@@ -1,15 +1,22 @@
-import { Controller, Post, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Param, UseGuards, Body } from '@nestjs/common';
 import { SyncService } from './sync.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('sync')
-@UseGuards(JwtAuthGuard)
 export class SyncController {
   constructor(private syncService: SyncService) {}
 
+  @Public()
   @Post('initial')
-  async triggerInitialSync(@CurrentUser('merchantId') merchantId: string) {
+  async triggerInitialSync(@Body('merchantId') merchantId: string) {
+    return this.syncService.triggerInitialSync(merchantId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('initial-auth')
+  async triggerInitialSyncAuth(@CurrentUser('merchantId') merchantId: string) {
     return this.syncService.triggerInitialSync(merchantId);
   }
 
