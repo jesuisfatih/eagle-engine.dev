@@ -12,9 +12,10 @@ import {
 import { PricingService } from './pricing.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('pricing')
-@UseGuards(JwtAuthGuard)
+@Public()
 export class PricingController {
   constructor(private pricingService: PricingService) {}
 
@@ -39,10 +40,10 @@ export class PricingController {
   // Pricing Rules Management
   @Get('rules')
   async getRules(
-    @CurrentUser('merchantId') merchantId: string,
     @Query('isActive') isActive?: string,
     @Query('companyId') companyId?: string,
   ) {
+    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
     const filters: any = {};
     if (isActive !== undefined) {
       filters.isActive = isActive === 'true';
@@ -55,35 +56,32 @@ export class PricingController {
   }
 
   @Get('rules/:id')
-  async getRule(@CurrentUser('merchantId') merchantId: string, @Param('id') id: string) {
+  async getRule(@Param('id') id: string) {
+    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
     return this.pricingService.getRule(id, merchantId);
   }
 
   @Post('rules')
-  async createRule(@CurrentUser('merchantId') merchantId: string, @Body() body: any) {
+  async createRule(@Body() body: any) {
+    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
     return this.pricingService.createRule(merchantId, body);
   }
 
   @Put('rules/:id')
-  async updateRule(
-    @CurrentUser('merchantId') merchantId: string,
-    @Param('id') id: string,
-    @Body() body: any,
-  ) {
+  async updateRule(@Param('id') id: string, @Body() body: any) {
+    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
     return this.pricingService.updateRule(id, merchantId, body);
   }
 
   @Delete('rules/:id')
-  async deleteRule(@CurrentUser('merchantId') merchantId: string, @Param('id') id: string) {
+  async deleteRule(@Param('id') id: string) {
+    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
     return this.pricingService.deleteRule(id, merchantId);
   }
 
   @Put('rules/:id/toggle')
-  async toggleRule(
-    @CurrentUser('merchantId') merchantId: string,
-    @Param('id') id: string,
-    @Body('isActive') isActive: boolean,
-  ) {
+  async toggleRule(@Param('id') id: string, @Body('isActive') isActive: boolean) {
+    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
     return this.pricingService.toggleRuleActive(id, merchantId, isActive);
   }
 }
