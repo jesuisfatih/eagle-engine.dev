@@ -253,8 +253,8 @@ export class PricingCalculatorService {
       case 'qty_break':
         if (qtyBreaks && Array.isArray(qtyBreaks)) {
           // Find applicable qty break
-          let applicableBreak = null;
-          for (const brk of qtyBreaks) {
+          let applicableBreak: any = null;
+          for (const brk of qtyBreaks as any[]) {
             if (quantity >= brk.min_qty) {
               if (!applicableBreak || brk.min_qty > applicableBreak.min_qty) {
                 applicableBreak = brk;
