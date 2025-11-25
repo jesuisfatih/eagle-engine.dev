@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import TopCompanies from './components/TopCompanies';
 
 export default function AnalyticsPage() {
   const [stats, setStats] = useState({
@@ -149,6 +150,10 @@ export default function AnalyticsPage() {
               )}
             </div>
           </div>
+        </div>
+
+        <div className="col-md-6">
+          <TopCompanies />
         </div>
       </div>
     </div>
