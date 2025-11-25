@@ -71,10 +71,10 @@ export default function OrdersPage() {
                         </span>
                       </td>
                       <td>
-                        <button className="btn btn-sm btn-primary">
+                        <a href={`/orders/${order.id}`} className="btn btn-sm btn-primary">
                           <i className="ti ti-eye me-1"></i>
                           View
-                        </button>
+                        </a>
                       </td>
                     </tr>
                   ))}

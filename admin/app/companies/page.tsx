@@ -114,31 +114,24 @@ export default function CompaniesPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="flex space-x-8">
+      <ul className="nav nav-tabs mb-4">
+        <li className="nav-item">
           <button
+            className={`nav-link ${activeTab === 'companies' ? 'active' : ''}`}
             onClick={() => setActiveTab('companies')}
-            className={`border-b-2 pb-4 text-sm font-medium ${
-              activeTab === 'companies'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-            }`}
           >
             B2B Companies ({companies.length})
           </button>
+        </li>
+        <li className="nav-item">
           <button
+            className={`nav-link ${activeTab === 'shopify' ? 'active' : ''}`}
             onClick={() => setActiveTab('shopify')}
-            className={`border-b-2 pb-4 text-sm font-medium ${
-              activeTab === 'shopify'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-            }`}
           >
             Shopify Customers ({shopifyCustomers.length})
           </button>
-        </nav>
-      </div>
+        </li>
+      </ul>
 
       {/* Companies Tab */}
       {activeTab === 'companies' && (
