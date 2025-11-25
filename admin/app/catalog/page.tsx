@@ -30,9 +30,27 @@ export default function CatalogPage() {
         <button
           onClick={async () => {
             const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-            await fetch(`${API_URL}/api/v1/sync/products`, { method: 'POST' });
-            alert('✅ Products sync started!');
-            setTimeout(loadProducts, 3000);
+            const response = await fetch(`${API_URL}/api/v1/sync/products`, { method: 'POST' });
+            if (response.ok) {
+              const modal = document.createElement('div');
+              modal.className = 'modal fade show d-block';
+              modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+              modal.innerHTML = `
+                <div class="modal-dialog modal-dialog-centered">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title">✅ Success</h5>
+                      <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+                    </div>
+                    <div class="modal-body">Products sync started! Check back in a few minutes.</div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove(); location.reload();">OK</button>
+                    </div>
+                  </div>
+                </div>
+              `;
+              document.body.appendChild(modal);
+            }
           }}
           className="btn btn-primary"
         >

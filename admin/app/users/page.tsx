@@ -75,11 +75,32 @@ export default function UsersPage() {
                         <div className="btn-group">
                           <button
                             onClick={() => {
-                              const newRole = prompt('Change role (admin/manager/buyer/viewer):', user.role);
-                              if (newRole) {
-                                alert(`Role changed to: ${newRole}`);
-                                loadUsers();
-                              }
+                              const modal = document.createElement('div');
+                              modal.className = 'modal fade show d-block';
+                              modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                              modal.innerHTML = `
+                                <div class="modal-dialog">
+                                  <div class="modal-content">
+                                    <div class="modal-header">
+                                      <h5 class="modal-title">Edit User Role</h5>
+                                      <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                      <select class="form-select" id="roleSelect">
+                                        <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                        <option value="manager" ${user.role === 'manager' ? 'selected' : ''}>Manager</option>
+                                        <option value="buyer" ${user.role === 'buyer' ? 'selected' : ''}>Buyer</option>
+                                        <option value="viewer" ${user.role === 'viewer' ? 'selected' : ''}>Viewer</option>
+                                      </select>
+                                    </div>
+                                    <div class="modal-footer">
+                                      <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+                                      <button type="button" class="btn btn-primary" onclick="alert('Role updated'); this.closest('.modal').remove(); location.reload();">Save</button>
+                                    </div>
+                                  </div>
+                                </div>
+                              `;
+                              document.body.appendChild(modal);
                             }}
                             className="btn btn-sm btn-icon btn-primary"
                           >
