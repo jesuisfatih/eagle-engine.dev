@@ -23,6 +23,9 @@ export default function RootLayout({
         />
         <link rel="stylesheet" href="https://app.eagledtfsupply.com/vendor/css/core.css" />
         <link rel="stylesheet" href="https://app.eagledtfsupply.com/vendor/fonts/iconify-icons.css" />
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+        <script src="https://app.eagledtfsupply.com/vendor/js/helpers.js" defer></script>
+        <script src="https://app.eagledtfsupply.com/vendor/js/menu.js" defer></script>
       </head>
       <body className="bg-body">
         <div className="layout-wrapper layout-content-navbar">
