@@ -33,14 +33,33 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
             </div>
           )}
 
-          <button
-            onClick={() => onAddToCart(product.id)}
-            className="btn btn-primary w-100"
-            disabled={product.variants?.[0]?.inventoryQuantity === 0}
-          >
-            <i className="ti ti-shopping-cart-plus me-1"></i>
-            {product.variants?.[0]?.inventoryQuantity === 0 ? 'Out of Stock' : 'Add to Cart'}
-          </button>
+          <div className="d-flex gap-2">
+            <button
+              onClick={() => onAddToCart(product.id)}
+              className="btn btn-primary flex-fill"
+              disabled={product.variants?.[0]?.inventoryQuantity === 0}
+            >
+              <i className="ti ti-shopping-cart-plus me-1"></i>
+              {product.variants?.[0]?.inventoryQuantity === 0 ? 'Out of Stock' : 'Add to Cart'}
+            </button>
+            <button
+              onClick={() => {
+                const wishlist = JSON.parse(localStorage.getItem('eagle_wishlist') || '[]');
+                wishlist.push({
+                  id: product.id,
+                  title: product.title,
+                  vendor: product.vendor,
+                  price: product.companyPrice || product.listPrice,
+                });
+                localStorage.setItem('eagle_wishlist', JSON.stringify(wishlist));
+                alert('✅ Added to wishlist!');
+              }}
+              className="btn btn-label-secondary"
+              title="Add to Wishlist"
+            >
+              <i className="ti ti-heart"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -55,16 +55,35 @@ export default function CatalogPage() {
         ) : (
           products.map((product) => (
             <div key={product.id} className="col-md-4">
-              <div className="card">
+              <div className="card h-100">
                 <div className="card-body">
                   <h6 className="card-title">{product.title}</h6>
                   <p className="text-muted small">{product.vendor}</p>
-                  <div className="d-flex justify-content-between">
+                  <div className="d-flex justify-content-between mb-2">
                     <span>Variants: {product.variants?.length || 0}</span>
                     <span className="badge bg-label-success">{product.status}</span>
                   </div>
-                  <div className="mt-2">
+                  <div className="mb-3">
                     <span className="fw-bold text-primary">${product.variants?.[0]?.price || 0}</span>
+                  </div>
+                  <div className="d-flex gap-2">
+                    <button
+                      onClick={() => {
+                        window.location.href = `/pricing?productId=${product.shopifyProductId}`;
+                      }}
+                      className="btn btn-sm btn-primary flex-fill"
+                    >
+                      <i className="ti ti-tag me-1"></i>
+                      Set Pricing
+                    </button>
+                    <button
+                      onClick={() => {
+                        alert(`Product: ${product.title}\nShopify ID: ${product.shopifyProductId}\nVariants: ${product.variants?.length}`);
+                      }}
+                      className="btn btn-sm btn-label-secondary"
+                    >
+                      <i className="ti ti-info-circle"></i>
+                    </button>
                   </div>
                 </div>
               </div>

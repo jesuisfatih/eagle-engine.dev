@@ -72,9 +72,31 @@ export default function UsersPage() {
                       </td>
                       <td className="small">{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never'}</td>
                       <td>
-                        <button className="btn btn-sm btn-primary">
-                          <i className="ti ti-edit"></i>
-                        </button>
+                        <div className="btn-group">
+                          <button
+                            onClick={() => {
+                              const newRole = prompt('Change role (admin/manager/buyer/viewer):', user.role);
+                              if (newRole) {
+                                alert(`Role changed to: ${newRole}`);
+                                loadUsers();
+                              }
+                            }}
+                            className="btn btn-sm btn-icon btn-primary"
+                          >
+                            <i className="ti ti-edit"></i>
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (confirm(`${user.isActive ? 'Deactivate' : 'Activate'} this user?`)) {
+                                alert(`User ${user.isActive ? 'deactivated' : 'activated'}`);
+                                loadUsers();
+                              }
+                            }}
+                            className={`btn btn-sm btn-icon ${user.isActive ? 'btn-warning' : 'btn-success'}`}
+                          >
+                            <i className={`ti ${user.isActive ? 'ti-user-off' : 'ti-user-check'}`}></i>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
