@@ -14,12 +14,13 @@ export default function DashboardPage() {
 
   const loadStats = async () => {
     try {
-      // Gerçek API'den veri çek
-      const data = await apiClient.getMerchantStats();
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/merchants/stats`);
+      const data = await response.json();
       setStats(data);
+      setError('');
     } catch (err: any) {
       setError(err.message);
-      // Mock data ile devam et (development için)
       setStats({
         totalCompanies: 0,
         totalUsers: 0,
@@ -33,11 +34,19 @@ export default function DashboardPage() {
 
   const triggerSync = async () => {
     try {
-      await apiClient.triggerInitialSync();
-      alert('Sync başlatıldı! Birkaç dakika içinde veriler gelecek.');
-      setTimeout(loadStats, 3000);
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      await fetch(`${API_URL}/api/v1/sync/initial`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ merchantId: '6ecc682b-98ee-472d-977b-cffbbae081b8' })
+      });
+      alert('✅ Sync başlatıldı! Birkaç dakika içinde veriler gelecek.');
+      setTimeout(() => {
+        loadStats();
+        window.location.reload();
+      }, 3000);
     } catch (err: any) {
-      alert('Sync başlatılamadı: ' + err.message);
+      alert('❌ Sync başlatılamadı: ' + err.message);
     }
   };
 
