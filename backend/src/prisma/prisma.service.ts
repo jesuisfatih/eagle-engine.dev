@@ -2,6 +2,7 @@ import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/commo
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
@@ -9,10 +10,11 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   private prisma: PrismaClient;
   private pool: Pool;
 
-  constructor() {
-    this.pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  constructor(private config: ConfigService) {
+    const dbUrl = this.config.get<string>('DATABASE_URL') || process.env.DATABASE_URL;
+    this.pool = new Pool({ connectionString: dbUrl });
     const adapter = new PrismaPg(this.pool);
-    this.prisma = new PrismaClient({ adapter });
+    this.prisma = new PrismaClient({ adapter } as any);
   }
 
   async $connect() {
