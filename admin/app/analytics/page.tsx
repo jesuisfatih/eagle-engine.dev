@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import TopCompanies from './components/TopCompanies';
+import DateRangeFilter from './components/DateRangeFilter';
 
 export default function AnalyticsPage() {
   const [stats, setStats] = useState({
@@ -35,7 +36,17 @@ export default function AnalyticsPage() {
 
   return (
     <div>
-      <h4 className="fw-bold mb-4">Analytics & Reports</h4>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h4 className="fw-bold mb-1">Analytics & Reports</h4>
+          <p className="mb-0 text-muted">Track performance and behavior</p>
+        </div>
+      </div>
+
+      <DateRangeFilter onDateChange={(from, to) => {
+        console.log('Date range:', from, to);
+        loadAnalytics();
+      }} />
 
       {/* Key Metrics */}
       <div className="row g-4 mb-4">
