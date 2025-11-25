@@ -30,14 +30,14 @@ const menuItems = [
     href: '/orders',
   },
   {
-    title: 'Abandoned Carts',
-    icon: 'ti-shopping-cart-off',
-    href: '/abandoned-carts',
-  },
-  {
     title: 'Analytics',
     icon: 'ti-chart-line',
     href: '/analytics',
+  },
+  {
+    title: 'Abandoned Carts',
+    icon: 'ti-shopping-cart-off',
+    href: '/abandoned-carts',
   },
   {
     title: 'Quotes',

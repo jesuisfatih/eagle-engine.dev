@@ -144,16 +144,28 @@ export default function CartPage() {
                 <h5 className="card-title mb-0">Order Summary</h5>
               </div>
               <div className="card-body">
-                <div className="mb-3">
+                  <div className="mb-3">
                   <label className="form-label small">Discount Code</label>
                   <div className="input-group input-group-sm">
                     <input
                       type="text"
                       className="form-control"
                       placeholder="Enter code"
+                      id="discountCodeInput"
                     />
-                    <button className="btn btn-outline-primary">Apply</button>
+                    <button
+                      onClick={() => {
+                        const input = document.getElementById('discountCodeInput') as HTMLInputElement;
+                        if (input.value) {
+                          alert(`✅ Discount code "${input.value}" will be applied at checkout`);
+                        }
+                      }}
+                      className="btn btn-outline-primary"
+                    >
+                      Apply
+                    </button>
                   </div>
+                  <small className="text-muted">B2B discounts are automatically applied</small>
                 </div>
 
                 <div className="d-flex justify-content-between mb-2">

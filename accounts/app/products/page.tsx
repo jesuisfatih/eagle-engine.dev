@@ -135,6 +135,15 @@ export default function ProductsPage() {
         {loading ? (
           <div className="text-center py-5">
             <div className="spinner-border text-primary"></div>
+            <p className="mt-2 text-muted">Loading products with B2B pricing...</p>
+          </div>
+        ) : displayProducts.length === 0 ? (
+          <div className="card">
+            <div className="card-body text-center py-5">
+              <i className="ti ti-package-off ti-3x text-muted mb-3"></i>
+              <h5>No products available</h5>
+              <p className="text-muted">Products will appear here after sync</p>
+            </div>
           </div>
         ) : (
           <div className="row g-4">
