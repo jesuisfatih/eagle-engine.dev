@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
+import Modal from '@/components/Modal';
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<any[]>([]);
   const [shopifyCustomers, setShopifyCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'companies' | 'shopify'>('companies');
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -32,12 +32,22 @@ export default function CompaniesPage() {
     }
   };
 
-  const convertToCompany = async (customerId: string) => {
-    if (!confirm('Bu Shopify müşterisini B2B firmaya dönüştürmek istiyor musunuz?')) return;
+  const [convertModal, setConvertModal] = useState<{show: boolean; customerId: string | null}>({
+    show: false,
+    customerId: null,
+  });
+  const [resultModal, setResultModal] = useState<{show: boolean; type: 'success' | 'error'; message: string}>({
+    show: false,
+    type: 'success',
+    message: '',
+  });
+
+  const convertToCompany = async () => {
+    if (!convertModal.customerId) return;
     
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/shopify-customers/${customerId}/convert-to-company`, {
+      const response = await fetch(`${API_URL}/api/v1/shopify-customers/${convertModal.customerId}/convert-to-company`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('eagle_admin_token')}`,
@@ -46,14 +56,26 @@ export default function CompaniesPage() {
       });
       
       if (response.ok) {
-        alert('✅ Firma oluşturuldu! Davet emaili gönderildi.');
-        loadData();
+        setResultModal({
+          show: true,
+          type: 'success',
+          message: 'Firma başarıyla oluşturuldu! Davet emaili gönderildi.',
+        });
+        setTimeout(() => loadData(), 1000);
       } else {
         const error = await response.json();
-        alert('❌ Hata: ' + (error.message || 'Failed'));
+        setResultModal({
+          show: true,
+          type: 'error',
+          message: error.message || 'İşlem başarısız oldu',
+        });
       }
     } catch (err: any) {
-      alert('❌ Hata: ' + err.message);
+      setResultModal({
+        show: true,
+        type: 'error',
+        message: err.message,
+      });
     }
   };
 
@@ -186,7 +208,7 @@ export default function CompaniesPage() {
                       <td className="fw-semibold">${customer.totalSpent || 0}</td>
                       <td>
                         <button
-                          onClick={() => convertToCompany(customer.id)}
+                          onClick={() => setConvertModal({ show: true, customerId: customer.id })}
                           className="btn btn-sm btn-primary"
                         >
                           <i className="ti ti-building me-1"></i>
@@ -202,6 +224,29 @@ export default function CompaniesPage() {
           </div>
         </div>
       )}
+
+      {/* Convert Confirmation Modal */}
+      <Modal
+        show={convertModal.show}
+        onClose={() => setConvertModal({ show: false, customerId: null })}
+        onConfirm={convertToCompany}
+        title="Firmaya Dönüştür"
+        message="Bu Shopify müşterisini B2B firmaya dönüştürmek istiyor musunuz? Davet emaili gönderilecektir."
+        confirmText="Evet, Dönüştür"
+        cancelText="İptal"
+        type="primary"
+      />
+
+      {/* Result Modal */}
+      <Modal
+        show={resultModal.show}
+        onClose={() => setResultModal({ ...resultModal, show: false })}
+        onConfirm={() => setResultModal({ ...resultModal, show: false })}
+        title={resultModal.type === 'success' ? 'Başarılı' : 'Hata'}
+        message={resultModal.message}
+        confirmText="Tamam"
+        type={resultModal.type === 'success' ? 'success' : 'danger'}
+      />
     </div>
   );
 }
