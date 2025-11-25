@@ -2,9 +2,10 @@ import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
 import { SettingsService } from './settings.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('settings')
-@UseGuards(JwtAuthGuard)
+@Public()
 export class SettingsController {
   constructor(private settingsService: SettingsService) {}
 
