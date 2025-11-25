@@ -16,11 +16,17 @@ export class ShopifyCustomersService {
       ];
     }
 
-    return this.prisma.shopifyCustomer.findMany({
+    const customers = await this.prisma.shopifyCustomer.findMany({
       where,
       orderBy: { syncedAt: 'desc' },
       take: 100,
     });
+
+    // Convert BigInt to string for JSON serialization
+    return customers.map(c => ({
+      ...c,
+      shopifyCustomerId: c.shopifyCustomerId.toString(),
+    }));
   }
 
   async findOne(id: string) {
