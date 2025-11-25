@@ -160,10 +160,45 @@ export default function CompaniesPage() {
                       <td>{company._count?.users || 0}</td>
                       <td>{company._count?.orders || 0}</td>
                       <td>
-                        <Link href={`/companies/${company.id}`} className="btn btn-sm btn-primary">
-                          <i className="ti ti-eye me-1"></i>
-                          View
-                        </Link>
+                        <div className="dropdown">
+                          <button
+                            className="btn btn-sm btn-icon"
+                            type="button"
+                            data-bs-toggle="dropdown"
+                          >
+                            <i className="ti ti-dots-vertical"></i>
+                          </button>
+                          <ul className="dropdown-menu dropdown-menu-end">
+                            <li>
+                              <Link href={`/companies/${company.id}`} className="dropdown-item">
+                                <i className="ti ti-eye me-2"></i>View Details
+                              </Link>
+                            </li>
+                            {company.status === 'pending' && (
+                              <li>
+                                <a className="dropdown-item" href="javascript:void(0);">
+                                  <i className="ti ti-check me-2"></i>Approve Company
+                                </a>
+                              </li>
+                            )}
+                            <li>
+                              <a className="dropdown-item" href="javascript:void(0);">
+                                <i className="ti ti-edit me-2"></i>Edit Info
+                              </a>
+                            </li>
+                            <li>
+                              <a className="dropdown-item" href="javascript:void(0);">
+                                <i className="ti ti-tag me-2"></i>Set Pricing
+                              </a>
+                            </li>
+                            <li><hr className="dropdown-divider" /></li>
+                            <li>
+                              <a className="dropdown-item text-danger" href="javascript:void(0);">
+                                <i className="ti ti-trash me-2"></i>Delete
+                              </a>
+                            </li>
+                          </ul>
+                        </div>
                       </td>
                     </tr>
                   ))}

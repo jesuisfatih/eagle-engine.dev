@@ -1,9 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function ProductsPage() {
-  const [products] = useState([
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/catalog/products?limit=100`);
+      const data = await response.json();
+      setProducts(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sampleProducts = [
     {
       id: '1',
       title: 'Premium Laptop Stand',
@@ -34,56 +54,58 @@ export default function ProductsPage() {
       image: 'https://via.placeholder.com/150',
       inStock: true,
     },
-  ]);
+  ];
+
+  const displayProducts = products.length > 0 ? products : sampleProducts;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+    <div>
+      <div>
+        <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Product Catalog</h1>
-            <p className="mt-1 text-sm text-gray-500">Browse products with your exclusive B2B pricing</p>
+            <h4 className="fw-bold mb-1">Product Catalog</h4>
+            <p className="mb-0 text-muted">Browse with exclusive B2B pricing</p>
           </div>
-          <div className="flex items-center space-x-3">
-            <input
-              type="text"
-              placeholder="Search products..."
-              className="w-64 rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          <input
+            type="text"
+            placeholder="Search products..."
+            className="form-control"
+            style={{maxWidth: '300px'}}
+          />
         </div>
 
-        {/* Products Grid */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {products.map((product) => (
-            <div key={product.id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
-              <div className="aspect-square rounded-lg bg-gray-100 mb-4 flex items-center justify-center overflow-hidden">
-                <img src={product.image} alt={product.title} className="h-full w-full object-cover" />
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="font-semibold text-gray-900">{product.title}</h3>
-                <p className="text-sm text-gray-500">{product.vendor}</p>
-                
-                <div className="flex items-baseline space-x-2">
-                  <span className="text-2xl font-bold text-blue-600">${product.companyPrice}</span>
-                  <span className="text-sm text-gray-500 line-through">${product.listPrice}</span>
-                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
-                    Save {product.discount}%
-                  </span>
+        {loading ? (
+          <div className="text-center py-5">
+            <div className="spinner-border text-primary"></div>
+          </div>
+        ) : (
+          <div className="row g-4">
+            {displayProducts.map((product) => (
+              <div key={product.id} className="col-md-4">
+                <div className="card">
+                  <div className="card-body">
+                    <h5 className="card-title">{product.title}</h5>
+                    <p className="card-text small text-muted">{product.vendor}</p>
+                    <div className="mt-3">
+                      <h4 className="text-primary mb-0">${product.companyPrice || product.listPrice}</h4>
+                      {product.companyPrice && (
+                        <div>
+                          <span className="text-muted small text-decoration-line-through">${product.listPrice}</span>
+                          <span className="badge bg-label-success ms-2">-{product.discount}%</span>
+                        </div>
+                      )}
+                    </div>
+                    <button className="btn btn-primary w-100 mt-3">
+                      <i className="ti ti-shopping-cart-plus me-1"></i>
+                      Add to Cart
+                    </button>
+                  </div>
                 </div>
-
-                <button className="w-full rounded-lg bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700">
-                  Add to Cart
-                </button>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
-
-      <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
     </div>
   );
 }

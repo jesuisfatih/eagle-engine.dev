@@ -4,60 +4,73 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const [shopDomain, setShopDomain] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleInstall = () => {
-    if (!shopDomain) return;
-    
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
-    const domain = shopDomain.includes('.myshopify.com') ? shopDomain : `${shopDomain}.myshopify.com`;
-    window.location.href = `${process.env.NEXT_PUBLIC_SHOPIFY_INSTALL_URL}?shop=${domain}`;
+    
+    // Simple check - production'da NextAuth kullanılacak
+    if (username === 'admin' && password === 'eagle2025') {
+      localStorage.setItem('eagle_admin_token', 'admin-token');
+      router.push('/dashboard');
+    } else {
+      alert('Invalid credentials. Use: admin / eagle2025');
+    }
+    setLoading(false);
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
-        <div className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-4xl">
-            🦅
+    <div className="d-flex align-items-center justify-content-center" style={{minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}}>
+      <div className="card" style={{maxWidth: '400px', width: '100%'}}>
+        <div className="card-body p-5">
+          <div className="text-center mb-4">
+            <span className="d-inline-block mb-3" style={{fontSize: '48px'}}>🦅</span>
+            <h3 className="fw-bold mb-1">Eagle B2B Admin</h3>
+            <p className="text-muted">Sign in to your account</p>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Eagle B2B</h1>
-          <p className="mt-2 text-gray-600">Admin Panel</p>
-        </div>
 
-        <div className="mt-8">
-          <label className="block text-sm font-medium text-gray-700">
-            Your Shopify Store Domain
-          </label>
-          <div className="mt-2 flex items-center space-x-2">
-            <input
-              type="text"
-              value={shopDomain}
-              onChange={(e) => setShopDomain(e.target.value)}
-              placeholder="your-store"
-              className="flex-1 rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onKeyPress={(e) => e.key === 'Enter' && handleInstall()}
-            />
-            <span className="text-gray-500">.myshopify.com</span>
+          <form onSubmit={handleLogin}>
+            <div className="mb-3">
+              <label className="form-label">Username</label>
+              <input
+                type="text"
+                className="form-control"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="admin"
+                required
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Password</label>
+              <input
+                type="password"
+                className="form-control"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn btn-primary w-100"
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+
+          <div className="text-center mt-4">
+            <small className="text-muted">Default: admin / eagle2025</small>
           </div>
         </div>
-
-        <button
-          onClick={handleInstall}
-          disabled={loading || !shopDomain}
-          className="mt-6 w-full rounded-lg bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? 'Installing...' : 'Install Eagle B2B'}
-        </button>
-
-        <p className="mt-6 text-center text-sm text-gray-500">
-          By installing, you agree to Eagle B2B's{' '}
-          <a href="#" className="text-blue-600 hover:underline">
-            Terms of Service
-          </a>
-        </p>
       </div>
     </div>
   );
