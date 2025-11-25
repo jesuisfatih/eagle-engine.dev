@@ -15,6 +15,11 @@ const menuItems = [
     href: '/companies',
   },
   {
+    title: 'Users',
+    icon: 'tabler-users',
+    href: '/users',
+  },
+  {
     title: 'Pricing Rules',
     icon: 'tabler-discount',
     href: '/pricing',
