@@ -1,78 +1,89 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { apiClient } from '@/lib/api-client';
 
 export default function OrdersPage() {
-  const [orders] = useState([
-    {
-      id: '#ORD-1245',
-      company: 'TechCorp Industries',
-      date: '2024-11-20',
-      items: 12,
-      total: 2450.00,
-      status: 'paid',
-    },
-    {
-      id: '#ORD-1244',
-      company: 'Global Supplies Ltd',
-      date: '2024-11-18',
-      items: 8,
-      total: 1680.50,
-      status: 'paid',
-    },
-  ]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  const loadOrders = async () => {
+    try {
+      const data = await apiClient.getOrders();
+      setOrders(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div>
+      <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-          <p className="mt-1 text-sm text-gray-500">Manage all B2B orders</p>
+          <h4 className="fw-bold mb-1">Orders</h4>
+          <p className="mb-0 text-muted">Manage all B2B orders</p>
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr className="text-left text-xs font-medium uppercase text-gray-700">
-                <th className="px-6 py-3">Order ID</th>
-                <th className="px-6 py-3">Company</th>
-                <th className="px-6 py-3">Date</th>
-                <th className="px-6 py-3">Items</th>
-                <th className="px-6 py-3">Total</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {orders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-semibold text-gray-900">{order.id}</td>
-                  <td className="px-6 py-4 text-gray-900">{order.company}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{order.date}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{order.items}</td>
-                  <td className="px-6 py-4 font-semibold text-gray-900">${order.total.toFixed(2)}</td>
-                  <td className="px-6 py-4">
-                    <span className="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
-                      {order.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button className="text-sm font-medium text-blue-600 hover:text-blue-700">
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="card">
+        <div className="card-body">
+          {loading ? (
+            <div className="text-center py-4">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="text-center py-5">
+              <i className="ti ti-shopping-cart ti-3x text-muted mb-3"></i>
+              <h5>No orders yet</h5>
+              <p className="text-muted">Orders will appear here after customers make purchases</p>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Company</th>
+                    <th>Date</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.map((order) => (
+                    <tr key={order.id}>
+                      <td className="fw-semibold">#{order.shopifyOrderNumber}</td>
+                      <td>{order.company?.name || 'N/A'}</td>
+                      <td className="small">{new Date(order.createdAt).toLocaleDateString()}</td>
+                      <td className="fw-semibold">${order.totalPrice}</td>
+                      <td>
+                        <span className="badge bg-label-success">
+                          {order.financialStatus}
+                        </span>
+                      </td>
+                      <td>
+                        <button className="btn btn-sm btn-primary">
+                          <i className="ti ti-eye me-1"></i>
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
-
-
-
-

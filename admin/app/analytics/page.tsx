@@ -1,75 +1,107 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function AnalyticsPage() {
+  const [stats, setStats] = useState({
+    totalEvents: 0,
+    productViews: 0,
+    addToCarts: 0,
+    conversionRate: 0,
+  });
+
+  useEffect(() => {
+    // API'den analytics çek
+    fetch('http://localhost:4000/api/v1/events/analytics')
+      .then(r => r.json())
+      .then(data => setStats(data))
+      .catch(() => {});
+  }, []);
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Analytics & Reports</h1>
-        <p className="mt-1 text-sm text-gray-500">Track performance and customer behavior</p>
-      </div>
+    <div>
+      <h4 className="fw-bold mb-4">Analytics & Reports</h4>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <p className="text-sm text-gray-600">Total Events</p>
-          <p className="mt-2 text-3xl font-bold text-gray-900">15,482</p>
-          <p className="mt-1 text-sm text-green-600">↑ 12% from last week</p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <p className="text-sm text-gray-600">Product Views</p>
-          <p className="mt-2 text-3xl font-bold text-gray-900">8,234</p>
-          <p className="mt-1 text-sm text-green-600">↑ 8% from last week</p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <p className="text-sm text-gray-600">Add to Cart</p>
-          <p className="mt-2 text-3xl font-bold text-gray-900">1,456</p>
-          <p className="mt-1 text-sm text-green-600">↑ 15% from last week</p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <p className="text-sm text-gray-600">Conversion Rate</p>
-          <p className="mt-2 text-3xl font-bold text-gray-900">17.7%</p>
-          <p className="mt-1 text-sm text-green-600">↑ 2.3% from last week</p>
-        </div>
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <h3 className="font-semibold text-gray-900">Event Funnel</h3>
-          <div className="mt-4 h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-            <p className="text-gray-500">Funnel Chart: Views → Cart → Checkout → Orders</p>
+      <div className="row g-4 mb-4">
+        <div className="col-sm-6 col-lg-3">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex justify-content-between">
+                <div>
+                  <p className="card-text mb-0">Total Events</p>
+                  <h4 className="mb-0">{stats.totalEvents}</h4>
+                </div>
+                <span className="badge bg-label-primary rounded p-2">
+                  <i className="ti ti-chart-line ti-sm"></i>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <h3 className="font-semibold text-gray-900">Top Products</h3>
-          <div className="mt-4 space-y-3">
-            {[
-              { name: 'Premium Laptop Stand', views: 1245, carts: 234 },
-              { name: 'Wireless Keyboard', views: 987, carts: 156 },
-              { name: 'Ergonomic Mouse', views: 856, carts: 142 },
-            ].map((product, i) => (
-              <div key={i} className="flex items-center justify-between border-b border-gray-100 pb-3">
+        <div className="col-sm-6 col-lg-3">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex justify-content-between">
                 <div>
-                  <p className="font-medium text-gray-900">{product.name}</p>
-                  <p className="text-sm text-gray-500">{product.views} views · {product.carts} carts</p>
+                  <p className="card-text mb-0">Product Views</p>
+                  <h4 className="mb-0">{stats.productViews}</h4>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-blue-600">
-                    {((product.carts / product.views) * 100).toFixed(1)}%
-                  </p>
-                </div>
+                <span className="badge bg-label-info rounded p-2">
+                  <i className="ti ti-eye ti-sm"></i>
+                </span>
               </div>
-            ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="col-sm-6 col-lg-3">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex justify-content-between">
+                <div>
+                  <p className="card-text mb-0">Add to Cart</p>
+                  <h4 className="mb-0">{stats.addToCarts}</h4>
+                </div>
+                <span className="badge bg-label-success rounded p-2">
+                  <i className="ti ti-shopping-cart-plus ti-sm"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-sm-6 col-lg-3">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex justify-content-between">
+                <div>
+                  <p className="card-text mb-0">Conversion Rate</p>
+                  <h4 className="mb-0">{stats.conversionRate}%</h4>
+                </div>
+                <span className="badge bg-label-warning rounded p-2">
+                  <i className="ti ti-trending-up ti-sm"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Funnel Chart */}
+      <div className="card">
+        <div className="card-header">
+          <h5 className="card-title mb-0">Conversion Funnel</h5>
+        </div>
+        <div className="card-body">
+          <div className="text-center py-5">
+            <i className="ti ti-chart-infographic ti-3x text-primary mb-3"></i>
+            <p className="text-muted">Chart: Product Views → Cart → Checkout → Orders</p>
+            <p className="small text-muted">API Integration Ready</p>
           </div>
         </div>
       </div>
     </div>
   );
 }
-
-
-
-
