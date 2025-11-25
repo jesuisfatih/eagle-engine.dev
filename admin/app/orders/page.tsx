@@ -29,6 +29,17 @@ export default function OrdersPage() {
           <h4 className="fw-bold mb-1">Orders</h4>
           <p className="mb-0 text-muted">Manage all B2B orders</p>
         </div>
+        <div className="d-flex gap-2">
+          <select className="form-select" style={{width: '150px'}}>
+            <option value="">All Status</option>
+            <option value="paid">Paid</option>
+            <option value="pending">Pending</option>
+            <option value="refunded">Refunded</option>
+          </select>
+          <select className="form-select" style={{width: '200px'}}>
+            <option value="">All Companies</option>
+          </select>
+        </div>
       </div>
 
       <div className="card">

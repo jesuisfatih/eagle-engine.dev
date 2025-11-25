@@ -193,7 +193,7 @@ export default function CompanyDetailPage() {
         </div>
 
         <div className="col-md-4">
-          <div className="card">
+          <div className="card mb-4">
             <div className="card-body">
               <h6 className="card-title">Quick Stats</h6>
               <div className="mt-3">
@@ -203,15 +203,67 @@ export default function CompanyDetailPage() {
                 </div>
                 <div className="d-flex justify-content-between mb-2">
                   <span className="text-muted">Total Orders</span>
-                  <span className="fw-bold">0</span>
+                  <span className="fw-bold">{company?.orders?.length || 0}</span>
                 </div>
                 <div className="d-flex justify-content-between">
                   <span className="text-muted">Total Spent</span>
-                  <span className="fw-bold">$0</span>
+                  <span className="fw-bold">${company?.orders?.reduce((sum: number, o: any) => sum + Number(o.totalPrice || 0), 0).toFixed(2) || '0.00'}</span>
                 </div>
               </div>
             </div>
           </div>
+
+          <div className="card">
+            <div className="card-body">
+              <h6 className="card-title">Assigned Pricing Rules</h6>
+              <div className="mt-3">
+                {company?.pricingRules?.length === 0 ? (
+                  <p className="text-muted small mb-0">No pricing rules assigned</p>
+                ) : (
+                  company?.pricingRules?.map((rule: any) => (
+                    <div key={rule.id} className="mb-2">
+                      <span className="badge bg-label-success">{rule.name}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Orders */}
+      <div className="card mb-4">
+        <div className="card-header">
+          <h5 className="card-title mb-0">Recent Orders</h5>
+        </div>
+        <div className="card-body">
+          {!company?.orders || company.orders.length === 0 ? (
+            <p className="text-muted mb-0">No orders yet</p>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Order</th>
+                    <th>Date</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {company.orders.slice(0, 5).map((order: any) => (
+                    <tr key={order.id}>
+                      <td className="fw-semibold">#{order.shopifyOrderNumber}</td>
+                      <td className="small">{new Date(order.createdAt).toLocaleDateString()}</td>
+                      <td className="fw-semibold">${order.totalPrice}</td>
+                      <td><span className="badge bg-label-success">{order.financialStatus}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 

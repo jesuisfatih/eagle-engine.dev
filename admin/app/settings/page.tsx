@@ -23,6 +23,25 @@ export default function SettingsPage() {
   data-shop="${settings.shopDomain}"></script>`;
 
   const handleSaveSettings = async () => {
+    // Validation
+    if (!settings.shopDomain) {
+      setModal({
+        show: true,
+        type: 'error',
+        message: 'Shop domain is required',
+      });
+      return;
+    }
+
+    if (!settings.shopDomain.includes('.myshopify.com')) {
+      setModal({
+        show: true,
+        type: 'error',
+        message: 'Invalid shop domain format',
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
