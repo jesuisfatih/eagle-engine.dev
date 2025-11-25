@@ -107,7 +107,7 @@ export class AuthService {
     };
   }
 
-  async acceptInvitation(token: string, password: string) {
+  async acceptInvitation(token: string, password: string, userInfo?: any) {
     const user = await this.prisma.companyUser.findFirst({
       where: { invitationToken: token },
       include: { company: true },
@@ -123,15 +123,32 @@ export class AuthService {
 
     const passwordHash = await this.hashPassword(password);
 
+    // Update user
     const updatedUser = await this.prisma.companyUser.update({
       where: { id: user.id },
       data: {
         passwordHash,
+        firstName: userInfo?.firstName || user.firstName,
+        lastName: userInfo?.lastName || user.lastName,
         invitationAcceptedAt: new Date(),
         invitationToken: null,
         isActive: true,
       },
     });
+
+    // Update company if info provided
+    if (userInfo?.companyInfo) {
+      await this.prisma.company.update({
+        where: { id: user.companyId },
+        data: {
+          name: userInfo.companyInfo.name || user.company.name,
+          taxId: userInfo.companyInfo.taxId,
+          phone: userInfo.companyInfo.phone,
+          billingAddress: userInfo.companyInfo.billingAddress,
+          status: 'active',
+        },
+      });
+    }
 
     const payload: JwtPayload = {
       sub: updatedUser.id,

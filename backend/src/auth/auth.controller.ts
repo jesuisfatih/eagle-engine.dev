@@ -11,6 +11,9 @@ class LoginDto {
 class AcceptInvitationDto {
   token: string;
   password: string;
+  firstName?: string;
+  lastName?: string;
+  companyInfo?: any;
 }
 
 @Controller('auth')
@@ -31,7 +34,7 @@ export class AuthController {
   @Post('accept-invitation')
   @HttpCode(HttpStatus.OK)
   async acceptInvitation(@Body() dto: AcceptInvitationDto) {
-    return this.authService.acceptInvitation(dto.token, dto.password);
+    return this.authService.acceptInvitation(dto.token, dto.password, dto);
   }
 
   @Public()
