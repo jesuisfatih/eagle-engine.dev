@@ -13,6 +13,9 @@ import { PricingModule } from './pricing/pricing.module';
 import { CartsModule } from './carts/carts.module';
 import { EventsModule } from './events/events.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { CompaniesModule } from './companies/companies.module';
+import { CatalogModule } from './catalog/catalog.module';
+import { OrdersModule } from './orders/orders.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -41,6 +44,9 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     CartsModule,
     EventsModule,
     WebhooksModule,
+    CompaniesModule,
+    CatalogModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [
