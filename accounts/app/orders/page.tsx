@@ -70,11 +70,18 @@ export default function OrdersPage() {
                         </span>
                       </td>
                       <td>
-                        <button className="btn btn-sm btn-primary">
+                        <a href={`/orders/${order.id}`} className="btn btn-sm btn-primary">
                           <i className="ti ti-eye me-1"></i>View
-                        </button>
-                        <button className="btn btn-sm btn-text-secondary ms-2">
-                          <i className="ti ti-refresh"></i>Reorder
+                        </a>
+                        <button
+                          onClick={async () => {
+                            if (confirm('Create a new order with the same items?')) {
+                              alert('Reorder functionality will copy items to cart');
+                            }
+                          }}
+                          className="btn btn-sm btn-text-secondary ms-2"
+                        >
+                          <i className="ti ti-refresh"></i>
                         </button>
                       </td>
                     </tr>

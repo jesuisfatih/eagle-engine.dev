@@ -58,9 +58,35 @@ export default function CartPage() {
   const savings = cart?.items?.reduce((sum: number, item: any) => 
     sum + ((item.listPrice - item.unitPrice) * item.quantity), 0) || 0;
 
+  const createCart = async () => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+      const companyId = 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d';
+      const userId = 'c67273cf-acea-41db-9ff5-8f6e3bbb5c38';
+      
+      await fetch(`${API_URL}/api/v1/carts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ merchantId, companyId, createdByUserId: userId }),
+      });
+      
+      loadCart();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div>
-      <h4 className="fw-bold mb-4">Shopping Cart</h4>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h4 className="fw-bold mb-0">Shopping Cart</h4>
+        {!cart && !loading && (
+          <button onClick={createCart} className="btn btn-primary btn-sm">
+            <i className="ti ti-plus me-1"></i>Create Cart
+          </button>
+        )}
+      </div>
 
       {loading ? (
         <div className="text-center py-5">
