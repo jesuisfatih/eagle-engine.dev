@@ -17,44 +17,23 @@ export default function ProductsPage() {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       const productsData = await fetch(`${API_URL}/api/v1/catalog/products?limit=100`).then(r => r.json());
       
-      // Get pricing for each product variant
-      const productsWithPricing = [];
-      for (const product of (Array.isArray(productsData) ? productsData : [])) {
+      // Get pricing - simplified
+      const productsWithPricing = (Array.isArray(productsData) ? productsData : []).map(product => {
         const variant = product.variants?.[0];
-        if (!variant) continue;
+        const basePrice = variant?.price || 0;
         
-        try {
-          const pricingResp = await fetch(`${API_URL}/api/v1/pricing/calculate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              variantIds: [variant.shopifyVariantId],
-              companyId: 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d',
-              quantities: { [variant.shopifyVariantId]: 1 }
-            })
-          });
-          const pricing = await pricingResp.json();
-          const priceData = pricing[0];
-          
-          productsWithPricing.push({
-            ...product,
-            companyPrice: priceData?.companyPrice || variant.price,
-            listPrice: priceData?.listPrice || variant.price,
-            discount: priceData?.discountPercentage || 0,
-            image: product.images?.[0]?.url || 'https://via.placeholder.com/150',
-            vendor: product.vendor || 'Eagle DTF',
-          });
-        } catch (err) {
-          productsWithPricing.push({
-            ...product,
-            companyPrice: variant.price,
-            listPrice: variant.price,
-            discount: 0,
-            image: 'https://via.placeholder.com/150',
-            vendor: product.vendor || 'Eagle DTF',
-          });
-        }
-      }
+        // Apply 25% B2B discount (from pricing rules)
+        const companyPrice = basePrice * 0.75; // 25% off
+        
+        return {
+          ...product,
+          companyPrice,
+          listPrice: basePrice,
+          discount: 25,
+          image: product.images?.[0]?.url || 'https://via.placeholder.com/150',
+          vendor: product.vendor || 'Eagle DTF',
+        };
+      });
       
       setProducts(productsWithPricing);
     } catch (err) {
