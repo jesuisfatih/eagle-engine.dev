@@ -22,7 +22,39 @@ export default function CustomersPage() {
 
   return (
     <div>
-      <h4 className="fw-bold mb-4">All Customers</h4>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h4 className="fw-bold mb-1">All Customers</h4>
+          <p className="mb-0 text-muted">{customers.length} total customers</p>
+        </div>
+        <div className="d-flex gap-2">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search customers..."
+            style={{maxWidth: '250px'}}
+            onChange={(e) => {
+              const query = e.target.value.toLowerCase();
+              if (query) {
+                loadCustomers();
+              } else {
+                loadCustomers();
+              }
+            }}
+          />
+          <button
+            onClick={async () => {
+              const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+              await fetch(`${API_URL}/api/v1/sync/customers`, { method: 'POST' });
+              alert('✅ Customers sync started!');
+              setTimeout(loadCustomers, 3000);
+            }}
+            className="btn btn-primary"
+          >
+            <i className="ti ti-refresh me-1"></i>Sync
+          </button>
+        </div>
+      </div>
 
       <div className="card">
         <div className="card-body">
