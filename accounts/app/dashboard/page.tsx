@@ -1,113 +1,186 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { accountsApi } from '@/lib/api-client';
+import Link from 'next/link';
 
 export default function AccountsDashboard() {
-  const [companyName] = useState('TechCorp Industries');
-  const [stats] = useState({
-    activeOrders: 5,
-    pendingApprovals: 2,
-    totalSpent: 45600,
-    availableCredit: 50000,
+  const [stats, setStats] = useState({
+    pendingOrders: 0,
+    completedOrders: 0,
+    totalSpent: 0,
+    cartItems: 0,
   });
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const orders = await accountsApi.getOrders();
+      setRecentOrders(Array.isArray(orders) ? orders.slice(0, 5) : []);
+      // Calculate stats
+      const pending = orders.filter((o: any) => o.financialStatus === 'pending').length;
+      const completed = orders.filter((o: any) => o.financialStatus === 'paid').length;
+      const total = orders.reduce((sum: number, o: any) => sum + Number(o.totalPrice || 0), 0);
+      setStats({
+        pendingOrders: pending,
+        completedOrders: completed,
+        totalSpent: total,
+        cartItems: 0,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Welcome back!</h1>
-            <p className="mt-1 text-gray-600">{companyName}</p>
-          </div>
-          <button className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-            View Catalog
-          </button>
-        </div>
+    <div>
+      <div className="mb-4">
+        <h4 className="fw-bold mb-1">Welcome back! 👋</h4>
+        <p className="mb-0 text-muted">Your company dashboard</p>
+      </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Active Orders</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">{stats.activeOrders}</p>
-              </div>
-              <div className="rounded-full bg-blue-50 p-3">
-                <iconify-icon icon="mdi:package-variant-closed" className="text-2xl text-blue-600"></iconify-icon>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Pending Approvals</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">{stats.pendingApprovals}</p>
-              </div>
-              <div className="rounded-full bg-orange-50 p-3">
-                <iconify-icon icon="mdi:clock-outline" className="text-2xl text-orange-600"></iconify-icon>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Spent</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">${stats.totalSpent.toLocaleString()}</p>
-              </div>
-              <div className="rounded-full bg-green-50 p-3">
-                <iconify-icon icon="mdi:currency-usd" className="text-2xl text-green-600"></iconify-icon>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Available Credit</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">${stats.availableCredit.toLocaleString()}</p>
-              </div>
-              <div className="rounded-full bg-purple-50 p-3">
-                <iconify-icon icon="mdi:credit-card" className="text-2xl text-purple-600"></iconify-icon>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Orders */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Orders</h2>
-          <div className="mt-4 space-y-4">
-            {[
-              { id: '#ORD-1245', date: '2024-11-20', items: 12, total: 2450, status: 'Delivered' },
-              { id: '#ORD-1244', date: '2024-11-18', items: 8, total: 1680, status: 'In Transit' },
-              { id: '#ORD-1243', date: '2024-11-15', items: 15, total: 3200, status: 'Processing' },
-            ].map((order) => (
-              <div key={order.id} className="flex items-center justify-between border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+      {/* Quick Stats */}
+      <div className="row g-4 mb-4">
+        <div className="col-sm-6 col-lg-3">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex justify-content-between">
                 <div>
-                  <p className="font-medium text-gray-900">{order.id}</p>
-                  <p className="text-sm text-gray-500">{order.date} · {order.items} items</p>
+                  <p className="card-text mb-0">Pending Orders</p>
+                  <h4 className="mb-0">{stats.pendingOrders}</h4>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-gray-900">${order.total}</p>
-                  <span className="mt-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
-                    {order.status}
-                  </span>
-                </div>
+                <span className="badge bg-label-warning rounded p-2">
+                  <i className="ti ti-clock ti-sm"></i>
+                </span>
               </div>
-            ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="col-sm-6 col-lg-3">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex justify-content-between">
+                <div>
+                  <p className="card-text mb-0">Completed Orders</p>
+                  <h4 className="mb-0">{stats.completedOrders}</h4>
+                </div>
+                <span className="badge bg-label-success rounded p-2">
+                  <i className="ti ti-check ti-sm"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-sm-6 col-lg-3">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex justify-content-between">
+                <div>
+                  <p className="card-text mb-0">Total Spent</p>
+                  <h4 className="mb-0">${stats.totalSpent.toFixed(2)}</h4>
+                </div>
+                <span className="badge bg-label-primary rounded p-2">
+                  <i className="ti ti-currency-dollar ti-sm"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-sm-6 col-lg-3">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex justify-content-between">
+                <div>
+                  <p className="card-text mb-0">Cart Items</p>
+                  <h4 className="mb-0">{stats.cartItems}</h4>
+                </div>
+                <span className="badge bg-label-info rounded p-2">
+                  <i className="ti ti-shopping-cart ti-sm"></i>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Iconify Script */}
-      <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+      {/* Quick Actions */}
+      <div className="row g-4 mb-4">
+        <div className="col-md-4">
+          <Link href="/products" className="card bg-primary text-white">
+            <div className="card-body">
+              <i className="ti ti-shopping-bag ti-lg mb-2"></i>
+              <h5 className="text-white mb-1">Browse Products</h5>
+              <p className="mb-0 small">View catalog with your exclusive B2B prices</p>
+            </div>
+          </Link>
+        </div>
+        <div className="col-md-4">
+          <Link href="/cart" className="card bg-info text-white">
+            <div className="card-body">
+              <i className="ti ti-shopping-cart ti-lg mb-2"></i>
+              <h5 className="text-white mb-1">View Cart</h5>
+              <p className="mb-0 small">Review and checkout your cart</p>
+            </div>
+          </Link>
+        </div>
+        <div className="col-md-4">
+          <Link href="/quotes" className="card bg-warning text-white">
+            <div className="card-body">
+              <i className="ti ti-file-invoice ti-lg mb-2"></i>
+              <h5 className="text-white mb-1">Request Quote</h5>
+              <p className="mb-0 small">Get custom pricing for bulk orders</p>
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* Recent Orders */}
+      <div className="card">
+        <div className="card-header d-flex justify-content-between align-items-center">
+          <h5 className="card-title mb-0">Recent Orders</h5>
+          <Link href="/orders" className="btn btn-sm btn-primary">View All</Link>
+        </div>
+        <div className="card-body">
+          {recentOrders.length === 0 ? (
+            <div className="text-center py-4">
+              <i className="ti ti-package ti-3x text-muted mb-3"></i>
+              <p className="text-muted mb-0">No orders yet. Start shopping!</p>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Order</th>
+                    <th>Date</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentOrders.map((order) => (
+                    <tr key={order.id}>
+                      <td className="fw-semibold">#{order.shopifyOrderNumber}</td>
+                      <td className="small">{new Date(order.createdAt).toLocaleDateString()}</td>
+                      <td className="fw-semibold">${order.totalPrice}</td>
+                      <td>
+                        <span className="badge bg-label-success">{order.financialStatus}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
-
-
-
-
