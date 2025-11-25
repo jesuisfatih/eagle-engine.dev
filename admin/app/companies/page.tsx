@@ -46,6 +46,22 @@ export default function CompaniesPage() {
   const convertToCompany = async () => {
     if (!convertModal.customerId) return;
     
+    // Check if already converted
+    const customer = shopifyCustomers.find(c => c.id === convertModal.customerId);
+    const alreadyConverted = companies.find(comp => 
+      comp.createdByShopifyCustomerId?.toString() === customer?.shopifyCustomerId
+    );
+    
+    if (alreadyConverted) {
+      setConvertModal({ show: false, customerId: null });
+      setResultModal({
+        show: true,
+        type: 'error',
+        message: 'Bu customer zaten B2B firmaya dönüştürülmüş!',
+      });
+      return;
+    }
+    
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       const response = await fetch(`${API_URL}/api/v1/shopify-customers/${convertModal.customerId}/convert-to-company`, {
@@ -57,6 +73,7 @@ export default function CompaniesPage() {
       });
       
       if (response.ok) {
+        setConvertModal({ show: false, customerId: null });
         setResultModal({
           show: true,
           type: 'success',
@@ -65,6 +82,7 @@ export default function CompaniesPage() {
         setTimeout(() => loadData(), 1000);
       } else {
         const error = await response.json();
+        setConvertModal({ show: false, customerId: null });
         setResultModal({
           show: true,
           type: 'error',
@@ -72,6 +90,7 @@ export default function CompaniesPage() {
         });
       }
     } catch (err: any) {
+      setConvertModal({ show: false, customerId: null });
       setResultModal({
         show: true,
         type: 'error',
