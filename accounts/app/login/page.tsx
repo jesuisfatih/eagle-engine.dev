@@ -28,34 +28,34 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
-        <div className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-4xl">
-            🦅
+    <div className="d-flex align-items-center justify-content-center" style={{minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}}>
+      <div className="card" style={{maxWidth: '400px', width: '100%'}}>
+        <div className="card-body p-5">
+          <div className="text-center mb-4">
+            <span className="d-inline-block mb-3" style={{fontSize: '48px'}}>🦅</span>
+            <h3 className="fw-bold mb-1">Eagle B2B</h3>
+            <p className="text-muted">Company Portal Login</p>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Eagle B2B</h1>
-          <p className="mt-2 text-gray-600">Company Portal</p>
-        </div>
 
-        <form onSubmit={handleLogin} className="mt-8 space-y-6">
-          {error && (
-            <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">
-              {error}
+          <form onSubmit={handleLogin}>
+            {error && (
+              <div className="alert alert-danger">
+                {error}
+              </div>
+            )}
+
+            <div className="mb-3">
+              <label className="form-label">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="form-control"
+                placeholder="you@company.com"
+                autoComplete="email"
+              />
             </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="you@company.com"
-            />
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Password</label>
@@ -69,21 +69,21 @@ export default function LoginPage() {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? 'Logging in...' : 'Sign In'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn btn-primary w-100"
+            >
+              {loading ? 'Logging in...' : 'Sign In'}
+            </button>
+          </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
-          Don't have an account?{' '}
-          <a href="#" className="text-blue-600 hover:underline">
-            Contact your administrator
-          </a>
-        </p>
+          <div className="text-center mt-4">
+            <small className="text-muted">
+              Don't have an account? Contact your administrator
+            </small>
+          </div>
+        </div>
       </div>
     </div>
   );
