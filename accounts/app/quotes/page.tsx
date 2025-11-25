@@ -97,7 +97,8 @@ export default function QuotesPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
         </div>
       </div>
