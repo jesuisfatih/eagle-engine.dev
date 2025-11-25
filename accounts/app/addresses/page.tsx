@@ -7,7 +7,34 @@ export default function AddressesPage() {
         <h4 className="fw-bold mb-0">Saved Addresses</h4>
         <button
           onClick={() => {
-            alert('Add address modal - feature ready');
+            const modal = document.createElement('div');
+            modal.className = 'modal fade show d-block';
+            modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            modal.innerHTML = `
+              <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Add Address</h5>
+                    <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+                  </div>
+                  <div class="modal-body">
+                    <div class="mb-3">
+                      <label class="form-label">Address Line 1</label>
+                      <input type="text" class="form-control" placeholder="123 Main St">
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">City</label>
+                      <input type="text" class="form-control">
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="alert('Address saved'); this.closest('.modal').remove();">Save</button>
+                  </div>
+                </div>
+              </div>
+            `;
+            document.body.appendChild(modal);
           }}
           className="btn btn-primary"
         >
@@ -28,16 +55,54 @@ export default function AddressesPage() {
               <p className="mb-1 small text-muted">United States</p>
               <div className="mt-3">
                 <button
-                  onClick={() => alert('Edit address modal')}
+                  onClick={() => {
+                    const modal = document.createElement('div');
+                    modal.className = 'modal fade show d-block';
+                    modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                    modal.innerHTML = `
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title">Edit Address</h5>
+                            <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+                          </div>
+                          <div class="modal-body">
+                            <input type="text" class="form-control" value="United States">
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="alert('Updated'); this.closest('.modal').remove();">Update</button>
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                    document.body.appendChild(modal);
+                  }}
                   className="btn btn-sm btn-label-secondary me-2"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => {
-                    if (confirm('Delete this address?')) {
-                      alert('Address deleted');
-                    }
+                    const modal = document.createElement('div');
+                    modal.className = 'modal fade show d-block';
+                    modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                    modal.innerHTML = `
+                      <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title">Delete Address</h5>
+                            <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+                          </div>
+                          <div class="modal-body">Are you sure you want to delete this address?</div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+                            <button type="button" class="btn btn-danger" onclick="alert('Deleted'); this.closest('.modal').remove();">Delete</button>
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                    document.body.appendChild(modal);
                   }}
                   className="btn btn-sm btn-text-danger"
                 >

@@ -21,10 +21,13 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
         />
-        <link rel="stylesheet" href="https://app.eagledtfsupply.com/vendor/fonts/fontawesome.css" />
-        <link rel="stylesheet" href="https://app.eagledtfsupply.com/vendor/fonts/tabler-icons.css" />
-        <link rel="stylesheet" href="https://app.eagledtfsupply.com/vendor/css/core.css" />
+        <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+        <link rel="stylesheet" href="https://app.eagledtfsupply.com/vendor/css/core.css" />
+        <style>{`
+          .ti { font-family: 'tabler-icons' !important; }
+          .ti:before { display: inline-block; }
+        `}</style>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
         <script src="https://app.eagledtfsupply.com/vendor/js/helpers.js" defer></script>
         <script src="https://app.eagledtfsupply.com/vendor/js/menu.js" defer></script>
