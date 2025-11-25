@@ -35,7 +35,7 @@ export class CompanyUsersService {
     });
 
     // Sync changes to Shopify
-    if (user.shopifyCustomerId) {
+    if (user.shopifyCustomerId && this.shopifyCustomerSync) {
       try {
         await this.shopifyCustomerSync.updateShopifyCustomer(userId);
       } catch (err) {
