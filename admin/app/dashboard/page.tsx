@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
+import QuickActions from './components/QuickActions';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
@@ -85,6 +86,8 @@ export default function DashboardPage() {
           Sync Shopify Data
         </button>
       </div>
+
+      <QuickActions />
 
       {/* Stats Cards - Vuexy Style */}
       <div className="row g-4 mb-4">

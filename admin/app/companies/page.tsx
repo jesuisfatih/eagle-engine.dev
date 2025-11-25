@@ -4,9 +4,12 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import Modal from '@/components/Modal';
+import SearchBar from './components/SearchBar';
+import StatusFilter from './components/StatusFilter';
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<any[]>([]);
+  const [allCompanies, setAllCompanies] = useState<any[]>([]);
   const [shopifyCustomers, setShopifyCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'companies' | 'shopify'>('companies');
@@ -34,6 +37,7 @@ export default function CompaniesPage() {
         fetch(`${API_URL}/api/v1/shopify-customers`).then(r => r.json()).catch(() => []),
       ]);
       setCompanies(companiesData);
+      setAllCompanies(companiesData);
       setShopifyCustomers(Array.isArray(customersData) ? customersData : []);
     } catch (err) {
       console.error('Load error:', err);
