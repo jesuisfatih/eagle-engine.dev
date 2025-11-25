@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { accountsApi } from '@/lib/api-client';
+import CartItem from './components/CartItem';
 
 export default function CartPage() {
   const [cart, setCart] = useState<any>(null);
@@ -107,50 +108,12 @@ export default function CartPage() {
             <div className="card mb-4">
               <div className="card-body">
                 {cart.items.map((item: any) => (
-                  <div key={item.id} className="row mb-3 pb-3 border-bottom">
-                    <div className="col-md-7">
-                      <h6 className="fw-semibold mb-1">{item.title}</h6>
-                      <p className="text-muted small mb-2">{item.variantTitle}</p>
-                      <div>
-                        <span className="text-primary fw-bold">${item.unitPrice}</span>
-                        {item.listPrice > item.unitPrice && (
-                          <>
-                            <span className="text-muted small text-decoration-line-through ms-2">${item.listPrice}</span>
-                            <span className="badge bg-label-success ms-2">
-                              Save ${(item.listPrice - item.unitPrice).toFixed(2)}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div className="col-md-3">
-                      <div className="input-group input-group-sm">
-                        <button
-                          className="btn btn-outline-secondary"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        >-</button>
-                        <input
-                          type="text"
-                          className="form-control text-center"
-                          value={item.quantity}
-                          readOnly
-                        />
-                        <button
-                          className="btn btn-outline-secondary"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        >+</button>
-                      </div>
-                    </div>
-                    <div className="col-md-2 text-end">
-                      <p className="fw-bold mb-2">${(item.unitPrice * item.quantity).toFixed(2)}</p>
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        className="btn btn-sm btn-text-danger"
-                      >
-                        <i className="ti ti-trash"></i>
-                      </button>
-                    </div>
-                  </div>
+                  <CartItem
+                    key={item.id}
+                    item={item}
+                    onUpdateQuantity={updateQuantity}
+                    onRemove={removeItem}
+                  />
                 ))}
               </div>
             </div>

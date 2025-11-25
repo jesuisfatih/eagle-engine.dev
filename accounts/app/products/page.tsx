@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { accountsApi } from '@/lib/api-client';
+import ProductCard from './components/ProductCard';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
