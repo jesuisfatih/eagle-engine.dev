@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import QuickActions from './components/QuickActions';
+import StatsRefresh from './components/StatsRefresh';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
@@ -78,13 +79,16 @@ export default function DashboardPage() {
           <h4 className="fw-bold mb-1">Dashboard</h4>
           <p className="mb-0 text-muted">Eagle B2B Commerce Engine</p>
         </div>
-        <button
-          onClick={triggerSync}
-          className="btn btn-primary"
-        >
-          <i className="ti ti-refresh me-1"></i>
-          Sync Shopify Data
-        </button>
+        <div className="d-flex gap-2">
+          <StatsRefresh onRefresh={loadStats} />
+          <button
+            onClick={triggerSync}
+            className="btn btn-primary"
+          >
+            <i className="ti ti-refresh me-1"></i>
+            Sync Shopify Data
+          </button>
+        </div>
       </div>
 
       <QuickActions />

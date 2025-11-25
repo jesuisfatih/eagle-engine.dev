@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
 import Modal from '@/components/Modal';
+import SnippetTester from './components/SnippetTester';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<any>({
@@ -302,6 +303,8 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      <SnippetTester />
 
       {/* Result Modal */}
       <Modal
