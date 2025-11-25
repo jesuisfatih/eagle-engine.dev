@@ -13,22 +13,46 @@ export default function ProductsPage() {
   const loadProducts = async () => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const [productsData, pricingData] = await Promise.all([
-        fetch(`${API_URL}/api/v1/catalog/products?limit=100`).then(r => r.json()),
-        fetch(`${API_URL}/api/v1/pricing/calculate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ variantIds: [], companyId: 'test' })
-        }).then(r => r.json()).catch(() => null)
-      ]);
+      const productsData = await fetch(`${API_URL}/api/v1/catalog/products?limit=100`).then(r => r.json());
       
-      // Merge pricing data
-      const productsWithPricing = Array.isArray(productsData) ? productsData.map(p => ({
-        ...p,
-        companyPrice: p.variants?.[0]?.price || p.price,
-        listPrice: p.variants?.[0]?.price || p.price,
-        discount: 0
-      })) : [];
+      // Get pricing for each product variant
+      const productsWithPricing = [];
+      for (const product of (Array.isArray(productsData) ? productsData : [])) {
+        const variant = product.variants?.[0];
+        if (!variant) continue;
+        
+        try {
+          const pricingResp = await fetch(`${API_URL}/api/v1/pricing/calculate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              variantIds: [variant.shopifyVariantId],
+              companyId: 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d',
+              quantities: { [variant.shopifyVariantId]: 1 }
+            })
+          });
+          const pricing = await pricingResp.json();
+          const priceData = pricing[0];
+          
+          productsWithPricing.push({
+            ...product,
+            companyPrice: priceData?.companyPrice || variant.price,
+            listPrice: priceData?.listPrice || variant.price,
+            discount: priceData?.discountPercentage || 0,
+            image: product.images?.[0]?.url || 'https://via.placeholder.com/150',
+            vendor: product.vendor || 'Eagle DTF',
+          });
+        } catch (err) {
+          productsWithPricing.push({
+            ...product,
+            companyPrice: variant.price,
+            listPrice: variant.price,
+            discount: 0,
+            image: 'https://via.placeholder.com/150',
+            vendor: product.vendor || 'Eagle DTF',
+          });
+        }
+      }
       
       setProducts(productsWithPricing);
     } catch (err) {

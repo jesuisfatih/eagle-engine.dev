@@ -334,22 +334,31 @@ export default function PricingPage() {
                 {formData.scopeType === 'products' && (
                   <div className="mb-3">
                     <label className="form-label">Select Products (Multiple)</label>
-                    <select
-                      multiple
-                      className="form-select"
-                      style={{ height: '150px' }}
-                      onChange={(e) => {
-                        const selected = Array.from(e.target.selectedOptions).map(o => parseInt(o.value));
-                        setFormData({...formData, scopeProductIds: selected});
-                      }}
-                    >
-                      {products.map(p => (
-                        <option key={p.shopifyProductId} value={p.shopifyProductId}>
-                          {p.title}
-                        </option>
-                      ))}
-                    </select>
-                    <small className="text-muted">Hold Ctrl/Cmd to select multiple products</small>
+                    {products.length === 0 ? (
+                      <div className="alert alert-info small">
+                        <i className="ti ti-info-circle me-2"></i>
+                        No products synced yet. Go to Settings → Run Full Sync to import products.
+                      </div>
+                    ) : (
+                      <>
+                        <select
+                          multiple
+                          className="form-select"
+                          style={{ height: '150px' }}
+                          onChange={(e) => {
+                            const selected = Array.from(e.target.selectedOptions).map(o => parseInt(o.value));
+                            setFormData({...formData, scopeProductIds: selected});
+                          }}
+                        >
+                          {products.map(p => (
+                            <option key={p.shopifyProductId} value={p.shopifyProductId}>
+                              {p.title} ({p.variants?.length || 0} variants)
+                            </option>
+                          ))}
+                        </select>
+                        <small className="text-muted">Hold Ctrl/Cmd to select multiple products. {products.length} products available.</small>
+                      </>
+                    )}
                   </div>
                 )}
 

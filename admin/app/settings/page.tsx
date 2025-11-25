@@ -89,9 +89,28 @@ export default function SettingsPage() {
     }
   };
 
-  const copySnippet = () => {
-    navigator.clipboard.writeText(snippetCode);
-    alert('✅ Snippet code copied to clipboard!');
+  const copySnippet = async () => {
+    try {
+      await navigator.clipboard.writeText(snippetCode);
+      setModal({
+        show: true,
+        type: 'success',
+        message: 'Snippet code copied to clipboard!',
+      });
+    } catch (err) {
+      // Fallback
+      const textarea = document.createElement('textarea');
+      textarea.value = snippetCode;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setModal({
+        show: true,
+        type: 'success',
+        message: 'Snippet code copied!',
+      });
+    }
   };
 
   return (
