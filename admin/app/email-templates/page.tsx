@@ -10,7 +10,15 @@ export default function EmailTemplatesPage() {
           <div className="card">
             <div className="card-header d-flex justify-content-between">
               <h6 className="card-title mb-0">Company Invitation</h6>
-              <button className="btn btn-sm btn-primary">Edit</button>
+              <button
+                onClick={() => {
+                  const newSubject = prompt('Edit subject:');
+                  if (newSubject) alert('Template will be updated');
+                }}
+                className="btn btn-sm btn-primary"
+              >
+                Edit
+              </button>
             </div>
             <div className="card-body">
               <div className="bg-lighter p-3 rounded">
@@ -27,7 +35,15 @@ export default function EmailTemplatesPage() {
           <div className="card">
             <div className="card-header d-flex justify-content-between">
               <h6 className="card-title mb-0">Order Confirmation</h6>
-              <button className="btn btn-sm btn-primary">Edit</button>
+              <button
+                onClick={() => {
+                  const newSubject = prompt('Edit subject:');
+                  if (newSubject) alert('Template will be updated');
+                }}
+                className="btn btn-sm btn-primary"
+              >
+                Edit
+              </button>
             </div>
             <div className="card-body">
               <div className="bg-lighter p-3 rounded">

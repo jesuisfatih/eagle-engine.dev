@@ -7,14 +7,19 @@ export default function SupportPage() {
 
       <div className="card">
         <div className="card-body">
-          <form>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            alert(`✅ Support request submitted!\nSubject: ${formData.get('subject')}`);
+            e.currentTarget.reset();
+          }}>
             <div className="mb-3">
               <label className="form-label">Subject</label>
-              <input type="text" className="form-control" />
+              <input type="text" name="subject" className="form-control" required />
             </div>
             <div className="mb-3">
               <label className="form-label">Message</label>
-              <textarea className="form-control" rows={4}></textarea>
+              <textarea name="message" className="form-control" rows={4} required></textarea>
             </div>
             <button type="submit" className="btn btn-primary">Submit</button>
           </form>

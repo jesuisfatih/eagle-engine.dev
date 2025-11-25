@@ -24,8 +24,22 @@ export default function IntegrationsPage() {
                 Store: eagle-dtf-supply0.myshopify.com
               </p>
               <div className="d-flex gap-2">
-                <button className="btn btn-sm btn-primary">Configure</button>
-                <button className="btn btn-sm btn-label-secondary">Disconnect</button>
+                <button
+                  onClick={() => window.location.href = '/settings'}
+                  className="btn btn-sm btn-primary"
+                >
+                  Configure
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm('Disconnect Shopify?')) {
+                      alert('Disconnection feature - will stop sync');
+                    }
+                  }}
+                  className="btn btn-sm btn-label-secondary"
+                >
+                  Disconnect
+                </button>
               </div>
             </div>
           </div>
@@ -48,7 +62,15 @@ export default function IntegrationsPage() {
               <p className="text-muted small mb-3">
                 Configure email service for invitations
               </p>
-              <button className="btn btn-sm btn-primary">Setup</button>
+              <button
+                onClick={() => {
+                  const email = prompt('SMTP Server:');
+                  if (email) alert('Email service setup - backend integration needed');
+                }}
+                className="btn btn-sm btn-primary"
+              >
+                Setup
+              </button>
             </div>
           </div>
         </div>

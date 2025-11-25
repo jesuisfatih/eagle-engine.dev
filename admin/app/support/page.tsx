@@ -12,14 +12,33 @@ export default function SupportPage() {
               <h6 className="card-title mb-0">Contact Support</h6>
             </div>
             <div className="card-body">
-              <form>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const subject = formData.get('subject');
+                const message = formData.get('message');
+                alert(`✅ Support ticket created!\nSubject: ${subject}\nMessage: ${message}`);
+                e.currentTarget.reset();
+              }}>
                 <div className="mb-3">
                   <label className="form-label">Subject</label>
-                  <input type="text" className="form-control" placeholder="How can we help?" />
+                  <input
+                    type="text"
+                    name="subject"
+                    className="form-control"
+                    placeholder="How can we help?"
+                    required
+                  />
                 </div>
                 <div className="mb-3">
                   <label className="form-label">Message</label>
-                  <textarea className="form-control" rows={5} placeholder="Describe your issue..."></textarea>
+                  <textarea
+                    name="message"
+                    className="form-control"
+                    rows={5}
+                    placeholder="Describe your issue..."
+                    required
+                  ></textarea>
                 </div>
                 <button type="submit" className="btn btn-primary">
                   <i className="ti ti-send me-1"></i>

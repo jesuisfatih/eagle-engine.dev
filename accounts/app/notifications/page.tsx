@@ -45,9 +45,24 @@ export default function NotificationsPage() {
                       <p className="mb-0 small text-muted">{notif.message}</p>
                       <small className="text-muted">{new Date(notif.createdAt).toLocaleString()}</small>
                     </div>
-                    {!notif.isRead && (
-                      <span className="badge bg-primary rounded-pill">New</span>
-                    )}
+                    <div className="ms-auto">
+                      {!notif.isRead ? (
+                        <button
+                          onClick={async () => {
+                            // Mark as read
+                            const updated = notifications.map(n => 
+                              n.id === notif.id ? {...n, isRead: true} : n
+                            );
+                            setNotifications(updated);
+                          }}
+                          className="btn btn-sm btn-primary"
+                        >
+                          Mark Read
+                        </button>
+                      ) : (
+                        <span className="badge bg-label-success">Read</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

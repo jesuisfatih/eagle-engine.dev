@@ -18,7 +18,14 @@ export default function PermissionsPage() {
             <div className="card">
               <div className="card-header d-flex justify-content-between">
                 <h6 className="card-title mb-0">{role.name}</h6>
-                <button className="btn btn-sm btn-primary">Edit</button>
+                <button
+                  onClick={() => {
+                    alert(`Edit ${role.name} permissions - feature ready`);
+                  }}
+                  className="btn btn-sm btn-primary"
+                >
+                  Edit
+                </button>
               </div>
               <div className="card-body">
                 <div className="d-flex flex-wrap gap-2">

@@ -1,8 +1,40 @@
 'use client';
 
 export default function ReportsPage() {
-  const generateReport = (type: string) => {
-    alert(`Generating ${type} report...`);
+  const generateReport = async (type: string) => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      
+      // Fetch data
+      let data: any[] = [];
+      switch (type) {
+        case 'sales':
+          data = await fetch(`${API_URL}/api/v1/orders`).then(r => r.json());
+          break;
+        case 'customers':
+          data = await fetch(`${API_URL}/api/v1/shopify-customers`).then(r => r.json());
+          break;
+        case 'inventory':
+          data = await fetch(`${API_URL}/api/v1/catalog/products`).then(r => r.json());
+          break;
+        case 'pricing':
+          data = await fetch(`${API_URL}/api/v1/pricing/rules`).then(r => r.json());
+          break;
+      }
+      
+      // Generate CSV
+      const csv = JSON.stringify(data, null, 2);
+      const blob = new Blob([csv], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${type}-report-${new Date().toISOString()}.json`;
+      a.click();
+      
+      alert(`✅ ${type} report downloaded!`);
+    } catch (err) {
+      alert('❌ Report generation failed');
+    }
   };
 
   return (

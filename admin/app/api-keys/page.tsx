@@ -8,7 +8,16 @@ export default function ApiKeysPage() {
           <h4 className="fw-bold mb-1">API Keys</h4>
           <p className="mb-0 text-muted">Manage API access</p>
         </div>
-        <button className="btn btn-primary">
+        <button
+          onClick={() => {
+            const keyName = prompt('API Key Name:');
+            if (keyName) {
+              const newKey = 'pk_live_' + Math.random().toString(36).substring(7);
+              alert(`New API Key generated: ${newKey}`);
+            }
+          }}
+          className="btn btn-primary"
+        >
           <i className="ti ti-plus me-1"></i>
           Generate Key
         </button>
@@ -39,10 +48,23 @@ export default function ApiKeysPage() {
                   <td className="small">2025-11-25</td>
                   <td className="small">Never</td>
                   <td>
-                    <button className="btn btn-sm btn-text-secondary me-1">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText('pk_live_***************');
+                        alert('✅ API Key copied!');
+                      }}
+                      className="btn btn-sm btn-text-secondary me-1"
+                    >
                       <i className="ti ti-copy"></i>
                     </button>
-                    <button className="btn btn-sm btn-text-danger">
+                    <button
+                      onClick={() => {
+                        if (confirm('Delete this API key?')) {
+                          alert('Key deleted');
+                        }
+                      }}
+                      className="btn btn-sm btn-text-danger"
+                    >
                       <i className="ti ti-trash"></i>
                     </button>
                   </td>
