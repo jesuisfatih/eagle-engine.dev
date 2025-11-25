@@ -107,12 +107,29 @@ export default function ProductsPage() {
             <h4 className="fw-bold mb-1">Product Catalog</h4>
             <p className="mb-0 text-muted">Browse with exclusive B2B pricing</p>
           </div>
-          <input
-            type="text"
-            placeholder="Search products..."
-            className="form-control"
-            style={{maxWidth: '300px'}}
-          />
+          <div className="d-flex gap-2">
+            <input
+              type="text"
+              placeholder="Search products..."
+              className="form-control"
+              style={{maxWidth: '300px'}}
+              onChange={(e) => {
+                const query = e.target.value.toLowerCase();
+                if (query) {
+                  const filtered = products.filter(p => 
+                    p.title?.toLowerCase().includes(query) ||
+                    p.vendor?.toLowerCase().includes(query)
+                  );
+                  setProducts(filtered);
+                } else {
+                  loadProducts();
+                }
+              }}
+            />
+            <select className="form-select" style={{maxWidth: '150px'}}>
+              <option value="">All Categories</option>
+            </select>
+          </div>
         </div>
 
         {loading ? (
