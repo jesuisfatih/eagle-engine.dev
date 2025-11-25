@@ -92,45 +92,45 @@ export default function CompaniesPage() {
 
       {/* Companies Tab */}
       {activeTab === 'companies' && (
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="card">
+          <div className="card-body">
           {companies.length === 0 ? (
-            <div className="p-12 text-center">
-              <span className="text-6xl">🏢</span>
-              <h3 className="mt-4 text-lg font-semibold text-gray-900">Henüz firma yok</h3>
-              <p className="mt-2 text-sm text-gray-500">
-                Shopify Customers sekmesinden müşteri davet edin veya yeni firma oluşturun.
-              </p>
+            <div className="text-center py-5">
+              <i className="ti ti-building ti-3x text-muted mb-3"></i>
+              <h5>No B2B companies yet</h5>
+              <p className="text-muted">Convert Shopify customers to B2B companies from the Shopify tab.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr className="text-left text-xs font-medium uppercase text-gray-700">
-                    <th className="px-6 py-3">Company</th>
-                    <th className="px-6 py-3">Status</th>
-                    <th className="px-6 py-3">Users</th>
-                    <th className="px-6 py-3">Orders</th>
-                    <th className="px-6 py-3">Actions</th>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Company</th>
+                    <th>Status</th>
+                    <th>Users</th>
+                    <th>Orders</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody>
                   {companies.map((company: any) => (
-                    <tr key={company.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900">{company.name}</div>
-                        <div className="text-sm text-gray-500">{company.email}</div>
+                    <tr key={company.id}>
+                      <td>
+                        <div className="fw-semibold">{company.name}</div>
+                        <div className="text-muted small">{company.email}</div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                          company.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                      <td>
+                        <span className={`badge ${
+                          company.status === 'active' ? 'bg-label-success' : 'bg-label-warning'
                         }`}>
                           {company.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm">{company._count?.users || 0}</td>
-                      <td className="px-6 py-4 text-sm">{company._count?.orders || 0}</td>
-                      <td className="px-6 py-4">
-                        <button className="text-sm font-medium text-blue-600 hover:text-blue-700">
+                      <td>{company._count?.users || 0}</td>
+                      <td>{company._count?.orders || 0}</td>
+                      <td>
+                        <button className="btn btn-sm btn-primary">
+                          <i className="ti ti-eye me-1"></i>
                           View
                         </button>
                       </td>
@@ -140,48 +140,49 @@ export default function CompaniesPage() {
               </table>
             </div>
           )}
+          </div>
         </div>
       )}
 
       {/* Shopify Customers Tab */}
       {activeTab === 'shopify' && (
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="card">
+          <div className="card-body">
           {shopifyCustomers.length === 0 ? (
-            <div className="p-12 text-center">
-              <span className="text-6xl">🛍️</span>
-              <h3 className="mt-4 text-lg font-semibold text-gray-900">Shopify müşterisi bulunamadı</h3>
-              <p className="mt-2 text-sm text-gray-500">
-                "Shopify'dan Sync Başlat" butonuna tıklayarak müşterileri çekin.
-              </p>
+            <div className="text-center py-5">
+              <i className="ti ti-users ti-3x text-muted mb-3"></i>
+              <h5>No Shopify customers synced</h5>
+              <p className="text-muted">Go to Settings and click "Run Full Sync" to import customers.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr className="text-left text-xs font-medium uppercase text-gray-700">
-                    <th className="px-6 py-3">Customer</th>
-                    <th className="px-6 py-3">Orders</th>
-                    <th className="px-6 py-3">Total Spent</th>
-                    <th className="px-6 py-3">Actions</th>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Orders</th>
+                    <th>Total Spent</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody>
                   {shopifyCustomers.map((customer: any) => (
-                    <tr key={customer.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900">
+                    <tr key={customer.id}>
+                      <td>
+                        <div className="fw-semibold">
                           {customer.firstName} {customer.lastName}
                         </div>
-                        <div className="text-sm text-gray-500">{customer.email}</div>
+                        <div className="text-muted small">{customer.email}</div>
                       </td>
-                      <td className="px-6 py-4 text-sm">{customer.ordersCount}</td>
-                      <td className="px-6 py-4 text-sm font-medium">${customer.totalSpent}</td>
-                      <td className="px-6 py-4">
+                      <td>{customer.ordersCount || 0}</td>
+                      <td className="fw-semibold">${customer.totalSpent || 0}</td>
+                      <td>
                         <button
                           onClick={() => convertToCompany(customer.id)}
-                          className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700"
+                          className="btn btn-sm btn-primary"
                         >
-                          Firmaya Dönüştür
+                          <i className="ti ti-building me-1"></i>
+                          Convert to B2B
                         </button>
                       </td>
                     </tr>
@@ -190,6 +191,7 @@ export default function CompaniesPage() {
               </table>
             </div>
           )}
+          </div>
         </div>
       )}
     </div>
