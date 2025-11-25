@@ -12,6 +12,7 @@ export default function AccountsDashboard() {
     cartItems: 0,
   });
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [companyName, setCompanyName] = useState('');
 
   useEffect(() => {
     loadData();
@@ -19,20 +20,30 @@ export default function AccountsDashboard() {
 
   const loadData = async () => {
     try {
-      const orders = await accountsApi.getOrders();
-      setRecentOrders(Array.isArray(orders) ? orders.slice(0, 5) : []);
-      // Calculate stats
-      const pending = orders.filter((o: any) => o.financialStatus === 'pending').length;
-      const completed = orders.filter((o: any) => o.financialStatus === 'paid').length;
-      const total = orders.reduce((sum: number, o: any) => sum + Number(o.totalPrice || 0), 0);
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const companyId = 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d';
+      
+      const [ordersData, companyData, cartData] = await Promise.all([
+        fetch(`${API_URL}/api/v1/orders?companyId=${companyId}`).then(r => r.json()).catch(() => []),
+        fetch(`${API_URL}/api/v1/companies/${companyId}`).then(r => r.json()).catch(() => null),
+        fetch(`${API_URL}/api/v1/carts/active`).then(r => r.json()).catch(() => null),
+      ]);
+      
+      setCompanyName(companyData?.name || 'Company');
+      setRecentOrders(Array.isArray(ordersData) ? ordersData.slice(0, 5) : []);
+      
+      const pending = ordersData.filter((o: any) => o.financialStatus === 'pending').length;
+      const completed = ordersData.filter((o: any) => o.financialStatus === 'paid').length;
+      const total = ordersData.reduce((sum: number, o: any) => sum + Number(o.totalPrice || 0), 0);
+      
       setStats({
         pendingOrders: pending,
         completedOrders: completed,
         totalSpent: total,
-        cartItems: 0,
+        cartItems: cartData?.items?.length || 0,
       });
     } catch (err) {
-      console.error(err);
+      console.error('Load data error:', err);
     }
   };
 
