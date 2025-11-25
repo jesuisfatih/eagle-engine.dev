@@ -1,5 +1,6 @@
-import { Controller, Post, Body, Headers, HttpCode } from '@nestjs/common';
+import { Controller, Post, Body, Headers, HttpCode, UseGuards } from '@nestjs/common';
 import { Public } from '../auth/decorators/public.decorator';
+import { WebhookAuthGuard } from '../common/guards/webhook-auth.guard';
 import { OrdersHandler } from './handlers/orders.handler';
 import { CustomersHandler } from './handlers/customers.handler';
 
