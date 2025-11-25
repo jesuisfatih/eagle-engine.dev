@@ -3,11 +3,14 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
 import Modal from '@/components/Modal';
+import PricingEditModal from '@/components/PricingEditModal';
 
 export default function PricingPage() {
   const [rules, setRules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingRule, setEditingRule] = useState<any>(null);
   const [deleteModal, setDeleteModal] = useState<{show: boolean; ruleId: string | null}>({
     show: false,
     ruleId: null,
@@ -104,10 +107,29 @@ export default function PricingPage() {
     }
   };
 
+  const handleEdit = async (id: string, data: any) => {
+    try {
+      await apiClient.updatePricingRule(id, data);
+      setResultModal({
+        show: true,
+        type: 'success',
+        message: 'Rule updated successfully!',
+      });
+      setTimeout(() => loadRules(), 1000);
+    } catch (err: any) {
+      setResultModal({
+        show: true,
+        type: 'error',
+        message: err.message,
+      });
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleteModal.ruleId) return;
     try {
       await apiClient.deletePricingRule(deleteModal.ruleId);
+      setDeleteModal({ show: false, ruleId: null });
       setResultModal({
         show: true,
         type: 'success',
@@ -201,7 +223,13 @@ export default function PricingPage() {
                         </span>
                       </td>
                       <td>
-                        <button className="btn btn-sm btn-icon btn-text-secondary me-1">
+                        <button
+                          onClick={() => {
+                            setEditingRule(rule);
+                            setShowEditModal(true);
+                          }}
+                          className="btn btn-sm btn-icon btn-text-secondary me-1"
+                        >
                           <i className="ti ti-edit"></i>
                         </button>
                         <button
@@ -458,6 +486,17 @@ export default function PricingPage() {
           </div>
         </div>
       )}
+
+      {/* Edit Modal */}
+      <PricingEditModal
+        show={showEditModal}
+        rule={editingRule}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingRule(null);
+        }}
+        onSave={handleEdit}
+      />
 
       {/* Delete Confirmation Modal */}
       <Modal
