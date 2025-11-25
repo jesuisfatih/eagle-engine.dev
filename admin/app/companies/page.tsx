@@ -8,6 +8,7 @@ export default function CompaniesPage() {
   const [shopifyCustomers, setShopifyCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'companies' | 'shopify'>('companies');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     loadData();
