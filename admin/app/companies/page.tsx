@@ -11,18 +11,27 @@ export default function CompaniesPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'companies' | 'shopify'>('companies');
 
+  const [stats, setStats] = useState({ total: 0, active: 0, pending: 0 });
+
   useEffect(() => {
     loadData();
+    loadStats();
   }, []);
+
+  const loadStats = async () => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const data = await fetch(`${API_URL}/api/v1/companies/stats`).then(r => r.json());
+      setStats(data);
+    } catch (err) {}
+  };
 
   const loadData = async () => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       const [companiesData, customersData] = await Promise.all([
         apiClient.getCompanies().catch(() => []),
-        fetch(`${API_URL}/api/v1/shopify-customers`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('eagle_admin_token')}` }
-        }).then(r => r.json()).catch(() => []),
+        fetch(`${API_URL}/api/v1/shopify-customers`).then(r => r.json()).catch(() => []),
       ]);
       setCompanies(companiesData);
       setShopifyCustomers(Array.isArray(customersData) ? customersData : []);
