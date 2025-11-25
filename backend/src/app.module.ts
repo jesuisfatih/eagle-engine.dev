@@ -16,6 +16,8 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 import { CompaniesModule } from './companies/companies.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { OrdersModule } from './orders/orders.module';
+import { CheckoutModule } from './checkout/checkout.module';
+import { MerchantsModule } from './merchants/merchants.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -47,6 +49,8 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     CompaniesModule,
     CatalogModule,
     OrdersModule,
+    CheckoutModule,
+    MerchantsModule,
   ],
   controllers: [AppController],
   providers: [
