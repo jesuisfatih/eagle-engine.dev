@@ -25,9 +25,9 @@ export class ShopifyOauthService {
     private config: ConfigService,
     private prisma: PrismaService,
   ) {
-    this.apiKey = this.config.get<string>('SHOPIFY_API_KEY');
-    this.apiSecret = this.config.get<string>('SHOPIFY_API_SECRET');
-    this.scopes = this.config.get<string>('SHOPIFY_SCOPES');
+    this.apiKey = this.config.get<string>('SHOPIFY_API_KEY') || '';
+    this.apiSecret = this.config.get<string>('SHOPIFY_API_SECRET') || '';
+    this.scopes = this.config.get<string>('SHOPIFY_SCOPES') || '';
     this.apiVersion = this.config.get<string>('SHOPIFY_API_VERSION', '2025-01');
     this.redirectUri = `${this.config.get<string>('API_URL')}/auth/shopify/callback`;
   }

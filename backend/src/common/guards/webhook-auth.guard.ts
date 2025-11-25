@@ -15,7 +15,7 @@ export class WebhookAuthGuard implements CanActivate {
       throw new UnauthorizedException('Missing HMAC signature');
     }
 
-    const secret = this.config.get<string>('SHOPIFY_API_SECRET');
+    const secret = this.config.get<string>('SHOPIFY_API_SECRET') || '';
     const hash = crypto
       .createHmac('sha256', secret)
       .update(JSON.stringify(body))

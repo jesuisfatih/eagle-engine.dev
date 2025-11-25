@@ -32,14 +32,14 @@ export class AuthService {
   }
 
   async generateToken(payload: JwtPayload): Promise<string> {
-    return this.jwtService.sign(payload);
+    return this.jwtService.sign(payload as any);
   }
 
   async generateRefreshToken(payload: JwtPayload): Promise<string> {
-    return this.jwtService.sign(payload, {
+    return this.jwtService.sign(payload as any, {
       secret: this.config.get<string>('JWT_REFRESH_SECRET'),
       expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRES_IN', '30d'),
-    });
+    } as any);
   }
 
   async verifyToken(token: string): Promise<JwtPayload> {
