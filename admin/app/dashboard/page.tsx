@@ -43,111 +43,129 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mt-3">Loading stats...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       {error && (
-        <div className="rounded-lg bg-yellow-50 p-4 border border-yellow-200">
-          <p className="text-sm text-yellow-800">
-            ⚠️ API Bağlantısı: {error}. Mock data gösteriliyor.
-          </p>
-          <button
-            onClick={() => window.location.href = '/login'}
-            className="mt-2 text-sm font-medium text-yellow-900 underline"
-          >
-            Login yap →
-          </button>
+        <div className="alert alert-warning alert-dismissible mb-4" role="alert">
+          <h5 className="alert-heading mb-1">⚠️ API Connection</h5>
+          <p className="mb-0">{error} - Showing default data</p>
         </div>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-500">Eagle B2B Commerce Engine</p>
+          <h4 className="fw-bold mb-1">Dashboard</h4>
+          <p className="mb-0 text-muted">Eagle B2B Commerce Engine</p>
         </div>
         <button
           onClick={triggerSync}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          className="btn btn-primary"
         >
-          🔄 Shopify'dan Sync Başlat
+          <i className="ti ti-refresh me-1"></i>
+          Sync Shopify Data
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Companies</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{stats.totalCompanies || 0}</p>
-            </div>
-            <div className="rounded-full bg-blue-50 p-3">
-              <span className="text-3xl">🏢</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Active Users</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{stats.totalUsers || 0}</p>
-            </div>
-            <div className="rounded-full bg-purple-50 p-3">
-              <span className="text-3xl">👥</span>
+      {/* Stats Cards - Vuexy Style */}
+      <div className="row g-4 mb-4">
+        <div className="col-sm-6 col-lg-3">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex justify-content-between">
+                <div className="card-info">
+                  <p className="card-text mb-0">Total Companies</p>
+                  <h4 className="mb-0">{stats.totalCompanies || 0}</h4>
+                </div>
+                <div className="card-icon">
+                  <span className="badge bg-label-primary rounded p-2">
+                    <i className="ti ti-building ti-sm"></i>
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Orders</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{stats.totalOrders || 0}</p>
-            </div>
-            <div className="rounded-full bg-green-50 p-3">
-              <span className="text-3xl">📦</span>
+        <div className="col-sm-6 col-lg-3">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex justify-content-between">
+                <div className="card-info">
+                  <p className="card-text mb-0">Active Users</p>
+                  <h4 className="mb-0">{stats.totalUsers || 0}</h4>
+                </div>
+                <div className="card-icon">
+                  <span className="badge bg-label-info rounded p-2">
+                    <i className="ti ti-users ti-sm"></i>
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">
-                ${Number(stats.totalRevenue || 0).toLocaleString()}
-              </p>
+        <div className="col-sm-6 col-lg-3">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex justify-content-between">
+                <div className="card-info">
+                  <p className="card-text mb-0">Total Orders</p>
+                  <h4 className="mb-0">{stats.totalOrders || 0}</h4>
+                </div>
+                <div className="card-icon">
+                  <span className="badge bg-label-success rounded p-2">
+                    <i className="ti ti-shopping-cart ti-sm"></i>
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="rounded-full bg-orange-50 p-3">
-              <span className="text-3xl">💰</span>
+          </div>
+        </div>
+
+        <div className="col-sm-6 col-lg-3">
+          <div className="card">
+            <div className="card-body">
+              <div className="d-flex justify-content-between">
+                <div className="card-info">
+                  <p className="card-text mb-0">Total Revenue</p>
+                  <h4 className="mb-0">${Number(stats.totalRevenue || 0).toLocaleString()}</h4>
+                </div>
+                <div className="card-icon">
+                  <span className="badge bg-label-warning rounded p-2">
+                    <i className="ti ti-currency-dollar ti-sm"></i>
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Info Card */}
-      <div className="rounded-xl border border-blue-200 bg-blue-50 p-6">
-        <h3 className="font-semibold text-blue-900">🎯 Sistem Durumu</h3>
-        <div className="mt-4 space-y-2 text-sm text-blue-800">
-          <p>✅ Backend API: ONLINE</p>
-          <p>✅ Database: Connected</p>
-          <p>✅ Scheduler: Running (20 saniye sync)</p>
-          <p>✅ Merchant: {stats.totalCompanies > 0 ? 'Active' : 'Shopify sync gerekli'}</p>
-        </div>
-        <div className="mt-4 pt-4 border-t border-blue-200">
-          <p className="text-sm text-blue-700">
-            💡 <strong>İlk Adım:</strong> "Shopify'dan Sync Başlat" butonuna tıklayın.
-            Customers, Products ve Orders otomatik çekilecek.
-          </p>
+      {/* System Status Card - Vuexy Style */}
+      <div className="card bg-primary text-white mb-3">
+        <div className="card-body">
+          <h5 className="card-title text-white mb-3">🎯 System Status</h5>
+          <div className="mb-3">
+            <p className="mb-1">✅ Backend API: <strong>ONLINE</strong></p>
+            <p className="mb-1">✅ Database: <strong>Connected</strong></p>
+            <p className="mb-1">✅ Scheduler: <strong>Running (20s sync)</strong></p>
+            <p className="mb-1">✅ Store: <strong>eagle-dtf-supply0.myshopify.com</strong></p>
+          </div>
+          <div className="alert alert-warning">
+            <h6 className="alert-heading mb-1">💡 First Step</h6>
+            <p className="mb-0 small">Click "Sync Shopify Data" to import customers, products and orders.</p>
+          </div>
         </div>
       </div>
     </div>
