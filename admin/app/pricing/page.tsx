@@ -49,16 +49,29 @@ export default function PricingPage() {
     try {
       const data = await apiClient.getCompanies();
       setCompanies(Array.isArray(data) ? data : []);
-    } catch (err) {}
+    } catch (err) {
+      setCompanies([]);
+    }
   };
 
   const loadProducts = async () => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/catalog/products?limit=100`);
+      const response = await fetch(`${API_URL}/api/v1/catalog/products?limit=500`);
       const data = await response.json();
-      setProducts(Array.isArray(data) ? data : []);
-    } catch (err) {}
+      
+      // Create flat list of products with variants
+      const productsList = Array.isArray(data) ? data.map(p => ({
+        id: p.id,
+        shopifyProductId: p.shopifyProductId,
+        title: p.title,
+        variants: p.variants || []
+      })) : [];
+      
+      setProducts(productsList);
+    } catch (err) {
+      setProducts([]);
+    }
   };
 
   const loadRules = async () => {

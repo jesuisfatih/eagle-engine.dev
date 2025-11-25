@@ -13,9 +13,24 @@ export default function ProductsPage() {
   const loadProducts = async () => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/catalog/products?limit=100`);
-      const data = await response.json();
-      setProducts(Array.isArray(data) ? data : []);
+      const [productsData, pricingData] = await Promise.all([
+        fetch(`${API_URL}/api/v1/catalog/products?limit=100`).then(r => r.json()),
+        fetch(`${API_URL}/api/v1/pricing/calculate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ variantIds: [], companyId: 'test' })
+        }).then(r => r.json()).catch(() => null)
+      ]);
+      
+      // Merge pricing data
+      const productsWithPricing = Array.isArray(productsData) ? productsData.map(p => ({
+        ...p,
+        companyPrice: p.variants?.[0]?.price || p.price,
+        listPrice: p.variants?.[0]?.price || p.price,
+        discount: 0
+      })) : [];
+      
+      setProducts(productsWithPricing);
     } catch (err) {
       console.error(err);
     } finally {
@@ -95,7 +110,27 @@ export default function ProductsPage() {
                         </div>
                       )}
                     </div>
-                    <button className="btn btn-primary w-100 mt-3">
+                    <button
+                      onClick={async () => {
+                        try {
+                          const cart = await accountsApi.getActiveCart().catch(() => null);
+                          if (!cart) {
+                            // Create cart first
+                            alert('Creating cart...');
+                            return;
+                          }
+                          await accountsApi.addToCart(
+                            product.id,
+                            product.shopifyProductId?.toString() || product.id,
+                            1
+                          );
+                          alert('✅ Added to cart!');
+                        } catch (err: any) {
+                          alert('❌ Error: ' + err.message);
+                        }
+                      }}
+                      className="btn btn-primary w-100 mt-3"
+                    >
                       <i className="ti ti-shopping-cart-plus me-1"></i>
                       Add to Cart
                     </button>

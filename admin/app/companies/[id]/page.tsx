@@ -52,17 +52,23 @@ export default function CompanyDetailPage() {
   };
 
   const approveCompany = async () => {
+    if (!confirm('Approve this company?')) return;
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      await fetch(`${API_URL}/api/v1/companies/${params.id}`, {
+      const response = await fetch(`${API_URL}/api/v1/companies/${params.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'active' }),
       });
-      alert('✅ Company approved!');
-      loadCompany();
-    } catch (err) {
-      alert('❌ Error approving company');
+      
+      if (response.ok) {
+        alert('✅ Company approved!');
+        loadCompany();
+      } else {
+        alert('❌ Failed to approve');
+      }
+    } catch (err: any) {
+      alert('❌ Error: ' + err.message);
     }
   };
 
