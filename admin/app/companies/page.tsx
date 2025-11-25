@@ -16,9 +16,10 @@ export default function CompaniesPage() {
 
   const loadData = async () => {
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       const [companiesData, customersData] = await Promise.all([
         apiClient.getCompanies().catch(() => []),
-        fetch('http://localhost:4000/api/v1/shopify-customers', {
+        fetch(`${API_URL}/api/v1/shopify-customers`, {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('eagle_admin_token')}` }
         }).then(r => r.json()).catch(() => []),
       ]);
@@ -35,17 +36,24 @@ export default function CompaniesPage() {
     if (!confirm('Bu Shopify müşterisini B2B firmaya dönüştürmek istiyor musunuz?')) return;
     
     try {
-      await fetch(`http://localhost:4000/api/v1/shopify-customers/${customerId}/convert-to-company`, {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/shopify-customers/${customerId}/convert-to-company`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('eagle_admin_token')}`,
           'Content-Type': 'application/json',
         },
       });
-      alert('Firma oluşturuldu! Davet emaili gönderildi.');
-      loadData();
+      
+      if (response.ok) {
+        alert('✅ Firma oluşturuldu! Davet emaili gönderildi.');
+        loadData();
+      } else {
+        const error = await response.json();
+        alert('❌ Hata: ' + (error.message || 'Failed'));
+      }
     } catch (err: any) {
-      alert('Hata: ' + err.message);
+      alert('❌ Hata: ' + err.message);
     }
   };
 

@@ -31,13 +31,19 @@ export default function SettingsPage() {
   const handleSync = async (type: 'customers' | 'products' | 'orders' | 'initial') => {
     setSyncing(true);
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       if (type === 'initial') {
-        await apiClient.triggerInitialSync();
+        await fetch(`${API_URL}/api/v1/sync/initial`, { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ merchantId: '6ecc682b-98ee-472d-977b-cffbbae081b8' })
+        });
         alert('✅ Full sync started! Check back in a few minutes.');
       } else {
-        await fetch(`http://localhost:4000/api/v1/sync/${type}`, { method: 'POST' });
+        await fetch(`${API_URL}/api/v1/sync/${type}`, { method: 'POST' });
         alert(`✅ ${type} sync queued!`);
       }
+      setTimeout(() => window.location.reload(), 2000);
     } catch (err: any) {
       alert('❌ Sync failed: ' + err.message);
     } finally {

@@ -9,17 +9,47 @@ export default function PricingPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
+    description: '',
     targetType: 'all',
+    targetCompanyId: '',
+    targetCompanyGroup: '',
     scopeType: 'all',
+    scopeProductIds: [] as number[],
+    scopeCollectionIds: [] as number[],
+    scopeTags: '',
+    scopeVariantIds: [] as number[],
     discountType: 'percentage',
     discountPercentage: 0,
+    discountValue: 0,
+    qtyBreaks: [] as any[],
+    minCartAmount: 0,
     priority: 0,
     isActive: true,
   });
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
 
   useEffect(() => {
     loadRules();
+    loadCompanies();
+    loadProducts();
   }, []);
+
+  const loadCompanies = async () => {
+    try {
+      const data = await apiClient.getCompanies();
+      setCompanies(Array.isArray(data) ? data : []);
+    } catch (err) {}
+  };
+
+  const loadProducts = async () => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/catalog/products?limit=100`);
+      const data = await response.json();
+      setProducts(Array.isArray(data) ? data : []);
+    } catch (err) {}
+  };
 
   const loadRules = async () => {
     try {
@@ -178,7 +208,7 @@ export default function PricingPage() {
 
                 <div className="row g-3 mb-3">
                   <div className="col-md-6">
-                    <label className="form-label">Target</label>
+                    <label className="form-label">🎯 Target (Kime?)</label>
                     <select
                       className="form-select"
                       value={formData.targetType}
@@ -186,35 +216,178 @@ export default function PricingPage() {
                     >
                       <option value="all">All Companies</option>
                       <option value="company">Specific Company</option>
-                      <option value="company_group">Company Group</option>
+                      <option value="company_group">Company Group (VIP, Wholesale)</option>
                     </select>
                   </div>
 
+                  {formData.targetType === 'company' && (
+                    <div className="col-md-6">
+                      <label className="form-label">Select Company</label>
+                      <select
+                        className="form-select"
+                        value={formData.targetCompanyId}
+                        onChange={(e) => setFormData({...formData, targetCompanyId: e.target.value})}
+                      >
+                        <option value="">Choose company...</option>
+                        {companies.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {formData.targetType === 'company_group' && (
+                    <div className="col-md-6">
+                      <label className="form-label">Group Name</label>
+                      <input
+                        className="form-control"
+                        value={formData.targetCompanyGroup}
+                        onChange={(e) => setFormData({...formData, targetCompanyGroup: e.target.value})}
+                        placeholder="e.g., VIP, Wholesale, Retail"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="mb-3">
+                  <label className="form-label">📦 Scope (Neye?)</label>
+                  <select
+                    className="form-select"
+                    value={formData.scopeType}
+                    onChange={(e) => setFormData({...formData, scopeType: e.target.value})}
+                  >
+                    <option value="all">All Products</option>
+                    <option value="products">Specific Products (Birden fazla seçilebilir)</option>
+                    <option value="collections">Collections/Categories</option>
+                    <option value="tags">Product Tags</option>
+                    <option value="variants">Specific Variants</option>
+                  </select>
+                </div>
+
+                {formData.scopeType === 'products' && (
+                  <div className="mb-3">
+                    <label className="form-label">Select Products (Multiple)</label>
+                    <select
+                      multiple
+                      className="form-select"
+                      style={{ height: '150px' }}
+                      onChange={(e) => {
+                        const selected = Array.from(e.target.selectedOptions).map(o => parseInt(o.value));
+                        setFormData({...formData, scopeProductIds: selected});
+                      }}
+                    >
+                      {products.map(p => (
+                        <option key={p.shopifyProductId} value={p.shopifyProductId}>
+                          {p.title}
+                        </option>
+                      ))}
+                    </select>
+                    <small className="text-muted">Hold Ctrl/Cmd to select multiple products</small>
+                  </div>
+                )}
+
+                {formData.scopeType === 'collections' && (
+                  <div className="mb-3">
+                    <label className="form-label">Collection IDs (comma-separated)</label>
+                    <input
+                      className="form-control"
+                      placeholder="e.g., 12345, 67890"
+                      onChange={(e) => {
+                        const ids = e.target.value.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+                        setFormData({...formData, scopeCollectionIds: ids});
+                      }}
+                    />
+                    <small className="text-muted">Enter Shopify collection IDs separated by commas</small>
+                  </div>
+                )}
+
+                {formData.scopeType === 'tags' && (
+                  <div className="mb-3">
+                    <label className="form-label">Product Tags (comma-separated)</label>
+                    <input
+                      className="form-control"
+                      value={formData.scopeTags}
+                      onChange={(e) => setFormData({...formData, scopeTags: e.target.value})}
+                      placeholder="e.g., electronics, wholesale, featured"
+                    />
+                  </div>
+                )}
+
+                <div className="row g-3 mb-3">
                   <div className="col-md-6">
-                    <label className="form-label">Discount Type</label>
+                    <label className="form-label">💰 Discount Type</label>
                     <select
                       className="form-select"
                       value={formData.discountType}
                       onChange={(e) => setFormData({...formData, discountType: e.target.value})}
                     >
-                      <option value="percentage">Percentage (%)</option>
-                      <option value="fixed_amount">Fixed Amount ($)</option>
+                      <option value="percentage">Percentage Discount (%)</option>
+                      <option value="fixed_amount">Fixed Amount Off ($)</option>
                       <option value="fixed_price">Fixed Price</option>
                       <option value="qty_break">Quantity Breaks</option>
+                      <option value="cart_total">Cart Total Based</option>
                     </select>
                   </div>
+
+                  {formData.discountType === 'percentage' && (
+                    <div className="col-md-6">
+                      <label className="form-label">Discount Percentage</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={formData.discountPercentage}
+                        onChange={(e) => setFormData({...formData, discountPercentage: parseFloat(e.target.value)})}
+                        placeholder="e.g., 25"
+                      />
+                    </div>
+                  )}
+
+                  {(formData.discountType === 'fixed_amount' || formData.discountType === 'fixed_price') && (
+                    <div className="col-md-6">
+                      <label className="form-label">Amount ($)</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={formData.discountValue}
+                        onChange={(e) => setFormData({...formData, discountValue: parseFloat(e.target.value)})}
+                        placeholder="e.g., 50"
+                      />
+                    </div>
+                  )}
                 </div>
 
-                <div className="mb-3">
-                  <label className="form-label">Discount Value (%)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={formData.discountPercentage}
-                    onChange={(e) => setFormData({...formData, discountPercentage: parseFloat(e.target.value)})}
-                    placeholder="e.g., 25"
-                  />
-                </div>
+                {formData.discountType === 'qty_break' && (
+                  <div className="mb-3">
+                    <label className="form-label">Quantity Breaks</label>
+                    <div className="alert alert-info small">
+                      Example: 10+ qty = 5% off, 50+ qty = 10% off
+                    </div>
+                    <textarea
+                      className="form-control"
+                      rows={3}
+                      placeholder='[{"min_qty": 10, "discount": 5, "discount_type": "percentage"}, {"min_qty": 50, "discount": 10, "discount_type": "percentage"}]'
+                      onChange={(e) => {
+                        try {
+                          const breaks = JSON.parse(e.target.value);
+                          setFormData({...formData, qtyBreaks: breaks});
+                        } catch {}
+                      }}
+                    />
+                  </div>
+                )}
+
+                {formData.discountType === 'cart_total' && (
+                  <div className="mb-3">
+                    <label className="form-label">Minimum Cart Amount ($)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.minCartAmount}
+                      onChange={(e) => setFormData({...formData, minCartAmount: parseFloat(e.target.value)})}
+                      placeholder="e.g., 1000"
+                    />
+                  </div>
+                )}
 
                 <div className="mb-3">
                   <label className="form-label">Priority (higher = first)</label>
