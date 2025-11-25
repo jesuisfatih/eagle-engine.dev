@@ -21,18 +21,16 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
         />
-        <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+        <link rel="stylesheet" href="https://app.eagledtfsupply.com/vendor/fonts/fontawesome.css" />
+        <link rel="stylesheet" href="https://app.eagledtfsupply.com/vendor/fonts/tabler-icons.css" />
+        <link rel="stylesheet" href="https://app.eagledtfsupply.com/vendor/fonts/flag-icons.css" />
+        <link rel="stylesheet" href="https://app.eagledtfsupply.com/vendor/libs/node-waves/node-waves.css" />
+        <link rel="stylesheet" href="https://app.eagledtfsupply.com/vendor/libs/perfect-scrollbar/perfect-scrollbar.css" />
         <link rel="stylesheet" href="https://app.eagledtfsupply.com/vendor/css/core.css" />
-        <style>{`
-          .menu-icon.ti { 
-            font-size: 1.25rem !important;
-            width: auto !important;
-            height: auto !important;
-            line-height: 1 !important;
-          }
-        `}</style>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+        <script src="https://app.eagledtfsupply.com/vendor/libs/node-waves/node-waves.js" defer></script>
+        <script src="https://app.eagledtfsupply.com/vendor/libs/perfect-scrollbar/perfect-scrollbar.js" defer></script>
         <script src="https://app.eagledtfsupply.com/vendor/js/helpers.js" defer></script>
         <script src="https://app.eagledtfsupply.com/vendor/js/menu.js" defer></script>
       </head>
