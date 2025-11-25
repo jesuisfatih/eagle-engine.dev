@@ -66,6 +66,7 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
     QuotesModule,
     NotificationsModule,
     SettingsModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [

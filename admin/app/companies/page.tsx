@@ -185,40 +185,59 @@ export default function CompaniesPage() {
                       <td>{company._count?.users || 0}</td>
                       <td>{company._count?.orders || 0}</td>
                       <td>
-                        <div className="dropdown">
+                        <div className="btn-group">
+                          <Link href={`/companies/${company.id}`} className="btn btn-sm btn-primary">
+                            <i className="ti ti-eye"></i>
+                          </Link>
                           <button
-                            className="btn btn-sm btn-icon"
                             type="button"
+                            className="btn btn-sm btn-primary dropdown-toggle dropdown-toggle-split"
                             data-bs-toggle="dropdown"
                           >
-                            <i className="ti ti-dots-vertical"></i>
+                            <span className="visually-hidden">Actions</span>
                           </button>
                           <ul className="dropdown-menu dropdown-menu-end">
-                            <li>
-                              <Link href={`/companies/${company.id}`} className="dropdown-item">
-                                <i className="ti ti-eye me-2"></i>View Details
-                              </Link>
-                            </li>
                             {company.status === 'pending' && (
                               <li>
-                                <a className="dropdown-item" href="javascript:void(0);">
-                                  <i className="ti ti-check me-2"></i>Approve Company
+                                <a
+                                  className="dropdown-item"
+                                  href="javascript:void(0);"
+                                  onClick={async () => {
+                                    try {
+                                      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+                                      await fetch(`${API_URL}/api/v1/companies/${company.id}`, {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ status: 'active' }),
+                                      });
+                                      loadData();
+                                    } catch (err) {}
+                                  }}
+                                >
+                                  <i className="ti ti-check me-2"></i>Approve
                                 </a>
                               </li>
                             )}
                             <li>
-                              <a className="dropdown-item" href="javascript:void(0);">
-                                <i className="ti ti-edit me-2"></i>Edit Info
-                              </a>
-                            </li>
-                            <li>
-                              <a className="dropdown-item" href="javascript:void(0);">
+                              <a className="dropdown-item" href={`/pricing?companyId=${company.id}`}>
                                 <i className="ti ti-tag me-2"></i>Set Pricing
                               </a>
                             </li>
                             <li><hr className="dropdown-divider" /></li>
                             <li>
-                              <a className="dropdown-item text-danger" href="javascript:void(0);">
+                              <a
+                                className="dropdown-item text-danger"
+                                href="javascript:void(0);"
+                                onClick={async () => {
+                                  if (confirm('Delete this company?')) {
+                                    try {
+                                      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+                                      await fetch(`${API_URL}/api/v1/companies/${company.id}`, { method: 'DELETE' });
+                                      loadData();
+                                    } catch (err) {}
+                                  }
+                                }}
+                              >
                                 <i className="ti ti-trash me-2"></i>Delete
                               </a>
                             </li>

@@ -54,6 +54,16 @@ const menuItems = [
     icon: 'tabler-file-analytics',
     href: '/reports',
   },
+  {
+    title: 'Webhooks',
+    icon: 'tabler-webhook',
+    href: '/webhooks',
+  },
+  {
+    title: 'Activity',
+    icon: 'tabler-activity',
+    href: '/activity',
+  },
 ];
 
 export default function Sidebar() {

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import OrderTracking from '../components/OrderTracking';
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -112,8 +113,20 @@ export default function OrderDetailPage() {
                 <i className="ti ti-refresh me-1"></i>
                 Reorder
               </button>
+
+              <button
+                onClick={() => {
+                  window.print();
+                }}
+                className="btn btn-label-secondary w-100 mt-2"
+              >
+                <i className="ti ti-printer me-1"></i>
+                Print Invoice
+              </button>
             </div>
           </div>
+
+          <OrderTracking order={order} />
         </div>
       </div>
     </div>
