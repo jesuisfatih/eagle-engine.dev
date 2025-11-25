@@ -5,7 +5,10 @@ import { apiClient } from '@/lib/api-client';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
+  const [allOrders, setAllOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [companyFilter, setCompanyFilter] = useState('');
 
   useEffect(() => {
     loadOrders();
@@ -15,11 +18,26 @@ export default function OrdersPage() {
     try {
       const data = await apiClient.getOrders();
       setOrders(Array.isArray(data) ? data : []);
+      setAllOrders(Array.isArray(data) ? data : []);
     } catch (err) {
       setOrders([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFilters = () => {
+    let filtered = [...allOrders];
+    
+    if (statusFilter) {
+      filtered = filtered.filter(o => o.financialStatus === statusFilter);
+    }
+    
+    if (companyFilter) {
+      filtered = filtered.filter(o => o.companyId === companyFilter);
+    }
+    
+    setOrders(filtered);
   };
 
   return (
@@ -30,15 +48,27 @@ export default function OrdersPage() {
           <p className="mb-0 text-muted">Manage all B2B orders</p>
         </div>
         <div className="d-flex gap-2">
-          <select className="form-select" style={{width: '150px'}}>
+          <select
+            className="form-select"
+            style={{width: '150px'}}
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setTimeout(applyFilters, 100);
+            }}
+          >
             <option value="">All Status</option>
             <option value="paid">Paid</option>
             <option value="pending">Pending</option>
             <option value="refunded">Refunded</option>
           </select>
-          <select className="form-select" style={{width: '200px'}}>
-            <option value="">All Companies</option>
-          </select>
+          <button onClick={() => {
+            setStatusFilter('');
+            setCompanyFilter('');
+            setOrders(allOrders);
+          }} className="btn btn-sm btn-label-secondary">
+            <i className="ti ti-x me-1"></i>Clear
+          </button>
         </div>
       </div>
 

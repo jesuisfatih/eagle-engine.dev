@@ -1,5 +1,7 @@
 'use client';
 
+import NotificationDropdown from './NotificationDropdown';
+
 export default function Header() {
   return (
     <nav className="layout-navbar navbar navbar-expand-xl align-items-center bg-navbar-theme" id="layout-navbar">
@@ -16,6 +18,12 @@ export default function Header() {
                 className="form-control border-0 shadow-none"
                 placeholder="Search companies, orders..."
                 aria-label="Search..."
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    const query = (e.target as HTMLInputElement).value;
+                    window.location.href = `/companies?search=${query}`;
+                  }
+                }}
               />
             </div>
           </div>
@@ -29,8 +37,9 @@ export default function Header() {
                 data-bs-toggle="dropdown"
               >
                 <i className="icon-base ti tabler-bell ti-md"></i>
-                <span className="badge bg-danger rounded-pill badge-notifications">5</span>
+                <span className="badge bg-danger rounded-pill badge-notifications">0</span>
               </a>
+              <NotificationDropdown />
             </li>
 
             {/* User */}

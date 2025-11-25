@@ -38,6 +38,8 @@ export default function PricingPage() {
     minCartAmount: 0,
     priority: 0,
     isActive: true,
+    validFrom: null as Date | null,
+    validUntil: null as Date | null,
   });
   const [companies, setCompanies] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -506,6 +508,29 @@ export default function PricingPage() {
                     value={formData.priority}
                     onChange={(e) => setFormData({...formData, priority: parseInt(e.target.value)})}
                   />
+                </div>
+
+                <div className="mb-3">
+                  <label className="form-label">Valid Date Range</label>
+                  <div className="row g-2">
+                    <div className="col-md-6">
+                      <input
+                        type="date"
+                        className="form-control"
+                        onChange={(e) => setFormData({...formData, validFrom: e.target.value ? new Date(e.target.value) : null})}
+                        placeholder="Valid From"
+                      />
+                    </div>
+                    <div className="col-md-6">
+                      <input
+                        type="date"
+                        className="form-control"
+                        onChange={(e) => setFormData({...formData, validUntil: e.target.value ? new Date(e.target.value) : null})}
+                        placeholder="Valid Until"
+                      />
+                    </div>
+                  </div>
+                  <small className="text-muted">Leave empty for no date restriction</small>
                 </div>
               </div>
               <div className="modal-footer">
