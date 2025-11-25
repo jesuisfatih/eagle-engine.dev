@@ -1,0 +1,40 @@
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const logger = new Logger('Bootstrap');
+  
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+  });
+
+  const config = app.get(ConfigService);
+
+  // Global pipes
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
+
+  // CORS
+  const corsOrigins = config.get<string>('CORS_ORIGINS', '*').split(',');
+  app.enableCors({
+    origin: corsOrigins,
+    credentials: true,
+  });
+
+  // API prefix
+  app.setGlobalPrefix('api/v1');
+
+  const port = config.get<number>('PORT', 4000);
+  await app.listen(port);
+
+  logger.log(`🚀 Eagle API is running on: http://localhost:${port}/api/v1`);
+}
+
+bootstrap();
