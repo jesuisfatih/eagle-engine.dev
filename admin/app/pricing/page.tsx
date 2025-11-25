@@ -2,11 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
+import Modal from '@/components/Modal';
 
 export default function PricingPage() {
   const [rules, setRules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<{show: boolean; ruleId: string | null}>({
+    show: false,
+    ruleId: null,
+  });
+  const [resultModal, setResultModal] = useState<{show: boolean; type: 'success' | 'error'; message: string}>({
+    show: false,
+    type: 'success',
+    message: '',
+  });
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -65,22 +75,38 @@ export default function PricingPage() {
   const handleCreate = async () => {
     try {
       await apiClient.createPricingRule(formData);
-      alert('✅ Pricing rule created!');
       setShowCreateModal(false);
-      loadRules();
+      setResultModal({
+        show: true,
+        type: 'success',
+        message: 'Pricing rule created successfully!',
+      });
+      setTimeout(() => loadRules(), 1000);
     } catch (err: any) {
-      alert('❌ Error: ' + err.message);
+      setResultModal({
+        show: true,
+        type: 'error',
+        message: err.message,
+      });
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this pricing rule?')) return;
+  const handleDelete = async () => {
+    if (!deleteModal.ruleId) return;
     try {
-      await apiClient.deletePricingRule(id);
-      alert('✅ Rule deleted!');
-      loadRules();
+      await apiClient.deletePricingRule(deleteModal.ruleId);
+      setResultModal({
+        show: true,
+        type: 'success',
+        message: 'Rule deleted successfully!',
+      });
+      setTimeout(() => loadRules(), 1000);
     } catch (err: any) {
-      alert('❌ Error: ' + err.message);
+      setResultModal({
+        show: true,
+        type: 'error',
+        message: err.message,
+      });
     }
   };
 
@@ -166,7 +192,7 @@ export default function PricingPage() {
                           <i className="ti ti-edit"></i>
                         </button>
                         <button
-                          onClick={() => handleDelete(rule.id)}
+                          onClick={() => setDeleteModal({ show: true, ruleId: rule.id })}
                           className="btn btn-sm btn-icon btn-text-danger"
                         >
                           <i className="ti ti-trash"></i>
@@ -419,6 +445,29 @@ export default function PricingPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        show={deleteModal.show}
+        onClose={() => setDeleteModal({ show: false, ruleId: null })}
+        onConfirm={handleDelete}
+        title="Pricing Rule Sil"
+        message="Bu pricing rule'ı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
+        confirmText="Evet, Sil"
+        cancelText="İptal"
+        type="danger"
+      />
+
+      {/* Result Modal */}
+      <Modal
+        show={resultModal.show}
+        onClose={() => setResultModal({ ...resultModal, show: false })}
+        onConfirm={() => setResultModal({ ...resultModal, show: false })}
+        title={resultModal.type === 'success' ? 'Başarılı' : 'Hata'}
+        message={resultModal.message}
+        confirmText="Tamam"
+        type={resultModal.type === 'success' ? 'success' : 'danger'}
+      />
     </div>
   );
 }
