@@ -5,6 +5,7 @@ import { ShopifyRestService } from './shopify-rest.service';
 import { ShopifyGraphqlService } from './shopify-graphql.service';
 import { ShopifyAdminDiscountService } from './shopify-admin-discount.service';
 import { ShopifyStorefrontService } from './shopify-storefront.service';
+import { ShopifyCustomerSyncService } from './shopify-customer-sync.service';
 
 @Module({
   imports: [HttpModule],
@@ -14,6 +15,7 @@ import { ShopifyStorefrontService } from './shopify-storefront.service';
     ShopifyGraphqlService,
     ShopifyAdminDiscountService,
     ShopifyStorefrontService,
+    ShopifyCustomerSyncService,
   ],
   exports: [
     ShopifyService,
@@ -21,6 +23,7 @@ import { ShopifyStorefrontService } from './shopify-storefront.service';
     ShopifyGraphqlService,
     ShopifyAdminDiscountService,
     ShopifyStorefrontService,
+    ShopifyCustomerSyncService,
   ],
 })
 export class ShopifyModule {}

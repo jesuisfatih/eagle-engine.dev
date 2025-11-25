@@ -45,11 +45,30 @@ export default function CartPage() {
 
   const checkout = async () => {
     if (!cart) return;
+    
     try {
-      const result = await accountsApi.createCheckout(cart.id);
-      window.location.href = result.checkoutUrl;
-    } catch (err) {
-      alert('Checkout failed');
+      // Get checkout URL from Eagle
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/checkout/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cartId: cart.id }),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Redirect to Shopify checkout with discount applied
+        if (result.checkoutUrl) {
+          window.location.href = result.checkoutUrl;
+        } else {
+          alert('Checkout URL not available');
+        }
+      } else {
+        throw new Error('Checkout failed');
+      }
+    } catch (err: any) {
+      alert('❌ Checkout failed: ' + err.message);
     }
   };
 

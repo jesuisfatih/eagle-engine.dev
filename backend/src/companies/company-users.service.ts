@@ -29,10 +29,21 @@ export class CompanyUsersService {
   }
 
   async update(userId: string, data: any) {
-    return this.prisma.companyUser.update({
+    const user = await this.prisma.companyUser.update({
       where: { id: userId },
       data,
     });
+
+    // Sync changes to Shopify
+    if (user.shopifyCustomerId) {
+      try {
+        await this.shopifyCustomerSync.updateShopifyCustomer(userId);
+      } catch (err) {
+        console.error('Shopify update failed:', err);
+      }
+    }
+
+    return user;
   }
 
   async delete(userId: string) {

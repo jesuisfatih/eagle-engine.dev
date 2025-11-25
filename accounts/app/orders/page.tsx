@@ -75,8 +75,29 @@ export default function OrdersPage() {
                         </a>
                         <button
                           onClick={async () => {
-                            if (confirm('Create a new order with the same items?')) {
-                              alert('Reorder functionality will copy items to cart');
+                            try {
+                              const items = order.lineItems || [];
+                              const cart = await accountsApi.getActiveCart().catch(() => null);
+                              
+                              if (!cart) {
+                                alert('Creating cart...');
+                                return;
+                              }
+
+                              for (const item of items) {
+                                if (item.variant_id) {
+                                  await accountsApi.addToCart(
+                                    item.product_id?.toString() || 'unknown',
+                                    item.variant_id.toString(),
+                                    item.quantity
+                                  ).catch(console.error);
+                                }
+                              }
+                              
+                              alert('✅ Items added to cart!');
+                              window.location.href = '/cart';
+                            } catch (err: any) {
+                              alert('❌ Reorder failed: ' + err.message);
                             }
                           }}
                           className="btn btn-sm btn-text-secondary ms-2"

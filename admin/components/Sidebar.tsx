@@ -129,7 +129,11 @@ export default function Sidebar() {
       {/* Navigation */}
       <ul className="menu-inner py-1 ps ps--active-y">
         {menuItems.map((item) => {
-          const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+          // Exact match or child route match (but not parent-child conflict)
+          const isExactMatch = pathname === item.href;
+          const isChildRoute = pathname?.startsWith(item.href + '/');
+          const isActive = isExactMatch || (isChildRoute && !menuItems.some(mi => pathname === mi.href));
+          
           return (
             <li key={item.href} className={`menu-item ${isActive ? 'active' : ''}`}>
               <Link href={item.href} className="menu-link">
