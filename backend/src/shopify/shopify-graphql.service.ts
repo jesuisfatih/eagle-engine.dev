@@ -79,8 +79,6 @@ export class ShopifyGraphqlService {
                     price
                     compareAtPrice
                     inventoryQuantity
-                    weight
-                    weightUnit
                     selectedOptions {
                       name
                       value
