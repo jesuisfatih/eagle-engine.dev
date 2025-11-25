@@ -1,6 +1,6 @@
 import { Processor, Process } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bull';
+import type { Job } from 'bull';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ShopifyService } from '../../shopify/shopify.service';
 import { ShopifyGraphqlService } from '../../shopify/shopify-graphql.service';
