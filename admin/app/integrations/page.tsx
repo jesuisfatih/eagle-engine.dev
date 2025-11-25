@@ -11,8 +11,8 @@ export default function IntegrationsPage() {
             <div className="card-body">
               <div className="d-flex align-items-center mb-3">
                 <div className="avatar avatar-lg me-3">
-                  <span className="avatar-initial rounded bg-label-success">
-                    <i className="ti ti-brand-shopify ti-lg"></i>
+                  <span className="avatar-initial rounded bg-label-success" style={{fontSize: '32px'}}>
+                    🛍️
                   </span>
                 </div>
                 <div>
@@ -50,8 +50,8 @@ export default function IntegrationsPage() {
             <div className="card-body">
               <div className="d-flex align-items-center mb-3">
                 <div className="avatar avatar-lg me-3">
-                  <span className="avatar-initial rounded bg-label-info">
-                    <i className="ti ti-mail ti-lg"></i>
+                  <span className="avatar-initial rounded bg-label-info" style={{fontSize: '32px'}}>
+                    ✉️
                   </span>
                 </div>
                 <div>

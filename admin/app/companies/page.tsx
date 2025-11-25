@@ -59,7 +59,6 @@ export default function CompaniesPage() {
   const convertToCompany = async () => {
     if (!convertModal.customerId) return;
     
-    // Check if already converted
     const customer = shopifyCustomers.find(c => c.id === convertModal.customerId);
     const alreadyConverted = companies.find(comp => 
       comp.createdByShopifyCustomerId?.toString() === customer?.shopifyCustomerId
@@ -74,6 +73,8 @@ export default function CompaniesPage() {
       });
       return;
     }
+    
+    setConvertModal({ show: false, customerId: null });
     
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
