@@ -1,105 +1,90 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { accountsApi } from '@/lib/api-client';
 
 export default function OrdersPage() {
-  const [orders] = useState([
-    {
-      id: '#ORD-1245',
-      date: '2024-11-20',
-      items: 12,
-      total: 2450.00,
-      status: 'delivered',
-      trackingNumber: 'TRK123456789',
-    },
-    {
-      id: '#ORD-1244',
-      date: '2024-11-18',
-      items: 8,
-      total: 1680.50,
-      status: 'in_transit',
-      trackingNumber: 'TRK987654321',
-    },
-    {
-      id: '#ORD-1243',
-      date: '2024-11-15',
-      items: 15,
-      total: 3200.00,
-      status: 'processing',
-      trackingNumber: null,
-    },
-  ]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
-      case 'in_transit':
-        return 'bg-blue-100 text-blue-800';
-      case 'processing':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  const loadOrders = async () => {
+    try {
+      const data = await accountsApi.getOrders();
+      setOrders(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setOrders([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
+    <div>
+      <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Order History</h1>
-          <p className="mt-1 text-sm text-gray-500">View and track all your company orders</p>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr className="text-left text-xs font-medium uppercase text-gray-700">
-                  <th className="px-6 py-3">Order ID</th>
-                  <th className="px-6 py-3">Date</th>
-                  <th className="px-6 py-3">Items</th>
-                  <th className="px-6 py-3">Total</th>
-                  <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3">Tracking</th>
-                  <th className="px-6 py-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <span className="font-semibold text-gray-900">{order.id}</span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{order.date}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{order.items} items</td>
-                    <td className="px-6 py-4 font-semibold text-gray-900">${order.total.toFixed(2)}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getStatusColor(order.status)}`}>
-                        {order.status.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {order.trackingNumber || '-'}
-                    </td>
-                    <td className="px-6 py-4">
-                      <button className="text-sm font-medium text-blue-600 hover:text-blue-700">
-                        View Details
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <h4 className="fw-bold mb-1">Order History</h4>
+          <p className="mb-0 text-muted">View and track all your orders</p>
         </div>
       </div>
 
-      <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+      <div className="card">
+        <div className="card-body">
+          {loading ? (
+            <div className="text-center py-4">
+              <div className="spinner-border text-primary"></div>
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="text-center py-5">
+              <i className="ti ti-package ti-3x text-muted mb-3"></i>
+              <h5>No orders yet</h5>
+              <p className="text-muted">Your order history will appear here</p>
+              <a href="/products" className="btn btn-primary mt-2">Start Shopping</a>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Date</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.map((order) => (
+                    <tr key={order.id}>
+                      <td className="fw-semibold">#{order.shopifyOrderNumber}</td>
+                      <td className="small">{new Date(order.createdAt).toLocaleDateString()}</td>
+                      <td>{order.lineItems?.length || 0} items</td>
+                      <td className="fw-semibold">${order.totalPrice}</td>
+                      <td>
+                        <span className="badge bg-label-success">
+                          {order.financialStatus}
+                        </span>
+                      </td>
+                      <td>
+                        <button className="btn btn-sm btn-primary">
+                          <i className="ti ti-eye me-1"></i>View
+                        </button>
+                        <button className="btn btn-sm btn-text-secondary ms-2">
+                          <i className="ti ti-refresh"></i>Reorder
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
-
-
-
-

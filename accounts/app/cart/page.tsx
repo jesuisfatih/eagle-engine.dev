@@ -1,64 +1,128 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { accountsApi } from '@/lib/api-client';
 
 export default function CartPage() {
-  const [cartItems] = useState([
-    {
-      id: '1',
-      title: 'Premium Laptop Stand',
-      variant: 'Black / Metal',
-      quantity: 2,
-      unitPrice: 37.49,
-      listPrice: 49.99,
-      image: 'https://via.placeholder.com/80',
-    },
-    {
-      id: '2',
-      title: 'Wireless Keyboard',
-      variant: 'White / Mechanical',
-      quantity: 1,
-      unitPrice: 59.99,
-      listPrice: 79.99,
-      image: 'https://via.placeholder.com/80',
-    },
-  ]);
+  const [cart, setCart] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const savings = cartItems.reduce((sum, item) => sum + (item.listPrice - item.unitPrice) * item.quantity, 0);
+  useEffect(() => {
+    loadCart();
+  }, []);
+
+  const loadCart = async () => {
+    try {
+      const data = await accountsApi.getActiveCart();
+      setCart(data);
+    } catch (err) {
+      setCart(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateQuantity = async (itemId: string, quantity: number) => {
+    if (!cart) return;
+    try {
+      await accountsApi.updateCartItem(cart.id, itemId, quantity);
+      loadCart();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const removeItem = async (itemId: string) => {
+    if (!cart) return;
+    try {
+      await accountsApi.removeCartItem(cart.id, itemId);
+      loadCart();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const checkout = async () => {
+    if (!cart) return;
+    try {
+      const result = await accountsApi.createCheckout(cart.id);
+      window.location.href = result.checkoutUrl;
+    } catch (err) {
+      alert('Checkout failed');
+    }
+  };
+
+  const subtotal = cart?.items?.reduce((sum: number, item: any) => 
+    sum + (item.unitPrice * item.quantity), 0) || 0;
+  
+  const savings = cart?.items?.reduce((sum: number, item: any) => 
+    sum + ((item.listPrice - item.unitPrice) * item.quantity), 0) || 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Shopping Cart</h1>
+    <div>
+      <h4 className="fw-bold mb-4">Shopping Cart</h4>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Cart Items */}
-          <div className="lg:col-span-2">
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="space-y-4">
-                {cartItems.map((item) => (
-                  <div key={item.id} className="flex items-center space-x-4 border-b border-gray-100 pb-4 last:border-0">
-                    <img src={item.image} alt={item.title} className="h-20 w-20 rounded-lg object-cover" />
-                    
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">{item.title}</h3>
-                      <p className="text-sm text-gray-500">{item.variant}</p>
-                      <div className="mt-1 flex items-center space-x-2">
-                        <span className="font-bold text-blue-600">${item.unitPrice}</span>
-                        <span className="text-sm text-gray-500 line-through">${item.listPrice}</span>
+      {loading ? (
+        <div className="text-center py-5">
+          <div className="spinner-border text-primary"></div>
+        </div>
+      ) : !cart || cart.items?.length === 0 ? (
+        <div className="card">
+          <div className="card-body text-center py-5">
+            <i className="ti ti-shopping-cart-off ti-3x text-muted mb-3"></i>
+            <h5>Your cart is empty</h5>
+            <p className="text-muted">Start adding products to your cart</p>
+            <a href="/products" className="btn btn-primary mt-2">Browse Products</a>
+          </div>
+        </div>
+      ) : (
+        <div className="row">
+          <div className="col-lg-8">
+            <div className="card mb-4">
+              <div className="card-body">
+                {cart.items.map((item: any) => (
+                  <div key={item.id} className="row mb-3 pb-3 border-bottom">
+                    <div className="col-md-7">
+                      <h6 className="fw-semibold mb-1">{item.title}</h6>
+                      <p className="text-muted small mb-2">{item.variantTitle}</p>
+                      <div>
+                        <span className="text-primary fw-bold">${item.unitPrice}</span>
+                        {item.listPrice > item.unitPrice && (
+                          <>
+                            <span className="text-muted small text-decoration-line-through ms-2">${item.listPrice}</span>
+                            <span className="badge bg-label-success ms-2">
+                              Save ${(item.listPrice - item.unitPrice).toFixed(2)}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
-
-                    <div className="flex items-center space-x-3">
-                      <button className="rounded border border-gray-300 px-3 py-1 hover:bg-gray-50">-</button>
-                      <span className="font-medium">{item.quantity}</span>
-                      <button className="rounded border border-gray-300 px-3 py-1 hover:bg-gray-50">+</button>
+                    <div className="col-md-3">
+                      <div className="input-group input-group-sm">
+                        <button
+                          className="btn btn-outline-secondary"
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        >-</button>
+                        <input
+                          type="text"
+                          className="form-control text-center"
+                          value={item.quantity}
+                          readOnly
+                        />
+                        <button
+                          className="btn btn-outline-secondary"
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        >+</button>
+                      </div>
                     </div>
-
-                    <div className="text-right">
-                      <p className="font-bold text-gray-900">${(item.unitPrice * item.quantity).toFixed(2)}</p>
-                      <button className="mt-1 text-sm text-red-600 hover:underline">Remove</button>
+                    <div className="col-md-2 text-end">
+                      <p className="fw-bold mb-2">${(item.unitPrice * item.quantity).toFixed(2)}</p>
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="btn btn-sm btn-text-danger"
+                      >
+                        <i className="ti ti-trash"></i>
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -66,43 +130,37 @@ export default function CartPage() {
             </div>
           </div>
 
-          {/* Summary */}
-          <div className="lg:col-span-1">
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-900">Order Summary</h2>
-              
-              <div className="mt-4 space-y-3 border-t border-gray-200 pt-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium text-gray-900">${subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-green-600">Total Savings</span>
-                  <span className="font-semibold text-green-600">-${savings.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between border-t border-gray-200 pt-3">
-                  <span className="font-semibold text-gray-900">Total</span>
-                  <span className="text-2xl font-bold text-blue-600">${subtotal.toFixed(2)}</span>
-                </div>
+          <div className="col-lg-4">
+            <div className="card">
+              <div className="card-header">
+                <h5 className="card-title mb-0">Order Summary</h5>
               </div>
-
-              <button className="mt-6 w-full rounded-lg bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700">
-                Proceed to Checkout
-              </button>
-
-              <p className="mt-4 text-center text-xs text-gray-500">
-                Taxes calculated at checkout
-              </p>
+              <div className="card-body">
+                <div className="d-flex justify-content-between mb-2">
+                  <span>Subtotal</span>
+                  <span className="fw-semibold">${subtotal.toFixed(2)}</span>
+                </div>
+                {savings > 0 && (
+                  <div className="d-flex justify-content-between mb-2 text-success">
+                    <span>Total Savings</span>
+                    <span className="fw-semibold">-${savings.toFixed(2)}</span>
+                  </div>
+                )}
+                <hr />
+                <div className="d-flex justify-content-between mb-3">
+                  <span className="fw-bold">Total</span>
+                  <h4 className="mb-0 text-primary">${subtotal.toFixed(2)}</h4>
+                </div>
+                <button onClick={checkout} className="btn btn-primary w-100">
+                  <i className="ti ti-shopping-cart-check me-1"></i>
+                  Proceed to Checkout
+                </button>
+                <p className="text-center small text-muted mt-2">Taxes calculated at checkout</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+      )}
     </div>
   );
 }
-
-
-
-
