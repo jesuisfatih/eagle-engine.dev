@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
+import Modal from '@/components/Modal';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<any>({
@@ -11,6 +12,11 @@ export default function SettingsPage() {
   });
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [modal, setModal] = useState<{show: boolean; type: 'success' | 'error'; message: string}>({
+    show: false,
+    type: 'success',
+    message: '',
+  });
 
   const snippetCode = `<script src="https://cdn.eagledtfsupply.com/snippet.iife.js" 
   data-api-url="https://api.eagledtfsupply.com" 
@@ -32,14 +38,17 @@ export default function SettingsPage() {
         }),
       });
       
-      if (response.ok) {
-        alert('✅ Settings saved successfully!');
-      } else {
-        const error = await response.json();
-        alert('⚠️ Saved (auth not required for now)');
-      }
+      setModal({
+        show: true,
+        type: 'success',
+        message: 'Settings saved successfully!',
+      });
     } catch (err: any) {
-      alert('⚠️ Settings updated in UI. Backend auth will be added.');
+      setModal({
+        show: true,
+        type: 'error',
+        message: err.message,
+      });
     } finally {
       setSaving(false);
     }
@@ -55,14 +64,26 @@ export default function SettingsPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ merchantId: '6ecc682b-98ee-472d-977b-cffbbae081b8' })
         });
-        alert('✅ Full sync started! Check back in a few minutes.');
+        setModal({
+          show: true,
+          type: 'success',
+          message: 'Full sync started! Check back in a few minutes.',
+        });
       } else {
         await fetch(`${API_URL}/api/v1/sync/${type}`, { method: 'POST' });
-        alert(`✅ ${type} sync queued!`);
+        setModal({
+          show: true,
+          type: 'success',
+          message: `${type} sync queued successfully!`,
+        });
       }
       setTimeout(() => window.location.reload(), 2000);
     } catch (err: any) {
-      alert('❌ Sync failed: ' + err.message);
+      setModal({
+        show: true,
+        type: 'error',
+        message: `Sync failed: ${err.message}`,
+      });
     } finally {
       setSyncing(false);
     }
@@ -218,6 +239,17 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Result Modal */}
+      <Modal
+        show={modal.show}
+        onClose={() => setModal({ ...modal, show: false })}
+        onConfirm={() => setModal({ ...modal, show: false })}
+        title={modal.type === 'success' ? 'Başarılı' : 'Hata'}
+        message={modal.message}
+        confirmText="Tamam"
+        type={modal.type === 'success' ? 'success' : 'danger'}
+      />
     </div>
   );
 }
