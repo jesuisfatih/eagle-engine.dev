@@ -89,6 +89,16 @@ const menuItems = [
     icon: 'tabler-shield-lock',
     href: '/permissions',
   },
+  {
+    title: 'API Keys',
+    icon: 'tabler-key',
+    href: '/api-keys',
+  },
+  {
+    title: 'Support',
+    icon: 'tabler-help',
+    href: '/support',
+  },
 ];
 
 export default function Sidebar() {

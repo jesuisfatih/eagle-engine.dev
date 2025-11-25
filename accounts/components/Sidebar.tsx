@@ -14,6 +14,7 @@ const menuItems = [
   { title: 'Wishlist', icon: 'tabler-heart', href: '/wishlist' },
   { title: 'Addresses', icon: 'tabler-map-pin', href: '/addresses' },
   { title: 'Notifications', icon: 'tabler-bell', href: '/notifications' },
+  { title: 'Support', icon: 'tabler-help', href: '/support' },
 ];
 
 export default function Sidebar() {
