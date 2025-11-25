@@ -7,9 +7,32 @@ export default function QuotesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // API'den quote'ları çek
-    setLoading(false);
+    loadQuotes();
   }, []);
+
+  const loadQuotes = async () => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/quotes`);
+      const data = await response.json();
+      setQuotes(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setQuotes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const approveQuote = async (id: string) => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      await fetch(`${API_URL}/api/v1/quotes/${id}/approve`, { method: 'POST' });
+      alert('✅ Quote approved!');
+      loadQuotes();
+    } catch (err) {
+      alert('❌ Failed to approve');
+    }
+  };
 
   return (
     <div>
