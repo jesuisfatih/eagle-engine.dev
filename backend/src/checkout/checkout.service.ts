@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ShopifyRestService } from '../shopify/shopify-rest.service';
+import { ShopifyAdminDiscountService } from '../shopify/shopify-admin-discount.service';
+import { ShopifyStorefrontService } from '../shopify/shopify-storefront.service';
 import { DiscountEngineService } from './discount-engine.service';
 import { PricingCalculatorService } from '../pricing/pricing-calculator.service';
 
@@ -11,6 +13,8 @@ export class CheckoutService {
   constructor(
     private prisma: PrismaService,
     private shopifyRest: ShopifyRestService,
+    private shopifyAdminDiscount: ShopifyAdminDiscountService,
+    private shopifyStorefront: ShopifyStorefrontService,
     private discountEngine: DiscountEngineService,
     private pricingCalculator: PricingCalculatorService,
   ) {}
@@ -62,19 +66,45 @@ export class CheckoutService {
         cartId,
         discountAmount,
       );
+
+      // Create discount in Shopify Admin API
+      try {
+        await this.shopifyAdminDiscount.createPriceRule(
+          merchant.shopDomain,
+          merchant.accessToken,
+          discountCode,
+          discountAmount,
+          'fixed_amount',
+        );
+      } catch (error) {
+        this.logger.warn('Failed to create Shopify discount, continuing anyway', error);
+      }
     }
 
-    // Create Shopify checkout via Storefront API
-    const checkoutData = {
-      lineItems: cart.items.map((item) => ({
-        variantId: item.shopifyVariantId?.toString(),
-        quantity: item.quantity,
-      })),
-      discountCode,
-    };
+    // Create Shopify cart via Storefront API
+    const lines = cart.items.map((item) => ({
+      merchandiseId: `gid://shopify/ProductVariant/${item.shopifyVariantId}`,
+      quantity: item.quantity,
+    }));
 
-    // For now, return checkout URL (full Storefront API integration needed)
-    const checkoutUrl = `https://${merchant.shopDomain}/cart?discount=${discountCode || ''}`;
+    let checkoutUrl: string;
+    try {
+      // Note: storefrontAccessToken should be stored in merchant settings
+      const storefrontToken = 'YOUR_STOREFRONT_ACCESS_TOKEN'; // TODO: Get from merchant settings
+      
+      const result = await this.shopifyStorefront.createCart(
+        merchant.shopDomain,
+        storefrontToken,
+        lines,
+        discountCode ? [discountCode] : undefined,
+      );
+
+      checkoutUrl = result.checkoutUrl;
+    } catch (error) {
+      this.logger.error('Storefront API failed, using fallback URL', error);
+      // Fallback: Direct cart URL with discount
+      checkoutUrl = `https://${merchant.shopDomain}/cart/${cart.items.map(i => `${i.shopifyVariantId}:${i.quantity}`).join(',')}${discountCode ? `?discount=${discountCode}` : ''}`;
+    }
 
     // Update cart
     await this.prisma.cart.update({

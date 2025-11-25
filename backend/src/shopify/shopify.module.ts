@@ -3,11 +3,25 @@ import { HttpModule } from '@nestjs/axios';
 import { ShopifyService } from './shopify.service';
 import { ShopifyRestService } from './shopify-rest.service';
 import { ShopifyGraphqlService } from './shopify-graphql.service';
+import { ShopifyAdminDiscountService } from './shopify-admin-discount.service';
+import { ShopifyStorefrontService } from './shopify-storefront.service';
 
 @Module({
   imports: [HttpModule],
-  providers: [ShopifyService, ShopifyRestService, ShopifyGraphqlService],
-  exports: [ShopifyService, ShopifyRestService, ShopifyGraphqlService],
+  providers: [
+    ShopifyService,
+    ShopifyRestService,
+    ShopifyGraphqlService,
+    ShopifyAdminDiscountService,
+    ShopifyStorefrontService,
+  ],
+  exports: [
+    ShopifyService,
+    ShopifyRestService,
+    ShopifyGraphqlService,
+    ShopifyAdminDiscountService,
+    ShopifyStorefrontService,
+  ],
 })
 export class ShopifyModule {}
 
