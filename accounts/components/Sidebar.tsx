@@ -39,7 +39,7 @@ export default function Sidebar() {
           return (
             <li key={item.href} className={`menu-item ${isActive ? 'active' : ''}`}>
               <Link href={item.href} className="menu-link">
-                <i className={`menu-icon tf-icons ti ${item.icon}`}></i>
+                <i className={`menu-icon tf-icons ${item.icon}`}></i>
                 <div>{item.title}</div>
               </Link>
             </li>
