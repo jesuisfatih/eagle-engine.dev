@@ -25,6 +25,8 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { QuotesModule } from './quotes/quotes.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SettingsModule } from './settings/settings.module';
+import { UploadsModule } from './uploads/uploads.module';
+import { AbandonedCartsModule } from './abandoned-carts/abandoned-carts.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
