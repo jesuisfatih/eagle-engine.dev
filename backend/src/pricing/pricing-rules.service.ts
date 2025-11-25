@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ShopifyPricingSyncService } from './shopify-pricing-sync.service';
 
 export interface CreatePricingRuleDto {
   name: string;
@@ -27,10 +28,13 @@ export interface CreatePricingRuleDto {
 export class PricingRulesService {
   private readonly logger = new Logger(PricingRulesService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private shopifyPricingSync: ShopifyPricingSyncService,
+  ) {}
 
   async create(merchantId: string, dto: CreatePricingRuleDto) {
-    return this.prisma.pricingRule.create({
+    const rule = await this.prisma.pricingRule.create({
       data: {
         merchantId,
         name: dto.name,
@@ -54,6 +58,15 @@ export class PricingRulesService {
         validUntil: dto.validUntil,
       },
     });
+
+    // Sync to Shopify as discount code
+    try {
+      await this.shopifyPricingSync.syncPricingRuleToShopify(rule.id);
+    } catch (error) {
+      this.logger.error('Pricing rule Shopify sync failed', error);
+    }
+
+    return rule;
   }
 
   async findAll(merchantId: string, filters?: { isActive?: boolean; companyId?: string }) {

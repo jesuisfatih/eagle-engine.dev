@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ShopifyCompanySyncService } from './shopify-company-sync.service';
 
 @Injectable()
 export class CompaniesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private shopifyCompanySync: ShopifyCompanySyncService,
+  ) {}
 
   async findAll(merchantId: string, filters?: { status?: string; search?: string }) {
     const where: any = { merchantId };
@@ -66,7 +70,7 @@ export class CompaniesService {
   }
 
   async create(merchantId: string, data: any) {
-    return this.prisma.company.create({
+    const company = await this.prisma.company.create({
       data: {
         merchantId,
         name: data.name,
@@ -81,12 +85,21 @@ export class CompaniesService {
         status: 'pending',
       },
     });
+
+    // Sync to Shopify after creation
+    try {
+      await this.shopifyCompanySync.syncCompanyToShopify(company.id);
+    } catch (error) {
+      console.error('Company Shopify sync failed:', error);
+    }
+
+    return company;
   }
 
   async update(id: string, merchantId: string, data: any) {
     await this.findOne(id, merchantId);
 
-    return this.prisma.company.update({
+    const company = await this.prisma.company.update({
       where: { id },
       data: {
         name: data.name,
@@ -101,6 +114,15 @@ export class CompaniesService {
         status: data.status,
       },
     });
+
+    // Sync updates to Shopify
+    try {
+      await this.shopifyCompanySync.updateCompanyInShopify(id);
+    } catch (error) {
+      console.error('Company Shopify update failed:', error);
+    }
+
+    return company;
   }
 
   async delete(id: string, merchantId: string) {

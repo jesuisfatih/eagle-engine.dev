@@ -1,11 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ShopifyWebhookSyncService } from '../shopify-webhook-sync.service';
 
 @Injectable()
 export class OrdersHandler {
   private readonly logger = new Logger(OrdersHandler.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private webhookSync: ShopifyWebhookSyncService,
+  ) {}
 
   async handleOrderCreate(orderData: any, headers: any) {
     try {
@@ -60,6 +64,10 @@ export class OrdersHandler {
       });
 
       this.logger.log(`Order created: ${orderData.order_number} for ${shop}`);
+      
+      // Sync cart status
+      await this.webhookSync.handleOrderCreate(orderData, shop);
+      
       return { success: true };
     } catch (error) {
       this.logger.error('Failed to handle order create', error);
