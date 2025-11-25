@@ -21,6 +21,10 @@ import { MerchantsModule } from './merchants/merchants.module';
 import { MailModule } from './mail/mail.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { ShopifyCustomersModule } from './shopify-customers/shopify-customers.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { QuotesModule } from './quotes/quotes.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { SettingsModule } from './settings/settings.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
@@ -58,6 +62,10 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
     MailModule,
     SchedulerModule,
     ShopifyCustomersModule,
+    AnalyticsModule,
+    QuotesModule,
+    NotificationsModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [
