@@ -1,8 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
-
-type Decimal = Prisma.Decimal;
 
 @Injectable()
 export class CartItemsService {
@@ -48,8 +45,8 @@ export class CartItemsService {
         title: variant.product.title,
         variantTitle: variant.title,
         quantity,
-        listPrice: variant.price || new Decimal(0),
-        unitPrice: variant.price || new Decimal(0), // Will be updated by pricing engine
+        listPrice: variant.price || 0,
+        unitPrice: variant.price || 0, // Will be updated by pricing engine
       },
     });
   }

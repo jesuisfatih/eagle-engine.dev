@@ -13,10 +13,10 @@ import { ShopifyOauthService } from './shopify-oauth.service';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
+      useFactory: async (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET') || 'default-secret',
         signOptions: {
-          expiresIn: '7d',
+          expiresIn: '7d' as any,
         },
       }),
     }),
