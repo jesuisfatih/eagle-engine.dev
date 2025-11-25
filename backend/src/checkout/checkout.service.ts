@@ -67,17 +67,26 @@ export class CheckoutService {
         discountAmount,
       );
 
-      // Create discount in Shopify Admin API
+      // Create discount in Shopify Admin API (SYNC)
       try {
-        await this.shopifyAdminDiscount.createPriceRule(
+        const shopifyDiscount = await this.shopifyAdminDiscount.createPriceRule(
           merchant.shopDomain,
           merchant.accessToken,
           discountCode,
           discountAmount,
           'fixed_amount',
         );
+        
+        this.logger.log(`Shopify discount created: ${discountCode} (ID: ${shopifyDiscount.priceRuleId})`);
+        
+        // Update discount code with Shopify ID
+        await this.prisma.discountCode.updateMany({
+          where: { code: discountCode },
+          data: { shopifyDiscountId: BigInt(shopifyDiscount.priceRuleId) },
+        });
       } catch (error) {
-        this.logger.warn('Failed to create Shopify discount, continuing anyway', error);
+        this.logger.error('Failed to create Shopify discount', error);
+        // Continue anyway - discount will be in URL
       }
     }
 

@@ -287,14 +287,22 @@ export default function CompanyDetailPage() {
       {/* Team Members */}
       <div className="card">
         <div className="card-header d-flex justify-content-between align-items-center">
-          <h5 className="card-title mb-0">Team Members</h5>
-          <button
-            onClick={() => setShowInviteModal(true)}
-            className="btn btn-sm btn-primary"
-          >
-            <i className="ti ti-user-plus me-1"></i>
-            Invite User
-          </button>
+          <h5 className="card-title mb-0">Team Members ({users.length})</h5>
+          <div className="d-flex gap-2">
+            <button
+              onClick={() => setShowInviteModal(true)}
+              className="btn btn-sm btn-primary"
+            >
+              <i className="ti ti-user-plus me-1"></i>
+              Add User
+            </button>
+            <button
+              onClick={loadCompany}
+              className="btn btn-sm btn-icon btn-label-secondary"
+            >
+              <i className="ti ti-refresh"></i>
+            </button>
+          </div>
         </div>
         <div className="card-body">
           <div className="table-responsive">
