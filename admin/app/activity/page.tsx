@@ -12,13 +12,37 @@ export default function ActivityPage() {
   const loadActivity = async () => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/analytics/dashboard`);
-      const data = await response.json();
-      // Mock activity from stats
-      setActivities([
-        { type: 'sync', message: 'Customers synced', time: new Date() },
-        { type: 'order', message: '1 order created', time: new Date() },
+      const [orders, companies, pricingRules] = await Promise.all([
+        fetch(`${API_URL}/api/v1/orders`).then(r => r.json()).catch(() => []),
+        fetch(`${API_URL}/api/v1/companies`).then(r => r.json()).catch(() => []),
+        fetch(`${API_URL}/api/v1/pricing/rules`).then(r => r.json()).catch(() => []),
       ]);
+      
+      const activities: any[] = [];
+      orders.forEach((order: any) => {
+        activities.push({
+          type: 'order',
+          message: `Order #${order.shopifyOrderNumber} created`,
+          time: order.createdAt,
+        });
+      });
+      companies.forEach((company: any) => {
+        activities.push({
+          type: 'company',
+          message: `Company ${company.name} ${company.status}`,
+          time: company.createdAt,
+        });
+      });
+      pricingRules.forEach((rule: any) => {
+        activities.push({
+          type: 'pricing',
+          message: `Pricing rule "${rule.name}" created`,
+          time: rule.createdAt,
+        });
+      });
+      
+      activities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+      setActivities(activities.slice(0, 20));
     } catch (err) {
       setActivities([]);
     }
