@@ -32,12 +32,21 @@ export class PricingCalculatorService {
     const { merchantId, companyId, variantIds, quantities = {} } = context;
 
     // Get company details
-    const company = await this.prisma.company.findUnique({
-      where: { id: companyId },
-    });
+    let company: any = null;
+    
+    if (companyId) {
+      try {
+        company = await this.prisma.company.findUnique({
+          where: { id: companyId },
+        });
+      } catch (err) {
+        console.error('Company lookup error:', err);
+      }
+    }
 
     if (!company) {
-      throw new Error('Company not found');
+      // Use default company for pricing calculation
+      company = { id: companyId, companyGroup: null };
     }
 
     // Get variants with their products
