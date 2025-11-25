@@ -1,121 +1,200 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { apiClient } from '@/lib/api-client';
 
 export default function SettingsPage() {
-  const [snippetEnabled, setSnippetEnabled] = useState(true);
-  const snippetCode = `<script src="https://cdn.eagledtfsupply.com/snippet.js" data-api-url="https://api.eagledtfsupply.com" data-shop="your-store.myshopify.com"></script>`;
+  const [settings, setSettings] = useState<any>({
+    shopDomain: 'eagle-dtf-supply0.myshopify.com',
+    apiKey: '98a8a8002dd04e2cffe78d72f3c23927',
+    snippetEnabled: true,
+  });
+  const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
+  const snippetCode = `<script src="https://cdn.eagledtfsupply.com/snippet.iife.js" 
+  data-api-url="https://api.eagledtfsupply.com" 
+  data-shop="${settings.shopDomain}"></script>`;
+
+  const handleSaveSettings = async () => {
+    setSaving(true);
+    try {
+      await apiClient.updateSettings(settings);
+      alert('✅ Settings saved successfully!');
+    } catch (err: any) {
+      alert('❌ Error: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSync = async (type: 'customers' | 'products' | 'orders' | 'initial') => {
+    setSyncing(true);
+    try {
+      if (type === 'initial') {
+        await apiClient.triggerInitialSync();
+        alert('✅ Full sync started! Check back in a few minutes.');
+      } else {
+        await fetch(`http://localhost:4000/api/v1/sync/${type}`, { method: 'POST' });
+        alert(`✅ ${type} sync queued!`);
+      }
+    } catch (err: any) {
+      alert('❌ Sync failed: ' + err.message);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const copySnippet = () => {
+    navigator.clipboard.writeText(snippetCode);
+    alert('✅ Snippet code copied to clipboard!');
+  };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="mt-1 text-sm text-gray-500">Configure your Eagle B2B installation</p>
+    <div>
+      <div className="mb-4">
+        <h4 className="fw-bold mb-1">Settings</h4>
+        <p className="mb-0 text-muted">Configure your Eagle B2B installation</p>
       </div>
 
-      {/* Snippet Settings */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900">Snippet Integration</h2>
-        <p className="mt-1 text-sm text-gray-500">Integrate Eagle with your Shopify theme</p>
-
-        <div className="mt-6 space-y-4">
-          <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
-            <div>
-              <p className="font-medium text-gray-900">App Embed Status</p>
-              <p className="text-sm text-gray-500">Automatically load snippet via Shopify app embed</p>
-            </div>
-            <label className="relative inline-flex cursor-pointer items-center">
+      {/* Shopify Connection */}
+      <div className="card mb-4">
+        <div className="card-header">
+          <h5 className="card-title mb-0">Shopify Connection</h5>
+        </div>
+        <div className="card-body">
+          <div className="row g-3">
+            <div className="col-md-6">
+              <label className="form-label">Shop Domain</label>
               <input
-                type="checkbox"
-                checked={snippetEnabled}
-                onChange={(e) => setSnippetEnabled(e.target.checked)}
-                className="peer sr-only"
+                type="text"
+                className="form-control"
+                value={settings.shopDomain}
+                onChange={(e) => setSettings({...settings, shopDomain: e.target.value})}
+                placeholder="your-store.myshopify.com"
               />
-              <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300"></div>
+            </div>
+            <div className="col-md-6">
+              <label className="form-label">API Key</label>
+              <input
+                type="text"
+                className="form-control"
+                value={settings.apiKey}
+                onChange={(e) => setSettings({...settings, apiKey: e.target.value})}
+              />
+            </div>
+          </div>
+          <button
+            onClick={handleSaveSettings}
+            disabled={saving}
+            className="btn btn-primary mt-3"
+          >
+            {saving ? 'Saving...' : 'Save Connection Settings'}
+          </button>
+        </div>
+      </div>
+
+      {/* Snippet Integration */}
+      <div className="card mb-4">
+        <div className="card-header">
+          <h5 className="card-title mb-0">Snippet Integration</h5>
+        </div>
+        <div className="card-body">
+          <div className="form-check form-switch mb-3">
+            <input
+              className="form-check-input"
+              type="checkbox"
+              checked={settings.snippetEnabled}
+              onChange={(e) => setSettings({...settings, snippetEnabled: e.target.checked})}
+            />
+            <label className="form-check-label">
+              Enable App Embed (Recommended)
             </label>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Manual Snippet Code</label>
-            <p className="mt-1 text-sm text-gray-500">Copy and paste this code into your theme's layout file</p>
-            <div className="mt-2 rounded-lg bg-gray-900 p-4">
-              <code className="text-sm text-green-400">{snippetCode}</code>
+            <label className="form-label">Manual Snippet Code</label>
+            <div className="bg-dark p-3 rounded">
+              <code className="text-light small">{snippetCode}</code>
             </div>
-            <button className="mt-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+            <button onClick={copySnippet} className="btn btn-sm btn-outline-primary mt-2">
+              <i className="ti ti-copy me-1"></i>
               Copy to Clipboard
             </button>
           </div>
         </div>
       </div>
 
-      {/* Sync Settings */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900">Data Synchronization</h2>
-        <p className="mt-1 text-sm text-gray-500">Sync your Shopify data with Eagle</p>
-
-        <div className="mt-6 space-y-4">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="rounded-lg border border-gray-200 p-4">
-              <p className="text-sm text-gray-600">Last Customers Sync</p>
-              <p className="mt-1 font-semibold text-gray-900">2 minutes ago</p>
-              <button className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700">
-                Sync Now
-              </button>
-            </div>
-            <div className="rounded-lg border border-gray-200 p-4">
-              <p className="text-sm text-gray-600">Last Products Sync</p>
-              <p className="mt-1 font-semibold text-gray-900">5 minutes ago</p>
-              <button className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700">
-                Sync Now
-              </button>
-            </div>
-            <div className="rounded-lg border border-gray-200 p-4">
-              <p className="text-sm text-gray-600">Last Orders Sync</p>
-              <p className="mt-1 font-semibold text-gray-900">1 minute ago</p>
-              <button className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700">
-                Sync Now
-              </button>
-            </div>
-          </div>
-
-          <button className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700">
-            Run Full Initial Sync
-          </button>
+      {/* Data Sync */}
+      <div className="card mb-4">
+        <div className="card-header">
+          <h5 className="card-title mb-0">Data Synchronization</h5>
         </div>
-      </div>
-
-      {/* General Settings */}
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900">General Settings</h2>
-        
-        <div className="mt-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Store Name</label>
-            <input
-              type="text"
-              defaultValue="My Shopify Store"
-              className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+        <div className="card-body">
+          <div className="alert alert-info mb-3">
+            <i className="ti ti-info-circle me-2"></i>
+            Auto-sync runs every 20 seconds for customers. Manual sync available below.
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Default Currency</label>
-            <select className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option>USD - US Dollar</option>
-              <option>EUR - Euro</option>
-              <option>GBP - British Pound</option>
-            </select>
-          </div>
+          <div className="row g-3">
+            <div className="col-md-3">
+              <div className="border rounded p-3 text-center">
+                <i className="ti ti-users ti-lg text-primary mb-2"></i>
+                <p className="mb-2 small">Customers</p>
+                <button
+                  onClick={() => handleSync('customers')}
+                  disabled={syncing}
+                  className="btn btn-sm btn-primary w-100"
+                >
+                  Sync Now
+                </button>
+              </div>
+            </div>
 
-          <button className="w-full rounded-lg bg-gray-900 py-2 font-semibold text-white hover:bg-gray-800">
-            Save Settings
-          </button>
+            <div className="col-md-3">
+              <div className="border rounded p-3 text-center">
+                <i className="ti ti-shopping-cart ti-lg text-success mb-2"></i>
+                <p className="mb-2 small">Products</p>
+                <button
+                  onClick={() => handleSync('products')}
+                  disabled={syncing}
+                  className="btn btn-sm btn-success w-100"
+                >
+                  Sync Now
+                </button>
+              </div>
+            </div>
+
+            <div className="col-md-3">
+              <div className="border rounded p-3 text-center">
+                <i className="ti ti-package ti-lg text-warning mb-2"></i>
+                <p className="mb-2 small">Orders</p>
+                <button
+                  onClick={() => handleSync('orders')}
+                  disabled={syncing}
+                  className="btn btn-sm btn-warning w-100"
+                >
+                  Sync Now
+                </button>
+              </div>
+            </div>
+
+            <div className="col-md-3">
+              <div className="border rounded p-3 text-center">
+                <i className="ti ti-refresh ti-lg text-danger mb-2"></i>
+                <p className="mb-2 small">Full Sync</p>
+                <button
+                  onClick={() => handleSync('initial')}
+                  disabled={syncing}
+                  className="btn btn-sm btn-danger w-100"
+                >
+                  {syncing ? 'Syncing...' : 'Run Full Sync'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
-
-
-
