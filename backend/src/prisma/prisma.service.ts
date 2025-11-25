@@ -1,13 +1,73 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { withAccelerate } from '@prisma/extension-accelerate';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
+  private prisma: PrismaClient;
 
   constructor() {
-    super();
+    this.prisma = new PrismaClient();
+  }
+
+  async $connect() {
+    return this.prisma.$connect();
+  }
+
+  async $disconnect() {
+    return this.prisma.$disconnect();
+  }
+
+  get merchant() {
+    return this.prisma.merchant;
+  }
+
+  get shopifyCustomer() {
+    return this.prisma.shopifyCustomer;
+  }
+
+  get company() {
+    return this.prisma.company;
+  }
+
+  get companyUser() {
+    return this.prisma.companyUser;
+  }
+
+  get catalogProduct() {
+    return this.prisma.catalogProduct;
+  }
+
+  get catalogVariant() {
+    return this.prisma.catalogVariant;
+  }
+
+  get pricingRule() {
+    return this.prisma.pricingRule;
+  }
+
+  get cart() {
+    return this.prisma.cart;
+  }
+
+  get cartItem() {
+    return this.prisma.cartItem;
+  }
+
+  get orderLocal() {
+    return this.prisma.orderLocal;
+  }
+
+  get activityLog() {
+    return this.prisma.activityLog;
+  }
+
+  get discountCode() {
+    return this.prisma.discountCode;
+  }
+
+  get syncLog() {
+    return this.prisma.syncLog;
   }
 
   async onModuleInit() {
