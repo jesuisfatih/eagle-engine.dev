@@ -9,6 +9,7 @@ import { RedisModule } from './redis/redis.module';
 import { AuthModule } from './auth/auth.module';
 import { ShopifyModule } from './shopify/shopify.module';
 import { SyncModule } from './sync/sync.module';
+import { PricingModule } from './pricing/pricing.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -33,6 +34,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     AuthModule,
     ShopifyModule,
     SyncModule,
+    PricingModule,
   ],
   controllers: [AppController],
   providers: [
