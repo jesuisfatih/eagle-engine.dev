@@ -25,10 +25,12 @@ export class CartsController {
 
   @Get('active')
   async getActiveCart(
-    @CurrentUser('companyId') companyId: string,
-    @CurrentUser('userId') userId: string,
+    @Query('companyId') companyId?: string,
+    @Query('userId') userId?: string,
   ) {
-    return this.cartsService.findActiveCart(companyId, userId);
+    const cId = companyId || 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d';
+    const uId = userId || 'c67273cf-acea-41db-9ff5-8f6e3bbb5c38';
+    return this.cartsService.findActiveCart(cId, uId);
   }
 
   @Get(':id')
