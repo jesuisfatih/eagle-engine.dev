@@ -162,18 +162,41 @@ export default function DashboardPage() {
       </div>
 
       {/* System Status Card - Vuexy Style */}
-      <div className="card bg-primary text-white mb-3">
-        <div className="card-body">
-          <h5 className="card-title text-white mb-3">🎯 System Status</h5>
-          <div className="mb-3">
-            <p className="mb-1">✅ Backend API: <strong>ONLINE</strong></p>
-            <p className="mb-1">✅ Database: <strong>Connected</strong></p>
-            <p className="mb-1">✅ Scheduler: <strong>Running (20s sync)</strong></p>
-            <p className="mb-1">✅ Store: <strong>eagle-dtf-supply0.myshopify.com</strong></p>
+      <div className="row g-4">
+        <div className="col-md-8">
+          <div className="card">
+            <div className="card-header d-flex justify-content-between">
+              <h5 className="card-title mb-0">Recent Activity</h5>
+              <button className="btn btn-sm btn-primary" onClick={loadStats}>
+                <i className="ti ti-refresh me-1"></i>Refresh
+              </button>
+            </div>
+            <div className="card-body">
+              <div className="timeline">
+                <div className="timeline-item">
+                  <span className="timeline-point timeline-point-primary"></span>
+                  <div className="timeline-event">
+                    <div className="timeline-header mb-1">
+                      <h6 className="mb-0">System Initialized</h6>
+                      <small className="text-muted">Just now</small>
+                    </div>
+                    <p className="mb-0">Eagle B2B Commerce Engine is running</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="alert alert-warning">
-            <h6 className="alert-heading mb-1">💡 First Step</h6>
-            <p className="mb-0 small">Click "Sync Shopify Data" to import customers, products and orders.</p>
+        </div>
+
+        <div className="col-md-4">
+          <div className="card bg-primary text-white">
+            <div className="card-body">
+              <h6 className="text-white mb-3">🎯 System Status</h6>
+              <p className="mb-1 small">✅ API: ONLINE</p>
+              <p className="mb-1 small">✅ DB: Connected</p>
+              <p className="mb-1 small">✅ Sync: Running</p>
+              <p className="mb-1 small">✅ Store: eagle-dtf-supply0</p>
+            </div>
           </div>
         </div>
       </div>
