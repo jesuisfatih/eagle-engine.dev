@@ -55,20 +55,21 @@ export default function QuotesPage() {
           </button>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr className="text-left text-xs font-medium uppercase text-gray-700">
-                  <th className="px-6 py-3">Quote ID</th>
-                  <th className="px-6 py-3">Date</th>
-                  <th className="px-6 py-3">Items</th>
-                  <th className="px-6 py-3">Total</th>
-                  <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3">Actions</th>
+      <div className="card">
+        <div className="card-body">
+          <div className="table-responsive">
+            <table className="table">
+                <thead>
+                  <tr>
+                    <th>Quote ID</th>
+                    <th>Date</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+                <tbody>
                 {quotes.map((quote) => (
                   <tr key={quote.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 font-semibold text-gray-900">{quote.id}</td>
