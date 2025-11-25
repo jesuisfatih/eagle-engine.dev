@@ -125,13 +125,25 @@ export default function CartPage() {
                 <h5 className="card-title mb-0">Order Summary</h5>
               </div>
               <div className="card-body">
+                <div className="mb-3">
+                  <label className="form-label small">Discount Code</label>
+                  <div className="input-group input-group-sm">
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Enter code"
+                    />
+                    <button className="btn btn-outline-primary">Apply</button>
+                  </div>
+                </div>
+
                 <div className="d-flex justify-content-between mb-2">
                   <span>Subtotal</span>
                   <span className="fw-semibold">${subtotal.toFixed(2)}</span>
                 </div>
                 {savings > 0 && (
                   <div className="d-flex justify-content-between mb-2 text-success">
-                    <span>Total Savings</span>
+                    <span>B2B Savings</span>
                     <span className="fw-semibold">-${savings.toFixed(2)}</span>
                   </div>
                 )}
@@ -140,9 +152,13 @@ export default function CartPage() {
                   <span className="fw-bold">Total</span>
                   <h4 className="mb-0 text-primary">${subtotal.toFixed(2)}</h4>
                 </div>
-                <button onClick={checkout} className="btn btn-primary w-100">
+                <button onClick={checkout} className="btn btn-primary w-100 mb-2">
                   <i className="ti ti-shopping-cart-check me-1"></i>
                   Proceed to Checkout
+                </button>
+                <button className="btn btn-label-secondary w-100">
+                  <i className="ti ti-file-invoice me-1"></i>
+                  Request Quote
                 </button>
                 <p className="text-center small text-muted mt-2">Taxes calculated at checkout</p>
               </div>

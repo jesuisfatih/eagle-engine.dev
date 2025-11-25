@@ -166,13 +166,38 @@ export default function SettingsPage() {
               />
             </div>
           </div>
-          <button
-            onClick={handleSaveSettings}
-            disabled={saving}
-            className="btn btn-primary mt-3"
-          >
-            {saving ? 'Saving...' : 'Save Connection Settings'}
-          </button>
+          <div className="d-flex gap-2 mt-3">
+            <button
+              onClick={handleSaveSettings}
+              disabled={saving}
+              className="btn btn-primary"
+            >
+              {saving ? 'Saving...' : 'Save Settings'}
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+                  await fetch(`${API_URL}/api/v1/sync/customers`, { method: 'POST' });
+                  setModal({
+                    show: true,
+                    type: 'success',
+                    message: 'Test successful! Connection OK.',
+                  });
+                } catch (err: any) {
+                  setModal({
+                    show: true,
+                    type: 'error',
+                    message: 'Connection failed: ' + err.message,
+                  });
+                }
+              }}
+              className="btn btn-label-secondary"
+            >
+              <i className="ti ti-plug me-1"></i>
+              Test Connection
+            </button>
+          </div>
         </div>
       </div>
 

@@ -48,6 +48,22 @@ export default function OrdersPage() {
           <p className="mb-0 text-muted">Manage all B2B orders</p>
         </div>
         <div className="d-flex gap-2">
+          <button
+            onClick={() => {
+              const csv = 'Order,Company,Total,Status\n' + orders.map(o => 
+                `${o.shopifyOrderNumber},${o.company?.name || 'N/A'},${o.totalPrice},${o.financialStatus}`
+              ).join('\n');
+              const blob = new Blob([csv], { type: 'text/csv' });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'orders.csv';
+              a.click();
+            }}
+            className="btn btn-success"
+          >
+            <i className="ti ti-download me-1"></i>Export CSV
+          </button>
           <select
             className="form-select"
             style={{width: '150px'}}
