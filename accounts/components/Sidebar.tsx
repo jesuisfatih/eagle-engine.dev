@@ -4,41 +4,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const menuItems = [
-  {
-    title: 'Dashboard',
-    icon: 'tabler-smart-home',
-    href: '/dashboard',
-  },
-  {
-    title: 'Companies',
-    icon: 'tabler-building',
-    href: '/companies',
-  },
-  {
-    title: 'Pricing Rules',
-    icon: 'tabler-discount',
-    href: '/pricing',
-  },
-  {
-    title: 'Orders',
-    icon: 'tabler-shopping-cart',
-    href: '/orders',
-  },
-  {
-    title: 'Analytics',
-    icon: 'tabler-chart-line',
-    href: '/analytics',
-  },
-  {
-    title: 'Quotes',
-    icon: 'tabler-file-invoice',
-    href: '/quotes',
-  },
-  {
-    title: 'Settings',
-    icon: 'tabler-settings',
-    href: '/settings',
-  },
+  { title: 'Dashboard', icon: 'tabler-home', href: '/dashboard' },
+  { title: 'Products', icon: 'tabler-shopping-bag', href: '/products' },
+  { title: 'Cart', icon: 'tabler-shopping-cart', href: '/cart' },
+  { title: 'Orders', icon: 'tabler-package', href: '/orders' },
+  { title: 'Quotes', icon: 'tabler-file-invoice', href: '/quotes' },
+  { title: 'Team', icon: 'tabler-users', href: '/team' },
 ];
 
 export default function Sidebar() {
@@ -46,7 +17,6 @@ export default function Sidebar() {
 
   return (
     <aside id="layout-menu" className="layout-menu menu-vertical menu bg-menu-theme">
-      {/* Logo */}
       <div className="app-brand demo">
         <Link href="/dashboard" className="app-brand-link">
           <span className="app-brand-logo demo">
@@ -54,17 +24,13 @@ export default function Sidebar() {
           </span>
           <span className="app-brand-text demo menu-text fw-bold ms-2">Eagle B2B</span>
         </Link>
-        <a href="javascript:void(0);" className="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
-          <i className="icon-base ti tabler-x"></i>
-        </a>
       </div>
 
       <div className="menu-inner-shadow"></div>
 
-      {/* Navigation */}
-      <ul className="menu-inner py-1 ps ps--active-y">
+      <ul className="menu-inner py-1">
         {menuItems.map((item) => {
-          const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+          const isActive = pathname === item.href;
           return (
             <li key={item.href} className={`menu-item ${isActive ? 'active' : ''}`}>
               <Link href={item.href} className="menu-link">
@@ -78,7 +44,4 @@ export default function Sidebar() {
     </aside>
   );
 }
-
-
-
 
