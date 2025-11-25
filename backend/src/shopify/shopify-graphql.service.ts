@@ -116,8 +116,11 @@ export class ShopifyGraphqlService {
               phone
               tags
               note
-              ordersCount
-              totalSpent
+              numberOfOrders
+              amountSpent {
+                amount
+                currencyCode
+              }
               addresses {
                 address1
                 address2
