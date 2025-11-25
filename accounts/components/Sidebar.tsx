@@ -10,6 +10,7 @@ const menuItems = [
   { title: 'Orders', icon: 'tabler-package', href: '/orders' },
   { title: 'Quotes', icon: 'tabler-file-invoice', href: '/quotes' },
   { title: 'Team', icon: 'tabler-users', href: '/team' },
+  { title: 'Profile', icon: 'tabler-user-circle', href: '/profile' },
 ];
 
 export default function Sidebar() {
