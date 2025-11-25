@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import type { Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
+
+type Decimal = Prisma.Decimal;
 
 @Injectable()
 export class CartItemsService {
