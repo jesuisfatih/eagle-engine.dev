@@ -64,6 +64,21 @@ const menuItems = [
     icon: 'tabler-activity',
     href: '/activity',
   },
+  {
+    title: 'Customers',
+    icon: 'tabler-user-check',
+    href: '/customers',
+  },
+  {
+    title: 'Catalog',
+    icon: 'tabler-package',
+    href: '/catalog',
+  },
+  {
+    title: 'Integrations',
+    icon: 'tabler-plug',
+    href: '/integrations',
+  },
 ];
 
 export default function Sidebar() {
