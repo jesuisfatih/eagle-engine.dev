@@ -143,3 +143,5 @@
 
 Hızla bu 3 kritik eksikliği tamamlayıp sistemi çalıştırıyorum!
 
+
+
