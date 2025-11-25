@@ -79,6 +79,16 @@ const menuItems = [
     icon: 'tabler-plug',
     href: '/integrations',
   },
+  {
+    title: 'Email Templates',
+    icon: 'tabler-mail',
+    href: '/email-templates',
+  },
+  {
+    title: 'Permissions',
+    icon: 'tabler-shield-lock',
+    href: '/permissions',
+  },
 ];
 
 export default function Sidebar() {
