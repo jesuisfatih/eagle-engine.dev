@@ -11,6 +11,7 @@ const menuItems = [
   { title: 'Quotes', icon: 'tabler-file-invoice', href: '/quotes' },
   { title: 'Team', icon: 'tabler-users', href: '/team' },
   { title: 'Profile', icon: 'tabler-user-circle', href: '/profile' },
+  { title: 'Wishlist', icon: 'tabler-heart', href: '/wishlist' },
 ];
 
 export default function Sidebar() {

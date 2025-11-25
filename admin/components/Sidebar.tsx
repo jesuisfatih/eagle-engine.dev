@@ -44,6 +44,11 @@ const menuItems = [
     icon: 'tabler-file-text',
     href: '/settings/sync-logs',
   },
+  {
+    title: 'Reports',
+    icon: 'tabler-file-analytics',
+    href: '/reports',
+  },
 ];
 
 export default function Sidebar() {
