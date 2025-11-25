@@ -2,44 +2,70 @@
 
 export default function Header() {
   return (
-    <header className="fixed left-64 right-0 top-0 z-30 h-16 border-b border-gray-200 bg-white">
-      <div className="flex h-full items-center justify-between px-6">
-        {/* Search */}
-        <div className="flex-1 max-w-2xl">
-          <div className="relative">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-              <iconify-icon icon="mdi:magnify" className="text-xl"></iconify-icon>
-            </span>
-            <input
-              type="text"
-              placeholder="Search companies, orders, products..."
-              className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
+    <nav className="layout-navbar navbar navbar-expand-xl align-items-center bg-navbar-theme" id="layout-navbar">
+      <div className="container-xxl">
+        <div className="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
+          {/* Search */}
+          <div className="navbar-nav align-items-center">
+            <div className="nav-item navbar-search-wrapper mb-0">
+              <span className="d-inline-block p-1 me-2">
+                <i className="icon-base ti tabler-search ti-sm"></i>
+              </span>
+              <input
+                type="text"
+                className="form-control border-0 shadow-none"
+                placeholder="Search companies, orders..."
+                aria-label="Search..."
+              />
+            </div>
           </div>
-        </div>
 
-        {/* Right Section */}
-        <div className="flex items-center space-x-4">
-          {/* Notifications */}
-          <button className="relative rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
-            <iconify-icon icon="mdi:bell-outline" className="text-2xl"></iconify-icon>
-            <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500"></span>
-          </button>
+          <ul className="navbar-nav flex-row align-items-center ms-auto">
+            {/* Notifications */}
+            <li className="nav-item dropdown-notifications navbar-dropdown dropdown me-3 me-xl-1">
+              <a
+                className="nav-link dropdown-toggle hide-arrow"
+                href="javascript:void(0);"
+                data-bs-toggle="dropdown"
+              >
+                <i className="icon-base ti tabler-bell ti-md"></i>
+                <span className="badge bg-danger rounded-pill badge-notifications">5</span>
+              </a>
+            </li>
 
-          {/* User Menu */}
-          <button className="flex items-center space-x-3 rounded-lg hover:bg-gray-50 p-2">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-semibold">
-              AD
-            </div>
-            <div className="text-left hidden md:block">
-              <p className="text-sm font-medium text-gray-900">Admin User</p>
-              <p className="text-xs text-gray-500">Administrator</p>
-            </div>
-            <iconify-icon icon="mdi:chevron-down" className="text-gray-400"></iconify-icon>
-          </button>
+            {/* User */}
+            <li className="nav-item navbar-dropdown dropdown-user dropdown">
+              <a
+                className="nav-link dropdown-toggle hide-arrow"
+                href="javascript:void(0);"
+                data-bs-toggle="dropdown"
+              >
+                <div className="avatar avatar-online">
+                  <span className="avatar-initial rounded-circle bg-label-primary">AD</span>
+                </div>
+              </a>
+              <ul className="dropdown-menu dropdown-menu-end">
+                <li>
+                  <a className="dropdown-item" href="/settings">
+                    <i className="ti ti-settings me-2 ti-sm"></i>
+                    <span className="align-middle">Settings</span>
+                  </a>
+                </li>
+                <li>
+                  <div className="dropdown-divider"></div>
+                </li>
+                <li>
+                  <a className="dropdown-item" href="/login">
+                    <i className="ti ti-logout me-2 ti-sm"></i>
+                    <span className="align-middle">Log Out</span>
+                  </a>
+                </li>
+              </ul>
+            </li>
+          </ul>
         </div>
       </div>
-    </header>
+    </nav>
   );
 }
 

@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
-
-const inter = Inter({ subsets: ['latin'] });
+import Sidebar from '@/components/Sidebar';
+import Header from '@/components/Header';
 
 export const metadata: Metadata = {
   title: 'Eagle B2B Admin - Dashboard',
@@ -15,17 +14,34 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="light-style layout-navbar-fixed layout-menu-fixed">
       <head>
+        <meta charSet="utf-8" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap"
           rel="stylesheet"
         />
+        <link rel="stylesheet" href="/vendor/css/core.css" />
+        <link rel="stylesheet" href="/vendor/fonts/iconify-icons.css" />
+        <script src="/vendor/js/helpers.js" defer></script>
+        <script src="/vendor/js/menu.js" defer></script>
       </head>
-      <body className={inter.className}>
-        {children}
+      <body className="bg-body">
+        <div className="layout-wrapper layout-content-navbar">
+          <div className="layout-container">
+            <Sidebar />
+            <div className="layout-page">
+              <Header />
+              <div className="content-wrapper">
+                <div className="container-xxl flex-grow-1 container-p-y">
+                  {children}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
       </body>
     </html>
