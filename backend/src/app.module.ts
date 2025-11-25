@@ -20,6 +20,7 @@ import { CheckoutModule } from './checkout/checkout.module';
 import { MerchantsModule } from './merchants/merchants.module';
 import { MailModule } from './mail/mail.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
+import { ShopifyCustomersModule } from './shopify-customers/shopify-customers.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
@@ -56,6 +57,7 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
     MerchantsModule,
     MailModule,
     SchedulerModule,
+    ShopifyCustomersModule,
   ],
   controllers: [AppController],
   providers: [
