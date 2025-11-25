@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Modal from '@/components/Modal';
+import CompanyEditModal from '@/components/CompanyEditModal';
 
 export default function CompanyDetailPage() {
   const params = useParams();
@@ -11,6 +12,7 @@ export default function CompanyDetailPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('buyer');
 
@@ -48,6 +50,22 @@ export default function CompanyDetailPage() {
       alert('✅ Invitation sent!');
     } catch (err) {
       alert('❌ Error sending invitation');
+    }
+  };
+
+  const handleEditCompany = async (data: any) => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      await fetch(`${API_URL}/api/v1/companies/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      setShowEditModal(false);
+      loadCompany();
+      alert('✅ Company updated!');
+    } catch (err) {
+      alert('❌ Update failed');
     }
   };
 
@@ -322,6 +340,14 @@ export default function CompanyDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Edit Company Modal */}
+      <CompanyEditModal
+        show={showEditModal}
+        company={company}
+        onClose={() => setShowEditModal(false)}
+        onSave={handleEditCompany}
+      />
     </div>
   );
 }

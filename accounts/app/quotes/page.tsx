@@ -1,9 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function QuotesPage() {
-  const [quotes] = useState([
+  const [quotes, setQuotes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadQuotes();
+  }, []);
+
+  const loadQuotes = async () => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/quotes`);
+      const data = await response.json();
+      setQuotes(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setQuotes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sampleQuotes = [
     {
       id: 'QT-001',
       date: '2024-11-20',
@@ -18,11 +38,13 @@ export default function QuotesPage() {
       status: 'approved',
       total: 8200,
     },
-  ]);
+  ];
+
+  const displayQuotes = quotes.length > 0 ? quotes : sampleQuotes;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
+    <div>
+      <div>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Quote Requests</h1>
