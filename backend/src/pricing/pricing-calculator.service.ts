@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
-interface PricingContext {
+export interface PricingContext {
   merchantId: string;
   companyId: string;
   variantIds: bigint[];
@@ -9,7 +9,7 @@ interface PricingContext {
   cartTotal?: number;
 }
 
-interface CalculatedPrice {
+export interface CalculatedPrice {
   variantId: bigint;
   listPrice: number;
   companyPrice: number;
