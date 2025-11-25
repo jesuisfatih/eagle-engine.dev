@@ -152,13 +152,30 @@ export default function PricingPage() {
           <h4 className="fw-bold mb-1">Pricing Rules</h4>
           <p className="mb-0 text-muted">Configure custom B2B pricing</p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="btn btn-primary"
-        >
-          <i className="ti ti-plus me-1"></i>
-          Create Pricing Rule
-        </button>
+        <div className="d-flex gap-2">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search rules..."
+            style={{maxWidth: '200px'}}
+            onChange={(e) => {
+              const search = e.target.value.toLowerCase();
+              if (search) {
+                const filtered = rules.filter(r => r.name.toLowerCase().includes(search));
+                setRules(filtered);
+              } else {
+                loadRules();
+              }
+            }}
+          />
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="btn btn-primary"
+          >
+            <i className="ti ti-plus me-1"></i>
+            Create Rule
+          </button>
+        </div>
       </div>
 
       {/* Quick Stats */}
@@ -223,21 +240,37 @@ export default function PricingPage() {
                         </span>
                       </td>
                       <td>
-                        <button
-                          onClick={() => {
-                            setEditingRule(rule);
-                            setShowEditModal(true);
-                          }}
-                          className="btn btn-sm btn-icon btn-text-secondary me-1"
-                        >
-                          <i className="ti ti-edit"></i>
-                        </button>
-                        <button
-                          onClick={() => setDeleteModal({ show: true, ruleId: rule.id })}
-                          className="btn btn-sm btn-icon btn-text-danger"
-                        >
-                          <i className="ti ti-trash"></i>
-                        </button>
+                        <div className="d-flex gap-1">
+                          <button
+                            onClick={async () => {
+                              try {
+                                await apiClient.updatePricingRule(rule.id, { isActive: !rule.isActive });
+                                loadRules();
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }}
+                            className={`btn btn-sm btn-icon ${rule.isActive ? 'btn-text-warning' : 'btn-text-success'}`}
+                            title={rule.isActive ? 'Deactivate' : 'Activate'}
+                          >
+                            <i className={`ti ${rule.isActive ? 'ti-toggle-right' : 'ti-toggle-left'}`}></i>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingRule(rule);
+                              setShowEditModal(true);
+                            }}
+                            className="btn btn-sm btn-icon btn-text-secondary"
+                          >
+                            <i className="ti ti-edit"></i>
+                          </button>
+                          <button
+                            onClick={() => setDeleteModal({ show: true, ruleId: rule.id })}
+                            className="btn btn-sm btn-icon btn-text-danger"
+                          >
+                            <i className="ti ti-trash"></i>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
