@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import Modal from '@/components/Modal';
 
@@ -159,10 +160,10 @@ export default function CompaniesPage() {
                       <td>{company._count?.users || 0}</td>
                       <td>{company._count?.orders || 0}</td>
                       <td>
-                        <button className="btn btn-sm btn-primary">
+                        <Link href={`/companies/${company.id}`} className="btn btn-sm btn-primary">
                           <i className="ti ti-eye me-1"></i>
                           View
-                        </button>
+                        </Link>
                       </td>
                     </tr>
                   ))}
