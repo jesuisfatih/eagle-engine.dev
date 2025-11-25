@@ -44,6 +44,18 @@ export class ShopifyCustomersService {
       throw new Error('Customer not found');
     }
 
+    // Check if already converted
+    const existingCompany = await this.prisma.company.findFirst({
+      where: {
+        merchantId,
+        createdByShopifyCustomerId: customer.shopifyCustomerId,
+      },
+    });
+
+    if (existingCompany) {
+      throw new Error('This customer is already converted to a B2B company');
+    }
+
     // Create company
     const company = await this.prisma.company.create({
       data: {

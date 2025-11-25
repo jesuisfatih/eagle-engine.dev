@@ -12,7 +12,8 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     // API'den analytics çek
-    fetch('http://localhost:4000/api/v1/events/analytics')
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+    fetch(`${API_URL}/api/v1/analytics/dashboard`)
       .then(r => r.json())
       .then(data => setStats(data))
       .catch(() => {});
