@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'eagle-api',
       cwd: '/var/www/eagle/backend',
-      script: 'dist/main.js',
+      script: 'dist/src/main.js',
       instances: 2,
       exec_mode: 'cluster',
       env: {
