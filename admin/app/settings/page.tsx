@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
 import Modal from '@/components/Modal';
 import SnippetTester from './components/SnippetTester';
+import SyncProgress from './components/SyncProgress';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<any>({
@@ -304,7 +305,14 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <SnippetTester />
+      <div className="row">
+        <div className="col-md-6">
+          <SnippetTester />
+        </div>
+        <div className="col-md-6">
+          <SyncProgress />
+        </div>
+      </div>
 
       {/* Result Modal */}
       <Modal

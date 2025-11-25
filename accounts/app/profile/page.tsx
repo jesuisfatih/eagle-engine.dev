@@ -58,7 +58,24 @@ export default function ProfilePage() {
                   />
                 </div>
               </div>
-              <button className="btn btn-primary mt-3">Save Changes</button>
+              <button
+                onClick={async () => {
+                  try {
+                    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+                    await fetch(`${API_URL}/api/v1/company-users/me`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(profile),
+                    });
+                    alert('✅ Profile updated!');
+                  } catch (err) {
+                    alert('❌ Update failed');
+                  }
+                }}
+                className="btn btn-primary mt-3"
+              >
+                Save Changes
+              </button>
             </div>
           </div>
 
@@ -77,7 +94,14 @@ export default function ProfilePage() {
                 <label className="form-label">Confirm Password</label>
                 <input type="password" className="form-control" />
               </div>
-              <button className="btn btn-primary">Update Password</button>
+              <button
+                onClick={() => {
+                  alert('Password update feature - implement backend endpoint');
+                }}
+                className="btn btn-primary"
+              >
+                Update Password
+              </button>
             </div>
           </div>
         </div>

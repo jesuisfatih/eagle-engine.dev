@@ -36,20 +36,37 @@ export default function CompanyDetailPage() {
     }
   };
 
+  const [inviteResult, setInviteResult] = useState<{show: boolean; type: 'success'|'error'; message: string}>({
+    show: false, type: 'success', message: ''
+  });
+
   const handleInviteUser = async () => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      await fetch(`${API_URL}/api/v1/companies/${params.id}/users`, {
+      const response = await fetch(`${API_URL}/api/v1/companies/${params.id}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
       });
-      setShowInviteModal(false);
-      setInviteEmail('');
-      loadCompany();
-      alert('✅ Invitation sent!');
-    } catch (err) {
-      alert('❌ Error sending invitation');
+      
+      if (response.ok) {
+        setShowInviteModal(false);
+        setInviteEmail('');
+        loadCompany();
+        setInviteResult({
+          show: true,
+          type: 'success',
+          message: 'Invitation sent successfully!',
+        });
+      } else {
+        throw new Error('Failed to send invitation');
+      }
+    } catch (err: any) {
+      setInviteResult({
+        show: true,
+        type: 'error',
+        message: err.message,
+      });
     }
   };
 
@@ -400,6 +417,19 @@ export default function CompanyDetailPage() {
         onClose={() => setShowEditModal(false)}
         onSave={handleEditCompany}
       />
+
+      {/* Invite Result Modal */}
+      {inviteResult.show && (
+        <Modal
+          show={inviteResult.show}
+          onClose={() => setInviteResult({...inviteResult, show: false})}
+          onConfirm={() => setInviteResult({...inviteResult, show: false})}
+          title={inviteResult.type === 'success' ? 'Success' : 'Error'}
+          message={inviteResult.message}
+          confirmText="OK"
+          type={inviteResult.type === 'success' ? 'success' : 'danger'}
+        />
+      )}
     </div>
   );
 }
