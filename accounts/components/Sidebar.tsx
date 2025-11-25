@@ -4,17 +4,17 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const menuItems = [
-  { title: 'Dashboard', icon: 'tabler-home', href: '/dashboard' },
-  { title: 'Products', icon: 'tabler-shopping-bag', href: '/products' },
-  { title: 'Cart', icon: 'tabler-shopping-cart', href: '/cart' },
-  { title: 'Orders', icon: 'tabler-package', href: '/orders' },
-  { title: 'Quotes', icon: 'tabler-file-invoice', href: '/quotes' },
-  { title: 'Team', icon: 'tabler-users', href: '/team' },
-  { title: 'Profile', icon: 'tabler-user-circle', href: '/profile' },
-  { title: 'Wishlist', icon: 'tabler-heart', href: '/wishlist' },
-  { title: 'Addresses', icon: 'tabler-map-pin', href: '/addresses' },
-  { title: 'Notifications', icon: 'tabler-bell', href: '/notifications' },
-  { title: 'Support', icon: 'tabler-help', href: '/support' },
+  { title: 'Dashboard', icon: 'ti-home', href: '/dashboard' },
+  { title: 'Products', icon: 'ti-shopping-bag', href: '/products' },
+  { title: 'Cart', icon: 'ti-shopping-cart', href: '/cart' },
+  { title: 'Orders', icon: 'ti-package', href: '/orders' },
+  { title: 'Quotes', icon: 'ti-file-invoice', href: '/quotes' },
+  { title: 'Team', icon: 'ti-users', href: '/team' },
+  { title: 'Profile', icon: 'ti-user-circle', href: '/profile' },
+  { title: 'Wishlist', icon: 'ti-heart', href: '/wishlist' },
+  { title: 'Addresses', icon: 'ti-map-pin', href: '/addresses' },
+  { title: 'Notifications', icon: 'ti-bell', href: '/notifications' },
+  { title: 'Support', icon: 'ti-help', href: '/support' },
 ];
 
 export default function Sidebar() {
@@ -35,11 +35,11 @@ export default function Sidebar() {
 
       <ul className="menu-inner py-1">
         {menuItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
           return (
             <li key={item.href} className={`menu-item ${isActive ? 'active' : ''}`}>
               <Link href={item.href} className="menu-link">
-                <i className={`menu-icon tf-icons icon-base ti ${item.icon}`}></i>
+                <i className={`menu-icon tf-icons ti ${item.icon}`}></i>
                 <div>{item.title}</div>
               </Link>
             </li>
