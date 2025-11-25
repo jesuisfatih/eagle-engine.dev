@@ -11,6 +11,8 @@ import { ShopifyModule } from './shopify/shopify.module';
 import { SyncModule } from './sync/sync.module';
 import { PricingModule } from './pricing/pricing.module';
 import { CartsModule } from './carts/carts.module';
+import { EventsModule } from './events/events.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -37,6 +39,8 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     SyncModule,
     PricingModule,
     CartsModule,
+    EventsModule,
+    WebhooksModule,
   ],
   controllers: [AppController],
   providers: [
