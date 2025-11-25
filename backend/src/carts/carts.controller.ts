@@ -13,9 +13,10 @@ import { CartsService } from './carts.service';
 import { CartItemsService } from './cart-items.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('carts')
-@UseGuards(JwtAuthGuard)
+@Public()
 export class CartsController {
   constructor(
     private cartsService: CartsService,
