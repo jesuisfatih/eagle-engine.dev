@@ -1,12 +1,26 @@
 'use client';
 
+import { useState } from 'react';
+import RoleEditModal from '@/components/RoleEditModal';
+import Modal from '@/components/Modal';
+
 export default function PermissionsPage() {
-  const roles = [
+  const [roles, setRoles] = useState([
     { name: 'Admin', permissions: ['all'] },
     { name: 'Manager', permissions: ['orders', 'approve', 'team'] },
     { name: 'Buyer', permissions: ['orders', 'cart'] },
     { name: 'Viewer', permissions: ['view'] },
-  ];
+  ]);
+  const [editModal, setEditModal] = useState<{show: boolean; role: any}>({show: false, role: null});
+  const [resultModal, setResultModal] = useState<{show: boolean; message: string}>({show: false, message: ''});
+
+  const handleSave = (role: any, newPermissions: string[]) => {
+    const updated = roles.map(r => 
+      r.name === role.name ? {...r, permissions: newPermissions} : r
+    );
+    setRoles(updated);
+    setResultModal({show: true, message: `✅ ${role.name} permissions updated!`});
+  };
 
   return (
     <div>
@@ -19,9 +33,7 @@ export default function PermissionsPage() {
               <div className="card-header d-flex justify-content-between">
                 <h6 className="card-title mb-0">{role.name}</h6>
                 <button
-                  onClick={() => {
-                    alert(`Edit ${role.name} permissions - feature ready`);
-                  }}
+                  onClick={() => setEditModal({show: true, role})}
                   className="btn btn-sm btn-primary"
                 >
                   Edit
@@ -38,6 +50,23 @@ export default function PermissionsPage() {
           </div>
         ))}
       </div>
+
+      <RoleEditModal
+        show={editModal.show}
+        role={editModal.role}
+        onClose={() => setEditModal({show: false, role: null})}
+        onSave={handleSave}
+      />
+
+      <Modal
+        show={resultModal.show}
+        onClose={() => setResultModal({show: false, message: ''})}
+        onConfirm={() => setResultModal({show: false, message: ''})}
+        title="Success"
+        message={resultModal.message}
+        confirmText="OK"
+        type="success"
+      />
     </div>
   );
 }
