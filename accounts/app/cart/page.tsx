@@ -90,6 +90,25 @@ export default function CartPage() {
     sum + ((item.listPrice - item.unitPrice) * item.quantity), 0) || 0;
 
   const createCart = async () => {
+    // Show modal
+    const modal = document.createElement('div');
+    modal.className = 'modal fade show d-block';
+    modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    modal.innerHTML = `
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Creating Cart...</h5>
+          </div>
+          <div class="modal-body text-center">
+            <div class="spinner-border text-primary mb-3"></div>
+            <p>Setting up your cart...</p>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       const merchantId = localStorage.getItem('eagle_merchantId') || '6ecc682b-98ee-472d-977b-cffbbae081b8';
@@ -102,11 +121,33 @@ export default function CartPage() {
         body: JSON.stringify({ merchantId, companyId, createdByUserId: userId }),
       });
       
+      modal.remove();
+      
       if (response.ok) {
-        loadCart();
+        const successModal = document.createElement('div');
+        successModal.className = 'modal fade show d-block';
+        successModal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+        successModal.innerHTML = `
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">✅ Success</h5>
+                <button type="button" class="btn-close" onclick="this.closest('.modal').remove(); location.reload();"></button>
+              </div>
+              <div class="modal-body">Cart created successfully!</div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove(); location.reload();">OK</button>
+              </div>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(successModal);
+      } else {
+        throw new Error('Failed to create cart');
       }
     } catch (err) {
-      console.error('Create cart error:', err);
+      modal.remove();
+      alert('❌ Failed to create cart');
     }
   };
 

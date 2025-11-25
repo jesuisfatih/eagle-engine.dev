@@ -25,8 +25,12 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
         <link rel="stylesheet" href="https://app.eagledtfsupply.com/vendor/css/core.css" />
         <style>{`
-          .ti { font-family: 'tabler-icons' !important; }
-          .ti:before { display: inline-block; }
+          .menu-icon.ti { 
+            font-size: 1.25rem !important;
+            width: auto !important;
+            height: auto !important;
+            line-height: 1 !important;
+          }
         `}</style>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
         <script src="https://app.eagledtfsupply.com/vendor/js/helpers.js" defer></script>

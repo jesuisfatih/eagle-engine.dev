@@ -84,31 +84,23 @@ export default function OrdersPage() {
                         <button
                           onClick={async () => {
                             try {
-                              const items = order.lineItems || [];
-                              const cart = await accountsApi.getActiveCart().catch(() => null);
+                              // Direct Shopify reorder
+                              const variantIds = order.lineItems?.map((item: any) => 
+                                `${item.variant_id}:${item.quantity}`
+                              ).join(',') || '';
                               
-                              if (!cart) {
-                                alert('Creating cart...');
-                                return;
+                              if (variantIds) {
+                                // Redirect to Shopify with cart items
+                                window.location.href = `https://eagle-dtf-supply0.myshopify.com/cart/${variantIds}`;
+                              } else {
+                                alert('No items to reorder');
                               }
-
-                              for (const item of items) {
-                                if (item.variant_id) {
-                                  await accountsApi.addToCart(
-                                    item.product_id?.toString() || 'unknown',
-                                    item.variant_id.toString(),
-                                    item.quantity
-                                  ).catch(console.error);
-                                }
-                              }
-                              
-                              alert('✅ Items added to cart!');
-                              window.location.href = '/cart';
                             } catch (err: any) {
-                              alert('❌ Reorder failed: ' + err.message);
+                              alert('❌ Reorder failed');
                             }
                           }}
                           className="btn btn-sm btn-text-secondary ms-2"
+                          title="Reorder"
                         >
                           <i className="ti ti-refresh"></i>
                         </button>

@@ -1,14 +1,35 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import InviteMemberModal from './components/InviteMemberModal';
 
 export default function TeamPage() {
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   useEffect(() => {
     loadMembers();
   }, []);
+
+  const handleInvite = async (email: string, role: string) => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const companyId = 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d';
+      
+      await fetch(`${API_URL}/api/v1/companies/${companyId}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, role }),
+      });
+      
+      setShowInviteModal(false);
+      alert('✅ Invitation sent!');
+      loadMembers();
+    } catch (err) {
+      alert('❌ Failed to send invitation');
+    }
+  };
 
   const loadMembers = async () => {
     try {
@@ -32,9 +53,14 @@ export default function TeamPage() {
           <h4 className="fw-bold mb-1">Team Members</h4>
           <p className="mb-0 text-muted">{members.length} members</p>
         </div>
-        <button onClick={loadMembers} className="btn btn-sm btn-primary">
-          <i className="ti ti-refresh me-1"></i>Refresh
-        </button>
+        <div className="d-flex gap-2">
+          <button onClick={() => setShowInviteModal(true)} className="btn btn-primary">
+            <i className="ti ti-user-plus me-1"></i>Invite Member
+          </button>
+          <button onClick={loadMembers} className="btn btn-sm btn-icon btn-label-secondary">
+            <i className="ti ti-refresh"></i>
+          </button>
+        </div>
       </div>
 
       <div className="card">
@@ -84,6 +110,12 @@ export default function TeamPage() {
           )}
         </div>
       </div>
+
+      <InviteMemberModal
+        show={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        onInvite={handleInvite}
+      />
     </div>
   );
 }
