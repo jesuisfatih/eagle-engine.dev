@@ -25,6 +25,7 @@ export default function RootLayout({
         />
         <link rel="stylesheet" href="/vendor/css/core.css" />
         <link rel="stylesheet" href="/vendor/fonts/iconify-icons.css" />
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
         <script src="/vendor/js/helpers.js" defer></script>
         <script src="/vendor/js/menu.js" defer></script>
       </head>
