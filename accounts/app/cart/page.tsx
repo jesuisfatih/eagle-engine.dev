@@ -16,8 +16,8 @@ export default function CartPage() {
     setLoading(true);
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const companyId = localStorage.getItem('eagle_companyId') || 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d';
-      const userId = localStorage.getItem('eagle_userId') || 'c67273cf-acea-41db-9ff5-8f6e3bbb5c38';
+      const companyId = localStorage.getItem('eagle_companyId') || '';
+      const userId = localStorage.getItem('eagle_userId') || '';
       
       const response = await fetch(`${API_URL}/api/v1/carts/active?companyId=${companyId}&userId=${userId}`);
       

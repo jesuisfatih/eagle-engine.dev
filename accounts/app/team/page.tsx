@@ -18,7 +18,7 @@ export default function TeamPage() {
   const handleInvite = async (email: string, role: string) => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const companyId = 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d';
+      const companyId = localStorage.getItem('eagle_companyId') || '';
       
       const response = await fetch(`${API_URL}/api/v1/companies/${companyId}/users`, {
         method: 'POST',
