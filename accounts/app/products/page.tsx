@@ -99,19 +99,25 @@ export default function ProductsPage() {
 
       if (!cart || !cart.id) {
         // Create new cart
+        const cartData = {
+          merchantId: '6ecc682b-98ee-472d-977b-cffbbae081b8',
+          companyId: 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d',
+          createdByUserId: 'c67273cf-acea-41db-9ff5-8f6e3bbb5c38'
+        };
+
         const createResponse = await fetch(`${API_URL}/api/v1/carts`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            merchantId: '6ecc682b-98ee-472d-977b-cffbbae081b8',
-            companyId: 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d',
-            createdByUserId: 'c67273cf-acea-41db-9ff5-8f6e3bbb5c38',
-          }),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(cartData),
         });
 
         if (!createResponse.ok) {
-          const error = await createResponse.json();
-          throw new Error(`Cart creation failed: ${error.message || createResponse.status}`);
+          const errorText = await createResponse.text();
+          console.error('Cart create error:', errorText);
+          throw new Error(`Cart creation failed: ${createResponse.status}`);
         }
 
         cart = await createResponse.json();
