@@ -13,35 +13,25 @@ export default function CartPage() {
   }, []);
 
   const loadCart = async () => {
+    setLoading(true);
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       const companyId = localStorage.getItem('eagle_companyId') || 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d';
       const userId = localStorage.getItem('eagle_userId') || 'c67273cf-acea-41db-9ff5-8f6e3bbb5c38';
       
-      const response = await fetch(`${API_URL}/api/v1/carts/active?companyId=${companyId}&userId=${userId}`, {
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
+      const response = await fetch(`${API_URL}/api/v1/carts/active?companyId=${companyId}&userId=${userId}`);
       
-      if (response.ok) {
-        const text = await response.text();
-        if (text) {
-          try {
-            const data = JSON.parse(text);
-            setCart(data);
-          } catch (parseErr) {
-            console.error('JSON parse error:', parseErr);
-            setCart(null);
-          }
-        } else {
+      if (response.ok && response.status !== 204) {
+        try {
+          const data = await response.json();
+          setCart(data && data.id ? data : null);
+        } catch (parseErr) {
           setCart(null);
         }
       } else {
         setCart(null);
       }
     } catch (err) {
-      console.error('Load cart error:', err);
       setCart(null);
     } finally {
       setLoading(false);

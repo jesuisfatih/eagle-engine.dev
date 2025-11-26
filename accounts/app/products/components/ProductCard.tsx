@@ -35,7 +35,50 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
 
           <div className="d-flex gap-2">
             <button
-              onClick={() => onAddToCart(product.id)}
+              onClick={async () => {
+                const modal = document.createElement('div');
+                modal.className = 'modal fade show d-block';
+                modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                modal.innerHTML = `
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                      <div class="modal-body text-center py-4">
+                        <div class="spinner-border text-primary mb-3"></div>
+                        <p>Adding to cart...</p>
+                      </div>
+                    </div>
+                  </div>
+                `;
+                document.body.appendChild(modal);
+
+                try {
+                  await onAddToCart(product.id);
+                  modal.remove();
+                  
+                  const successModal = document.createElement('div');
+                  successModal.className = 'modal fade show d-block';
+                  successModal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                  successModal.innerHTML = `
+                    <div class="modal-dialog modal-dialog-centered">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title">✅ Success</h5>
+                          <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+                        </div>
+                        <div class="modal-body">Product added to cart!</div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">Continue Shopping</button>
+                          <a href="/cart" class="btn btn-success">View Cart</a>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                  document.body.appendChild(successModal);
+                } catch (err) {
+                  modal.remove();
+                  alert('❌ Failed to add to cart');
+                }
+              }}
               className="btn btn-primary flex-fill"
               disabled={product.variants?.[0]?.inventoryQuantity === 0}
             >
@@ -52,7 +95,22 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
                   price: product.companyPrice || product.listPrice,
                 });
                 localStorage.setItem('eagle_wishlist', JSON.stringify(wishlist));
-                alert('✅ Added to wishlist!');
+                
+                const modal = document.createElement('div');
+                modal.className = 'modal fade show d-block';
+                modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                modal.innerHTML = `
+                  <div class="modal-dialog modal-dialog-centered modal-sm">
+                    <div class="modal-content">
+                      <div class="modal-body text-center py-4">
+                        <i class="ti ti-heart ti-3x text-danger mb-3"></i>
+                        <h5>Added to Wishlist!</h5>
+                        <button type="button" class="btn btn-primary mt-3" onclick="this.closest('.modal').remove()">OK</button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+                document.body.appendChild(modal);
               }}
               className="btn btn-label-secondary"
               title="Add to Wishlist"
