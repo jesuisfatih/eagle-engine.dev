@@ -79,23 +79,27 @@ export default function ProductsPage() {
   const displayProducts = products.length > 0 ? products : sampleProducts;
 
   const handleAddToCart = async (productId: string) => {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+    const product = displayProducts.find(p => p.id === productId);
+    
+    if (!product || !product.variants?.[0]) {
+      throw new Error('Product or variant not found');
+    }
+
+    const variant = product.variants[0];
+    
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const product = displayProducts.find(p => p.id === productId);
-      if (!product || !product.variants?.[0]) {
-        throw new Error('Product variant not found');
+      // Step 1: Get or create cart
+      let cartResponse = await fetch(`${API_URL}/api/v1/carts/active?companyId=f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d&userId=c67273cf-acea-41db-9ff5-8f6e3bbb5c38`);
+      let cart = null;
+
+      if (cartResponse.ok) {
+        cart = await cartResponse.json().catch(() => null);
       }
 
-      const variant = product.variants[0];
-      
-      // Get or create cart
-      let cart = await fetch(`${API_URL}/api/v1/carts/active?companyId=f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d&userId=c67273cf-acea-41db-9ff5-8f6e3bbb5c38`)
-        .then(r => r.json())
-        .catch(() => null);
-
       if (!cart || !cart.id) {
-        // Create cart
-        const createResp = await fetch(`${API_URL}/api/v1/carts`, {
+        // Create new cart
+        const createResponse = await fetch(`${API_URL}/api/v1/carts`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -104,22 +108,39 @@ export default function ProductsPage() {
             createdByUserId: 'c67273cf-acea-41db-9ff5-8f6e3bbb5c38',
           }),
         });
-        cart = await createResp.json();
+
+        if (!createResponse.ok) {
+          const error = await createResponse.json();
+          throw new Error(`Cart creation failed: ${error.message || createResponse.status}`);
+        }
+
+        cart = await createResponse.json();
+        
+        if (!cart || !cart.id) {
+          throw new Error('Cart ID not received');
+        }
       }
 
-      // Add item
-      await fetch(`${API_URL}/api/v1/carts/${cart.id}/items`, {
+      // Step 2: Add item to cart
+      const addItemResponse = await fetch(`${API_URL}/api/v1/carts/${cart.id}/items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           variantId: variant.id,
-          shopifyVariantId: variant.shopifyVariantId,
+          shopifyVariantId: variant.shopifyVariantId.toString(),
           quantity: 1,
         }),
       });
-    } catch (err) {
+
+      if (!addItemResponse.ok) {
+        const error = await addItemResponse.json();
+        throw new Error(`Add item failed: ${error.message || addItemResponse.status}`);
+      }
+
+      return true;
+    } catch (err: any) {
       console.error('Add to cart error:', err);
-      throw err;
+      throw new Error(err.message || 'Failed to add to cart');
     }
   };
 
