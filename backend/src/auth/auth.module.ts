@@ -4,12 +4,15 @@ import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { SessionSyncService } from './session-sync.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { ShopifyOauthService } from './shopify-oauth.service';
+import { ShopifyModule } from '../shopify/shopify.module';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
+    ShopifyModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -22,8 +25,8 @@ import { ShopifyOauthService } from './shopify-oauth.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, ShopifyOauthService],
-  exports: [AuthService, JwtModule],
+  providers: [AuthService, SessionSyncService, JwtStrategy, ShopifyOauthService],
+  exports: [AuthService, SessionSyncService, JwtModule],
 })
 export class AuthModule {}
 
