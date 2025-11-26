@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import InviteMemberModal from './components/InviteMemberModal';
+import Modal from '@/components/Modal';
 
 export default function TeamPage() {
   const [members, setMembers] = useState<any[]>([]);
@@ -12,22 +13,29 @@ export default function TeamPage() {
     loadMembers();
   }, []);
 
+  const [resultModal, setResultModal] = useState<{show: boolean; message: string}>({show: false, message: ''});
+
   const handleInvite = async (email: string, role: string) => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       const companyId = 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d';
       
-      await fetch(`${API_URL}/api/v1/companies/${companyId}/users`, {
+      const response = await fetch(`${API_URL}/api/v1/companies/${companyId}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, role }),
       });
       
       setShowInviteModal(false);
-      alert('✅ Invitation sent!');
-      loadMembers();
+      
+      if (response.ok) {
+        setResultModal({show: true, message: '✅ Invitation sent successfully!'});
+        loadMembers();
+      } else {
+        setResultModal({show: true, message: '❌ Failed to send invitation'});
+      }
     } catch (err) {
-      alert('❌ Failed to send invitation');
+      setResultModal({show: true, message: '❌ Failed to send invitation'});
     }
   };
 
@@ -116,6 +124,18 @@ export default function TeamPage() {
         onClose={() => setShowInviteModal(false)}
         onInvite={handleInvite}
       />
+
+      {resultModal.show && (
+        <Modal
+          show={resultModal.show}
+          onClose={() => setResultModal({show: false, message: ''})}
+          onConfirm={() => setResultModal({show: false, message: ''})}
+          title={resultModal.message.includes('✅') ? 'Success' : 'Error'}
+          message={resultModal.message}
+          confirmText="OK"
+          type={resultModal.message.includes('✅') ? 'success' : 'danger'}
+        />
+      )}
     </div>
   );
 }

@@ -62,14 +62,45 @@ export default function ProfilePage() {
                 onClick={async () => {
                   try {
                     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-                    await fetch(`${API_URL}/api/v1/company-users/me`, {
+                    const response = await fetch(`${API_URL}/api/v1/company-users/me`, {
                       method: 'PUT',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify(profile),
                     });
-                    alert('✅ Profile updated!');
+                    
+                    const modal = document.createElement('div');
+                    modal.className = 'modal fade show d-block';
+                    modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                    modal.innerHTML = response.ok ? `
+                      <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title">✅ Success</h5>
+                            <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+                          </div>
+                          <div class="modal-body">Profile updated successfully!</div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">OK</button>
+                          </div>
+                        </div>
+                      </div>
+                    ` : `
+                      <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title">❌ Error</h5>
+                            <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+                          </div>
+                          <div class="modal-body">Failed to update profile</div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">OK</button>
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                    document.body.appendChild(modal);
                   } catch (err) {
-                    alert('❌ Update failed');
+                    console.error(err);
                   }
                 }}
                 className="btn btn-primary mt-3"
