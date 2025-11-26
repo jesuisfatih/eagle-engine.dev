@@ -24,7 +24,24 @@ export default function RegisterPage() {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match!');
+      const modal = document.createElement('div');
+      modal.className = 'modal fade show d-block';
+      modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+      modal.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">❌ Password Error</h5>
+              <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+            </div>
+            <div class="modal-body">Passwords do not match!</div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">OK</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
       return;
     }
 
