@@ -43,40 +43,7 @@ export default function ProductsPage() {
     }
   };
 
-  const sampleProducts = [
-    {
-      id: '1',
-      title: 'Premium Laptop Stand',
-      vendor: 'TechGear',
-      listPrice: 49.99,
-      companyPrice: 37.49,
-      discount: 25,
-      image: 'https://via.placeholder.com/150',
-      inStock: true,
-    },
-    {
-      id: '2',
-      title: 'Wireless Keyboard',
-      vendor: 'KeyMaster',
-      listPrice: 79.99,
-      companyPrice: 59.99,
-      discount: 25,
-      image: 'https://via.placeholder.com/150',
-      inStock: true,
-    },
-    {
-      id: '3',
-      title: 'Ergonomic Mouse',
-      vendor: 'ComfortTech',
-      listPrice: 39.99,
-      companyPrice: 29.99,
-      discount: 25,
-      image: 'https://via.placeholder.com/150',
-      inStock: true,
-    },
-  ];
-
-  const displayProducts = products.length > 0 ? products : sampleProducts;
+  const displayProducts = products;
 
   const handleAddToCart = async (productId: string) => {
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';

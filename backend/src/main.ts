@@ -26,18 +26,12 @@ async function bootstrap() {
     }),
   );
 
-  // CORS - Multi-domain support
+  // CORS - Allow ALL origins (Public API)
   app.enableCors({
-    origin: [
-      'https://accounts.eagledtfsupply.com',
-      'https://app.eagledtfsupply.com',
-      'https://eagle-dtf-supply0.myshopify.com',
-      'http://localhost:3000',
-      'http://localhost:3001',
-    ],
+    origin: true, // Accept all origins
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     exposedHeaders: ['X-Total-Count', 'X-Page-Count'],
   });
 
