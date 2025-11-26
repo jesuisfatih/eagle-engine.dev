@@ -78,6 +78,51 @@ export default function ProductsPage() {
 
   const displayProducts = products.length > 0 ? products : sampleProducts;
 
+  const handleAddToCart = async (productId: string) => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const product = displayProducts.find(p => p.id === productId);
+      if (!product || !product.variants?.[0]) {
+        throw new Error('Product variant not found');
+      }
+
+      const variant = product.variants[0];
+      
+      // Get or create cart
+      let cart = await fetch(`${API_URL}/api/v1/carts/active?companyId=f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d&userId=c67273cf-acea-41db-9ff5-8f6e3bbb5c38`)
+        .then(r => r.json())
+        .catch(() => null);
+
+      if (!cart || !cart.id) {
+        // Create cart
+        const createResp = await fetch(`${API_URL}/api/v1/carts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            merchantId: '6ecc682b-98ee-472d-977b-cffbbae081b8',
+            companyId: 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d',
+            createdByUserId: 'c67273cf-acea-41db-9ff5-8f6e3bbb5c38',
+          }),
+        });
+        cart = await createResp.json();
+      }
+
+      // Add item
+      await fetch(`${API_URL}/api/v1/carts/${cart.id}/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          variantId: variant.id,
+          shopifyVariantId: variant.shopifyVariantId,
+          quantity: 1,
+        }),
+      });
+    } catch (err) {
+      console.error('Add to cart error:', err);
+      throw err;
+    }
+  };
+
   return (
     <div>
       <div>
@@ -127,6 +172,11 @@ export default function ProductsPage() {
         ) : (
           <div className="row g-4">
             {displayProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onAddToCart={handleAddToCart}
+              />
               <div key={product.id} className="col-md-4">
                 <div className="card">
                   <div className="card-body">
