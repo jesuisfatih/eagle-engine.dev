@@ -1,41 +1,27 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { authService } from '@/lib/auth-service';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-function LoginForm() {
+export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    initAuth();
-  }, [searchParams, router]);
-
-  const initAuth = async () => {
-    // Auto-login from Shopify callback
-    const token = searchParams?.get('token');
-    const auto = searchParams?.get('auto');
-    
-    if (token && auto === 'true') {
-      await authService.setToken(token);
-      router.push('/dashboard');
-      return;
-    }
-
-    // Try to recover session
-    const recovered = await authService.recoverSession();
-    if (recovered) {
+    // Check if already logged in
+    const token = localStorage.getItem('eagle_token');
+    if (token) {
       router.push('/dashboard');
     }
-  };
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
@@ -48,42 +34,22 @@ function LoginForm() {
       if (response.ok) {
         const data = await response.json();
         
-        // Store Eagle token (multi-layer)
-        await authService.setToken(data.token);
-        await authService.setUserData(data.user);
-        authService.startTokenRefresh();
+        // Store auth data
+        localStorage.setItem('eagle_token', data.token);
+        localStorage.setItem('eagle_userId', data.user.id);
+        localStorage.setItem('eagle_companyId', data.user.companyId);
+        localStorage.setItem('eagle_userEmail', data.user.email);
+        localStorage.setItem('eagle_userName', `${data.user.firstName} ${data.user.lastName}`);
+        localStorage.setItem('eagle_loginTime', Date.now().toString());
         
-        // Redirect to Shopify for SSO
-        if (data.shopifySsoUrl) {
-          window.location.href = data.shopifySsoUrl;
-        } else {
-          router.push('/dashboard');
-        }
+        // Redirect to dashboard
+        router.push('/dashboard');
       } else {
-        const modal = document.createElement('div');
-        modal.className = 'modal fade show d-block';
-        modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
-        modal.innerHTML = `
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">❌ Login Failed</h5>
-                <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
-              </div>
-              <div class="modal-body">
-                <p>Invalid email or password.</p>
-                <p class="small text-muted">Please check your credentials and try again.</p>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">Try Again</button>
-              </div>
-            </div>
-          </div>
-        `;
-        document.body.appendChild(modal);
+        const errorData = await response.json();
+        setError(errorData.message || 'Invalid credentials');
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setError('Connection error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -108,8 +74,18 @@ function LoginForm() {
               <span className="text-primary text-4xl">🦅</span>
               <span className="app-brand-text demo fw-bold ms-2">Eagle B2B</span>
             </div>
-            <h4 className="mb-1 fw-bold">Welcome!</h4>
-            <p className="mb-4">Please sign-in to your account</p>
+            <h4 className="mb-1 fw-bold">Welcome! 👋</h4>
+            <p className="mb-4">Please sign-in to your account and start the adventure</p>
+
+            {error && (
+              <div className="alert alert-danger alert-dismissible" role="alert">
+                <button type="button" className="btn-close" onClick={() => setError('')}></button>
+                <div className="alert-message">
+                  <i className="ti ti-alert-circle me-2"></i>
+                  {error}
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit}>
               <div className="mb-3">
@@ -121,10 +97,16 @@ function LoginForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
+                  disabled={loading}
                 />
               </div>
               <div className="mb-3 form-password-toggle">
-                <label className="form-label">Password</label>
+                <div className="d-flex justify-content-between">
+                  <label className="form-label">Password</label>
+                  <a href="/forgot-password">
+                    <small>Forgot Password?</small>
+                  </a>
+                </div>
                 <input
                   type="password"
                   className="form-control"
@@ -132,19 +114,35 @@ function LoginForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  disabled={loading}
                 />
+              </div>
+              <div className="mb-3">
+                <div className="form-check">
+                  <input className="form-check-input" type="checkbox" id="remember-me" />
+                  <label className="form-check-label" htmlFor="remember-me">
+                    Remember Me
+                  </label>
+                </div>
               </div>
               <button
                 type="submit"
                 disabled={loading}
                 className="btn btn-primary d-grid w-100 mb-3"
               >
-                {loading ? 'Signing in...' : 'Sign in'}
+                {loading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2"></span>
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign in'
+                )}
               </button>
             </form>
 
             <p className="text-center">
-              <span>New user? </span>
+              <span>New on our platform? </span>
               <a href="/register">
                 <span>Create an account</span>
               </a>
@@ -153,13 +151,5 @@ function LoginForm() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="text-center py-5"><div className="spinner-border"></div></div>}>
-      <LoginForm />
-    </Suspense>
   );
 }
