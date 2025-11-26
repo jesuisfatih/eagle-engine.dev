@@ -47,17 +47,6 @@ export default function QuotesPage() {
     }
   };
 
-  const approveQuote = async (id: string) => {
-    try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      await fetch(`${API_URL}/api/v1/quotes/${id}/approve`, { method: 'POST' });
-      alert('✅ Quote approved!');
-      loadQuotes();
-    } catch (err) {
-      alert('❌ Failed to approve');
-    }
-  };
-
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
