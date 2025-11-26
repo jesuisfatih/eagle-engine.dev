@@ -40,11 +40,20 @@ export default function CartPage() {
 
   const updateQuantity = async (itemId: string, quantity: number) => {
     if (!cart) return;
+    
     try {
-      await accountsApi.updateCartItem(cart.id, itemId, quantity);
-      loadCart();
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/carts/${cart.id}/items/${itemId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity }),
+      });
+      
+      if (response.ok) {
+        loadCart();
+      }
     } catch (err) {
-      console.error(err);
+      console.error('Update quantity error:', err);
     }
   };
 

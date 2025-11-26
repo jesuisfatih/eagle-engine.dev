@@ -77,10 +77,27 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
                     </div>
                   `;
                   document.body.appendChild(successModal);
-                } catch (err) {
-                  modal.remove();
-                  alert('❌ Failed to add to cart');
-                }
+              } catch (err: any) {
+                modal.remove();
+                const errorModal = document.createElement('div');
+                errorModal.className = 'modal fade show d-block';
+                errorModal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                errorModal.innerHTML = `
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">❌ Error</h5>
+                        <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+                      </div>
+                      <div class="modal-body">Failed to add to cart: ${err.message}</div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">OK</button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+                document.body.appendChild(errorModal);
+              }
               }}
               className="btn btn-primary flex-fill"
               disabled={product.variants?.[0]?.inventoryQuantity === 0}
