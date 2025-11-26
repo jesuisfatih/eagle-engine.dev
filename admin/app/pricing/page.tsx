@@ -96,19 +96,32 @@ export default function PricingPage() {
 
   const handleCreate = async () => {
     try {
-      await apiClient.createPricingRule(formData);
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/pricing/rules`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || `Server error: ${response.status}`);
+      }
+
+      const result = await response.json();
       setShowCreateModal(false);
       setResultModal({
         show: true,
         type: 'success',
-        message: 'Pricing rule created successfully!',
+        message: `✅ Pricing rule created!\n${result.discountType === 'percentage' ? 'Shopify discount code will be created automatically.' : ''}`,
       });
       setTimeout(() => loadRules(), 1000);
     } catch (err: any) {
+      setShowCreateModal(false);
       setResultModal({
         show: true,
         type: 'error',
-        message: err.message,
+        message: `❌ Failed to create pricing rule:\n${err.message}`,
       });
     }
   };

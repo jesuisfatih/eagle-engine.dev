@@ -34,39 +34,49 @@ export class PricingRulesService {
   ) {}
 
   async create(merchantId: string, dto: CreatePricingRuleDto) {
-    const rule = await this.prisma.pricingRule.create({
-      data: {
-        merchantId,
-        name: dto.name,
-        description: dto.description,
-        targetType: dto.targetType,
-        targetCompanyId: dto.targetCompanyId,
-        targetCompanyGroup: dto.targetCompanyGroup,
-        scopeType: dto.scopeType,
-        scopeProductIds: dto.scopeProductIds || [],
-        scopeCollectionIds: dto.scopeCollectionIds || [],
-        scopeTags: dto.scopeTags,
-        scopeVariantIds: dto.scopeVariantIds || [],
-        discountType: dto.discountType,
-        discountValue: dto.discountValue,
-        discountPercentage: dto.discountPercentage,
-        qtyBreaks: dto.qtyBreaks,
-        minCartAmount: dto.minCartAmount,
-        priority: dto.priority || 0,
-        isActive: dto.isActive !== false,
-        validFrom: dto.validFrom,
-        validUntil: dto.validUntil,
-      },
-    });
-
-    // Sync to Shopify as discount code
     try {
-      await this.shopifyPricingSync.syncPricingRuleToShopify(rule.id);
-    } catch (error) {
-      this.logger.error('Pricing rule Shopify sync failed', error);
-    }
+      const rule = await this.prisma.pricingRule.create({
+        data: {
+          merchantId,
+          name: dto.name,
+          description: dto.description,
+          targetType: dto.targetType,
+          targetCompanyId: dto.targetCompanyId,
+          targetCompanyGroup: dto.targetCompanyGroup,
+          scopeType: dto.scopeType,
+          scopeProductIds: dto.scopeProductIds || [],
+          scopeCollectionIds: dto.scopeCollectionIds || [],
+          scopeTags: dto.scopeTags,
+          scopeVariantIds: dto.scopeVariantIds || [],
+          discountType: dto.discountType,
+          discountValue: dto.discountValue,
+          discountPercentage: dto.discountPercentage,
+          qtyBreaks: dto.qtyBreaks,
+          minCartAmount: dto.minCartAmount,
+          priority: dto.priority || 0,
+          isActive: dto.isActive !== false,
+          validFrom: dto.validFrom,
+          validUntil: dto.validUntil,
+        },
+      });
 
-    return rule;
+      // Sync to Shopify as discount code (ASYNC)
+      if (this.shopifyPricingSync && rule.isActive) {
+        setImmediate(async () => {
+          try {
+            await this.shopifyPricingSync.syncPricingRuleToShopify(rule.id);
+            this.logger.log(`Pricing rule ${rule.id} synced to Shopify`);
+          } catch (error) {
+            this.logger.error('Pricing rule Shopify sync failed', error);
+          }
+        });
+      }
+
+      return rule;
+    } catch (error) {
+      this.logger.error('Failed to create pricing rule', error);
+      throw new Error(`Failed to create pricing rule: ${error.message}`);
+    }
   }
 
   async findAll(merchantId: string, filters?: { isActive?: boolean; companyId?: string }) {
