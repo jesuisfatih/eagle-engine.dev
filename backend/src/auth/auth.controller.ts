@@ -204,4 +204,31 @@ export class AuthController {
       });
     }
   }
+
+  @Public()
+  @Get('user')
+  async getCurrentUser(@Query('token') token: string, @Res() res: Response) {
+    try {
+      const user = await this.authService.validateToken(token);
+      
+      if (!user) {
+        return res.status(HttpStatus.UNAUTHORIZED).json({
+          message: 'Invalid token',
+        });
+      }
+
+      return res.json({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        companyId: user.companyId,
+        shopifyCustomerId: user.shopifyCustomerId?.toString(),
+      });
+    } catch (error) {
+      return res.status(HttpStatus.UNAUTHORIZED).json({
+        message: 'Invalid token',
+      });
+    }
+  }
 }
