@@ -2,15 +2,14 @@ import { Module } from '@nestjs/common';
 import { PricingService } from './pricing.service';
 import { PricingRulesService } from './pricing-rules.service';
 import { PricingCalculatorService } from './pricing-calculator.service';
-import { ShopifyPricingSyncService } from './shopify-pricing-sync.service';
 import { PricingController } from './pricing.controller';
-import { ShopifyModule } from '../shopify/shopify.module';
+import { PricingRulesController } from './pricing-rules.controller';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Module({
-  imports: [ShopifyModule],
-  controllers: [PricingController],
-  providers: [PricingService, PricingRulesService, PricingCalculatorService, ShopifyPricingSyncService],
-  exports: [PricingService, PricingCalculatorService],
+  controllers: [PricingController, PricingRulesController],
+  providers: [PricingService, PricingRulesService, PricingCalculatorService, PrismaService],
+  exports: [PricingService, PricingCalculatorService, PricingRulesService],
 })
 export class PricingModule {}
 
