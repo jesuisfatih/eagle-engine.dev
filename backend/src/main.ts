@@ -26,21 +26,28 @@ async function bootstrap() {
     }),
   );
 
-  // CORS - Allow ALL origins (Public API)
+  // CORS - PUBLIC API with proper headers
   app.enableCors({
-    origin: true, // Accept all origins
-    credentials: true,
+    origin: '*', // Allow all origins
+    credentials: false, // Set to false for public API with origin: '*'
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     exposedHeaders: ['X-Total-Count', 'X-Page-Count'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
 
-  // Security headers
+  // CORS headers middleware (add before routes)
   app.use((req: any, res: any, next: any) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS,PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+    res.header('Access-Control-Expose-Headers', 'X-Total-Count, X-Page-Count');
+    
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(204);
+      return;
+    }
     next();
   });
 
