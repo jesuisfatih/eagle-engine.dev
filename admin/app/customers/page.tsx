@@ -5,6 +5,7 @@ import Modal from '@/components/Modal';
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<any[]>([]);
+  const [convertModal, setConvertModal] = useState<{show: boolean; customerId: string}>({show: false, customerId: ''});
 
   useEffect(() => {
     loadCustomers();
