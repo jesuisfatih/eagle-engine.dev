@@ -3,17 +3,55 @@
  * Seamless Shopify SSO without user interruption
  */
 
+import { storageService } from './storage-service';
+import { broadcastService } from './broadcast-service';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
 
 export class AuthService {
   private static instance: AuthService;
   private tokenRefreshTimer: NodeJS.Timeout | null = null;
+  private activityTimer: NodeJS.Timeout | null = null;
 
   static getInstance(): AuthService {
     if (!AuthService.instance) {
       AuthService.instance = new AuthService();
+      AuthService.instance.init();
     }
     return AuthService.instance;
+  }
+
+  private init(): void {
+    // Subscribe to cross-tab auth events
+    broadcastService.subscribe('auth', (event) => {
+      if (event.type === 'login' && event.token) {
+        this.setToken(event.token);
+      } else if (event.type === 'logout') {
+        this.logout();
+      } else if (event.type === 'refresh' && event.token) {
+        this.setToken(event.token);
+      }
+    });
+
+    // User activity detection
+    if (typeof window !== 'undefined') {
+      ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(event => {
+        window.addEventListener(event, () => this.onUserActivity(), { passive: true });
+      });
+    }
+  }
+
+  private onUserActivity(): void {
+    broadcastService.broadcastActivity();
+    
+    // Debounce activity ping
+    if (this.activityTimer) {
+      clearTimeout(this.activityTimer);
+    }
+    
+    this.activityTimer = setTimeout(() => {
+      this.ping();
+    }, 5000);
   }
 
   /**
@@ -61,75 +99,73 @@ export class AuthService {
   }
 
   /**
-   * Set authentication token
+   * Set authentication token (multi-layer)
    */
-  setToken(token: string): void {
-    localStorage.setItem('eagle_token', token);
-    sessionStorage.setItem('eagle_session', 'active');
-    
-    // Set cookie for cross-domain
-    document.cookie = `eagle_auth=${token}; path=/; max-age=2592000; secure; samesite=lax`;
+  async setToken(token: string): Promise<void> {
+    await storageService.set('eagle_token', token);
+    await storageService.set('eagle_session', 'active');
   }
 
   /**
-   * Get authentication token
+   * Get authentication token (multi-layer)
    */
-  getToken(): string | null {
-    return localStorage.getItem('eagle_token');
+  async getToken(): Promise<string | null> {
+    return await storageService.get('eagle_token');
   }
 
   /**
-   * Set user data
+   * Set user data (multi-layer)
    */
-  setUserData(user: any): void {
-    localStorage.setItem('eagle_userId', user.id);
-    localStorage.setItem('eagle_companyId', user.companyId);
-    localStorage.setItem('eagle_userEmail', user.email);
+  async setUserData(user: any): Promise<void> {
+    await storageService.set('eagle_userId', user.id);
+    await storageService.set('eagle_companyId', user.companyId);
+    await storageService.set('eagle_userEmail', user.email);
   }
 
   /**
    * Check if user is authenticated
    */
-  isAuthenticated(): boolean {
-    const token = this.getToken();
-    const session = sessionStorage.getItem('eagle_session');
+  async isAuthenticated(): Promise<boolean> {
+    const token = await this.getToken();
+    const session = await storageService.get('eagle_session');
     return !!(token && session === 'active');
   }
 
   /**
-   * Auto token refresh - 1 hour before expiry
+   * Auto token refresh - Safari ITP proof (< 7 days)
    */
   startTokenRefresh(): void {
     if (this.tokenRefreshTimer) {
       clearInterval(this.tokenRefreshTimer);
     }
 
-    // Refresh every 6 hours (token valid for 7 days)
+    // Refresh every 6 hours (Safari-safe: < 7 days)
     this.tokenRefreshTimer = setInterval(async () => {
       await this.refreshToken();
     }, 6 * 60 * 60 * 1000);
   }
 
   /**
-   * Refresh token silently
+   * Refresh token silently (multi-layer)
    */
   async refreshToken(): Promise<boolean> {
     try {
-      const currentToken = this.getToken();
+      const currentToken = await this.getToken();
       if (!currentToken) return false;
 
       const response = await fetch(`${API_URL}/api/v1/auth/refresh`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${currentToken}`,
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ token: currentToken }),
       });
 
       if (response.ok) {
         const data = await response.json();
         if (data.token) {
-          this.setToken(data.token);
+          await this.setToken(data.token);
+          broadcastService.broadcastRefresh(data.token);
           return true;
         }
       }
@@ -142,18 +178,74 @@ export class AuthService {
   }
 
   /**
-   * Logout
+   * Ping to keep session alive
    */
-  logout(): void {
-    localStorage.removeItem('eagle_token');
-    localStorage.removeItem('eagle_userId');
-    localStorage.removeItem('eagle_companyId');
-    localStorage.removeItem('eagle_userEmail');
-    sessionStorage.removeItem('eagle_session');
-    document.cookie = 'eagle_auth=; path=/; max-age=0';
+  private async ping(): Promise<void> {
+    try {
+      const token = await this.getToken();
+      if (!token) return;
+
+      await fetch(`${API_URL}/api/v1/auth/ping`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      console.error('Ping failed:', error);
+    }
+  }
+
+  /**
+   * Logout (multi-layer clear)
+   */
+  async logout(): Promise<void> {
+    await storageService.clear();
     
     if (this.tokenRefreshTimer) {
       clearInterval(this.tokenRefreshTimer);
+    }
+    
+    if (this.activityTimer) {
+      clearTimeout(this.activityTimer);
+    }
+
+    broadcastService.broadcastLogout();
+  }
+
+  /**
+   * Session recovery - Try to restore session from storage
+   */
+  async recoverSession(): Promise<boolean> {
+    try {
+      const token = await this.getToken();
+      
+      if (!token) {
+        return false;
+      }
+
+      // Validate token
+      const response = await fetch(`${API_URL}/api/v1/auth/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.valid) {
+          await this.setUserData(data.user);
+          this.startTokenRefresh();
+          return true;
+        }
+      }
+
+      // Invalid token - clear
+      await this.logout();
+      return false;
+    } catch (error) {
+      console.error('Session recovery failed:', error);
+      return false;
     }
   }
 
