@@ -6,12 +6,15 @@ import Modal from '@/components/Modal';
 export default function QuotesPage() {
   const [quotes, setQuotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [approveModal, setApproveModal] = useState<{show: boolean; quoteId: string}>({show: false, quoteId: ''});
+  const [resultModal, setResultModal] = useState<{show: boolean; message: string}>({show: false, message: ''});
 
   useEffect(() => {
     loadQuotes();
   }, []);
 
   const loadQuotes = async () => {
+    setLoading(true);
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       const response = await fetch(`${API_URL}/api/v1/quotes`);
@@ -21,6 +24,26 @@ export default function QuotesPage() {
       setQuotes([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const approveQuote = async (quoteId: string) => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/quotes/${quoteId}/approve`, {
+        method: 'POST',
+      });
+      
+      setApproveModal({show: false, quoteId: ''});
+      
+      if (response.ok) {
+        setResultModal({show: true, message: '✅ Quote approved successfully!'});
+        loadQuotes();
+      } else {
+        setResultModal({show: true, message: '❌ Failed to approve quote'});
+      }
+    } catch (err) {
+      setResultModal({show: true, message: '❌ Failed to approve quote'});
     }
   };
 
