@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import QuickActions from './components/QuickActions';
 import StatsRefresh from './components/StatsRefresh';
+import Modal from '@/components/Modal';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
@@ -34,6 +35,8 @@ export default function DashboardPage() {
     }
   };
 
+  const [syncModal, setSyncModal] = useState<{show: boolean; message: string}>({show: false, message: ''});
+
   const triggerSync = async () => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
@@ -42,13 +45,13 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ merchantId: '6ecc682b-98ee-472d-977b-cffbbae081b8' })
       });
-      alert('✅ Sync başlatıldı! Birkaç dakika içinde veriler gelecek.');
+      setSyncModal({show: true, message: '✅ Sync started! Data will appear in a few minutes.'});
       setTimeout(() => {
         loadStats();
         window.location.reload();
       }, 3000);
     } catch (err: any) {
-      alert('❌ Sync başlatılamadı: ' + err.message);
+      setSyncModal({show: true, message: '❌ Sync failed: ' + err.message});
     }
   };
 
@@ -207,6 +210,18 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {syncModal.show && (
+        <Modal
+          show={syncModal.show}
+          onClose={() => setSyncModal({show: false, message: ''})}
+          onConfirm={() => setSyncModal({show: false, message: ''})}
+          title={syncModal.message.includes('✅') ? 'Success' : 'Error'}
+          message={syncModal.message}
+          confirmText="OK"
+          type={syncModal.message.includes('✅') ? 'success' : 'danger'}
+        />
+      )}
     </div>
   );
 }
