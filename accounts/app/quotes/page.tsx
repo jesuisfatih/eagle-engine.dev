@@ -11,6 +11,7 @@ export default function QuotesPage() {
   }, []);
 
   const loadQuotes = async () => {
+    setLoading(true);
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       const response = await fetch(`${API_URL}/api/v1/quotes`);
@@ -23,69 +24,147 @@ export default function QuotesPage() {
     }
   };
 
-  const displayQuotes = quotes;
-
   return (
     <div>
-      <div>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Quote Requests</h1>
-            <p className="mt-1 text-sm text-gray-500">Request custom pricing for bulk orders</p>
-          </div>
-          <button className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-            New Quote Request
-          </button>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h4 className="fw-bold mb-1">Quote Requests</h4>
+          <p className="mb-0 text-muted">Request custom pricing for bulk orders</p>
         </div>
+        <button
+          onClick={() => {
+            const modal = document.createElement('div');
+            modal.className = 'modal fade show d-block';
+            modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            modal.innerHTML = `
+              <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Request Quote</h5>
+                    <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+                  </div>
+                  <div class="modal-body">
+                    <div class="mb-3">
+                      <label class="form-label">Your Email</label>
+                      <input type="email" class="form-control" id="quoteEmail" placeholder="you@company.com">
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Notes</label>
+                      <textarea class="form-control" id="quoteNotes" rows="3" placeholder="Describe your requirements..."></textarea>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="window.submitQuote()">Submit</button>
+                  </div>
+                </div>
+              </div>
+            `;
+            (window as any).submitQuote = async () => {
+              const email = (document.getElementById('quoteEmail') as HTMLInputElement).value;
+              const notes = (document.getElementById('quoteNotes') as HTMLTextAreaElement).value;
+              
+              try {
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+                await fetch(`${API_URL}/api/v1/quotes`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    companyId: localStorage.getItem('eagle_companyId') || '',
+                    userId: localStorage.getItem('eagle_userId') || '',
+                    notes: `${notes} (${email})`,
+                  }),
+                });
+                
+                const successModal = document.createElement('div');
+                successModal.className = 'modal fade show d-block';
+                successModal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                successModal.innerHTML = `
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">✅ Success</h5>
+                        <button type="button" class="btn-close" onclick="this.closest('.modal').remove(); location.reload();"></button>
+                      </div>
+                      <div class="modal-body">Quote request submitted!</div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove(); location.reload();">OK</button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+                document.querySelectorAll('.modal').forEach(m => m.remove());
+                document.body.appendChild(successModal);
+              } catch (err) {
+                console.error(err);
+              }
+            };
+            document.body.appendChild(modal);
+          }}
+          className="btn btn-primary"
+        >
+          <i className="ti ti-plus me-1"></i>
+          New Quote Request
+        </button>
+      </div>
 
       <div className="card">
         <div className="card-body">
-          <div className="table-responsive">
-            <table className="table">
+          {loading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary"></div>
+              <p className="mt-3 text-muted">Loading quotes...</p>
+            </div>
+          ) : quotes.length === 0 ? (
+            <div className="text-center py-5">
+              <i className="ti ti-file-invoice ti-3x text-muted mb-3"></i>
+              <h5>No quote requests yet</h5>
+              <p className="text-muted">Request a quote for bulk orders to get custom pricing</p>
+              <button className="btn btn-primary mt-3">
+                <i className="ti ti-plus me-1"></i>
+                Request Your First Quote
+              </button>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table">
                 <thead>
                   <tr>
                     <th>Quote ID</th>
                     <th>Date</th>
-                    <th>Items</th>
-                    <th>Total</th>
                     <th>Status</th>
+                    <th>Notes</th>
                     <th>Actions</th>
-                </tr>
-              </thead>
-                <tbody>
-                {quotes.map((quote) => (
-                  <tr key={quote.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 font-semibold text-gray-900">{quote.id}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{quote.date}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{quote.items} items</td>
-                    <td className="px-6 py-4 font-semibold text-gray-900">${quote.total.toLocaleString()}</td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                          quote.status === 'approved'
-                            ? 'bg-green-100 text-green-800'
-                            : quote.status === 'pending'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
-                      >
-                        {quote.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <button className="text-sm font-medium text-blue-600 hover:text-blue-700">
-                        View
-                      </button>
-                    </td>
                   </tr>
-                ))}
-              </tbody>
+                </thead>
+                <tbody>
+                  {quotes.map((quote) => (
+                    <tr key={quote.id}>
+                      <td className="fw-semibold">#{quote.id.substring(0, 8)}</td>
+                      <td>{new Date(quote.createdAt).toLocaleDateString()}</td>
+                      <td>
+                        <span className={`badge ${
+                          quote.status === 'approved' ? 'bg-success' :
+                          quote.status === 'rejected' ? 'bg-danger' :
+                          'bg-warning'
+                        }`}>
+                          {quote.status}
+                        </span>
+                      </td>
+                      <td className="small">{quote.notes}</td>
+                      <td>
+                        <button className="btn btn-sm btn-primary">
+                          <i className="ti ti-eye"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
-
