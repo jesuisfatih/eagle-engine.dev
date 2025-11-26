@@ -27,8 +27,11 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
 
           {product.variants?.[0] && (
             <div className="mb-2">
-              <span className="badge bg-label-info small">
-                {product.variants[0].inventoryQuantity > 0 ? 'In Stock' : 'Out of Stock'}
+              <span className={`badge ${product.variants[0].inventoryQuantity > 0 ? 'bg-label-success' : 'bg-label-warning'} small`}>
+                {product.variants[0].inventoryQuantity > 0 
+                  ? `In Stock (${product.variants[0].inventoryQuantity})`
+                  : 'Limited Stock - Contact Sales'
+                }
               </span>
             </div>
           )}
