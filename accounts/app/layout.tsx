@@ -16,6 +16,15 @@ export default function RootLayout({
   return (
     <html lang="en" className="light-style layout-navbar-fixed layout-menu-fixed">
       <head>
+        <script dangerouslySetInnerHTML={{__html: `
+          if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+              navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('✅ Service Worker registered'))
+                .catch(err => console.error('❌ Service Worker registration failed:', err));
+            });
+          }
+        `}} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap"
