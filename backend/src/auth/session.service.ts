@@ -81,6 +81,26 @@ export class SessionService {
     return sessions;
   }
 
+  async getAllSessions(): Promise<any[]> {
+    const keys = await this.redis.keys(this.SESSION_PREFIX + '*');
+    const sessions = [];
+
+    for (const key of keys) {
+      const data = await this.redis.get(key);
+      if (data) {
+        const session = JSON.parse(data);
+        sessions.push({
+          sessionId: key.replace(this.SESSION_PREFIX, ''),
+          ...session,
+        });
+      }
+    }
+
+    return sessions.sort((a, b) => 
+      new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime()
+    );
+  }
+
   private generateSessionId(): string {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }

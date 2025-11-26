@@ -1,6 +1,8 @@
-import { Controller, Post, Body, Get, Query, Res, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Res, HttpStatus, Delete, Param } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
+import { SessionService } from './session.service';
+import { TokenBlacklistService } from './token-blacklist.service';
 import { ShopifySsoService } from '../shopify/shopify-sso.service';
 import { Public } from './decorators/public.decorator';
 
@@ -8,6 +10,8 @@ import { Public } from './decorators/public.decorator';
 export class AuthController {
   constructor(
     private authService: AuthService,
+    private sessionService: SessionService,
+    private tokenBlacklistService: TokenBlacklistService,
     private shopifySsoService: ShopifySsoService,
   ) {}
 
@@ -161,6 +165,42 @@ export class AuthController {
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         message: 'SSO URL generation failed',
+      });
+    }
+  }
+
+  @Public()
+  @Get('sessions')
+  async getSessions() {
+    // Get all active sessions (admin only in production)
+    const sessions = await this.sessionService.getAllSessions();
+    return sessions;
+  }
+
+  @Public()
+  @Delete('sessions/:sessionId')
+  async deleteSession(@Param('sessionId') sessionId: string, @Res() res: Response) {
+    try {
+      await this.sessionService.deleteSession(sessionId);
+      return res.json({ message: 'Session terminated' });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Failed to terminate session',
+      });
+    }
+  }
+
+  @Public()
+  @Post('logout')
+  async logout(@Body() body: { token: string }, @Res() res: Response) {
+    try {
+      // Add token to blacklist
+      await this.tokenBlacklistService.addToBlacklist(body.token, 'user_logout');
+      
+      return res.json({ message: 'Logged out successfully' });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Logout failed',
       });
     }
   }
