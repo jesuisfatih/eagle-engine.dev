@@ -80,10 +80,14 @@ export default function PricingPage() {
   };
 
   const loadRules = async () => {
+    setLoading(true);
     try {
-      const data = await apiClient.getPricingRules();
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/pricing/rules`);
+      const data = await response.json();
       setRules(Array.isArray(data) ? data : []);
     } catch (err) {
+      console.error('Load pricing rules error:', err);
       setRules([]);
     } finally {
       setLoading(false);

@@ -16,11 +16,15 @@ export default function OrdersPage() {
 
   const loadOrders = async () => {
     try {
-      const data = await apiClient.getOrders();
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/orders`);
+      const data = await response.json();
       setOrders(Array.isArray(data) ? data : []);
       setAllOrders(Array.isArray(data) ? data : []);
     } catch (err) {
+      console.error('Load orders error:', err);
       setOrders([]);
+      setAllOrders([]);
     } finally {
       setLoading(false);
     }
