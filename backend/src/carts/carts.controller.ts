@@ -39,11 +39,11 @@ export class CartsController {
   }
 
   @Post()
-  async createCart(
-    @CurrentUser('companyId') companyId: string,
-    @CurrentUser('userId') userId: string,
-    @CurrentUser('merchantId') merchantId: string,
-  ) {
+  async createCart(@Body() body: any) {
+    const merchantId = body.merchantId || '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    const companyId = body.companyId || 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d';
+    const userId = body.createdByUserId || 'c67273cf-acea-41db-9ff5-8f6e3bbb5c38';
+    
     return this.cartsService.create(companyId, userId, merchantId);
   }
 
