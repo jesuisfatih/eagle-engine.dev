@@ -177,47 +177,6 @@ export default function ProductsPage() {
                 product={product}
                 onAddToCart={handleAddToCart}
               />
-              <div key={product.id} className="col-md-4">
-                <div className="card">
-                  <div className="card-body">
-                    <h5 className="card-title">{product.title}</h5>
-                    <p className="card-text small text-muted">{product.vendor}</p>
-                    <div className="mt-3">
-                      <h4 className="text-primary mb-0">${product.companyPrice || product.listPrice}</h4>
-                      {product.companyPrice && (
-                        <div>
-                          <span className="text-muted small text-decoration-line-through">${product.listPrice}</span>
-                          <span className="badge bg-label-success ms-2">-{product.discount}%</span>
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      onClick={async () => {
-                        try {
-                          const cart = await accountsApi.getActiveCart().catch(() => null);
-                          if (!cart) {
-                            // Create cart first
-                            alert('Creating cart...');
-                            return;
-                          }
-                          await accountsApi.addToCart(
-                            product.id,
-                            product.shopifyProductId?.toString() || product.id,
-                            1
-                          );
-                          alert('✅ Added to cart!');
-                        } catch (err: any) {
-                          alert('❌ Error: ' + err.message);
-                        }
-                      }}
-                      className="btn btn-primary w-100 mt-3"
-                    >
-                      <i className="ti ti-shopping-cart-plus me-1"></i>
-                      Add to Cart
-                    </button>
-                  </div>
-                </div>
-              </div>
             ))}
           </div>
         )}
