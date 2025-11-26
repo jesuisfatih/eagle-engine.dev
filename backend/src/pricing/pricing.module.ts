@@ -3,11 +3,10 @@ import { PricingService } from './pricing.service';
 import { PricingRulesService } from './pricing-rules.service';
 import { PricingCalculatorService } from './pricing-calculator.service';
 import { PricingController } from './pricing.controller';
-import { PricingRulesController } from './pricing-rules.controller';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Module({
-  controllers: [PricingController, PricingRulesController],
+  controllers: [PricingController],
   providers: [PricingService, PricingRulesService, PricingCalculatorService, PrismaService],
   exports: [PricingService, PricingCalculatorService, PricingRulesService],
 })
