@@ -1,18 +1,14 @@
-import { Controller, Post, Body, Get, Query, Res, HttpStatus, Delete, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Res, HttpStatus, Delete, Param, Headers } from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
-import { SessionService } from './session.service';
-import { TokenBlacklistService } from './token-blacklist.service';
-import { ShopifySsoService } from '../shopify/shopify-sso.service';
+import { SessionSyncService } from './session-sync.service';
 import { Public } from './decorators/public.decorator';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
-    private sessionService: SessionService,
-    private tokenBlacklistService: TokenBlacklistService,
-    private shopifySsoService: ShopifySsoService,
+    private sessionSyncService: SessionSyncService,
   ) {}
 
   @Public()
@@ -101,6 +97,36 @@ export class AuthController {
   @Post('accept-invitation')
   async acceptInvitation(@Body() body: any) {
     return this.authService.acceptInvitation(body);
+  }
+
+  @Public()
+  @Post('shopify-customer-sync')
+  async shopifyCustomerSync(@Body() body: {
+    shopifyCustomerId: string;
+    email: string;
+    fingerprint?: string;
+  }) {
+    return this.sessionSyncService.syncFromShopify(
+      body.shopifyCustomerId,
+      body.email,
+      body.fingerprint
+    );
+  }
+
+  @Public()
+  @Get('resolve')
+  async resolveContext(@Headers('authorization') auth: string) {
+    const token = auth?.replace('Bearer ', '');
+    if (!token) {
+      return { error: 'No token provided' };
+    }
+
+    try {
+      const decoded: any = this.authService['jwtService'].verify(token);
+      return this.sessionSyncService.resolveContext(decoded.sub);
+    } catch (error) {
+      return { error: 'Invalid token' };
+    }
   }
 
   @Public()
