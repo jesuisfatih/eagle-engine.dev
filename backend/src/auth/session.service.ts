@@ -66,7 +66,7 @@ export class SessionService {
 
   async getUserSessions(userId: string): Promise<any[]> {
     const keys = await this.redis.keys(this.SESSION_PREFIX + '*');
-    const sessions = [];
+    const sessions: any[] = [];
 
     for (const key of keys) {
       const data = await this.redis.get(key);
@@ -86,7 +86,7 @@ export class SessionService {
 
   async getAllSessions(): Promise<any[]> {
     const keys = await this.redis.keys(this.SESSION_PREFIX + '*');
-    const sessions = [];
+    const sessions: any[] = [];
 
     for (const key of keys) {
       const data = await this.redis.get(key);
