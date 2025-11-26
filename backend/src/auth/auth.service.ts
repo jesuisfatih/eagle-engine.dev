@@ -136,7 +136,7 @@ export class AuthService {
         lastName: '',
         role: 'buyer',
         companyId: 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d', // Default company
-        status: 'active',
+        isActive: true,
       },
       include: { company: true },
     });
