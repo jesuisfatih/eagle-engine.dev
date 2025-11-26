@@ -5,6 +5,9 @@ import Modal from '@/components/Modal';
 
 export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [roleModal, setRoleModal] = useState<{show: boolean; userId: string}>({show: false, userId: ''});
+  const [resultModal, setResultModal] = useState<{show: boolean; message: string}>({show: false, message: ''});
 
   useEffect(() => {
     loadUsers();
