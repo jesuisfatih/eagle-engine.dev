@@ -60,17 +60,8 @@ export class PricingRulesService {
         },
       });
 
-      // Sync to Shopify as discount code (ASYNC)
-      if (this.shopifyPricingSync && rule.isActive) {
-        setImmediate(async () => {
-          try {
-            await this.shopifyPricingSync.syncPricingRuleToShopify(rule.id);
-            this.logger.log(`Pricing rule ${rule.id} synced to Shopify`);
-          } catch (error) {
-            this.logger.error('Pricing rule Shopify sync failed', error);
-          }
-        });
-      }
+      // Shopify discount sync will be handled by webhook/scheduler
+      this.logger.log(`Pricing rule ${rule.id} created`);
 
       return rule;
     } catch (error) {
