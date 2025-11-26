@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Modal from '@/components/Modal';
 
 export default function AbandonedCartsPage() {
   const [carts, setCarts] = useState<any[]>([]);
@@ -25,8 +26,15 @@ export default function AbandonedCartsPage() {
     }
   };
 
+  const [reminderModal, setReminderModal] = useState<{show: boolean; message: string}>({show: false, message: ''});
+
   const sendReminder = async (cartId: string, email: string) => {
-    alert(`✅ Reminder email sent to ${email}`);
+    try {
+      // Send reminder API call (will be implemented)
+      setReminderModal({show: true, message: `✅ Reminder email sent to ${email}`});
+    } catch (err) {
+      setReminderModal({show: true, message: '❌ Failed to send reminder'});
+    }
   };
 
   const calculateTotal = (cart: any) => {
@@ -100,6 +108,18 @@ export default function AbandonedCartsPage() {
           )}
         </div>
       </div>
+
+      {reminderModal.show && (
+        <Modal
+          show={reminderModal.show}
+          onClose={() => setReminderModal({show: false, message: ''})}
+          onConfirm={() => setReminderModal({show: false, message: ''})}
+          title="Reminder"
+          message={reminderModal.message}
+          confirmText="OK"
+          type="success"
+        />
+      )}
     </div>
   );
 }
