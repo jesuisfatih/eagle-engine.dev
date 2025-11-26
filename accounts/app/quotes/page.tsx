@@ -23,24 +23,7 @@ export default function QuotesPage() {
     }
   };
 
-  const sampleQuotes = [
-    {
-      id: 'QT-001',
-      date: '2024-11-20',
-      items: 25,
-      status: 'pending',
-      total: 12500,
-    },
-    {
-      id: 'QT-002',
-      date: '2024-11-15',
-      items: 15,
-      status: 'approved',
-      total: 8200,
-    },
-  ];
-
-  const displayQuotes = quotes.length > 0 ? quotes : sampleQuotes;
+  const displayQuotes = quotes;
 
   return (
     <div>

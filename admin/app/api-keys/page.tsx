@@ -1,38 +1,79 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ApiKeyModal from '@/components/ApiKeyModal';
 import Modal from '@/components/Modal';
 
 export default function ApiKeysPage() {
-  const [keys, setKeys] = useState([
-    { id: '1', name: 'Production Key', key: 'pk_live_***************', created: '2025-11-25', lastUsed: 'Never' }
-  ]);
+  const [keys, setKeys] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [resultModal, setResultModal] = useState<{show: boolean; type: 'success' | 'error'; message: string}>({
     show: false, type: 'success', message: ''
   });
 
-  const handleGenerate = (keyName: string) => {
-    const newKey = {
-      id: Date.now().toString(),
-      name: keyName,
-      key: 'pk_live_' + Math.random().toString(36).substring(2, 15),
-      created: new Date().toISOString().split('T')[0],
-      lastUsed: 'Never'
-    };
-    setKeys([...keys, newKey]);
-    setShowGenerateModal(false);
-    setResultModal({
-      show: true,
-      type: 'success',
-      message: `New API Key: ${newKey.key}\n\nSave this key securely!`
-    });
+  useEffect(() => {
+    loadKeys();
+  }, []);
+
+  const loadKeys = async () => {
+    setLoading(true);
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/api-keys`);
+      if (response.ok) {
+        const data = await response.json();
+        setKeys(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      setKeys([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setKeys(keys.filter(k => k.id !== id));
-    setResultModal({show: true, type: 'success', message: 'API Key deleted'});
+  const handleGenerate = async (keyName: string) => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/api-keys`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: keyName }),
+      });
+
+      if (response.ok) {
+        const newKey = await response.json();
+        setShowGenerateModal(false);
+        setResultModal({
+          show: true,
+          type: 'success',
+          message: `New API Key: ${newKey.key}\n\nSave this key securely!`
+        });
+        loadKeys();
+      } else {
+        setResultModal({show: true, type: 'error', message: 'Failed to generate key'});
+      }
+    } catch (err) {
+      setResultModal({show: true, type: 'error', message: 'Failed to generate key'});
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/api-keys/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setResultModal({show: true, type: 'success', message: 'API Key deleted'});
+        loadKeys();
+      } else {
+        setResultModal({show: true, type: 'error', message: 'Failed to delete key'});
+      }
+    } catch (err) {
+      setResultModal({show: true, type: 'error', message: 'Failed to delete key'});
+    }
   };
 
   return (
