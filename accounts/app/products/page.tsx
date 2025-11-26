@@ -54,10 +54,13 @@ export default function ProductsPage() {
     }
 
     const variant = product.variants[0];
+    const companyId = localStorage.getItem('eagle_companyId') || '';
+    const userId = localStorage.getItem('eagle_userId') || '';
+    const merchantId = localStorage.getItem('eagle_merchantId') || '6ecc682b-98ee-472d-977b-cffbbae081b8';
     
     try {
       // Step 1: Get or create cart
-      let cartResponse = await fetch(`${API_URL}/api/v1/carts/active?companyId=f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d&userId=c67273cf-acea-41db-9ff5-8f6e3bbb5c38`);
+      let cartResponse = await fetch(`${API_URL}/api/v1/carts/active?companyId=${companyId}&userId=${userId}`);
       let cart = null;
 
       if (cartResponse.ok) {
