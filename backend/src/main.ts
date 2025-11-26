@@ -26,29 +26,10 @@ async function bootstrap() {
     }),
   );
 
-  // CORS - PUBLIC API with proper headers
+  // CORS - Allow all origins
   app.enableCors({
-    origin: '*', // Allow all origins
-    credentials: false, // Set to false for public API with origin: '*'
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-    exposedHeaders: ['X-Total-Count', 'X-Page-Count'],
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
-  });
-
-  // CORS headers middleware (add before routes)
-  app.use((req: any, res: any, next: any) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS,PATCH');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
-    res.header('Access-Control-Expose-Headers', 'X-Total-Count, X-Page-Count');
-    
-    if (req.method === 'OPTIONS') {
-      res.sendStatus(204);
-      return;
-    }
-    next();
+    origin: '*',
+    credentials: false,
   });
 
   // API prefix
@@ -57,7 +38,7 @@ async function bootstrap() {
   const port = config.get<number>('PORT', 4000);
   await app.listen(port);
 
-  logger.log(`🚀 Eagle API is running on: http://localhost:${port}/api/v1`);
+  logger.log(`Eagle API is running on: http://localhost:${port}/api/v1`);
 }
 
 bootstrap();
