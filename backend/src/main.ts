@@ -26,11 +26,28 @@ async function bootstrap() {
     }),
   );
 
-  // CORS
-  const corsOrigins = config.get<string>('CORS_ORIGINS', '*').split(',');
+  // CORS - Multi-domain support
   app.enableCors({
-    origin: corsOrigins,
+    origin: [
+      'https://accounts.eagledtfsupply.com',
+      'https://app.eagledtfsupply.com',
+      'https://eagle-dtf-supply0.myshopify.com',
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ],
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['X-Total-Count', 'X-Page-Count'],
+  });
+
+  // Security headers
+  app.use((req: any, res: any, next: any) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    next();
   });
 
   // API prefix
