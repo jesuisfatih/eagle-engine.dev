@@ -201,23 +201,24 @@ export class AuthService {
       where: { id: user.id },
       data: {
         passwordHash,
-        firstName: userInfo?.firstName || user.firstName,
-        lastName: userInfo?.lastName || user.lastName,
+        firstName: body.firstName || user.firstName,
+        lastName: body.lastName || user.lastName,
         invitationAcceptedAt: new Date(),
         invitationToken: null,
         isActive: true,
       },
+      include: { company: true },
     });
 
     // Update company if info provided
-    if (userInfo?.companyInfo) {
+    if (body.companyInfo) {
       await this.prisma.company.update({
         where: { id: user.companyId },
         data: {
-          name: userInfo.companyInfo.name || user.company.name,
-          taxId: userInfo.companyInfo.taxId,
-          phone: userInfo.companyInfo.phone,
-          billingAddress: userInfo.companyInfo.billingAddress,
+          name: body.companyInfo.name || user.company.name,
+          taxId: body.companyInfo.taxId,
+          phone: body.companyInfo.phone,
+          billingAddress: body.companyInfo.billingAddress,
           status: 'active',
         },
       });
