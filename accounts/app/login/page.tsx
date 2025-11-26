@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authService } from '@/lib/auth-service';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
@@ -17,8 +17,8 @@ export default function LoginPage() {
 
   const initAuth = async () => {
     // Auto-login from Shopify callback
-    const token = searchParams.get('token');
-    const auto = searchParams.get('auto');
+    const token = searchParams?.get('token');
+    const auto = searchParams?.get('auto');
     
     if (token && auto === 'true') {
       await authService.setToken(token);
@@ -153,5 +153,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-5"><div className="spinner-border"></div></div>}>
+      <LoginForm />
+    </Suspense>
   );
 }
