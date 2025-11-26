@@ -17,7 +17,25 @@ export default function SupportPage() {
                 const formData = new FormData(e.currentTarget);
                 const subject = formData.get('subject');
                 const message = formData.get('message');
-                alert(`✅ Support ticket created!\nSubject: ${subject}\nMessage: ${message}`);
+                
+                const modal = document.createElement('div');
+                modal.className = 'modal fade show d-block';
+                modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                modal.innerHTML = `
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">✅ Success</h5>
+                        <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+                      </div>
+                      <div class="modal-body">Support ticket created!<br>Subject: ${subject}</div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">OK</button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+                document.body.appendChild(modal);
                 e.currentTarget.reset();
               }}>
                 <div className="mb-3">

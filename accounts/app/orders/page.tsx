@@ -16,7 +16,7 @@ export default function OrdersPage() {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       
       // Get current user's company
-      const companyId = 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d'; // Should come from login
+      const companyId = localStorage.getItem('eagle_companyId') || '';
       
       // Fetch orders for this company
       const response = await fetch(`${API_URL}/api/v1/orders?companyId=${companyId}`);
