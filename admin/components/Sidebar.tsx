@@ -100,6 +100,11 @@ const menuItems = [
     href: '/api-keys',
   },
   {
+    title: 'Sessions',
+    icon: 'ti-device-desktop',
+    href: '/sessions',
+  },
+  {
     title: 'Support',
     icon: 'ti-help',
     href: '/support',
