@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRedis } from '@liaoliaots/nestjs-redis';
-import Redis from 'ioredis';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class SessionService {
@@ -8,7 +7,11 @@ export class SessionService {
   private readonly SESSION_PREFIX = 'session:';
   private readonly SESSION_TTL = 7 * 24 * 60 * 60; // 7 days (Safari-proof)
 
-  constructor(@InjectRedis() private readonly redis: Redis) {}
+  constructor(private readonly redisService: RedisService) {}
+
+  private get redis() {
+    return this.redisService.getClient();
+  }
 
   async createSession(userId: string, data: any): Promise<string> {
     const sessionId = this.generateSessionId();
@@ -96,7 +99,7 @@ export class SessionService {
       }
     }
 
-    return sessions.sort((a, b) => 
+    return sessions.sort((a: any, b: any) => 
       new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime()
     );
   }

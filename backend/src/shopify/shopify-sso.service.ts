@@ -9,9 +9,9 @@ export class ShopifySsoService {
   private readonly multipassSecret: string;
 
   constructor(private configService: ConfigService) {
-    this.shopifyDomain = this.configService.get('SHOPIFY_STORE_DOMAIN');
+    this.shopifyDomain = this.configService.get('SHOPIFY_STORE_DOMAIN') || 'eagle-dtf-supply0.myshopify.com';
     // Multipass secret from Shopify Admin -> Settings -> Customer accounts -> Multipass
-    this.multipassSecret = this.configService.get('SHOPIFY_MULTIPASS_SECRET');
+    this.multipassSecret = this.configService.get('SHOPIFY_MULTIPASS_SECRET') || '';
   }
 
   /**
@@ -102,7 +102,7 @@ export class ShopifySsoService {
         `https://${this.shopifyDomain}/admin/api/2024-01/customers/${shopifyCustomerId}.json`,
         {
           headers: {
-            'X-Shopify-Access-Token': this.configService.get('SHOPIFY_ACCESS_TOKEN'),
+            'X-Shopify-Access-Token': this.configService.get('SHOPIFY_ACCESS_TOKEN') || '',
           },
         }
       );

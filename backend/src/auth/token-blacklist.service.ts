@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRedis } from '@liaoliaots/nestjs-redis';
-import Redis from 'ioredis';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class TokenBlacklistService {
@@ -8,7 +7,11 @@ export class TokenBlacklistService {
   private readonly BLACKLIST_PREFIX = 'token:blacklist:';
   private readonly TTL = 7 * 24 * 60 * 60; // 7 days
 
-  constructor(@InjectRedis() private readonly redis: Redis) {}
+  constructor(private readonly redisService: RedisService) {}
+
+  private get redis() {
+    return this.redisService.getClient();
+  }
 
   async addToBlacklist(token: string, reason: string = 'logout'): Promise<void> {
     const key = this.BLACKLIST_PREFIX + token;
