@@ -195,41 +195,6 @@ export class AuthController {
     }
   }
 
-  @Public()
-  @Get('sessions')
-  async getSessions() {
-    // Get all active sessions (admin only in production)
-    const sessions = await this.sessionService.getAllSessions();
-    return sessions;
-  }
-
-  @Public()
-  @Delete('sessions/:sessionId')
-  async deleteSession(@Param('sessionId') sessionId: string, @Res() res: Response) {
-    try {
-      await this.sessionService.deleteSession(sessionId);
-      return res.json({ message: 'Session terminated' });
-    } catch (error) {
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        message: 'Failed to terminate session',
-      });
-    }
-  }
-
-  @Public()
-  @Post('logout')
-  async logout(@Body() body: { token: string }, @Res() res: Response) {
-    try {
-      // Add token to blacklist
-      await this.tokenBlacklistService.addToBlacklist(body.token, 'user_logout');
-      
-      return res.json({ message: 'Logged out successfully' });
-    } catch (error) {
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        message: 'Logout failed',
-      });
-    }
-  }
 
   @Public()
   @Get('user')
