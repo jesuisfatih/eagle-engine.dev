@@ -98,4 +98,70 @@ export class AuthController {
   async acceptInvitation(@Body() body: any) {
     return this.authService.acceptInvitation(body);
   }
+
+  @Public()
+  @Post('refresh')
+  async refreshToken(@Body() body: { token: string }, @Res() res: Response) {
+    try {
+      const newToken = await this.authService.refreshToken(body.token);
+      
+      if (!newToken) {
+        return res.status(HttpStatus.UNAUTHORIZED).json({
+          message: 'Invalid or expired token',
+        });
+      }
+
+      return res.json({ token: newToken });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Token refresh failed',
+      });
+    }
+  }
+
+  @Public()
+  @Get('ping')
+  async ping(@Res() res: Response) {
+    return res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  }
+
+  @Public()
+  @Post('validate')
+  async validateToken(@Body() body: { token: string }, @Res() res: Response) {
+    try {
+      const user = await this.authService.validateToken(body.token);
+      
+      if (!user) {
+        return res.status(HttpStatus.UNAUTHORIZED).json({
+          valid: false,
+        });
+      }
+
+      return res.json({ valid: true, user });
+    } catch (error) {
+      return res.status(HttpStatus.UNAUTHORIZED).json({
+        valid: false,
+      });
+    }
+  }
+
+  @Public()
+  @Post('shopify-sso')
+  async getShopifySsoUrl(@Body() body: any, @Res() res: Response) {
+    try {
+      const ssoUrl = this.shopifySsoService.generateSsoUrl({
+        email: body.email,
+        firstName: body.firstName,
+        lastName: body.lastName,
+        customerId: body.customerId,
+        returnTo: body.returnTo,
+      });
+
+      return res.json({ ssoUrl });
+    } catch (error) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'SSO URL generation failed',
+      });
+    }
+  }
 }
