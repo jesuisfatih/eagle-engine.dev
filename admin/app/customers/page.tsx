@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Modal from '@/components/Modal';
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<any[]>([]);
@@ -123,6 +124,19 @@ export default function CustomersPage() {
           </div>
         </div>
       </div>
+
+      {convertModal.show && (
+        <Modal
+          show={convertModal.show}
+          onClose={() => setConvertModal({show: false, customerId: ''})}
+          onConfirm={() => convertToCompany(convertModal.customerId)}
+          title="Convert to Company"
+          message="Are you sure you want to convert this customer to a company?"
+          confirmText="Convert"
+          cancelText="Cancel"
+          type="warning"
+        />
+      )}
     </div>
   );
 }
