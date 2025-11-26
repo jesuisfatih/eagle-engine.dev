@@ -39,10 +39,43 @@ export default function InviteCompanyPage() {
         }),
       });
 
-      alert('✅ Invitation sent successfully!');
-      router.push('/companies');
+      const modal = document.createElement('div');
+      modal.className = 'modal fade show d-block';
+      modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+      modal.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">✅ Success</h5>
+              <button type="button" class="btn-close" onclick="location.href='/companies'"></button>
+            </div>
+            <div class="modal-body">Company invitation sent successfully!</div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" onclick="location.href='/companies'">OK</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
     } catch (err: any) {
-      alert('❌ Error: ' + err.message);
+      const modal = document.createElement('div');
+      modal.className = 'modal fade show d-block';
+      modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+      modal.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">❌ Error</h5>
+              <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+            </div>
+            <div class="modal-body">Failed to send invitation: ${err.message}</div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">OK</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
     } finally {
       setLoading(false);
     }

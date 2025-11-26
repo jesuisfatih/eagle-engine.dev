@@ -31,9 +31,43 @@ export default function ReportsPage() {
       a.download = `${type}-report-${new Date().toISOString()}.json`;
       a.click();
       
-      alert(`✅ ${type} report downloaded!`);
+      const modal = document.createElement('div');
+      modal.className = 'modal fade show d-block';
+      modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+      modal.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">✅ Success</h5>
+              <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+            </div>
+            <div class="modal-body">${type.charAt(0).toUpperCase() + type.slice(1)} report downloaded successfully!</div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">OK</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
     } catch (err) {
-      alert('❌ Report generation failed');
+      const modal = document.createElement('div');
+      modal.className = 'modal fade show d-block';
+      modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+      modal.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">❌ Error</h5>
+              <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+            </div>
+            <div class="modal-body">Report generation failed</div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">OK</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
     }
   };
 
