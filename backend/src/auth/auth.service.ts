@@ -107,7 +107,73 @@ export class AuthService {
     };
   }
 
-  async acceptInvitation(token: string, password: string, userInfo?: any) {
+  async validateUser(email: string, password: string): Promise<any> {
+    const user = await this.prisma.companyUser.findUnique({
+      where: { email },
+      include: { company: true },
+    });
+
+    if (user && password) {
+      return user;
+    }
+
+    return null;
+  }
+
+  async findUserByEmail(email: string): Promise<any> {
+    return this.prisma.companyUser.findUnique({
+      where: { email },
+      include: { company: true },
+    });
+  }
+
+  async createUserFromShopify(data: { email: string; shopifyCustomerId: string }): Promise<any> {
+    return this.prisma.companyUser.create({
+      data: {
+        email: data.email,
+        shopifyCustomerId: data.shopifyCustomerId,
+        firstName: '',
+        lastName: '',
+        role: 'buyer',
+        companyId: 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d', // Default company
+        status: 'active',
+      },
+      include: { company: true },
+    });
+  }
+
+  async refreshToken(oldToken: string): Promise<string | null> {
+    try {
+      const decoded = this.jwtService.verify(oldToken);
+      const user = await this.prisma.companyUser.findUnique({
+        where: { id: decoded.sub },
+      });
+
+      if (!user) return null;
+
+      return this.generateToken(user);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async validateToken(token: string): Promise<any> {
+    try {
+      const decoded = this.jwtService.verify(token);
+      const user = await this.prisma.companyUser.findUnique({
+        where: { id: decoded.sub },
+        include: { company: true },
+      });
+
+      return user;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async acceptInvitation(body: any) {
+    const token = body.token;
+    const password = body.password;
     const user = await this.prisma.companyUser.findFirst({
       where: { invitationToken: token },
       include: { company: true },
