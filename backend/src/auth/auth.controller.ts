@@ -1,5 +1,5 @@
 import { Controller, Post, Body, Get, Query, Res, HttpStatus, Delete, Param } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
 import { TokenBlacklistService } from './token-blacklist.service';
