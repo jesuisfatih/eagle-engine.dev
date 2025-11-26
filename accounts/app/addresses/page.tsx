@@ -113,6 +113,31 @@ export default function AddressesPage() {
           </div>
         </div>
       </div>
+
+      {deleteModal.show && (
+        <Modal
+          show={deleteModal.show}
+          onClose={() => setDeleteModal({show: false, id: ''})}
+          onConfirm={() => handleDelete(deleteModal.id)}
+          title="Delete Address"
+          message="Are you sure you want to delete this address?"
+          confirmText="Delete"
+          cancelText="Cancel"
+          type="danger"
+        />
+      )}
+
+      {resultModal.show && (
+        <Modal
+          show={resultModal.show}
+          onClose={() => setResultModal({show: false, message: ''})}
+          onConfirm={() => setResultModal({show: false, message: ''})}
+          title={resultModal.message.includes('✅') ? 'Success' : 'Error'}
+          message={resultModal.message}
+          confirmText="OK"
+          type={resultModal.message.includes('✅') ? 'success' : 'danger'}
+        />
+      )}
     </div>
   );
 }
