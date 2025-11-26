@@ -131,7 +131,7 @@ export class AuthService {
     return this.prisma.companyUser.create({
       data: {
         email: data.email,
-        shopifyCustomerId: data.shopifyCustomerId,
+        shopifyCustomerId: BigInt(data.shopifyCustomerId),
         firstName: '',
         lastName: '',
         role: 'buyer',
@@ -144,14 +144,21 @@ export class AuthService {
 
   async refreshToken(oldToken: string): Promise<string | null> {
     try {
-      const decoded = this.jwtService.verify(oldToken);
+      const decoded: any = this.jwtService.verify(oldToken);
       const user = await this.prisma.companyUser.findUnique({
         where: { id: decoded.sub },
+        include: { company: true },
       });
 
       if (!user) return null;
 
-      return this.generateToken(user);
+      const payload = {
+        sub: user.id,
+        email: user.email,
+        type: 'access',
+      };
+
+      return this.jwtService.sign(payload);
     } catch (error) {
       return null;
     }
