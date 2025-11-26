@@ -18,7 +18,27 @@ export default function LoginPage() {
       localStorage.setItem('eagle_admin_token', 'admin-token');
       router.push('/dashboard');
     } else {
-      alert('Invalid credentials. Use: admin / eagle2025');
+      const modal = document.createElement('div');
+      modal.className = 'modal fade show d-block';
+      modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+      modal.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">❌ Login Failed</h5>
+              <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+            </div>
+            <div class="modal-body">
+              <p>Invalid credentials.</p>
+              <p class="small text-muted">Use: <code>admin</code> / <code>eagle2025</code></p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">Try Again</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
     }
     setLoading(false);
   };

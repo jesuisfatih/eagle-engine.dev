@@ -96,7 +96,29 @@ export default function CatalogPage() {
                     </button>
                     <button
                       onClick={() => {
-                        alert(`Product: ${product.title}\nShopify ID: ${product.shopifyProductId}\nVariants: ${product.variants?.length}`);
+                        const modal = document.createElement('div');
+                        modal.className = 'modal fade show d-block';
+                        modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                        modal.innerHTML = `
+                          <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                              <div class="modal-header">
+                                <h5 class="modal-title">Product Info</h5>
+                                <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
+                              </div>
+                              <div class="modal-body">
+                                <p><strong>Title:</strong> ${product.title}</p>
+                                <p><strong>Shopify ID:</strong> ${product.shopifyProductId}</p>
+                                <p><strong>Variants:</strong> ${product.variants?.length || 0}</p>
+                                <p><strong>Status:</strong> ${product.status}</p>
+                              </div>
+                              <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">OK</button>
+                              </div>
+                            </div>
+                          </div>
+                        `;
+                        document.body.appendChild(modal);
                       }}
                       className="btn btn-sm btn-label-secondary"
                     >

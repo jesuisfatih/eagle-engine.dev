@@ -86,8 +86,9 @@ export default function CompanyDetailPage() {
     }
   };
 
+  const [approveModal, setApproveModal] = useState<{show: boolean; message: string}>({show: false, message: ''});
+
   const approveCompany = async () => {
-    if (!confirm('Approve this company?')) return;
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       const response = await fetch(`${API_URL}/api/v1/companies/${params.id}`, {
@@ -97,13 +98,13 @@ export default function CompanyDetailPage() {
       });
       
       if (response.ok) {
-        alert('✅ Company approved!');
+        setApproveModal({show: true, message: '✅ Company approved successfully!'});
         loadCompany();
       } else {
-        alert('❌ Failed to approve');
+        setApproveModal({show: true, message: '❌ Failed to approve company'});
       }
     } catch (err: any) {
-      alert('❌ Error: ' + err.message);
+      setApproveModal({show: true, message: '❌ Error: ' + err.message});
     }
   };
 
@@ -436,6 +437,19 @@ export default function CompanyDetailPage() {
           message={inviteResult.message}
           confirmText="OK"
           type={inviteResult.type === 'success' ? 'success' : 'danger'}
+        />
+      )}
+
+      {/* Approve Result Modal */}
+      {approveModal.show && (
+        <Modal
+          show={approveModal.show}
+          onClose={() => setApproveModal({show: false, message: ''})}
+          onConfirm={() => setApproveModal({show: false, message: ''})}
+          title={approveModal.message.includes('✅') ? 'Success' : 'Error'}
+          message={approveModal.message}
+          confirmText="OK"
+          type={approveModal.message.includes('✅') ? 'success' : 'danger'}
         />
       )}
     </div>
