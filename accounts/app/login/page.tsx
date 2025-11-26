@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { authService } from '@/lib/auth-service';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,15 +12,26 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    initAuth();
+  }, [searchParams, router]);
+
+  const initAuth = async () => {
     // Auto-login from Shopify callback
     const token = searchParams.get('token');
     const auto = searchParams.get('auto');
     
     if (token && auto === 'true') {
-      localStorage.setItem('eagle_token', token);
+      await authService.setToken(token);
+      router.push('/dashboard');
+      return;
+    }
+
+    // Try to recover session
+    const recovered = await authService.recoverSession();
+    if (recovered) {
       router.push('/dashboard');
     }
-  }, [searchParams, router]);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,10 +48,10 @@ export default function LoginPage() {
       if (response.ok) {
         const data = await response.json();
         
-        // Store Eagle token
-        localStorage.setItem('eagle_token', data.token);
-        localStorage.setItem('eagle_userId', data.user.id);
-        localStorage.setItem('eagle_companyId', data.user.companyId);
+        // Store Eagle token (multi-layer)
+        await authService.setToken(data.token);
+        await authService.setUserData(data.user);
+        authService.startTokenRefresh();
         
         // Redirect to Shopify for SSO
         if (data.shopifySsoUrl) {
