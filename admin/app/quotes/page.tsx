@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Modal from '@/components/Modal';
 
 export default function QuotesPage() {
   const [quotes, setQuotes] = useState<any[]>([]);
@@ -88,6 +89,31 @@ export default function QuotesPage() {
           </div>
         </div>
       </div>
+
+      {approveModal.show && (
+        <Modal
+          show={approveModal.show}
+          onClose={() => setApproveModal({show: false, quoteId: ''})}
+          onConfirm={() => approveQuote(approveModal.quoteId)}
+          title="Approve Quote"
+          message="Are you sure you want to approve this quote?"
+          confirmText="Approve"
+          cancelText="Cancel"
+          type="warning"
+        />
+      )}
+
+      {resultModal.show && (
+        <Modal
+          show={resultModal.show}
+          onClose={() => setResultModal({show: false, message: ''})}
+          onConfirm={() => setResultModal({show: false, message: ''})}
+          title={resultModal.message.includes('✅') ? 'Success' : 'Error'}
+          message={resultModal.message}
+          confirmText="OK"
+          type={resultModal.message.includes('✅') ? 'success' : 'danger'}
+        />
+      )}
     </div>
   );
 }
