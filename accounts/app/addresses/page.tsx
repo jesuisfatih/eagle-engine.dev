@@ -1,6 +1,29 @@
 'use client';
 
+import { useState } from 'react';
+import Modal from '@/components/Modal';
+
 export default function AddressesPage() {
+  const [deleteModal, setDeleteModal] = useState<{show: boolean; id: string}>({show: false, id: ''});
+  const [resultModal, setResultModal] = useState<{show: boolean; message: string}>({show: false, message: ''});
+
+  const handleDelete = async (id: string) => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/addresses/${id}`, { method: 'DELETE' });
+      
+      setDeleteModal({show: false, id: ''});
+      
+      if (response.ok) {
+        setResultModal({show: true, message: '✅ Address deleted successfully!'});
+      } else {
+        setResultModal({show: true, message: '❌ Failed to delete address'});
+      }
+    } catch (err) {
+      setResultModal({show: true, message: '❌ Failed to delete address'});
+    }
+  };
+
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
