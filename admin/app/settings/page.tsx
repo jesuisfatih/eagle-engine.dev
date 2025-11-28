@@ -5,6 +5,7 @@ import { apiClient } from '@/lib/api-client';
 import Modal from '@/components/Modal';
 import SnippetTester from './components/SnippetTester';
 import SyncProgress from './components/SyncProgress';
+import SsoModeSwitch from './components/SsoModeSwitch';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<any>({
