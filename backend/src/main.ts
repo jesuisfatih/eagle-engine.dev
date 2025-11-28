@@ -17,17 +17,7 @@ async function bootstrap() {
 
   const config = app.get(ConfigService);
 
-  // CORS - FIRST (before everything)
-  app.use((req: any, res: any, next: any) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS,PATCH');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,Accept');
-    
-    if (req.method === 'OPTIONS') {
-      return res.status(204).end();
-    }
-    next();
-  });
+  // CORS handled by Caddy - removed duplicate headers to prevent '*, *' error
 
   // Global pipes
   app.useGlobalPipes(

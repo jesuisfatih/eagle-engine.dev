@@ -28,15 +28,6 @@ export class AuthController {
 
       const token = await this.authService.generateToken(user);
 
-      // Generate Shopify SSO URL
-      const shopifySsoUrl = this.shopifySsoService.generateSsoUrl({
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        customerId: user.shopifyCustomerId,
-        returnTo: '/account',
-      });
-
       return res.json({
         token,
         user: {
@@ -46,7 +37,6 @@ export class AuthController {
           lastName: user.lastName,
           companyId: user.companyId,
         },
-        shopifySsoUrl, // Frontend will redirect user to this URL
       });
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
@@ -178,21 +168,8 @@ export class AuthController {
   @Public()
   @Post('shopify-sso')
   async getShopifySsoUrl(@Body() body: any, @Res() res: Response) {
-    try {
-      const ssoUrl = this.shopifySsoService.generateSsoUrl({
-        email: body.email,
-        firstName: body.firstName,
-        lastName: body.lastName,
-        customerId: body.customerId,
-        returnTo: body.returnTo,
-      });
-
-      return res.json({ ssoUrl });
-    } catch (error) {
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        message: 'SSO URL generation failed',
-      });
-    }
+    // SSO handled by frontend/snippet - endpoint kept for compatibility
+    return res.json({ ssoUrl: null, message: 'SSO handled client-side' });
   }
 
 

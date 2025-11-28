@@ -63,6 +63,14 @@ self.addEventListener('fetch', (event) => {
 async function openDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('eagle_auth_db', 1);
+    
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('auth_store')) {
+        db.createObjectStore('auth_store', { keyPath: 'key' });
+      }
+    };
+    
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });

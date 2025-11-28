@@ -69,10 +69,11 @@ export default function ProductsPage() {
 
       if (!cart || !cart.id) {
         // Create new cart
+        const merchantId = localStorage.getItem('eagle_merchantId') || '6ecc682b-98ee-472d-977b-cffbbae081b8';
         const cartData = {
-          merchantId: '6ecc682b-98ee-472d-977b-cffbbae081b8',
-          companyId: 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d',
-          createdByUserId: 'c67273cf-acea-41db-9ff5-8f6e3bbb5c38'
+          merchantId,
+          companyId,
+          createdByUserId: userId
         };
 
         const createResponse = await fetch(`${API_URL}/api/v1/carts`, {

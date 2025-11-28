@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { ShopifyPricingSyncService } from './shopify-pricing-sync.service';
+// ShopifyPricingSyncService removed - handled by webhooks
 
 export interface CreatePricingRuleDto {
   name: string;
@@ -30,7 +30,7 @@ export class PricingRulesService {
 
   constructor(
     private prisma: PrismaService,
-    private shopifyPricingSync: ShopifyPricingSyncService,
+    // ShopifyPricingSyncService removed
   ) {}
 
   async create(merchantId: string, dto: CreatePricingRuleDto) {
