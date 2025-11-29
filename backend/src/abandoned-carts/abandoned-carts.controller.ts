@@ -10,9 +10,12 @@ export class AbandonedCartsController {
 
   @Public()
   @Get()
-  async getAbandonedCarts(@Query('companyId') companyId?: string) {
+  async getAbandonedCarts(
+    @Query('companyId') companyId?: string,
+    @Query('includeRecent') includeRecent?: string,
+  ) {
     const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
-    return this.abandonedCartsService.getAbandonedCarts(merchantId, companyId);
+    return this.abandonedCartsService.getAbandonedCarts(merchantId, companyId, includeRecent === 'true');
   }
 
   @UseGuards(JwtAuthGuard)

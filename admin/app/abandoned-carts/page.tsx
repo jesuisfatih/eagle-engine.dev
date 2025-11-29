@@ -47,10 +47,13 @@ export default function AbandonedCartsPage() {
   const loadCarts = async () => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/abandoned-carts`);
+      // Get all carts including recent ones (for admin view)
+      const response = await fetch(`${API_URL}/api/v1/abandoned-carts?includeRecent=true`);
       const data = await response.json();
       setCarts(Array.isArray(data) ? data : []);
+      console.log('Loaded abandoned carts:', data.length);
     } catch (err) {
+      console.error('Failed to load abandoned carts:', err);
       setCarts([]);
     } finally {
       setLoading(false);
