@@ -15,7 +15,7 @@ export class AbandonedCartsController {
     @Query('includeRecent') includeRecent?: string,
   ) {
     const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
-    const includeRecentBool = includeRecent === 'true' || includeRecent === true;
+    const includeRecentBool = includeRecent === 'true';
     console.log('📦 getAbandonedCarts called:', { companyId, includeRecent, includeRecentBool });
     return this.abandonedCartsService.getAbandonedCarts(merchantId, companyId, includeRecentBool);
   }
