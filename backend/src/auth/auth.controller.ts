@@ -158,9 +158,15 @@ export class AuthController {
   @Post('register')
   async register(@Body() body: any, @Res() res: Response) {
     try {
+      this.logger.log(`📝 [REGISTER] Registration request received for email: ${body.email}`);
       const result = await this.authService.register(body);
+      this.logger.log(`✅ [REGISTER] Registration successful for email: ${body.email}`);
       return res.json(result);
     } catch (error: any) {
+      this.logger.error(`❌ [REGISTER] Registration failed for email: ${body.email}`, {
+        error: error.message,
+        stack: error.stack,
+      });
       return res.status(HttpStatus.BAD_REQUEST).json({
         error: error.message || 'Registration failed',
       });
@@ -170,7 +176,18 @@ export class AuthController {
   @Public()
   @Post('accept-invitation')
   async acceptInvitation(@Body() body: any) {
-    return this.authService.acceptInvitation(body);
+    try {
+      this.logger.log(`📝 [ACCEPT_INVITATION] Invitation acceptance request received for token: ${body.token?.substring(0, 10)}...`);
+      const result = await this.authService.acceptInvitation(body);
+      this.logger.log(`✅ [ACCEPT_INVITATION] Invitation accepted successfully`);
+      return result;
+    } catch (error: any) {
+      this.logger.error(`❌ [ACCEPT_INVITATION] Invitation acceptance failed`, {
+        error: error.message,
+        stack: error.stack,
+      });
+      throw error;
+    }
   }
 
   @Public()

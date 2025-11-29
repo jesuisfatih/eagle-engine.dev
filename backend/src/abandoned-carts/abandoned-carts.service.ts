@@ -36,7 +36,8 @@ export class AbandonedCartsService {
 
     // For admin view with includeRecent, show all carts. Otherwise show old carts
     // IMPORTANT: Admin panel always wants to see all carts, so if includeRecent is true, don't filter by time
-    if (includeRecent === true) {
+    // Explicitly check for true (boolean) or 'true' (string)
+    if (includeRecent === true || includeRecent === 'true') {
       // Admin view - show all carts (including recent)
       // Don't add updatedAt filter - show everything
       this.logger.log('✅ Admin view: Showing ALL carts (including recent) - no time filter');
