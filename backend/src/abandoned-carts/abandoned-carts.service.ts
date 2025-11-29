@@ -11,6 +11,14 @@ export class AbandonedCartsService {
     // Get carts that aren't converted to orders
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     
+    // Find Anonymous Customers company for this merchant
+    const anonymousCompany = await this.prisma.company.findFirst({
+      where: {
+        merchantId,
+        name: 'Anonymous Customers',
+      },
+    });
+    
     const where: any = {
       merchantId,
       convertedToOrderId: null, // Only show carts that haven't been converted to orders
@@ -20,6 +28,20 @@ export class AbandonedCartsService {
     // If companyId provided, filter by company, otherwise show all (including anonymous)
     if (companyId) {
       where.companyId = companyId;
+    } else {
+      // For admin view, show all carts including anonymous ones
+      // Anonymous carts can have:
+      // 1. companyId = anonymousCompany.id (new carts)
+      // 2. companyId = null (old carts before anonymous company was created)
+      if (anonymousCompany) {
+        where.OR = [
+          { companyId: anonymousCompany.id },
+          { companyId: null }, // Old anonymous carts
+        ];
+      } else {
+        // If no anonymous company exists, show carts with null companyId
+        where.companyId = null;
+      }
     }
 
     // For admin view with includeRecent, show all carts. Otherwise show old carts
@@ -31,9 +53,9 @@ export class AbandonedCartsService {
       where.updatedAt = { lt: oneHourAgo };
     }
     
-    this.logger.log(`Querying abandoned carts: merchantId=${merchantId}, companyId=${companyId}, includeRecent=${includeRecent}, where=${JSON.stringify(where)}`);
+    this.logger.log(`Querying abandoned carts: merchantId=${merchantId}, companyId=${companyId}, includeRecent=${includeRecent}, anonymousCompanyId=${anonymousCompany?.id}, where=${JSON.stringify(where)}`);
     
-    return this.prisma.cart.findMany({
+    const carts = await this.prisma.cart.findMany({
       where,
       include: {
         items: {
@@ -64,6 +86,10 @@ export class AbandonedCartsService {
         updatedAt: 'desc',
       },
     });
+    
+    this.logger.log(`Found ${carts.length} abandoned carts. Anonymous: ${carts.filter(c => c.company?.name === 'Anonymous Customers').length}`);
+    
+    return carts;
   }
 
   /**
