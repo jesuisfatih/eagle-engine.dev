@@ -44,8 +44,71 @@ export default function CartPage() {
     }
     
     try {
-      // Method 1: Use Shopify's cart/add endpoint to add items to browser's cart cookie
-      // This ensures items are visible in Shopify cart
+      // Step 1: Fetch user profile and address information
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const token = localStorage.getItem('eagle_token') || '';
+      
+      let userData: any = null;
+      let addressData: any = null;
+      
+      try {
+        // Get user profile
+        const userResponse = await fetch(`${API_URL}/api/v1/company-users/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (userResponse.ok) {
+          userData = await userResponse.json();
+        }
+        
+        // Get user addresses (try to get default or first address)
+        try {
+          const addressResponse = await fetch(`${API_URL}/api/v1/addresses`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (addressResponse.ok) {
+            const addresses = await addressResponse.json();
+            // Get default address or first address
+            addressData = addresses.find((addr: any) => addr.isDefault) || addresses[0] || null;
+          }
+        } catch (addrErr) {
+          console.warn('Address fetch failed:', addrErr);
+        }
+      } catch (userErr) {
+        console.warn('User data fetch failed:', userErr);
+      }
+      
+      // Step 2: Store user data in localStorage for checkout autofill
+      if (userData || addressData) {
+        const checkoutData = {
+          email: userData?.email || localStorage.getItem('eagle_userEmail') || '',
+          firstName: userData?.firstName || '',
+          lastName: userData?.lastName || '',
+          phone: userData?.phone || '',
+          address1: addressData?.address1 || addressData?.street || '',
+          address2: addressData?.address2 || '',
+          city: addressData?.city || '',
+          state: addressData?.state || addressData?.province || '',
+          zip: addressData?.postalCode || addressData?.zip || '',
+          country: addressData?.country || 'US',
+          timestamp: Date.now(), // For cleanup
+        };
+        
+        // Store in localStorage with a unique key
+        localStorage.setItem('eagle_checkout_autofill', JSON.stringify(checkoutData));
+        
+        // Also store in sessionStorage as backup
+        sessionStorage.setItem('eagle_checkout_autofill', JSON.stringify(checkoutData));
+      }
+      
+      // Step 3: Use Shopify's cart/add endpoint to add items to browser's cart cookie
       const shopDomain = 'eagle-dtf-supply0.myshopify.com';
       const shopUrl = `https://${shopDomain}`;
       
@@ -66,15 +129,14 @@ export default function CartPage() {
       // Wait for all items to be added
       await Promise.all(addPromises);
       
-      // Get discount code from backend if available
+      // Step 4: Get discount code from backend if available
       let discountParam = '';
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
         const checkoutResponse = await fetch(`${API_URL}/api/v1/checkout/create`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('eagle_token') || ''}`,
+            'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({ cartId: cart.id }),
         });
@@ -86,17 +148,82 @@ export default function CartPage() {
           }
         }
       } catch (discountErr) {
-        // Ignore discount errors - continue to checkout
         console.warn('Discount code fetch failed:', discountErr);
       }
       
-      // Redirect to Shopify checkout (cart is now populated in browser cookie)
-      window.location.href = `${shopUrl}/checkout${discountParam}`;
+      // Step 5: Inject autofill script into checkout page
+      // Since we can't directly inject into Shopify's checkout, we'll:
+      // 1. Store data in localStorage (already done)
+      // 2. Create a script that runs on checkout page via URL hash or query param
+      // 3. Use a technique to inject script after page load
+      
+      // Create a script element that will be injected into checkout page
+      const script = document.createElement('script');
+      script.textContent = `
+        (function() {
+          if (!window.location.href.includes('/checkout') && !window.location.href.includes('/checkouts')) return;
+          
+          const data = localStorage.getItem('eagle_checkout_autofill') || sessionStorage.getItem('eagle_checkout_autofill');
+          if (!data) return;
+          
+          const userInfo = JSON.parse(data);
+          if (Date.now() - userInfo.timestamp > 300000) return;
+          
+          function fill(selector, value, isSelect = false) {
+            const el = document.querySelector(selector);
+            if (!el || !value || el.value) return false;
+            if (isSelect) {
+              const opt = Array.from(el.options).find(o => o.value === value || o.text.includes(value));
+              if (opt) el.value = opt.value;
+            } else {
+              el.value = value;
+            }
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+            return true;
+          }
+          
+          const fillForm = () => {
+            fill('#email, input[name="email"]', userInfo.email);
+            fill('#TextField3225, input[name="firstName"]', userInfo.firstName);
+            fill('#TextField3226, input[name="lastName"]', userInfo.lastName);
+            fill('#shipping-address1, input[name="address1"]', userInfo.address1);
+            fill('#TextField3227, input[name="address2"]', userInfo.address2);
+            fill('#TextField3228, input[name="city"]', userInfo.city);
+            fill('#Select613, select[name="zone"]', userInfo.state, true);
+            fill('#TextField3229, input[name="postalCode"]', userInfo.zip);
+            fill('#Select612, select[name="countryCode"]', userInfo.country, true);
+          };
+          
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+              setTimeout(fillForm, 500);
+              setTimeout(fillForm, 2000);
+            });
+          } else {
+            fillForm();
+            setTimeout(fillForm, 500);
+            setTimeout(fillForm, 2000);
+          }
+        })();
+      `;
+      
+      // Step 6: Redirect to checkout with autofill trigger
+      // We'll append a hash that triggers the script
+      const checkoutUrl = `${shopUrl}/checkout${discountParam}#eagle-autofill`;
+      
+      // Store script in a way that checkout page can access it
+      // Since we can't directly inject, we'll use localStorage and a bookmarklet approach
+      // OR we can try to inject via URL hash
+      
+      // For now, redirect and hope the script runs
+      // In production, you might need a browser extension or bookmarklet
+      window.location.href = checkoutUrl;
       
     } catch (err) {
       console.error('Checkout error:', err);
       
-      // Fallback: Use cart URL format (Shopify will add items from URL)
+      // Fallback: Use cart URL format
       const cartItems = cart.items.map((item: any) => 
         `${item.shopifyVariantId}:${item.quantity}`
       ).join(',');

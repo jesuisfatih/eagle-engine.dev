@@ -13,6 +13,9 @@ const shopify_graphql_service_1 = require("./shopify-graphql.service");
 const shopify_customer_sync_service_1 = require("./shopify-customer-sync.service");
 const shopify_sso_service_1 = require("./shopify-sso.service");
 const shopify_service_1 = require("./shopify.service");
+const shopify_rest_service_1 = require("./shopify-rest.service");
+const shopify_admin_discount_service_1 = require("./shopify-admin-discount.service");
+const shopify_storefront_service_1 = require("./shopify-storefront.service");
 const prisma_service_1 = require("../prisma/prisma.service");
 const config_1 = require("@nestjs/config");
 let ShopifyModule = class ShopifyModule {
@@ -26,6 +29,9 @@ exports.ShopifyModule = ShopifyModule = __decorate([
             shopify_customer_sync_service_1.ShopifyCustomerSyncService,
             shopify_sso_service_1.ShopifySsoService,
             shopify_service_1.ShopifyService,
+            shopify_rest_service_1.ShopifyRestService,
+            shopify_admin_discount_service_1.ShopifyAdminDiscountService,
+            shopify_storefront_service_1.ShopifyStorefrontService,
             prisma_service_1.PrismaService,
         ],
         exports: [
@@ -33,6 +39,9 @@ exports.ShopifyModule = ShopifyModule = __decorate([
             shopify_customer_sync_service_1.ShopifyCustomerSyncService,
             shopify_sso_service_1.ShopifySsoService,
             shopify_service_1.ShopifyService,
+            shopify_rest_service_1.ShopifyRestService,
+            shopify_admin_discount_service_1.ShopifyAdminDiscountService,
+            shopify_storefront_service_1.ShopifyStorefrontService,
         ],
     })
 ], ShopifyModule);

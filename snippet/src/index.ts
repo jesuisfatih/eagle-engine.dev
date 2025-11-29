@@ -36,6 +36,7 @@ class EagleSnippet {
     this.setupEventListeners();
     this.setupCartTracking();
     this.setupCustomerSync();
+    this.setupCheckoutAutofill();
   }
 
   private detectCustomer() {
@@ -244,6 +245,175 @@ class EagleSnippet {
   public clearToken() {
     this.config.token = undefined;
     localStorage.removeItem('eagle_token');
+  }
+
+  private setupCheckoutAutofill() {
+    // Only run on checkout pages
+    if (!window.location.href.includes('/checkout') && !window.location.href.includes('/checkouts')) {
+      return;
+    }
+
+    console.log('🦅 Eagle: Checkout autofill enabled');
+
+    const fillCheckoutForm = () => {
+      try {
+        // Get user data from localStorage or sessionStorage
+        const data = localStorage.getItem('eagle_checkout_autofill') || 
+                     sessionStorage.getItem('eagle_checkout_autofill');
+        
+        if (!data) {
+          return false;
+        }
+        
+        const userInfo = JSON.parse(data);
+        
+        // Check if data is expired (5 minutes)
+        if (Date.now() - userInfo.timestamp > 300000) {
+          localStorage.removeItem('eagle_checkout_autofill');
+          sessionStorage.removeItem('eagle_checkout_autofill');
+          return false;
+        }
+        
+        console.log('🦅 Eagle: Filling checkout form', userInfo);
+        
+        let filledCount = 0;
+        
+        // Helper function to fill input
+        const fillInput = (selector: string, value: string) => {
+          const element = document.querySelector(selector);
+          if (element && value && !(element as HTMLInputElement).value) {
+            (element as HTMLInputElement).value = value;
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+            element.dispatchEvent(new Event('change', { bubbles: true }));
+            filledCount++;
+            return true;
+          }
+          return false;
+        };
+        
+        // Helper function to fill select
+        const fillSelect = (selector: string, value: string) => {
+          const element = document.querySelector(selector) as HTMLSelectElement;
+          if (element && value) {
+            const option = Array.from(element.options).find((opt) => 
+              opt.value === value || 
+              opt.textContent?.trim() === value ||
+              opt.textContent?.includes(value)
+            );
+            if (option && element.value !== option.value) {
+              element.value = option.value;
+              element.dispatchEvent(new Event('change', { bubbles: true }));
+              filledCount++;
+              return true;
+            }
+          }
+          return false;
+        };
+        
+        // Fill email (multiple selectors for compatibility)
+        fillInput('#email', userInfo.email);
+        fillInput('input[name="email"]', userInfo.email);
+        fillInput('input[autocomplete="shipping email"]', userInfo.email);
+        fillInput('input[autocomplete="email"]', userInfo.email);
+        
+        // Fill first name
+        fillInput('#TextField3225', userInfo.firstName);
+        fillInput('input[name="firstName"]', userInfo.firstName);
+        fillInput('input[autocomplete="shipping given-name"]', userInfo.firstName);
+        fillInput('input[autocomplete="given-name"]', userInfo.firstName);
+        
+        // Fill last name
+        fillInput('#TextField3226', userInfo.lastName);
+        fillInput('input[name="lastName"]', userInfo.lastName);
+        fillInput('input[autocomplete="shipping family-name"]', userInfo.lastName);
+        fillInput('input[autocomplete="family-name"]', userInfo.lastName);
+        
+        // Fill address
+        fillInput('#shipping-address1', userInfo.address1);
+        fillInput('input[name="address1"]', userInfo.address1);
+        fillInput('input[autocomplete="shipping address-line1"]', userInfo.address1);
+        fillInput('input[autocomplete="address-line1"]', userInfo.address1);
+        
+        // Fill address 2
+        if (userInfo.address2) {
+          fillInput('#TextField3227', userInfo.address2);
+          fillInput('input[name="address2"]', userInfo.address2);
+          fillInput('input[autocomplete="shipping address-line2"]', userInfo.address2);
+          fillInput('input[autocomplete="address-line2"]', userInfo.address2);
+        }
+        
+        // Fill city
+        fillInput('#TextField3228', userInfo.city);
+        fillInput('input[name="city"]', userInfo.city);
+        fillInput('input[autocomplete="shipping address-level2"]', userInfo.city);
+        fillInput('input[autocomplete="address-level2"]', userInfo.city);
+        
+        // Fill state
+        fillSelect('#Select613', userInfo.state);
+        fillSelect('select[name="zone"]', userInfo.state);
+        fillSelect('select[autocomplete="shipping address-level1"]', userInfo.state);
+        fillSelect('select[autocomplete="address-level1"]', userInfo.state);
+        
+        // Fill ZIP
+        fillInput('#TextField3229', userInfo.zip);
+        fillInput('input[name="postalCode"]', userInfo.zip);
+        fillInput('input[autocomplete="shipping postal-code"]', userInfo.zip);
+        fillInput('input[autocomplete="postal-code"]', userInfo.zip);
+        
+        // Fill country
+        if (userInfo.country) {
+          fillSelect('#Select612', userInfo.country);
+          fillSelect('select[name="countryCode"]', userInfo.country);
+          fillSelect('select[autocomplete="shipping country-name"]', userInfo.country);
+          fillSelect('select[autocomplete="country"]', userInfo.country);
+        }
+        
+        console.log(`🦅 Eagle: Filled ${filledCount} checkout fields`);
+        
+        // Clean up after successful fill
+        if (filledCount > 0) {
+          setTimeout(() => {
+            localStorage.removeItem('eagle_checkout_autofill');
+            sessionStorage.removeItem('eagle_checkout_autofill');
+            console.log('🦅 Eagle: Cleaned up autofill data');
+          }, 10000);
+        }
+        
+        return filledCount > 0;
+      } catch (e) {
+        console.error('🦅 Eagle: Autofill error', e);
+        return false;
+      }
+    };
+    
+    // Try to fill immediately
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(fillCheckoutForm, 500);
+        setTimeout(fillCheckoutForm, 2000);
+        setTimeout(fillCheckoutForm, 5000);
+      });
+    } else {
+      fillCheckoutForm();
+      setTimeout(fillCheckoutForm, 500);
+      setTimeout(fillCheckoutForm, 2000);
+      setTimeout(fillCheckoutForm, 5000);
+    }
+    
+    // Also listen for dynamic form updates
+    const observer = new MutationObserver(() => {
+      fillCheckoutForm();
+    });
+    
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+    
+    // Clean up observer after 30 seconds
+    setTimeout(() => {
+      observer.disconnect();
+    }, 30000);
   }
 }
 

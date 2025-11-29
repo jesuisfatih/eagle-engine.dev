@@ -37,6 +37,14 @@ let SettingsController = class SettingsController {
     async updateCompanySettings(companyId, body) {
         return this.settingsService.updateCompanySettings(companyId, body);
     }
+    async getSsoSettings() {
+        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+        return this.settingsService.getSsoSettings(merchantId);
+    }
+    async updateSsoSettings(body) {
+        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+        return this.settingsService.updateSsoSettings(merchantId, body);
+    }
 };
 exports.SettingsController = SettingsController;
 __decorate([
@@ -77,6 +85,19 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "updateCompanySettings", null);
+__decorate([
+    (0, common_1.Get)('sso'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], SettingsController.prototype, "getSsoSettings", null);
+__decorate([
+    (0, common_1.Put)('sso'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], SettingsController.prototype, "updateSsoSettings", null);
 exports.SettingsController = SettingsController = __decorate([
     (0, common_1.Controller)('settings'),
     (0, public_decorator_1.Public)(),

@@ -19,4 +19,5 @@ export declare class CheckoutService {
         total: number;
         savings: number;
     }>;
+    private buildCartUrl;
 }

@@ -83,14 +83,22 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
             quantity: item.quantity,
         }));
         let checkoutUrl;
-        try {
-            const storefrontToken = 'YOUR_STOREFRONT_ACCESS_TOKEN';
-            const result = await this.shopifyStorefront.createCart(merchant.shopDomain, storefrontToken, lines, discountCode ? [discountCode] : undefined);
-            checkoutUrl = result.checkoutUrl;
+        const settings = merchant.settings || {};
+        const storefrontToken = settings.storefrontToken || '';
+        if (storefrontToken) {
+            try {
+                const result = await this.shopifyStorefront.createCart(merchant.shopDomain, storefrontToken, lines, discountCode ? [discountCode] : undefined);
+                checkoutUrl = result.checkoutUrl;
+                this.logger.log(`Checkout URL created via Storefront API: ${checkoutUrl}`);
+            }
+            catch (error) {
+                this.logger.warn('Storefront API failed, using fallback cart URL', error);
+                checkoutUrl = this.buildCartUrl(merchant.shopDomain, cart.items, discountCode);
+            }
         }
-        catch (error) {
-            this.logger.error('Storefront API failed, using fallback URL', error);
-            checkoutUrl = `https://${merchant.shopDomain}/cart/${cart.items.map(i => `${i.shopifyVariantId}:${i.quantity}`).join(',')}${discountCode ? `?discount=${discountCode}` : ''}`;
+        else {
+            this.logger.log('No storefront token, using cart URL');
+            checkoutUrl = this.buildCartUrl(merchant.shopDomain, cart.items, discountCode);
         }
         await this.prisma.cart.update({
             where: { id: cartId },
@@ -105,6 +113,11 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
             total: pricing.subtotal,
             savings: discountAmount,
         };
+    }
+    buildCartUrl(shopDomain, items, discountCode) {
+        const cartItems = items.map(i => `${i.shopifyVariantId}:${i.quantity}`).join(',');
+        const baseUrl = `https://${shopDomain}/cart/${cartItems}`;
+        return discountCode ? `${baseUrl}?discount=${discountCode}` : baseUrl;
     }
 };
 exports.CheckoutService = CheckoutService;

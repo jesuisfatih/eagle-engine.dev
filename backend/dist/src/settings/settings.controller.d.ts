@@ -59,4 +59,27 @@ export declare class SettingsController {
         companyGroup: string | null;
         createdByShopifyCustomerId: bigint | null;
     }>;
+    getSsoSettings(): Promise<{
+        mode: any;
+        multipassSecret: any;
+        storefrontToken: any;
+    }>;
+    updateSsoSettings(body: {
+        mode: string;
+        multipassSecret?: string;
+        storefrontToken?: string;
+    }): Promise<{
+        id: string;
+        shopDomain: string;
+        shopifyShopId: bigint | null;
+        accessToken: string;
+        scope: string | null;
+        planName: string;
+        status: string;
+        settings: import("@prisma/client/runtime/client").JsonValue;
+        snippetEnabled: boolean;
+        lastSyncAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
 }
