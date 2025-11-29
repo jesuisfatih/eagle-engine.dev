@@ -8,13 +8,13 @@ export class AbandonedCartsService {
   constructor(private prisma: PrismaService) {}
 
   async getAbandonedCarts(merchantId: string, companyId?: string, includeRecent: boolean = false) {
-    // Get carts older than 1 hour that aren't converted
+    // Get carts that aren't converted to orders
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     
     const where: any = {
       merchantId,
-      status: 'draft',
-      convertedToOrderId: null,
+      convertedToOrderId: null, // Only show carts that haven't been converted to orders
+      // Remove status filter - show all non-converted carts regardless of status
     };
 
     // If companyId provided, filter by company, otherwise show all (including anonymous)
@@ -30,6 +30,8 @@ export class AbandonedCartsService {
       // Show only old carts (older than 1 hour)
       where.updatedAt = { lt: oneHourAgo };
     }
+    
+    this.logger.log(`Querying abandoned carts: merchantId=${merchantId}, companyId=${companyId}, includeRecent=${includeRecent}, where=${JSON.stringify(where)}`);
     
     return this.prisma.cart.findMany({
       where,
