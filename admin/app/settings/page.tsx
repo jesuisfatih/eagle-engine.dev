@@ -235,6 +235,9 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* SSO Configuration */}
+      <SsoModeSwitch />
+
       {/* Data Sync */}
       <div className="card mb-4">
         <div className="card-header">

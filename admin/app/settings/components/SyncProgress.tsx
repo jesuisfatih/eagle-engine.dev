@@ -10,18 +10,28 @@ export default function SyncProgress() {
       try {
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
         const response = await fetch(`${API_URL}/api/v1/sync/status`);
+        
+        if (!response.ok) {
+          // Silently fail - don't spam console
+          return;
+        }
+        
         const logs = await response.json();
         
-        const latest = logs[0];
-        if (latest && latest.status === 'running') {
-          setProgress({
-            customers: latest.recordsProcessed || 0,
-            products: latest.recordsProcessed || 0,
-            orders: latest.recordsProcessed || 0,
-          });
+        if (Array.isArray(logs) && logs.length > 0) {
+          const latest = logs[0];
+          if (latest && latest.status === 'running') {
+            setProgress({
+              customers: latest.recordsProcessed || 0,
+              products: latest.recordsProcessed || 0,
+              orders: latest.recordsProcessed || 0,
+            });
+          }
         }
-      } catch (err) {}
-    }, 2000);
+      } catch (err) {
+        // Silently fail - endpoint might not be available
+      }
+    }, 5000); // Reduced frequency to avoid 502 spam
 
     return () => clearInterval(interval);
   }, []);

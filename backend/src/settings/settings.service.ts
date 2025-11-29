@@ -56,5 +56,42 @@ export class SettingsService {
       },
     });
   }
+
+  async getSsoSettings(merchantId: string) {
+    const merchant = await this.prisma.merchant.findUnique({
+      where: { id: merchantId },
+      select: { settings: true },
+    });
+
+    const settings = (merchant?.settings as any) || {};
+    return {
+      mode: settings.ssoMode || 'alternative',
+      multipassSecret: settings.multipassSecret || '',
+      storefrontToken: settings.storefrontToken || '',
+    };
+  }
+
+  async updateSsoSettings(merchantId: string, ssoSettings: { mode: string; multipassSecret?: string; storefrontToken?: string }) {
+    const merchant = await this.prisma.merchant.findUnique({
+      where: { id: merchantId },
+      select: { settings: true },
+    });
+
+    const currentSettings = (merchant?.settings as any) || {};
+    const updatedSettings = {
+      ...currentSettings,
+      ssoMode: ssoSettings.mode,
+      multipassSecret: ssoSettings.multipassSecret || currentSettings.multipassSecret || '',
+      storefrontToken: ssoSettings.storefrontToken || currentSettings.storefrontToken || '',
+    };
+
+    return this.prisma.merchant.update({
+      where: { id: merchantId },
+      data: {
+        settings: updatedSettings,
+        updatedAt: new Date(),
+      },
+    });
+  }
 }
 

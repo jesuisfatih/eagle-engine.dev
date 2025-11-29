@@ -42,5 +42,18 @@ export class SettingsController {
   ) {
     return this.settingsService.updateCompanySettings(companyId, body);
   }
+
+  @Get('sso')
+  async getSsoSettings() {
+    // Default merchant for now
+    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    return this.settingsService.getSsoSettings(merchantId);
+  }
+
+  @Put('sso')
+  async updateSsoSettings(@Body() body: { mode: string; multipassSecret?: string; storefrontToken?: string }) {
+    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    return this.settingsService.updateSsoSettings(merchantId, body);
+  }
 }
 

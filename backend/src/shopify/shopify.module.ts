@@ -4,6 +4,7 @@ import { ShopifyGraphqlService } from './shopify-graphql.service';
 import { ShopifyCustomerSyncService } from './shopify-customer-sync.service';
 import { ShopifySsoService } from './shopify-sso.service';
 import { ShopifyService } from './shopify.service';
+import { ShopifyRestService } from './shopify-rest.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigModule } from '@nestjs/config';
 
@@ -14,6 +15,7 @@ import { ConfigModule } from '@nestjs/config';
     ShopifyCustomerSyncService,
     ShopifySsoService,
     ShopifyService,
+    ShopifyRestService,
     PrismaService,
   ],
   exports: [
@@ -21,6 +23,7 @@ import { ConfigModule } from '@nestjs/config';
     ShopifyCustomerSyncService,
     ShopifySsoService,
     ShopifyService,
+    ShopifyRestService,
   ],
 })
 export class ShopifyModule {}
