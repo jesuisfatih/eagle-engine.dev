@@ -109,34 +109,53 @@ class EagleSnippet {
       }
       
       // Send to abandoned carts tracking endpoint
-      await fetch(`${this.config.apiUrl}/api/v1/abandoned-carts/track`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cartToken: this.cartToken,
-          shopifyCartId: this.cartToken,
-          customerEmail: customerEmail,
-          shopifyCustomerId: this.customerId,
-          customerId: this.customerId,
-          items: cart.items.map((item: any) => ({
-            variant_id: item.variant_id,
-            variantId: item.variant_id,
-            product_id: item.product_id,
-            productId: item.product_id,
-            sku: item.sku,
-            title: item.title,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-          totalPrice: cart.total_price,
-          currency: cart.currency,
-        }),
+      const payload = {
+        cartToken: this.cartToken,
+        shopifyCartId: this.cartToken,
+        customerEmail: customerEmail,
+        shopifyCustomerId: this.customerId,
+        customerId: this.customerId,
+        items: cart.items.map((item: any) => ({
+          variant_id: item.variant_id,
+          variantId: item.variant_id,
+          product_id: item.product_id,
+          productId: item.product_id,
+          sku: item.sku,
+          title: item.title,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        totalPrice: cart.total_price,
+        currency: cart.currency,
+      };
+      
+      console.log('🦅 Eagle: Sending cart to backend', {
+        url: `${this.config.apiUrl}/api/v1/abandoned-carts/track`,
+        payload: payload,
       });
       
-      console.log('🦅 Eagle: Cart synced to abandoned carts', {
+      const response = await fetch(`${this.config.apiUrl}/api/v1/abandoned-carts/track`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Eagle: Cart sync failed', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText,
+        });
+        throw new Error(`Cart sync failed: ${response.status} ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log('✅ Eagle: Cart synced successfully', {
         cartToken: this.cartToken,
         itemCount: cart.items.length,
         customerEmail,
+        result: result,
       });
     } catch (err) {
       console.error('Eagle: Cart sync failed', err);

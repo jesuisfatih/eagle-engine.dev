@@ -371,6 +371,8 @@ export class AbandonedCartsService {
   async trackCart(data: any) {
     // This is called from snippet - same as sync but with different data structure
     try {
+      this.logger.log(`📦 Tracking cart: token=${data.cartToken}, items=${data.items?.length || 0}, email=${data.customerEmail || 'anonymous'}`);
+      
       const result = await this.syncShopifyCart({
         cartToken: data.cartToken || data.shopifyCartId,
         shopifyCartId: data.cartToken || data.shopifyCartId,
@@ -379,10 +381,10 @@ export class AbandonedCartsService {
         items: data.items || [],
       });
       
-      this.logger.log(`Cart tracked: ${data.cartToken}, items: ${data.items?.length || 0}, anonymous: ${!data.customerEmail}`);
+      this.logger.log(`✅ Cart tracked successfully: id=${result.id}, companyId=${result.companyId}`);
       return result;
-    } catch (error) {
-      this.logger.error('Failed to track cart', error);
+    } catch (error: any) {
+      this.logger.error(`❌ Failed to track cart: ${error.message}`, error.stack);
       throw error;
     }
   }
