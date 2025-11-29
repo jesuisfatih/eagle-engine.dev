@@ -38,47 +38,68 @@ export default function CartPage() {
   };
 
   const checkout = async () => {
-    if (!cart || !cart.id) return;
+    if (!cart || !cart.id || !cart.items || cart.items.length === 0) {
+      alert('Cart is empty');
+      return;
+    }
     
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      // Method 1: Use Shopify's cart/add endpoint to add items to browser's cart cookie
+      // This ensures items are visible in Shopify cart
+      const shopDomain = 'eagle-dtf-supply0.myshopify.com';
+      const shopUrl = `https://${shopDomain}`;
       
-      // Use backend checkout endpoint to create proper Shopify checkout
-      const response = await fetch(`${API_URL}/api/v1/checkout/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('eagle_token') || ''}`,
-        },
-        body: JSON.stringify({ cartId: cart.id }),
+      // Add all items to Shopify cart using /cart/add.js
+      const addPromises = cart.items.map((item: any) => {
+        return fetch(`${shopUrl}/cart/add.js`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: item.shopifyVariantId.toString(),
+            quantity: item.quantity,
+          }),
+        });
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        if (data.checkoutUrl) {
-          // Redirect to Shopify checkout (SSO will auto-fill if active)
-          window.location.href = data.checkoutUrl;
-          return;
+      // Wait for all items to be added
+      await Promise.all(addPromises);
+      
+      // Get discount code from backend if available
+      let discountParam = '';
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+        const checkoutResponse = await fetch(`${API_URL}/api/v1/checkout/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('eagle_token') || ''}`,
+          },
+          body: JSON.stringify({ cartId: cart.id }),
+        });
+        
+        if (checkoutResponse.ok) {
+          const checkoutData = await checkoutResponse.json();
+          if (checkoutData.discountCode) {
+            discountParam = `?discount=${checkoutData.discountCode}`;
+          }
         }
+      } catch (discountErr) {
+        // Ignore discount errors - continue to checkout
+        console.warn('Discount code fetch failed:', discountErr);
       }
       
-      // Fallback: Direct cart URL (if backend fails)
-      const cartItems = cart.items?.map((item: any) => 
-        `${item.shopifyVariantId}:${item.quantity}`
-      ).join(',') || '';
+      // Redirect to Shopify checkout (cart is now populated in browser cookie)
+      window.location.href = `${shopUrl}/checkout${discountParam}`;
       
-      if (cartItems) {
-        window.location.href = `https://eagle-dtf-supply0.myshopify.com/cart/${cartItems}`;
-      } else {
-        alert('Cart is empty');
-      }
     } catch (err) {
       console.error('Checkout error:', err);
       
-      // Final fallback: Direct cart URL
-      const cartItems = cart.items?.map((item: any) => 
+      // Fallback: Use cart URL format (Shopify will add items from URL)
+      const cartItems = cart.items.map((item: any) => 
         `${item.shopifyVariantId}:${item.quantity}`
-      ).join(',') || '';
+      ).join(',');
       
       if (cartItems) {
         window.location.href = `https://eagle-dtf-supply0.myshopify.com/cart/${cartItems}`;
