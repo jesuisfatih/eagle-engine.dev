@@ -473,6 +473,17 @@ export class AuthService {
           userWithShopify.shopifyCustomerId.toString(),
           metafields,
         );
+
+        // Update subscription status based on email verification
+        if (emailVerified) {
+          await this.shopifyRest.updateCustomerSubscription(
+            merchant.shopDomain,
+            merchant.accessToken,
+            userWithShopify.shopifyCustomerId.toString(),
+            true, // Subscribe to marketing
+          );
+          this.logger.log(`Customer ${user.email} subscribed to marketing (email verified)`);
+        }
       }
     } catch (shopifyError: any) {
       this.logger.error('Shopify sync failed during registration', shopifyError);

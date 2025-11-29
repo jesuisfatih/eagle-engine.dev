@@ -29,6 +29,10 @@ export class ShopifyCustomerSyncService {
     if (!merchant) return;
 
     try {
+      // Check if email is verified
+      const permissions = (user.permissions as any) || {};
+      const emailVerified = permissions.emailVerified || false;
+
       const customerData = {
         customer: {
           email: user.email,
@@ -37,6 +41,7 @@ export class ShopifyCustomerSyncService {
           phone: user.company.phone,
           addresses: user.company.billingAddress ? [user.company.billingAddress] : [],
           tags: [`eagle-b2b-user`, `company-${user.companyId}`],
+          accepts_marketing: emailVerified, // Subscribe if email verified
         },
       };
 
@@ -90,12 +95,17 @@ export class ShopifyCustomerSyncService {
         `/customers/${user.shopifyCustomerId}.json`
       );
 
+      // Check if email is verified
+      const permissions = (user.permissions as any) || {};
+      const emailVerified = permissions.emailVerified || false;
+
       const customerData = {
         customer: {
           email: user.email,
           first_name: user.firstName,
           last_name: user.lastName,
           phone: user.company.phone,
+          accepts_marketing: emailVerified, // Subscribe if email verified
         },
       };
 

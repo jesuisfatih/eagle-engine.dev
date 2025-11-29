@@ -137,6 +137,42 @@ export class ShopifyRestService {
   }
 
   /**
+   * Update customer subscription status (accepts_marketing)
+   */
+  async updateCustomerSubscription(
+    shop: string,
+    accessToken: string,
+    customerId: string,
+    acceptsMarketing: boolean,
+  ): Promise<any> {
+    const url = this.shopifyService.buildAdminApiUrl(shop, `/customers/${customerId}.json`);
+    
+    try {
+      const response = await firstValueFrom(
+        this.httpService.put(
+          url,
+          {
+            customer: {
+              accepts_marketing: acceptsMarketing,
+            },
+          },
+          {
+            headers: {
+              'X-Shopify-Access-Token': accessToken,
+              'Content-Type': 'application/json',
+            },
+          },
+        ),
+      );
+
+      return response.data;
+    } catch (error: any) {
+      this.logger.error(`Customer subscription update failed: ${url}`, error.response?.data);
+      throw error;
+    }
+  }
+
+  /**
    * Update customer metafields (B2B data)
    */
   async updateCustomerMetafields(

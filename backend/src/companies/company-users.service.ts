@@ -1,10 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ShopifyRestService } from '../shopify/shopify-rest.service';
 import * as crypto from 'crypto';
 
 @Injectable()
 export class CompanyUsersService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(CompanyUsersService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => ShopifyRestService))
+    private shopifyRest: ShopifyRestService,
+  ) {}
 
   async findByCompany(companyId: string) {
     return this.prisma.companyUser.findMany({
@@ -44,6 +51,7 @@ export class CompanyUsersService {
   async verifyEmail(userId: string) {
     const user = await this.prisma.companyUser.findUnique({
       where: { id: userId },
+      include: { company: { include: { merchant: true } } },
     });
 
     if (!user) {
@@ -53,12 +61,30 @@ export class CompanyUsersService {
     const permissions = (user.permissions as any) || {};
     permissions.emailVerified = true;
 
-    return this.prisma.companyUser.update({
+    const updatedUser = await this.prisma.companyUser.update({
       where: { id: userId },
       data: {
         permissions,
       },
     });
+
+    // Update Shopify subscription if customer exists
+    if (user.shopifyCustomerId && user.company.merchant) {
+      try {
+        await this.shopifyRest.updateCustomerSubscription(
+          user.company.merchant.shopDomain,
+          user.company.merchant.accessToken,
+          user.shopifyCustomerId.toString(),
+          true, // Subscribe to marketing
+        );
+        this.logger.log(`Customer ${user.email} subscribed to marketing after email verification`);
+      } catch (error: any) {
+        this.logger.error(`Failed to update Shopify subscription for ${user.email}`, error);
+        // Continue anyway - email is verified
+      }
+    }
+
+    return updatedUser;
   }
 }
 
