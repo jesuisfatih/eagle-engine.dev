@@ -199,25 +199,68 @@ export default function CompaniesPage() {
                           </button>
                           <ul className="dropdown-menu dropdown-menu-end">
                             {company.status === 'pending' && (
-                              <li>
-                                <a
-                                  className="dropdown-item"
-                                  href="javascript:void(0);"
-                                  onClick={async () => {
-                                    try {
-                                      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-                                      await fetch(`${API_URL}/api/v1/companies/${company.id}`, {
-                                        method: 'PUT',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ status: 'active' }),
-                                      });
-                                      loadData();
-                                    } catch (err) {}
-                                  }}
-                                >
-                                  <i className="ti ti-check me-2"></i>Approve
-                                </a>
-                              </li>
+                              <>
+                                <li>
+                                  <a
+                                    className="dropdown-item text-success"
+                                    href="javascript:void(0);"
+                                    onClick={async () => {
+                                      if (confirm('Approve this company? All users will be activated.')) {
+                                        try {
+                                          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+                                          const response = await fetch(`${API_URL}/api/v1/companies/${company.id}/approve`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                          });
+                                          if (response.ok) {
+                                            alert('Company approved successfully!');
+                                            loadData();
+                                            loadStats();
+                                          } else {
+                                            const error = await response.json();
+                                            alert(error.error || 'Failed to approve company');
+                                          }
+                                        } catch (err) {
+                                          alert('Error approving company');
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    <i className="ti ti-check me-2"></i>Approve
+                                  </a>
+                                </li>
+                                <li>
+                                  <a
+                                    className="dropdown-item text-danger"
+                                    href="javascript:void(0);"
+                                    onClick={async () => {
+                                      const reason = prompt('Rejection reason (optional):');
+                                      if (reason !== null) {
+                                        try {
+                                          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+                                          const response = await fetch(`${API_URL}/api/v1/companies/${company.id}/reject`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ reason: reason || undefined }),
+                                          });
+                                          if (response.ok) {
+                                            alert('Company rejected');
+                                            loadData();
+                                            loadStats();
+                                          } else {
+                                            const error = await response.json();
+                                            alert(error.error || 'Failed to reject company');
+                                          }
+                                        } catch (err) {
+                                          alert('Error rejecting company');
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    <i className="ti ti-x me-2"></i>Reject
+                                  </a>
+                                </li>
+                              </>
                             )}
                             <li>
                               <a className="dropdown-item" href={`/pricing?companyId=${company.id}`}>

@@ -96,6 +96,52 @@ export class CompaniesService {
     return company;
   }
 
+  async approve(id: string, merchantId: string) {
+    const company = await this.findOne(id, merchantId);
+    
+    // Update company status
+    const updatedCompany = await this.prisma.company.update({
+      where: { id },
+      data: {
+        status: 'active',
+      },
+    });
+
+    // Activate all users in the company
+    await this.prisma.companyUser.updateMany({
+      where: { companyId: id },
+      data: {
+        isActive: true,
+      },
+    });
+
+    // Sync to Shopify if not already synced
+    try {
+      await this.shopifyCompanySync.syncCompanyToShopify(id);
+    } catch (error) {
+      console.error('Company Shopify sync failed after approval:', error);
+    }
+
+    return updatedCompany;
+  }
+
+  async reject(id: string, merchantId: string, reason?: string) {
+    const company = await this.findOne(id, merchantId);
+    
+    const updatedCompany = await this.prisma.company.update({
+      where: { id },
+      data: {
+        status: 'rejected',
+        settings: {
+          ...(company.settings as any),
+          rejectionReason: reason,
+        },
+      },
+    });
+
+    return updatedCompany;
+  }
+
   async update(id: string, merchantId: string, data: any) {
     await this.findOne(id, merchantId);
 

@@ -56,6 +56,18 @@ export class CompaniesController {
     return this.companiesService.update(id, merchantId, body);
   }
 
+  @Post(':id/approve')
+  async approve(@Param('id') id: string) {
+    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    return this.companiesService.approve(id, merchantId);
+  }
+
+  @Post(':id/reject')
+  async reject(@Param('id') id: string, @Body() body: { reason?: string }) {
+    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    return this.companiesService.reject(id, merchantId, body.reason);
+  }
+
   @Delete(':id')
   async delete(@Param('id') id: string) {
     const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';

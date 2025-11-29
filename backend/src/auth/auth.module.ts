@@ -8,11 +8,13 @@ import { SessionSyncService } from './session-sync.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { ShopifyOauthService } from './shopify-oauth.service';
 import { ShopifyModule } from '../shopify/shopify.module';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     ShopifyModule,
+    MailModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

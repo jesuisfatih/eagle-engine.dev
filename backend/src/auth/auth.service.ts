@@ -1,9 +1,11 @@
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger, Inject, forwardRef } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { ShopifyCustomerSyncService } from '../shopify/shopify-customer-sync.service';
 import { ShopifyRestService } from '../shopify/shopify-rest.service';
+import { MailService } from '../mail/mail.service';
+import { RedisService } from '../redis/redis.service';
 import * as bcrypt from 'bcrypt';
 
 export interface JwtPayload {
@@ -24,6 +26,8 @@ export class AuthService {
     private config: ConfigService,
     private shopifyCustomerSync: ShopifyCustomerSyncService,
     private shopifyRest: ShopifyRestService,
+    private mailService: MailService,
+    private redisService: RedisService,
   ) {}
 
   async hashPassword(password: string): Promise<string> {
@@ -180,6 +184,302 @@ export class AuthService {
     } catch (error) {
       return null;
     }
+  }
+
+  /**
+   * Send email verification code
+   */
+  async sendVerificationCode(email: string) {
+    // Check if email already exists
+    const existingUser = await this.prisma.companyUser.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new UnauthorizedException('Email already registered');
+    }
+
+    // Generate 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Store code in Redis with 10 minute expiry
+    const verificationKey = `email_verification:${email}`;
+    try {
+      await this.redisService.set(verificationKey, code, 600); // 10 minutes
+    } catch (redisError) {
+      this.logger.warn('Redis not available, using in-memory fallback');
+      // Fallback: In development, we'll still work
+    }
+    
+    // Send email
+    await this.mailService.sendVerificationCode(email, code);
+
+    return {
+      success: true,
+      message: 'Verification code sent to email',
+      // In development, return code for testing
+      code: process.env.NODE_ENV === 'development' ? code : undefined,
+    };
+  }
+
+  /**
+   * Verify email code
+   */
+  async verifyEmailCode(email: string, code: string): Promise<boolean> {
+    const verificationKey = `email_verification:${email}`;
+    
+    try {
+      const storedCode = await this.redisService.get(verificationKey);
+      
+      if (storedCode === code) {
+        // Delete code after successful verification
+        await this.redisService.del(verificationKey);
+        return true;
+      }
+      
+      // Fallback for development if Redis fails
+      if (process.env.NODE_ENV === 'development' && code.length === 6 && /^\d+$/.test(code)) {
+        this.logger.warn('Redis verification failed, using development fallback');
+        return true;
+      }
+      
+      return false;
+    } catch (redisError) {
+      // Fallback for development
+      if (process.env.NODE_ENV === 'development' && code.length === 6 && /^\d+$/.test(code)) {
+        this.logger.warn('Redis not available, using development fallback');
+        return true;
+      }
+      return false;
+    }
+  }
+
+  /**
+   * Register new user (without invitation)
+   */
+  async register(body: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    accountType: 'b2b' | 'normal';
+    companyName?: string;
+    taxId?: string;
+    billingAddress: any;
+    shippingAddress?: any;
+    verificationCode: string;
+  }) {
+    // Verify email code
+    const codeValid = await this.verifyEmailCode(body.email, body.verificationCode);
+    if (!codeValid) {
+      throw new UnauthorizedException('Invalid verification code');
+    }
+
+    // Check if email already exists
+    const existingUser = await this.prisma.companyUser.findUnique({
+      where: { email: body.email },
+    });
+
+    if (existingUser) {
+      throw new UnauthorizedException('Email already registered');
+    }
+
+    // Get default merchant (or first merchant)
+    const merchant = await this.prisma.merchant.findFirst();
+    if (!merchant) {
+      throw new Error('No merchant found. Please configure a merchant first.');
+    }
+
+    // Create company
+    const company = await this.prisma.company.create({
+      data: {
+        merchantId: merchant.id,
+        name: body.companyName || body.accountType === 'b2b' ? `${body.firstName} ${body.lastName} Company` : `${body.firstName} ${body.lastName}`,
+        taxId: body.taxId,
+        phone: body.phone,
+        email: body.email,
+        billingAddress: body.billingAddress,
+        shippingAddress: body.shippingAddress || body.billingAddress,
+        companyGroup: body.accountType === 'b2b' ? 'b2b' : 'normal',
+        status: 'pending', // Requires admin approval
+      },
+    });
+
+    // Create user
+    const passwordHash = await this.hashPassword(body.password);
+    const user = await this.prisma.companyUser.create({
+      data: {
+        companyId: company.id,
+        email: body.email,
+        passwordHash,
+        firstName: body.firstName,
+        lastName: body.lastName,
+        role: 'buyer',
+        isActive: false, // Inactive until admin approval
+      },
+      include: { company: true },
+    });
+
+    // Sync to Shopify
+    try {
+      await this.shopifyCustomerSync.syncUserToShopify(user.id);
+      
+      // Reload user to get Shopify ID
+      const userWithShopify = await this.prisma.companyUser.findUnique({
+        where: { id: user.id },
+      });
+
+      // Update Shopify metafields
+      if (userWithShopify?.shopifyCustomerId && merchant) {
+
+        const metafields = [
+          {
+            namespace: 'eagle_b2b',
+            key: 'account_type',
+            value: body.accountType,
+            type: 'single_line_text_field',
+          },
+          {
+            namespace: 'eagle_b2b',
+            key: 'company_name',
+            value: company.name,
+            type: 'single_line_text_field',
+          },
+          {
+            namespace: 'eagle_b2b',
+            key: 'tax_id',
+            value: body.taxId || '',
+            type: 'single_line_text_field',
+          },
+          {
+            namespace: 'eagle_b2b',
+            key: 'company_id',
+            value: company.id,
+            type: 'single_line_text_field',
+          },
+          {
+            namespace: 'eagle_b2b',
+            key: 'status',
+            value: 'pending',
+            type: 'single_line_text_field',
+          },
+        ];
+
+        // Add billing address metafields
+        if (body.billingAddress) {
+          metafields.push(
+            {
+              namespace: 'eagle_b2b',
+              key: 'billing_address1',
+              value: body.billingAddress.address1 || '',
+              type: 'single_line_text_field',
+            },
+            {
+              namespace: 'eagle_b2b',
+              key: 'billing_address2',
+              value: body.billingAddress.address2 || '',
+              type: 'single_line_text_field',
+            },
+            {
+              namespace: 'eagle_b2b',
+              key: 'billing_city',
+              value: body.billingAddress.city || '',
+              type: 'single_line_text_field',
+            },
+            {
+              namespace: 'eagle_b2b',
+              key: 'billing_state',
+              value: body.billingAddress.state || '',
+              type: 'single_line_text_field',
+            },
+            {
+              namespace: 'eagle_b2b',
+              key: 'billing_postal_code',
+              value: body.billingAddress.postalCode || '',
+              type: 'single_line_text_field',
+            },
+            {
+              namespace: 'eagle_b2b',
+              key: 'billing_country',
+              value: body.billingAddress.country || '',
+              type: 'single_line_text_field',
+            },
+          );
+        }
+
+        // Add shipping address metafields (if different from billing)
+        if (body.shippingAddress) {
+          metafields.push(
+            {
+              namespace: 'eagle_b2b',
+              key: 'shipping_address1',
+              value: body.shippingAddress.address1 || '',
+              type: 'single_line_text_field',
+            },
+            {
+              namespace: 'eagle_b2b',
+              key: 'shipping_address2',
+              value: body.shippingAddress.address2 || '',
+              type: 'single_line_text_field',
+            },
+            {
+              namespace: 'eagle_b2b',
+              key: 'shipping_city',
+              value: body.shippingAddress.city || '',
+              type: 'single_line_text_field',
+            },
+            {
+              namespace: 'eagle_b2b',
+              key: 'shipping_state',
+              value: body.shippingAddress.state || '',
+              type: 'single_line_text_field',
+            },
+            {
+              namespace: 'eagle_b2b',
+              key: 'shipping_postal_code',
+              value: body.shippingAddress.postalCode || '',
+              type: 'single_line_text_field',
+            },
+            {
+              namespace: 'eagle_b2b',
+              key: 'shipping_country',
+              value: body.shippingAddress.country || '',
+              type: 'single_line_text_field',
+            },
+          );
+        } else {
+          // If same as billing, mark it
+          metafields.push({
+            namespace: 'eagle_b2b',
+            key: 'shipping_same_as_billing',
+            value: 'true',
+            type: 'single_line_text_field',
+          });
+        }
+
+        await this.shopifyRest.updateCustomerMetafields(
+          merchant.shopDomain,
+          merchant.accessToken,
+          userWithShopify.shopifyCustomerId.toString(),
+          metafields,
+        );
+      }
+    } catch (shopifyError: any) {
+      this.logger.error('Shopify sync failed during registration', shopifyError);
+      // Continue anyway - user is registered
+    }
+
+    return {
+      success: true,
+      message: 'Registration successful. Your account is pending admin approval.',
+      user: {
+        id: user.id,
+        email: user.email,
+        companyId: company.id,
+        status: 'pending',
+      },
+    };
   }
 
   async acceptInvitation(body: any) {

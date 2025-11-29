@@ -29,6 +29,16 @@ export class MailService {
     this.logger.log(`📧 Password reset sent to ${email}`);
     return { success: true, resetUrl };
   }
+
+  async sendVerificationCode(email: string, code: string) {
+    this.logger.log(`📧 Verification code sent to ${email}: ${code}`);
+    // TODO: Implement with nodemailer or SendGrid
+    return {
+      success: true,
+      message: 'Verification code sent',
+      code, // Development için code'u döndür
+    };
+  }
 }
 
 

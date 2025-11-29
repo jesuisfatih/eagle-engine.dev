@@ -129,6 +129,45 @@ export class AuthController {
   }
 
   @Public()
+  @Post('send-verification-code')
+  async sendVerificationCode(@Body() body: { email: string }, @Res() res: Response) {
+    try {
+      const result = await this.authService.sendVerificationCode(body.email);
+      return res.json(result);
+    } catch (error: any) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        error: error.message || 'Failed to send verification code',
+      });
+    }
+  }
+
+  @Public()
+  @Post('verify-email-code')
+  async verifyEmailCode(@Body() body: { email: string; code: string }, @Res() res: Response) {
+    try {
+      const isValid = await this.authService.verifyEmailCode(body.email, body.code);
+      return res.json({ valid: isValid });
+    } catch (error: any) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        error: error.message || 'Failed to verify code',
+      });
+    }
+  }
+
+  @Public()
+  @Post('register')
+  async register(@Body() body: any, @Res() res: Response) {
+    try {
+      const result = await this.authService.register(body);
+      return res.json(result);
+    } catch (error: any) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        error: error.message || 'Registration failed',
+      });
+    }
+  }
+
+  @Public()
   @Post('accept-invitation')
   async acceptInvitation(@Body() body: any) {
     return this.authService.acceptInvitation(body);
