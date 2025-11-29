@@ -22,6 +22,7 @@ export class ShopifyStorefrontService {
     storefrontAccessToken: string,
     lines: CartLineItem[],
     discountCodes?: string[],
+    customerAccessToken?: string, // For authenticated checkout
   ) {
     const url = `https://${shop}/api/2025-01/graphql.json`;
 
@@ -57,6 +58,15 @@ export class ShopifyStorefrontService {
                 amount
               }
             }
+            buyerIdentity {
+              email
+              customer {
+                id
+                email
+                firstName
+                lastName
+              }
+            }
           }
           userErrors {
             field
@@ -66,12 +76,19 @@ export class ShopifyStorefrontService {
       }
     `;
 
-    const variables = {
+    const variables: any = {
       input: {
         lines,
         discountCodes,
       },
     };
+
+    // Add buyer identity if customer token provided
+    if (customerAccessToken) {
+      variables.input.buyerIdentity = {
+        customerAccessToken,
+      };
+    }
 
     try {
       const response = await firstValueFrom(
@@ -106,6 +123,81 @@ export class ShopifyStorefrontService {
     } catch (error) {
       this.logger.error('Failed to create Shopify cart', error);
       throw error;
+    }
+  }
+
+  /**
+   * Create customer access token for authenticated checkout
+   * This allows checkout to be pre-filled with customer data
+   */
+  async createCustomerAccessToken(
+    shop: string,
+    storefrontAccessToken: string,
+    email: string,
+    password: string,
+  ): Promise<string | null> {
+    const url = `https://${shop}/api/2025-01/graphql.json`;
+
+    const mutation = `
+      mutation customerAccessTokenCreate($input: CustomerAccessTokenCreateInput!) {
+        customerAccessTokenCreate(input: $input) {
+          customerAccessToken {
+            accessToken
+            expiresAt
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+
+    const variables = {
+      input: {
+        email,
+        password,
+      },
+    };
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          url,
+          {
+            query: mutation,
+            variables,
+          },
+          {
+            headers: {
+              'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
+              'Content-Type': 'application/json',
+            },
+          },
+        ),
+      );
+
+      if (response.data.errors) {
+        this.logger.error('Customer access token creation errors:', response.data.errors);
+        return null;
+      }
+
+      const result = response.data.data.customerAccessTokenCreate;
+      
+      if (result.userErrors && result.userErrors.length > 0) {
+        this.logger.error('Customer access token user errors:', result.userErrors);
+        return null;
+      }
+
+      if (result.customerAccessToken) {
+        this.logger.log('Customer access token created successfully');
+        return result.customerAccessToken.accessToken;
+      }
+
+      return null;
+    } catch (error) {
+      this.logger.error('Failed to create customer access token', error);
+      return null;
     }
   }
 }

@@ -9,11 +9,10 @@ interface EagleConfig {
   token?: string;
 }
 
-declare global {
-  interface Window {
-    Shopify: any;
-    ShopifyAnalytics: any;
-  }
+// Type declarations for Shopify globals
+interface Window {
+  Shopify?: any;
+  ShopifyAnalytics?: any;
 }
 
 class EagleSnippet {

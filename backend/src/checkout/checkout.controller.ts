@@ -9,8 +9,8 @@ export class CheckoutController {
   constructor(private checkoutService: CheckoutService) {}
 
   @Post('create')
-  async createCheckout(@Body('cartId') cartId: string) {
-    return this.checkoutService.createCheckout(cartId);
+  async createCheckout(@Body() body: { cartId: string; userId?: string }) {
+    return this.checkoutService.createCheckout(body.cartId, body.userId);
   }
 }
 

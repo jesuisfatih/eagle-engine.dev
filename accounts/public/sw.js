@@ -66,23 +66,62 @@ async function openDB() {
     
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
+      // Delete old stores if they exist
+      if (db.objectStoreNames.contains('auth_store')) {
+        db.deleteObjectStore('auth_store');
+      }
+      // Create new store
       if (!db.objectStoreNames.contains('auth_store')) {
         db.createObjectStore('auth_store', { keyPath: 'key' });
       }
     };
     
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => {
+      const db = request.result;
+      // Verify store exists, if not, upgrade
+      if (!db.objectStoreNames.contains('auth_store')) {
+        // Close and reopen with upgrade
+        db.close();
+        const upgradeRequest = indexedDB.open('eagle_auth_db', 2);
+        upgradeRequest.onupgradeneeded = (e) => {
+          const upgradeDb = e.target.result;
+          if (!upgradeDb.objectStoreNames.contains('auth_store')) {
+            upgradeDb.createObjectStore('auth_store', { keyPath: 'key' });
+          }
+        };
+        upgradeRequest.onsuccess = () => resolve(upgradeRequest.result);
+        upgradeRequest.onerror = () => reject(upgradeRequest.error);
+      } else {
+        resolve(db);
+      }
+    };
+    
     request.onerror = () => reject(request.error);
   });
 }
 
 async function getFromDB(db, key) {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['auth_store'], 'readonly');
-    const store = transaction.objectStore('auth_store');
-    const request = store.get(key);
-    request.onsuccess = () => resolve(request.result ? request.result.value : null);
-    request.onerror = () => reject(request.error);
+    try {
+      // Verify store exists before transaction
+      if (!db.objectStoreNames.contains('auth_store')) {
+        console.warn('Service Worker: auth_store not found, returning null');
+        resolve(null);
+        return;
+      }
+      
+      const transaction = db.transaction(['auth_store'], 'readonly');
+      const store = transaction.objectStore('auth_store');
+      const request = store.get(key);
+      request.onsuccess = () => resolve(request.result ? request.result.value : null);
+      request.onerror = () => {
+        console.error('Service Worker: getFromDB error', request.error);
+        resolve(null); // Return null instead of rejecting
+      };
+    } catch (error) {
+      console.error('Service Worker: getFromDB exception', error);
+      resolve(null); // Return null instead of rejecting
+    }
   });
 }
 
@@ -114,11 +153,26 @@ async function refreshToken(oldToken) {
 
 async function setInDB(db, key, value) {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['auth_store'], 'readwrite');
-    const store = transaction.objectStore('auth_store');
-    const request = store.put({ key, value, timestamp: Date.now() });
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
+    try {
+      // Verify store exists before transaction
+      if (!db.objectStoreNames.contains('auth_store')) {
+        console.warn('Service Worker: auth_store not found, cannot save');
+        resolve(); // Resolve instead of rejecting
+        return;
+      }
+      
+      const transaction = db.transaction(['auth_store'], 'readwrite');
+      const store = transaction.objectStore('auth_store');
+      const request = store.put({ key, value, timestamp: Date.now() });
+      request.onsuccess = () => resolve();
+      request.onerror = () => {
+        console.error('Service Worker: setInDB error', request.error);
+        resolve(); // Resolve instead of rejecting to prevent crashes
+      };
+    } catch (error) {
+      console.error('Service Worker: setInDB exception', error);
+      resolve(); // Resolve instead of rejecting
+    }
   });
 }
 

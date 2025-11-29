@@ -129,96 +129,113 @@ export default function CartPage() {
       // Wait for all items to be added
       await Promise.all(addPromises);
       
-      // Step 4: Get discount code from backend if available
-      let discountParam = '';
+      // Step 4: Get checkout URL with SSO and discount from backend
+      let checkoutUrl = '';
+      let ssoUrl: string | null = null;
+      
       try {
+        const userId = localStorage.getItem('eagle_userId') || '';
         const checkoutResponse = await fetch(`${API_URL}/api/v1/checkout/create`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
-          body: JSON.stringify({ cartId: cart.id }),
+          body: JSON.stringify({ 
+            cartId: cart.id,
+            userId: userId || undefined,
+          }),
         });
         
         if (checkoutResponse.ok) {
           const checkoutData = await checkoutResponse.json();
-          if (checkoutData.discountCode) {
-            discountParam = `?discount=${checkoutData.discountCode}`;
+          checkoutUrl = checkoutData.checkoutUrl || '';
+          
+          // If SSO URL is provided, use it first
+          if (checkoutData.ssoUrl) {
+            ssoUrl = checkoutData.ssoUrl;
+          }
+          
+          // Add discount to URL if available
+          if (checkoutData.discountCode && checkoutUrl) {
+            const urlObj = new URL(checkoutUrl);
+            urlObj.searchParams.set('discount', checkoutData.discountCode);
+            checkoutUrl = urlObj.toString();
           }
         }
-      } catch (discountErr) {
-        console.warn('Discount code fetch failed:', discountErr);
+      } catch (checkoutErr) {
+        console.warn('Checkout creation failed:', checkoutErr);
       }
       
-      // Step 5: Inject autofill script into checkout page
-      // Since we can't directly inject into Shopify's checkout, we'll:
-      // 1. Store data in localStorage (already done)
-      // 2. Create a script that runs on checkout page via URL hash or query param
-      // 3. Use a technique to inject script after page load
-      
-      // Create a script element that will be injected into checkout page
-      const script = document.createElement('script');
-      script.textContent = `
-        (function() {
-          if (!window.location.href.includes('/checkout') && !window.location.href.includes('/checkouts')) return;
+      // Step 5: If no checkout URL from backend, build fallback
+      if (!checkoutUrl) {
+        // Get discount code from backend if available
+        let discountParam = '';
+        try {
+          const discountResponse = await fetch(`${API_URL}/api/v1/checkout/create`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ cartId: cart.id }),
+          });
           
-          const data = localStorage.getItem('eagle_checkout_autofill') || sessionStorage.getItem('eagle_checkout_autofill');
-          if (!data) return;
-          
-          const userInfo = JSON.parse(data);
-          if (Date.now() - userInfo.timestamp > 300000) return;
-          
-          function fill(selector, value, isSelect = false) {
-            const el = document.querySelector(selector);
-            if (!el || !value || el.value) return false;
-            if (isSelect) {
-              const opt = Array.from(el.options).find(o => o.value === value || o.text.includes(value));
-              if (opt) el.value = opt.value;
-            } else {
-              el.value = value;
+          if (discountResponse.ok) {
+            const discountData = await discountResponse.json();
+            if (discountData.discountCode) {
+              discountParam = `?discount=${discountData.discountCode}`;
             }
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-            return true;
           }
-          
-          const fillForm = () => {
-            fill('#email, input[name="email"]', userInfo.email);
-            fill('#TextField3225, input[name="firstName"]', userInfo.firstName);
-            fill('#TextField3226, input[name="lastName"]', userInfo.lastName);
-            fill('#shipping-address1, input[name="address1"]', userInfo.address1);
-            fill('#TextField3227, input[name="address2"]', userInfo.address2);
-            fill('#TextField3228, input[name="city"]', userInfo.city);
-            fill('#Select613, select[name="zone"]', userInfo.state, true);
-            fill('#TextField3229, input[name="postalCode"]', userInfo.zip);
-            fill('#Select612, select[name="countryCode"]', userInfo.country, true);
-          };
-          
-          if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-              setTimeout(fillForm, 500);
-              setTimeout(fillForm, 2000);
-            });
-          } else {
-            fillForm();
-            setTimeout(fillForm, 500);
-            setTimeout(fillForm, 2000);
-          }
-        })();
-      `;
+        } catch (discountErr) {
+          console.warn('Discount code fetch failed:', discountErr);
+        }
+        
+        checkoutUrl = `${shopUrl}/checkout${discountParam}`;
+      }
       
-      // Step 6: Redirect to checkout with autofill trigger
-      // We'll append a hash that triggers the script
-      const checkoutUrl = `${shopUrl}/checkout${discountParam}#eagle-autofill`;
+      // Step 6: Set cookies for autofill (Shopify reads these)
+      // Shopify checkout reads certain cookies for autofill
+      if (userData || addressData) {
+        const domain = '.eagledtfsupply.com'; // Cross-subdomain cookie
+        
+        // Set customer email cookie (Shopify reads this)
+        if (userData?.email) {
+          document.cookie = `customer_email=${encodeURIComponent(userData.email)}; domain=${domain}; path=/; max-age=3600; SameSite=Lax`;
+        }
+        
+        // Set customer info in localStorage for snippet autofill
+        const checkoutData = {
+          email: userData?.email || localStorage.getItem('eagle_userEmail') || '',
+          firstName: userData?.firstName || '',
+          lastName: userData?.lastName || '',
+          phone: userData?.phone || '',
+          address1: addressData?.address1 || addressData?.street || '',
+          address2: addressData?.address2 || '',
+          city: addressData?.city || '',
+          state: addressData?.state || addressData?.province || '',
+          zip: addressData?.postalCode || addressData?.zip || '',
+          country: addressData?.country || 'US',
+          timestamp: Date.now(),
+        };
+        
+        localStorage.setItem('eagle_checkout_autofill', JSON.stringify(checkoutData));
+        sessionStorage.setItem('eagle_checkout_autofill', JSON.stringify(checkoutData));
+      }
       
-      // Store script in a way that checkout page can access it
-      // Since we can't directly inject, we'll use localStorage and a bookmarklet approach
-      // OR we can try to inject via URL hash
-      
-      // For now, redirect and hope the script runs
-      // In production, you might need a browser extension or bookmarklet
-      window.location.href = checkoutUrl;
+      // Step 7: Redirect to SSO first (if available), then checkout
+      if (ssoUrl) {
+        // Update SSO return_to with checkout URL
+        const ssoUrlObj = new URL(ssoUrl);
+        ssoUrlObj.searchParams.set('return_to', checkoutUrl);
+        
+        console.log('🦅 Redirecting to SSO first, then checkout');
+        window.location.href = ssoUrlObj.toString();
+      } else {
+        // Direct checkout redirect
+        console.log('🦅 Redirecting to checkout');
+        window.location.href = checkoutUrl;
+      }
       
     } catch (err) {
       console.error('Checkout error:', err);
