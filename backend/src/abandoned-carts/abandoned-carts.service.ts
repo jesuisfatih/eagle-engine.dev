@@ -195,7 +195,7 @@ export class AbandonedCartsService {
           merchantId,
           companyId: finalCompanyId,
           createdByUserId: userId || merchantId, // Use merchantId as fallback for anonymous
-          shopifyCartId: data.cartToken || data.shopifyCartId,
+          shopifyCartId: cleanCartToken, // Use cleaned token
           status: 'draft',
           metadata: {
             isAnonymous: !userId,
