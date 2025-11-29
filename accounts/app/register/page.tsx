@@ -271,8 +271,8 @@ export default function RegisterPage() {
   return (
     <div className="authentication-wrapper authentication-basic container-p-y">
       <div className="authentication-inner">
-        <div className="card">
-          <div className="card-body">
+        <div className="card" style={{ maxWidth: '500px', margin: '0 auto' }}>
+          <div className="card-body p-4 p-sm-5">
             <div className="app-brand justify-content-center mb-4">
               <span className="app-brand-text demo text-body fw-bold ms-2">
                 <span className="text-primary text-4xl">🦅</span>
