@@ -34,7 +34,20 @@ export class AbandonedCartsController {
   @Public()
   @Post('track')
   async trackCart(@Body() data: any) {
-    return this.abandonedCartsService.trackCart(data);
+    console.log('📦 Cart tracking received:', {
+      cartToken: data.cartToken,
+      itemCount: data.items?.length || 0,
+      customerEmail: data.customerEmail,
+      isAnonymous: !data.customerEmail,
+    });
+    try {
+      const result = await this.abandonedCartsService.trackCart(data);
+      console.log('✅ Cart tracked successfully:', result.id);
+      return result;
+    } catch (error: any) {
+      console.error('❌ Cart tracking failed:', error.message);
+      throw error;
+    }
   }
 
   @Public()

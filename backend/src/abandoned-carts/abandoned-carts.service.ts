@@ -22,15 +22,14 @@ export class AbandonedCartsService {
       where.companyId = companyId;
     }
 
-    // For admin view, show all carts. For user view, only show old carts
-    if (!includeRecent && !companyId) {
-      // Admin view without includeRecent - show old carts
-      where.updatedAt = { lt: oneHourAgo };
-    } else if (companyId) {
-      // User view - only show old carts
+    // For admin view with includeRecent, show all carts. Otherwise show old carts
+    if (includeRecent && !companyId) {
+      // Admin view - show all carts (including recent)
+      // Don't add updatedAt filter
+    } else {
+      // Show only old carts (older than 1 hour)
       where.updatedAt = { lt: oneHourAgo };
     }
-    // If includeRecent=true and no companyId, show all carts (admin view)
     
     return this.prisma.cart.findMany({
       where,
