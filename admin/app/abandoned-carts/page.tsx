@@ -58,10 +58,18 @@ export default function AbandonedCartsPage() {
       console.log('📦 Abandoned carts API response:', {
         status: response.status,
         count: Array.isArray(data) ? data.length : 0,
+        isArray: Array.isArray(data),
+        firstCart: Array.isArray(data) && data.length > 0 ? data[0] : null,
         data: data,
       });
       
-      setCarts(Array.isArray(data) ? data : []);
+      if (Array.isArray(data)) {
+        console.log(`✅ Setting ${data.length} carts to state`);
+        setCarts(data);
+      } else {
+        console.error('❌ Response is not an array:', typeof data, data);
+        setCarts([]);
+      }
     } catch (err: any) {
       console.error('❌ Failed to load abandoned carts:', err);
       setCarts([]);
