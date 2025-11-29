@@ -39,14 +39,32 @@ export class AbandonedCartsController {
       itemCount: data.items?.length || 0,
       customerEmail: data.customerEmail,
       isAnonymous: !data.customerEmail,
+      items: data.items?.map((i: any) => ({
+        variantId: i.variant_id || i.variantId,
+        productId: i.product_id || i.productId,
+        price: i.price,
+      })),
     });
     try {
       const result = await this.abandonedCartsService.trackCart(data);
       console.log('✅ Cart tracked successfully:', result.id);
       return result;
     } catch (error: any) {
-      console.error('❌ Cart tracking failed:', error.message);
-      throw error;
+      console.error('❌ Cart tracking failed:', {
+        message: error.message,
+        stack: error.stack,
+        data: {
+          cartToken: data.cartToken,
+          itemCount: data.items?.length,
+          firstItem: data.items?.[0],
+        },
+      });
+      // Return proper error response
+      return {
+        statusCode: 500,
+        message: error.message || 'Internal server error',
+        error: 'Cart tracking failed',
+      };
     }
   }
 

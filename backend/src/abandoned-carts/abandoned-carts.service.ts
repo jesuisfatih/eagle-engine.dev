@@ -145,13 +145,16 @@ export class AbandonedCartsService {
       }
     }
     
+    // Clean cart token (remove query params like ?key=...)
+    const cleanCartToken = (data.cartToken || data.shopifyCartId || '').split('?')[0];
+    
     // Find or create cart by shopifyCartId or cartToken
     let cart = await this.prisma.cart.findFirst({
       where: {
         merchantId,
         OR: [
+          { shopifyCartId: cleanCartToken },
           { shopifyCartId: data.cartToken || data.shopifyCartId },
-          ...(data.cartToken ? [{ shopifyCartId: data.cartToken }] : []),
         ],
       },
     });
@@ -251,14 +254,30 @@ export class AbandonedCartsService {
     const newItems: any[] = [];
     // Add new items
     for (const item of data.items || []) {
-      const variantId = item.variant_id || item.variantId;
-      const productId = item.product_id || item.productId;
-      const price = item.price || (item.price ? parseFloat(item.price) : 0);
-      
-      if (variantId && productId) {
+      try {
+        const variantId = item.variant_id || item.variantId;
+        const productId = item.product_id || item.productId;
+        const price = item.price ? (typeof item.price === 'string' ? parseFloat(item.price) : item.price) : 0;
+        
+        if (!variantId || !productId) {
+          this.logger.warn(`Skipping item: missing variantId or productId`, { item });
+          continue;
+        }
+
+        // Convert to BigInt safely
+        let variantIdBigInt: bigint;
+        let productIdBigInt: bigint;
+        try {
+          variantIdBigInt = BigInt(variantId);
+          productIdBigInt = BigInt(productId);
+        } catch (e) {
+          this.logger.error(`Failed to convert to BigInt:`, { variantId, productId, error: e });
+          continue;
+        }
+        
         // Try to find variant in catalog
         const variant = await this.prisma.catalogVariant.findUnique({
-          where: { shopifyVariantId: BigInt(variantId) },
+          where: { shopifyVariantId: variantIdBigInt },
           include: { product: true },
         });
 
@@ -266,8 +285,8 @@ export class AbandonedCartsService {
           data: {
             cartId: cart.id,
             variantId: variant?.id,
-            shopifyVariantId: BigInt(variantId),
-            shopifyProductId: BigInt(productId),
+            shopifyVariantId: variantIdBigInt,
+            shopifyProductId: productIdBigInt,
             sku: item.sku || variant?.sku || '',
             title: item.title || variant?.title || '',
             quantity: item.quantity || 1,
@@ -276,6 +295,13 @@ export class AbandonedCartsService {
           },
         });
         newItems.push(cartItem);
+      } catch (itemError: any) {
+        this.logger.error(`Failed to process cart item:`, {
+          item,
+          error: itemError.message,
+          stack: itemError.stack,
+        });
+        // Continue with next item instead of failing entire cart
       }
     }
 
