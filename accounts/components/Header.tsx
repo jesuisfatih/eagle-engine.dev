@@ -1,22 +1,91 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Header() {
+  const router = useRouter();
   const [cartCount, setCartCount] = useState(0);
+  const [userName, setUserName] = useState('');
 
   useEffect(() => {
     loadCartCount();
+    loadUserInfo();
   }, []);
 
   const loadCartCount = async () => {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/carts/active`);
-      const cart = await response.json();
-      setCartCount(cart?.items?.length || 0);
+      const token = localStorage.getItem('eagle_token');
+      const companyId = localStorage.getItem('eagle_companyId');
+      const userId = localStorage.getItem('eagle_userId');
+      
+      if (!token || !companyId || !userId) return;
+      
+      const response = await fetch(`${API_URL}/api/v1/carts/active?companyId=${companyId}&userId=${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok && response.status !== 204) {
+        const cart = await response.json();
+        setCartCount(cart?.items?.length || 0);
+      }
     } catch (err) {
       setCartCount(0);
+    }
+  };
+
+  const loadUserInfo = () => {
+    const name = localStorage.getItem('eagle_userName') || '';
+    const email = localStorage.getItem('eagle_userEmail') || '';
+    setUserName(name || email.split('@')[0] || 'U');
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Clear all auth data
+      localStorage.removeItem('eagle_token');
+      localStorage.removeItem('eagle_userId');
+      localStorage.removeItem('eagle_companyId');
+      localStorage.removeItem('eagle_userEmail');
+      localStorage.removeItem('eagle_userName');
+      localStorage.removeItem('eagle_loginTime');
+      sessionStorage.removeItem('eagle_token');
+      sessionStorage.removeItem('eagle_checkout_autofill');
+      
+      // Clear IndexedDB
+      try {
+        const db = await new Promise<IDBDatabase>((resolve, reject) => {
+          const request = indexedDB.open('eagle_auth_db', 2);
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+        const transaction = db.transaction(['auth_store'], 'readwrite');
+        const store = transaction.objectStore('auth_store');
+        await new Promise<void>((resolve, reject) => {
+          const request = store.clear();
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        });
+      } catch (dbErr) {
+        console.warn('IndexedDB clear failed:', dbErr);
+      }
+      
+      // Broadcast logout to all tabs
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        const channel = new BroadcastChannel('eagle_auth');
+        channel.postMessage({ type: 'logout', timestamp: Date.now() });
+        channel.close();
+      }
+      
+      // Redirect to login
+      router.push('/login');
+    } catch (err) {
+      console.error('Logout error:', err);
+      // Force redirect anyway
+      router.push('/login');
     }
   };
 
@@ -40,7 +109,9 @@ export default function Header() {
                 data-bs-toggle="dropdown"
               >
                 <div className="avatar avatar-online">
-                  <span className="avatar-initial rounded-circle bg-label-primary">MA</span>
+                  <span className="avatar-initial rounded-circle bg-label-primary">
+                    {userName ? userName.substring(0, 2).toUpperCase() : 'U'}
+                  </span>
                 </div>
               </a>
               <ul className="dropdown-menu dropdown-menu-end">
@@ -58,7 +129,14 @@ export default function Header() {
                 </li>
                 <li><hr className="dropdown-divider" /></li>
                 <li>
-                  <a className="dropdown-item" href="/login">
+                  <a 
+                    className="dropdown-item" 
+                    href="javascript:void(0);"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleLogout();
+                    }}
+                  >
                     <i className="ti ti-logout me-2"></i>
                     <span className="align-middle">Logout</span>
                   </a>

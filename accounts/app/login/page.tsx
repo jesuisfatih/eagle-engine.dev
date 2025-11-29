@@ -143,8 +143,8 @@ export default function LoginPage() {
 
             <p className="text-center">
               <span>New on our platform? </span>
-              <a href="/register">
-                <span>Create an account</span>
+              <a href="/request-invitation">
+                <span>Request an invitation</span>
               </a>
             </p>
           </div>
