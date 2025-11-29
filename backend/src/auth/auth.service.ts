@@ -332,9 +332,12 @@ export class AuthService {
 
     // Sync to Shopify immediately (even if email not verified)
     try {
-      this.logger.log(`Syncing new user ${user.email} to Shopify (register)`);
-      await this.shopifyCustomerSync.syncUserToShopify(user.id);
-      this.logger.log(`✅ User ${user.email} synced to Shopify successfully`);
+      this.logger.log(`🔄 [REGISTER] Starting Shopify sync for user ${user.email} (ID: ${user.id})`);
+      const shopifyResult = await this.shopifyCustomerSync.syncUserToShopify(user.id);
+      this.logger.log(`✅ [REGISTER] User ${user.email} synced to Shopify successfully`, {
+        shopifyCustomerId: shopifyResult?.id,
+        email: user.email,
+      });
       
       // Reload user to get Shopify ID
       const userWithShopify = await this.prisma.companyUser.findUnique({
@@ -343,6 +346,9 @@ export class AuthService {
 
       // Update Shopify metafields
       if (userWithShopify?.shopifyCustomerId && merchant) {
+        this.logger.log(`📝 [REGISTER] Updating Shopify metafields for user ${user.email}`, {
+          shopifyCustomerId: userWithShopify.shopifyCustomerId.toString(),
+        });
 
         const metafields = [
           {
@@ -558,12 +564,13 @@ export class AuthService {
 
     // Sync user to Shopify after registration
     try {
-      this.logger.log(`Syncing user ${updatedUser.email} to Shopify after invitation acceptance`);
+      this.logger.log(`🔄 [ACCEPT_INVITATION] Starting Shopify sync for user ${updatedUser.email} (ID: ${updatedUser.id})`);
       
       // Sync user to Shopify
       const shopifyCustomer = await this.shopifyCustomerSync.syncUserToShopify(updatedUser.id);
-      this.logger.log(`✅ User ${updatedUser.email} synced to Shopify successfully`, {
+      this.logger.log(`✅ [ACCEPT_INVITATION] User ${updatedUser.email} synced to Shopify successfully`, {
         shopifyCustomerId: shopifyCustomer?.id,
+        email: updatedUser.email,
       });
       
       // Reload user to get Shopify customer ID
