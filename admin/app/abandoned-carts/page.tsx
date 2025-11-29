@@ -82,8 +82,12 @@ export default function AbandonedCartsPage() {
   };
 
   const calculateTotal = (cart: any) => {
-    return cart.items?.reduce((sum: number, item: any) => 
-      sum + (item.unitPrice * item.quantity), 0) || 0;
+    if (!cart.items || cart.items.length === 0) return 0;
+    return cart.items.reduce((sum: number, item: any) => {
+      const price = item.unitPrice || item.listPrice || 0;
+      const quantity = item.quantity || 0;
+      return sum + (price * quantity);
+    }, 0);
   };
 
   return (
@@ -154,8 +158,19 @@ export default function AbandonedCartsPage() {
                           <span className="badge bg-label-warning">Anonymous</span>
                         )}
                       </td>
-                      <td>{cart.items?.length || 0} items</td>
-                      <td className="fw-semibold">${calculateTotal(cart).toFixed(2)}</td>
+                      <td>
+                        {cart.items && cart.items.length > 0 ? (
+                          <span>{cart.items.length} items</span>
+                        ) : (
+                          <span className="text-muted">0 items</span>
+                        )}
+                      </td>
+                      <td className="fw-semibold">
+                        ${calculateTotal(cart).toFixed(2)}
+                        {cart.items && cart.items.length === 0 && (
+                          <span className="badge bg-label-warning ms-2">Empty</span>
+                        )}
+                      </td>
                       <td className="small">{new Date(cart.updatedAt).toLocaleString()}</td>
                       <td>
                         <div className="btn-group">
