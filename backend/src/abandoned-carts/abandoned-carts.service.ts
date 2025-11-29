@@ -35,12 +35,15 @@ export class AbandonedCartsService {
     }
 
     // For admin view with includeRecent, show all carts. Otherwise show old carts
-    if (includeRecent && !companyId) {
+    // IMPORTANT: Admin panel always wants to see all carts, so if includeRecent is true, don't filter by time
+    if (includeRecent) {
       // Admin view - show all carts (including recent)
-      // Don't add updatedAt filter
+      // Don't add updatedAt filter - show everything
+      this.logger.log('Admin view: Showing all carts (including recent) - no time filter');
     } else {
-      // Show only old carts (older than 1 hour)
+      // Show only old carts (older than 1 hour) - for user view
       where.updatedAt = { lt: oneHourAgo };
+      this.logger.log(`User view: Filtering carts older than ${oneHourAgo.toISOString()}`);
     }
     
     this.logger.log(`Querying abandoned carts: merchantId=${merchantId}, companyId=${companyId}, includeRecent=${includeRecent}, anonymousCompanyId=${anonymousCompany?.id}`);
