@@ -285,11 +285,12 @@ export class AbandonedCartsService {
           ci.shopifyVariantId && ci.shopifyVariantId.toString() === ni.shopifyVariantId.toString()
         )
       );
-      const removedItems = currentItems.filter(ci => 
-        ci.shopifyVariantId && !newItems.some(ni => 
+      const removedItems = currentItems.filter(ci => {
+        if (!ci.shopifyVariantId) return false;
+        return !newItems.some(ni => 
           ni.shopifyVariantId && ni.shopifyVariantId.toString() === ci.shopifyVariantId.toString()
-        )
-      );
+        );
+      });
       const updatedItems = newItems.filter(ni => {
         if (!ni.shopifyVariantId) return false;
         const oldItem = currentItems.find(ci => 
