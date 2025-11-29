@@ -268,12 +268,17 @@ export class AuthService {
     taxId?: string;
     billingAddress: any;
     shippingAddress?: any;
-    verificationCode: string;
+    verificationCode?: string;
+    skipEmailVerification?: boolean;
   }) {
-    // Verify email code
-    const codeValid = await this.verifyEmailCode(body.email, body.verificationCode);
-    if (!codeValid) {
-      throw new UnauthorizedException('Invalid verification code');
+    // Verify email code if provided
+    let emailVerified = false;
+    if (body.verificationCode && !body.skipEmailVerification) {
+      const codeValid = await this.verifyEmailCode(body.email, body.verificationCode);
+      if (!codeValid) {
+        throw new UnauthorizedException('Invalid verification code');
+      }
+      emailVerified = true;
     }
 
     // Check if email already exists
@@ -317,6 +322,10 @@ export class AuthService {
         lastName: body.lastName,
         role: 'buyer',
         isActive: false, // Inactive until admin approval
+        // Store email verification status in settings JSON
+        permissions: {
+          emailVerified: emailVerified,
+        },
       },
       include: { company: true },
     });

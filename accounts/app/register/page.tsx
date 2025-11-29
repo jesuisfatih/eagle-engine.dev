@@ -14,6 +14,8 @@ export default function RegisterPage() {
     email: '',
     verificationCode: '',
     codeSent: false,
+    emailVerified: false,
+    skipEmailVerification: false,
     
     // Step 2: Personal Info
     firstName: '',
@@ -109,8 +111,7 @@ export default function RegisterPage() {
       if (response.ok) {
         const data = await response.json();
         if (data.valid) {
-          setFormData(prev => ({ ...prev, verificationCode: verificationCodeInput }));
-          setCurrentStep(2);
+          setFormData(prev => ({ ...prev, verificationCode: verificationCodeInput, emailVerified: true }));
         } else {
           setError('Invalid verification code');
         }
@@ -134,13 +135,16 @@ export default function RegisterPage() {
         setError('Email is required');
         return;
       }
-      if (!formData.codeSent) {
-        setError('Please send and verify verification code first');
-        return;
-      }
-      if (!formData.verificationCode) {
-        setError('Please verify your email code');
-        return;
+      // Email verification is optional - can skip
+      if (!formData.skipEmailVerification && !formData.emailVerified) {
+        if (!formData.codeSent) {
+          setError('Please send verification code or skip email verification');
+          return;
+        }
+        if (!formData.verificationCode) {
+          setError('Please verify your email code or skip email verification');
+          return;
+        }
       }
     } else if (currentStep === 2) {
       if (!formData.firstName || !formData.lastName || !formData.phone) {
@@ -202,7 +206,8 @@ export default function RegisterPage() {
           accountType: formData.accountType,
           companyName: formData.accountType === 'b2b' ? formData.companyName : undefined,
           taxId: formData.accountType === 'b2b' ? formData.taxId : undefined,
-          verificationCode: formData.verificationCode,
+          verificationCode: formData.emailVerified ? formData.verificationCode : undefined,
+          skipEmailVerification: formData.skipEmailVerification,
           billingAddress: {
             address1: formData.billingAddress1,
             address2: formData.billingAddress2,
@@ -264,30 +269,15 @@ export default function RegisterPage() {
   const progress = (currentStep / totalSteps) * 100;
 
   return (
-    <div className="authentication-wrapper authentication-cover authentication-bg">
-      <div className="authentication-inner row">
-        <div className="d-none d-lg-flex col-lg-7 p-0">
-          <div className="auth-cover-bg auth-cover-bg-color d-flex justify-content-center align-items-center">
-            <div className="text-center text-white p-5">
-              <h2 className="mb-3">🦅 Join Eagle B2B</h2>
-              <p className="lead">Create your account in {totalSteps} simple steps</p>
-              <div className="progress mt-4" style={{ height: '8px', width: '300px', margin: '0 auto' }}>
-                <div 
-                  className="progress-bar bg-white" 
-                  role="progressbar" 
-                  style={{ width: `${progress}%` }}
-                ></div>
-              </div>
-              <p className="mt-3 small">Step {currentStep} of {totalSteps}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="d-flex col-12 col-lg-5 align-items-center p-sm-5 p-4">
-          <div className="w-px-400 mx-auto">
-            <div className="app-brand mb-4">
-              <span className="text-primary text-4xl">🦅</span>
-              <span className="app-brand-text demo fw-bold ms-2">Eagle B2B</span>
+    <div className="authentication-wrapper authentication-basic container-p-y">
+      <div className="authentication-inner">
+        <div className="card">
+          <div className="card-body">
+            <div className="app-brand justify-content-center mb-4">
+              <span className="app-brand-text demo text-body fw-bold ms-2">
+                <span className="text-primary text-4xl">🦅</span>
+                <span className="ms-2">Eagle B2B</span>
+              </span>
             </div>
 
             {/* Progress Bar */}
@@ -296,7 +286,7 @@ export default function RegisterPage() {
                 <span className="small text-muted">Step {currentStep} of {totalSteps}</span>
                 <span className="small text-muted">{Math.round(progress)}%</span>
               </div>
-              <div className="progress" style={{ height: '6px' }}>
+              <div className="progress" style={{ height: '8px' }}>
                 <div 
                   className="progress-bar bg-primary" 
                   role="progressbar" 
@@ -378,7 +368,7 @@ export default function RegisterPage() {
 
                 {formData.codeSent && (
                   <div className="mb-3">
-                    <label className="form-label">Verification Code *</label>
+                    <label className="form-label">Verification Code</label>
                     <div className="input-group">
                       <input
                         type="text"
@@ -387,29 +377,44 @@ export default function RegisterPage() {
                         value={verificationCodeInput}
                         onChange={(e) => setVerificationCodeInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
                         placeholder="000000"
-                        disabled={loading || !!formData.verificationCode}
+                        disabled={loading || formData.emailVerified}
                       />
                       <button
                         type="button"
                         className="btn btn-primary"
                         onClick={handleVerifyCode}
-                        disabled={loading || verificationCodeInput.length !== 6 || !!formData.verificationCode}
+                        disabled={loading || verificationCodeInput.length !== 6 || formData.emailVerified}
                       >
-                        {formData.verificationCode ? 'Verified ✓' : 'Verify'}
+                        {formData.emailVerified ? 'Verified ✓' : 'Verify'}
                       </button>
                     </div>
                     <small className="text-muted">Enter the 6-digit code sent to your email</small>
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  disabled={loading || !formData.verificationCode}
-                  className="btn btn-primary d-grid w-100"
-                >
-                  Next Step →
-                </button>
+                <div className="d-flex gap-2">
+                  {!formData.emailVerified && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, skipEmailVerification: true, emailVerified: false }));
+                        setCurrentStep(2);
+                      }}
+                      className="btn btn-label-secondary flex-grow-1"
+                      disabled={loading || !formData.email}
+                    >
+                      Skip for now
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={loading || (!formData.emailVerified && !formData.skipEmailVerification && formData.codeSent)}
+                    className="btn btn-primary flex-grow-1"
+                  >
+                    Next Step →
+                  </button>
+                </div>
               </div>
             )}
 
@@ -844,7 +849,7 @@ export default function RegisterPage() {
               </div>
             )}
 
-            <p className="text-center mt-4">
+            <p className="text-center mt-4 mb-0">
               <span>Already have an account? </span>
               <a href="/login">
                 <span>Sign in</span>

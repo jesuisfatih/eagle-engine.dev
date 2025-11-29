@@ -40,6 +40,26 @@ export class CompanyUsersService {
       where: { id: userId },
     });
   }
+
+  async verifyEmail(userId: string) {
+    const user = await this.prisma.companyUser.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const permissions = (user.permissions as any) || {};
+    permissions.emailVerified = true;
+
+    return this.prisma.companyUser.update({
+      where: { id: userId },
+      data: {
+        permissions,
+      },
+    });
+  }
 }
 
 

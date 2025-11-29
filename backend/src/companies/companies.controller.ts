@@ -84,6 +84,11 @@ export class CompaniesController {
   async inviteUser(@Param('id') companyId: string, @Body() body: any) {
     return this.companyUsersService.invite(companyId, body);
   }
+
+  @Post('users/:userId/verify-email')
+  async verifyUserEmail(@Param('userId') userId: string) {
+    return this.companyUsersService.verifyEmail(userId);
+  }
 }
 
 

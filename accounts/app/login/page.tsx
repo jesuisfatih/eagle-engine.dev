@@ -56,26 +56,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="authentication-wrapper authentication-cover authentication-bg">
-      <div className="authentication-inner row">
-        <div className="d-none d-lg-flex col-lg-7 p-0">
-          <div className="auth-cover-bg auth-cover-bg-color d-flex justify-content-center align-items-center">
-            <img
-              src="/img/illustrations/auth-login-illustration-light.png"
-              alt="auth-login-cover"
-              className="img-fluid my-5 auth-illustration"
-            />
-          </div>
-        </div>
-
-        <div className="d-flex col-12 col-lg-5 align-items-center p-sm-5 p-4">
-          <div className="w-px-400 mx-auto">
-            <div className="app-brand mb-4">
-              <span className="text-primary text-4xl">🦅</span>
-              <span className="app-brand-text demo fw-bold ms-2">Eagle B2B</span>
+    <div className="authentication-wrapper authentication-basic container-p-y">
+      <div className="authentication-inner">
+        <div className="card">
+          <div className="card-body">
+            <div className="app-brand justify-content-center mb-4">
+              <span className="app-brand-text demo text-body fw-bold ms-2">
+                <span className="text-primary text-4xl">🦅</span>
+                <span className="ms-2">Eagle B2B</span>
+              </span>
             </div>
-            <h4 className="mb-1 fw-bold">Welcome! 👋</h4>
-            <p className="mb-4">Please sign-in to your account and start the adventure</p>
+
+            <h4 className="mb-2 text-center">Welcome! 👋</h4>
+            <p className="mb-4 text-center">Please sign-in to your account and start the adventure</p>
 
             {error && (
               <div className="alert alert-danger alert-dismissible" role="alert">
@@ -87,7 +80,7 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="mb-3">
               <div className="mb-3">
                 <label className="form-label">Email</label>
                 <input
@@ -141,13 +134,13 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <p className="text-center">
+            <p className="text-center mb-2">
               <span>New on our platform? </span>
               <a href="/register">
                 <span className="fw-semibold">Create an account</span>
               </a>
             </p>
-            <p className="text-center mt-2">
+            <p className="text-center">
               <span className="text-muted small">Already invited? </span>
               <a href="/request-invitation" className="small">
                 <span>Request an invitation</span>
