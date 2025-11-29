@@ -43,7 +43,8 @@ export class AbandonedCartsService {
       where.updatedAt = { lt: oneHourAgo };
     }
     
-    this.logger.log(`Querying abandoned carts: merchantId=${merchantId}, companyId=${companyId}, includeRecent=${includeRecent}, anonymousCompanyId=${anonymousCompany?.id}, where=${JSON.stringify(where)}`);
+    this.logger.log(`Querying abandoned carts: merchantId=${merchantId}, companyId=${companyId}, includeRecent=${includeRecent}, anonymousCompanyId=${anonymousCompany?.id}`);
+    this.logger.log(`Where clause: ${JSON.stringify(where, null, 2)}`);
     
     const carts = await this.prisma.cart.findMany({
       where,
@@ -77,7 +78,8 @@ export class AbandonedCartsService {
       },
     });
     
-    this.logger.log(`Found ${carts.length} abandoned carts. Anonymous: ${carts.filter(c => c.company?.name === 'Anonymous Customers').length}`);
+    const anonymousCount = carts.filter(c => c.company?.name === 'Anonymous Customers').length;
+    this.logger.log(`Found ${carts.length} abandoned carts. Anonymous: ${anonymousCount}, Regular: ${carts.length - anonymousCount}`);
     
     return carts;
   }
