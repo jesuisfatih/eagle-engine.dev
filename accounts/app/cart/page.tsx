@@ -38,25 +38,53 @@ export default function CartPage() {
   };
 
   const checkout = async () => {
-    if (!cart) return;
+    if (!cart || !cart.id) return;
     
     try {
-      // Get user info
-      const email = localStorage.getItem('eagle_userEmail') || '';
-      const firstName = localStorage.getItem('eagle_userFirstName') || '';
-      const lastName = localStorage.getItem('eagle_userLastName') || '';
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       
-      // Shopify checkout with autofill parameters
-      const checkoutParams = new URLSearchParams({
-        'checkout[email]': email,
-        'checkout[shipping_address][first_name]': firstName,
-        'checkout[shipping_address][last_name]': lastName,
+      // Use backend checkout endpoint to create proper Shopify checkout
+      const response = await fetch(`${API_URL}/api/v1/checkout/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('eagle_token') || ''}`,
+        },
+        body: JSON.stringify({ cartId: cart.id }),
       });
       
-      window.location.href = `https://eagle-dtf-supply0.myshopify.com/checkout?${checkoutParams}`;
+      if (response.ok) {
+        const data = await response.json();
+        if (data.checkoutUrl) {
+          // Redirect to Shopify checkout (SSO will auto-fill if active)
+          window.location.href = data.checkoutUrl;
+          return;
+        }
+      }
+      
+      // Fallback: Direct cart URL (if backend fails)
+      const cartItems = cart.items?.map((item: any) => 
+        `${item.shopifyVariantId}:${item.quantity}`
+      ).join(',') || '';
+      
+      if (cartItems) {
+        window.location.href = `https://eagle-dtf-supply0.myshopify.com/cart/${cartItems}`;
+      } else {
+        alert('Cart is empty');
+      }
     } catch (err) {
       console.error('Checkout error:', err);
-      window.location.href = 'https://eagle-dtf-supply0.myshopify.com/checkout';
+      
+      // Final fallback: Direct cart URL
+      const cartItems = cart.items?.map((item: any) => 
+        `${item.shopifyVariantId}:${item.quantity}`
+      ).join(',') || '';
+      
+      if (cartItems) {
+        window.location.href = `https://eagle-dtf-supply0.myshopify.com/cart/${cartItems}`;
+      } else {
+        alert('Failed to proceed to checkout. Please try again.');
+      }
     }
   };
 

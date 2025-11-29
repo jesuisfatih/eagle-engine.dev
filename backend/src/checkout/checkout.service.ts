@@ -97,22 +97,32 @@ export class CheckoutService {
     }));
 
     let checkoutUrl: string;
-    try {
-      // Note: storefrontAccessToken should be stored in merchant settings
-      const storefrontToken = 'YOUR_STOREFRONT_ACCESS_TOKEN'; // TODO: Get from merchant settings
-      
-      const result = await this.shopifyStorefront.createCart(
-        merchant.shopDomain,
-        storefrontToken,
-        lines,
-        discountCode ? [discountCode] : undefined,
-      );
+    
+    // Get storefront token from merchant settings
+    const settings = (merchant.settings as any) || {};
+    const storefrontToken = settings.storefrontToken || '';
+    
+    // Try Storefront API if token exists
+    if (storefrontToken) {
+      try {
+        const result = await this.shopifyStorefront.createCart(
+          merchant.shopDomain,
+          storefrontToken,
+          lines,
+          discountCode ? [discountCode] : undefined,
+        );
 
-      checkoutUrl = result.checkoutUrl;
-    } catch (error) {
-      this.logger.error('Storefront API failed, using fallback URL', error);
-      // Fallback: Direct cart URL with discount
-      checkoutUrl = `https://${merchant.shopDomain}/cart/${cart.items.map(i => `${i.shopifyVariantId}:${i.quantity}`).join(',')}${discountCode ? `?discount=${discountCode}` : ''}`;
+        checkoutUrl = result.checkoutUrl;
+        this.logger.log(`Checkout URL created via Storefront API: ${checkoutUrl}`);
+      } catch (error) {
+        this.logger.warn('Storefront API failed, using fallback cart URL', error);
+        // Fallback to cart URL
+        checkoutUrl = this.buildCartUrl(merchant.shopDomain, cart.items, discountCode);
+      }
+    } else {
+      // No storefront token - use cart URL directly
+      this.logger.log('No storefront token, using cart URL');
+      checkoutUrl = this.buildCartUrl(merchant.shopDomain, cart.items, discountCode);
     }
 
     // Update cart
@@ -130,6 +140,12 @@ export class CheckoutService {
       total: pricing.subtotal,
       savings: discountAmount,
     };
+  }
+
+  private buildCartUrl(shopDomain: string, items: any[], discountCode?: string): string {
+    const cartItems = items.map(i => `${i.shopifyVariantId}:${i.quantity}`).join(',');
+    const baseUrl = `https://${shopDomain}/cart/${cartItems}`;
+    return discountCode ? `${baseUrl}?discount=${discountCode}` : baseUrl;
   }
 }
 
