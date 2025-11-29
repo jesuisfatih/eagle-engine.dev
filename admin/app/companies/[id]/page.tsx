@@ -314,13 +314,15 @@ export default function CompanyDetailPage() {
                   <th>Role</th>
                   <th>Status</th>
                   <th>Last Login</th>
+                  <th>Email Status</th>
+                  <th>Last Login</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-4">
+                    <td colSpan={6} className="text-center py-4">
                       <p className="text-muted mb-0">No team members yet</p>
                     </td>
                   </tr>
@@ -339,13 +341,52 @@ export default function CompanyDetailPage() {
                           {user.isActive ? 'Active' : 'Pending'}
                         </span>
                       </td>
+                      <td>
+                        {((user.permissions as any)?.emailVerified) ? (
+                          <span className="badge bg-label-success">
+                            <i className="ti ti-check me-1"></i>Verified
+                          </span>
+                        ) : (
+                          <span className="badge bg-label-warning">
+                            <i className="ti ti-x me-1"></i>Not Verified
+                          </span>
+                        )}
+                      </td>
                       <td className="small text-muted">
                         {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never'}
                       </td>
                       <td>
-                        <button className="btn btn-sm btn-icon btn-text-secondary">
-                          <i className="ti ti-edit"></i>
-                        </button>
+                        <div className="btn-group">
+                          {!((user.permissions as any)?.emailVerified) && (
+                            <button
+                              className="btn btn-sm btn-icon btn-text-success"
+                              onClick={async () => {
+                                if (confirm('Verify this user\'s email address?')) {
+                                  try {
+                                    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+                                    const response = await fetch(`${API_URL}/api/v1/companies/users/${user.id}/verify-email`, {
+                                      method: 'POST',
+                                    });
+                                    if (response.ok) {
+                                      alert('Email verified successfully!');
+                                      loadCompany();
+                                    } else {
+                                      alert('Failed to verify email');
+                                    }
+                                  } catch (err) {
+                                    alert('Error verifying email');
+                                  }
+                                }
+                              }}
+                              title="Verify Email"
+                            >
+                              <i className="ti ti-mail-check"></i>
+                            </button>
+                          )}
+                          <button className="btn btn-sm btn-icon btn-text-secondary">
+                            <i className="ti ti-edit"></i>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
