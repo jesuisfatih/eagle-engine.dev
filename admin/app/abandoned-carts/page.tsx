@@ -83,12 +83,24 @@ export default function AbandonedCartsPage() {
                   {carts.map((cart) => (
                     <tr key={cart.id}>
                       <td>
-                        <div className="fw-semibold">
-                          {cart.createdBy?.firstName} {cart.createdBy?.lastName}
-                        </div>
-                        <div className="small text-muted">{cart.createdBy?.email}</div>
+                        {cart.createdBy ? (
+                          <>
+                            <div className="fw-semibold">
+                              {cart.createdBy.firstName} {cart.createdBy.lastName}
+                            </div>
+                            <div className="small text-muted">{cart.createdBy.email}</div>
+                          </>
+                        ) : (
+                          <span className="badge bg-label-warning">Anonymous User</span>
+                        )}
                       </td>
-                      <td>{cart.company?.name || <span className="badge bg-label-warning">Anonymous</span>}</td>
+                      <td>
+                        {cart.company?.name ? (
+                          cart.company.name
+                        ) : (
+                          <span className="badge bg-label-warning">Anonymous</span>
+                        )}
+                      </td>
                       <td>{cart.items?.length || 0} items</td>
                       <td className="fw-semibold">${calculateTotal(cart).toFixed(2)}</td>
                       <td className="small">{new Date(cart.updatedAt).toLocaleString()}</td>

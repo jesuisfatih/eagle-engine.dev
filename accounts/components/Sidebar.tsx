@@ -7,6 +7,7 @@ const menuItems = [
   { title: 'Dashboard', icon: 'ti-home', href: '/dashboard' },
   { title: 'Products', icon: 'ti-shopping-bag', href: '/products' },
   { title: 'Cart', icon: 'ti-shopping-cart', href: '/cart' },
+  { title: 'Abandoned Carts', icon: 'ti-shopping-cart-off', href: '/abandoned-carts' },
   { title: 'Orders', icon: 'ti-package', href: '/orders' },
   { title: 'Quotes', icon: 'ti-file-invoice', href: '/quotes' },
   { title: 'Team', icon: 'ti-users', href: '/team' },
