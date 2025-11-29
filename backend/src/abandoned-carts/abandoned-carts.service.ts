@@ -280,10 +280,21 @@ export class AbandonedCartsService {
       });
     } else if (previousItemCount !== newItemCount) {
       // Items changed
-      const addedItems = newItems.filter(ni => !currentItems.some(ci => ci.shopifyVariantId.toString() === ni.shopifyVariantId.toString()));
-      const removedItems = currentItems.filter(ci => !newItems.some(ni => ni.shopifyVariantId.toString() === ci.shopifyVariantId.toString()));
+      const addedItems = newItems.filter(ni => 
+        ni.shopifyVariantId && !currentItems.some(ci => 
+          ci.shopifyVariantId && ci.shopifyVariantId.toString() === ni.shopifyVariantId.toString()
+        )
+      );
+      const removedItems = currentItems.filter(ci => 
+        ci.shopifyVariantId && !newItems.some(ni => 
+          ni.shopifyVariantId && ni.shopifyVariantId.toString() === ci.shopifyVariantId.toString()
+        )
+      );
       const updatedItems = newItems.filter(ni => {
-        const oldItem = currentItems.find(ci => ci.shopifyVariantId.toString() === ni.shopifyVariantId.toString());
+        if (!ni.shopifyVariantId) return false;
+        const oldItem = currentItems.find(ci => 
+          ci.shopifyVariantId && ci.shopifyVariantId.toString() === ni.shopifyVariantId.toString()
+        );
         return oldItem && oldItem.quantity !== ni.quantity;
       });
 
@@ -300,7 +311,9 @@ export class AbandonedCartsService {
       if (updatedItems.length > 0) {
         await this.logCartActivity(cart.id, merchantId, cart.companyId, 'cart_item_updated', {
           items: updatedItems.map(i => {
-            const oldItem = currentItems.find(ci => ci.shopifyVariantId.toString() === i.shopifyVariantId.toString());
+            const oldItem = i.shopifyVariantId ? currentItems.find(ci => 
+              ci.shopifyVariantId && ci.shopifyVariantId.toString() === i.shopifyVariantId.toString()
+            ) : null;
             return {
               sku: i.sku,
               title: i.title,
