@@ -15,18 +15,32 @@ export class ShopifyCustomerSyncService {
   ) {}
 
   async syncUserToShopify(userId: string) {
+    this.logger.log(`🔄 syncUserToShopify called for userId: ${userId}`);
+    
     const user = await this.prisma.companyUser.findUnique({
       where: { id: userId },
       include: { company: true },
     });
 
-    if (!user) return;
+    if (!user) {
+      this.logger.warn(`⚠️ syncUserToShopify: User not found (ID: ${userId})`);
+      throw new Error(`User not found: ${userId}`);
+    }
 
     const merchant = await this.prisma.merchant.findUnique({
       where: { id: user.company.merchantId },
     });
 
-    if (!merchant) return;
+    if (!merchant) {
+      this.logger.warn(`⚠️ syncUserToShopify: Merchant not found for user ${user.email} (merchantId: ${user.company.merchantId})`);
+      throw new Error(`Merchant not found for user ${user.email}`);
+    }
+    
+    this.logger.log(`🔄 syncUserToShopify: Starting sync for user ${user.email}`, {
+      userId,
+      merchantId: merchant.id,
+      shopDomain: merchant.shopDomain,
+    });
 
     try {
       // Check if user already has Shopify customer ID
@@ -124,13 +138,16 @@ export class ShopifyCustomerSyncService {
 
       this.logger.log(`✅ User ${user.email} synced to Shopify successfully`, {
         shopifyCustomerId: response.data.customer.id,
+        email: user.email,
       });
       return response.data.customer;
     } catch (error: any) {
       this.logger.error(`❌ Failed to sync user ${user.email} to Shopify`, {
         error: error.message,
+        stack: error.stack,
         response: error.response?.data,
         status: error.response?.status,
+        url: error.config?.url,
       });
       throw error;
     }
