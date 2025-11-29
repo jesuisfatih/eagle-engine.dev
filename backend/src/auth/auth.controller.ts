@@ -94,6 +94,39 @@ export class AuthController {
   }
 
   @Public()
+  @Get('validate-invitation')
+  async validateInvitation(@Query('token') token: string, @Res() res: Response) {
+    try {
+      const user = await this.prisma.companyUser.findFirst({
+        where: { invitationToken: token },
+        include: { company: true },
+      });
+
+      if (!user) {
+        return res.status(HttpStatus.NOT_FOUND).json({
+          error: 'Invalid invitation token',
+        });
+      }
+
+      if (user.invitationAcceptedAt) {
+        return res.status(HttpStatus.BAD_REQUEST).json({
+          error: 'Invitation already accepted',
+        });
+      }
+
+      return res.json({
+        email: user.email,
+        companyName: user.company.name,
+        valid: true,
+      });
+    } catch (error: any) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        error: 'Failed to validate invitation',
+      });
+    }
+  }
+
+  @Public()
   @Post('accept-invitation')
   async acceptInvitation(@Body() body: any) {
     return this.authService.acceptInvitation(body);

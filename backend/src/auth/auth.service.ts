@@ -2,6 +2,8 @@ import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { ShopifyCustomerSyncService } from '../shopify/shopify-customer-sync.service';
+import { ShopifyRestService } from '../shopify/shopify-rest.service';
 import * as bcrypt from 'bcrypt';
 
 export interface JwtPayload {
@@ -20,6 +22,8 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private config: ConfigService,
+    private shopifyCustomerSync: ShopifyCustomerSyncService,
+    private shopifyRest: ShopifyRestService,
   ) {}
 
   async hashPassword(password: string): Promise<string> {
@@ -211,8 +215,9 @@ export class AuthService {
     });
 
     // Update company if info provided
+    let updatedCompany = user.company;
     if (body.companyInfo) {
-      await this.prisma.company.update({
+      updatedCompany = await this.prisma.company.update({
         where: { id: user.companyId },
         data: {
           name: body.companyInfo.name || user.company.name,
@@ -221,7 +226,107 @@ export class AuthService {
           billingAddress: body.companyInfo.billingAddress,
           status: 'active',
         },
+        include: { merchant: true },
       });
+    }
+
+    // Sync user to Shopify after registration
+    try {
+      this.logger.log(`Syncing user ${updatedUser.email} to Shopify after registration`);
+      
+      // Sync user to Shopify
+      const shopifyCustomer = await this.shopifyCustomerSync.syncUserToShopify(updatedUser.id);
+      
+      // Reload user to get Shopify customer ID
+      const userWithShopify = await this.prisma.companyUser.findUnique({
+        where: { id: updatedUser.id },
+      });
+
+      // Update Shopify customer with B2B metafields if company info provided
+      if (updatedCompany?.merchant && body.companyInfo && userWithShopify?.shopifyCustomerId) {
+        try {
+          const metafields = [
+            {
+              namespace: 'eagle_b2b',
+              key: 'company_name',
+              value: body.companyInfo.name || '',
+              type: 'single_line_text_field',
+            },
+            {
+              namespace: 'eagle_b2b',
+              key: 'tax_id',
+              value: body.companyInfo.taxId || '',
+              type: 'single_line_text_field',
+            },
+            {
+              namespace: 'eagle_b2b',
+              key: 'company_id',
+              value: updatedUser.companyId,
+              type: 'single_line_text_field',
+            },
+          ];
+
+          // Add address metafields if provided
+          if (body.companyInfo.billingAddress) {
+            const address = body.companyInfo.billingAddress;
+            metafields.push(
+              {
+                namespace: 'eagle_b2b',
+                key: 'billing_address1',
+                value: address.address1 || '',
+                type: 'single_line_text_field',
+              },
+              {
+                namespace: 'eagle_b2b',
+                key: 'billing_address2',
+                value: address.address2 || '',
+                type: 'single_line_text_field',
+              },
+              {
+                namespace: 'eagle_b2b',
+                key: 'billing_city',
+                value: address.city || '',
+                type: 'single_line_text_field',
+              },
+              {
+                namespace: 'eagle_b2b',
+                key: 'billing_state',
+                value: address.state || '',
+                type: 'single_line_text_field',
+              },
+              {
+                namespace: 'eagle_b2b',
+                key: 'billing_postal_code',
+                value: address.postalCode || '',
+                type: 'single_line_text_field',
+              },
+              {
+                namespace: 'eagle_b2b',
+                key: 'billing_country',
+                value: address.country || '',
+                type: 'single_line_text_field',
+              },
+            );
+          }
+
+          await this.shopifyRest.updateCustomerMetafields(
+            updatedCompany.merchant.shopDomain,
+            updatedCompany.merchant.accessToken,
+            userWithShopify.shopifyCustomerId.toString(),
+            metafields,
+          );
+
+          this.logger.log(`B2B metafields updated for customer ${userWithShopify.shopifyCustomerId}`);
+        } catch (metafieldError: any) {
+          this.logger.warn('Failed to update Shopify metafields', metafieldError);
+          // Continue anyway - customer is created
+        }
+      }
+
+      this.logger.log(`User ${updatedUser.email} successfully synced to Shopify`);
+    } catch (shopifyError: any) {
+      this.logger.error('Failed to sync user to Shopify after registration', shopifyError);
+      // Continue anyway - user is registered in Eagle
     }
 
     const payload: JwtPayload = {
