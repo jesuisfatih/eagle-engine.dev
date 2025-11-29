@@ -362,13 +362,21 @@ export class AbandonedCartsService {
 
   async trackCart(data: any) {
     // This is called from snippet - same as sync but with different data structure
-    return this.syncShopifyCart({
-      cartToken: data.cartToken,
-      shopifyCartId: data.cartToken,
-      customerEmail: data.customerEmail,
-      shopifyCustomerId: data.shopifyCustomerId || data.customerId,
-      items: data.items,
-    });
+    try {
+      const result = await this.syncShopifyCart({
+        cartToken: data.cartToken || data.shopifyCartId,
+        shopifyCartId: data.cartToken || data.shopifyCartId,
+        customerEmail: data.customerEmail,
+        shopifyCustomerId: data.shopifyCustomerId || data.customerId,
+        items: data.items || [],
+      });
+      
+      this.logger.log(`Cart tracked: ${data.cartToken}, items: ${data.items?.length || 0}, anonymous: ${!data.customerEmail}`);
+      return result;
+    } catch (error) {
+      this.logger.error('Failed to track cart', error);
+      throw error;
+    }
   }
 }
 

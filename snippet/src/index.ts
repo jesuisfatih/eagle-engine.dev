@@ -96,25 +96,47 @@ class EagleSnippet {
       const cartResponse = await fetch('/cart.js');
       const cart = await cartResponse.json();
       
+      if (!cart.items || cart.items.length === 0) {
+        return; // Empty cart, don't sync
+      }
+      
       this.cartToken = cart.token;
       
-      await fetch(`${this.config.apiUrl}/api/v1/events/collect`, {
+      // Get customer email if available
+      let customerEmail = null;
+      if (window.Shopify?.customer?.email) {
+        customerEmail = window.Shopify.customer.email;
+      }
+      
+      // Send to abandoned carts tracking endpoint
+      await fetch(`${this.config.apiUrl}/api/v1/abandoned-carts/track`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          shop: this.config.shop,
-          sessionId: this.sessionId,
-          eagleToken: this.config.token,
+          cartToken: this.cartToken,
+          shopifyCartId: this.cartToken,
+          customerEmail: customerEmail,
           shopifyCustomerId: this.customerId,
-          eventType: 'cart_update',
-          payload: {
-            cartToken: this.cartToken,
-            items: cart.items,
-            itemCount: cart.item_count,
-            totalPrice: cart.total_price,
-            currency: cart.currency,
-          },
+          customerId: this.customerId,
+          items: cart.items.map((item: any) => ({
+            variant_id: item.variant_id,
+            variantId: item.variant_id,
+            product_id: item.product_id,
+            productId: item.product_id,
+            sku: item.sku,
+            title: item.title,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          totalPrice: cart.total_price,
+          currency: cart.currency,
         }),
+      });
+      
+      console.log('🦅 Eagle: Cart synced to abandoned carts', {
+        cartToken: this.cartToken,
+        itemCount: cart.items.length,
+        customerEmail,
       });
     } catch (err) {
       console.error('Eagle: Cart sync failed', err);
