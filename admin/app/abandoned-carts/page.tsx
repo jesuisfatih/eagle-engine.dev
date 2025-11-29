@@ -48,7 +48,9 @@ export default function AbandonedCartsPage() {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       // Get all carts including recent ones (for admin view)
-      const response = await fetch(`${API_URL}/api/v1/abandoned-carts?includeRecent=true`);
+      const url = `${API_URL}/api/v1/abandoned-carts?includeRecent=true`;
+      console.log('🔗 Fetching abandoned carts from:', url);
+      const response = await fetch(url);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
