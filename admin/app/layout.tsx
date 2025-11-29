@@ -24,7 +24,6 @@ export default function RootLayout({
           rel="stylesheet"
         />
         <link rel="stylesheet" href="/vendor/fonts/fontawesome.css" />
-        <link rel="stylesheet" href="/vendor/fonts/tabler-icons.css" />
         <link rel="stylesheet" href="/vendor/fonts/flag-icons.css" />
         <link rel="stylesheet" href="/vendor/libs/node-waves/node-waves.css" />
         <link rel="stylesheet" href="/vendor/libs/perfect-scrollbar/perfect-scrollbar.css" />

@@ -28,10 +28,14 @@ export default function SsoModeSwitch() {
   };
 
   const handleToggle = async (enabled: boolean) => {
+    // Optimistic update - update UI immediately
+    const previousMode = multipassMode;
+    setMultipassMode(enabled);
     setLoading(true);
+    
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      await fetch(`${API_URL}/api/v1/settings/sso`, {
+      const response = await fetch(`${API_URL}/api/v1/settings/sso`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -40,28 +44,24 @@ export default function SsoModeSwitch() {
           storefrontToken: !enabled ? storefrontToken : '',
         }),
       });
-      setMultipassMode(enabled);
       
-      const modal = document.createElement('div');
-      modal.className = 'modal fade show d-block';
-      modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
-      modal.innerHTML = `
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">✅ Settings Updated</h5>
-              <button type="button" class="btn-close" onclick="this.closest('.modal').remove(); location.reload();"></button>
-            </div>
-            <div class="modal-body">SSO mode changed to: ${enabled ? 'Multipass' : 'Alternative'}</div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove(); location.reload();">OK</button>
-            </div>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-    } catch (err) {
-      console.error(err);
+      if (!response.ok) {
+        // Revert on error
+        setMultipassMode(previousMode);
+        throw new Error(`Failed to update SSO settings: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      // Update with server response
+      setMultipassMode(data.mode === 'multipass');
+      
+      // Show success message
+      alert(`✅ SSO mode changed to: ${enabled ? 'Multipass' : 'Alternative'}`);
+    } catch (err: any) {
+      // Revert on error
+      setMultipassMode(previousMode);
+      alert(`❌ Failed to update SSO settings: ${err.message || 'Unknown error'}`);
+      console.error('SSO toggle error:', err);
     } finally {
       setLoading(false);
     }
@@ -105,19 +105,21 @@ export default function SsoModeSwitch() {
                 Enable it in: Shopify Admin → Settings → Customer accounts → Multipass
               </p>
             </div>
-            <div className="mb-3">
-              <label className="form-label">Multipass Secret (64 characters)</label>
-              <input 
-                type="password" 
-                className="form-control font-monospace"
-                placeholder="a1b2c3d4e5f6..."
-                value={multipassSecret}
-                onChange={(e) => setMultipassSecret(e.target.value)}
-              />
-              <small className="text-muted">
-                Get from: Shopify Admin → Settings → Customer accounts → Multipass
-              </small>
-            </div>
+            <form onSubmit={(e) => { e.preventDefault(); }}>
+              <div className="mb-3">
+                <label className="form-label">Multipass Secret (64 characters)</label>
+                <input 
+                  type="password" 
+                  className="form-control font-monospace"
+                  placeholder="a1b2c3d4e5f6..."
+                  value={multipassSecret}
+                  onChange={(e) => setMultipassSecret(e.target.value)}
+                />
+                <small className="text-muted">
+                  Get from: Shopify Admin → Settings → Customer accounts → Multipass
+                </small>
+              </div>
+            </form>
           </div>
         ) : (
           <div>
@@ -141,19 +143,21 @@ export default function SsoModeSwitch() {
               />
               <small className="text-muted">Cross-subdomain cookie for seamless auth</small>
             </div>
-            <div className="mb-3">
-              <label className="form-label">Shopify Storefront Access Token</label>
-              <input 
-                type="password" 
-                className="form-control font-monospace"
-                placeholder="Storefront API token"
-                value={storefrontToken}
-                onChange={(e) => setStorefrontToken(e.target.value)}
-              />
-              <small className="text-muted">
-                Required for checkout creation
-              </small>
-            </div>
+            <form onSubmit={(e) => { e.preventDefault(); }}>
+              <div className="mb-3">
+                <label className="form-label">Shopify Storefront Access Token</label>
+                <input 
+                  type="password" 
+                  className="form-control font-monospace"
+                  placeholder="Storefront API token"
+                  value={storefrontToken}
+                  onChange={(e) => setStorefrontToken(e.target.value)}
+                />
+                <small className="text-muted">
+                  Required for checkout creation
+                </small>
+              </div>
+            </form>
           </div>
         )}
 

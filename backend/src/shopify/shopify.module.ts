@@ -5,6 +5,8 @@ import { ShopifyCustomerSyncService } from './shopify-customer-sync.service';
 import { ShopifySsoService } from './shopify-sso.service';
 import { ShopifyService } from './shopify.service';
 import { ShopifyRestService } from './shopify-rest.service';
+import { ShopifyAdminDiscountService } from './shopify-admin-discount.service';
+import { ShopifyStorefrontService } from './shopify-storefront.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigModule } from '@nestjs/config';
 
@@ -16,6 +18,8 @@ import { ConfigModule } from '@nestjs/config';
     ShopifySsoService,
     ShopifyService,
     ShopifyRestService,
+    ShopifyAdminDiscountService,
+    ShopifyStorefrontService,
     PrismaService,
   ],
   exports: [
@@ -24,6 +28,8 @@ import { ConfigModule } from '@nestjs/config';
     ShopifySsoService,
     ShopifyService,
     ShopifyRestService,
+    ShopifyAdminDiscountService,
+    ShopifyStorefrontService,
   ],
 })
 export class ShopifyModule {}
