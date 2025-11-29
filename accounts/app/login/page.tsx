@@ -143,7 +143,13 @@ export default function LoginPage() {
 
             <p className="text-center">
               <span>New on our platform? </span>
-              <a href="/request-invitation">
+              <a href="/register">
+                <span className="fw-semibold">Create an account</span>
+              </a>
+            </p>
+            <p className="text-center mt-2">
+              <span className="text-muted small">Already invited? </span>
+              <a href="/request-invitation" className="small">
                 <span>Request an invitation</span>
               </a>
             </p>
