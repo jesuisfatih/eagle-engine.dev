@@ -12,18 +12,37 @@ export class AbandonedCartsController {
   @Get()
   async getAbandonedCarts(
     @Query('companyId') companyId?: string,
-    @Query('includeRecent') includeRecent?: string,
+    @Query('includeRecent') includeRecent?: string | boolean,
+    @Query() allQuery?: any, // Get all query params for debugging
   ) {
     const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    
+    // Debug: Log all query parameters
+    console.log('📦 getAbandonedCarts - All query params:', JSON.stringify(allQuery));
+    console.log('📦 getAbandonedCarts - includeRecent param:', includeRecent, typeof includeRecent);
+    
     // Convert string to boolean - handle 'true', 'True', 'TRUE', etc.
-    const includeRecentBool = includeRecent === 'true' || includeRecent === 'True' || includeRecent === 'TRUE';
-    console.log('📦 getAbandonedCarts called:', { 
+    // Also handle if it comes as boolean from query transformation
+    let includeRecentBool = false;
+    if (includeRecent === 'true' || includeRecent === 'True' || includeRecent === 'TRUE' || includeRecent === true) {
+      includeRecentBool = true;
+    }
+    
+    // Fallback: check allQuery if includeRecent is undefined
+    if (includeRecent === undefined && allQuery?.includeRecent) {
+      const allQueryValue = allQuery.includeRecent;
+      includeRecentBool = allQueryValue === 'true' || allQueryValue === 'True' || allQueryValue === 'TRUE' || allQueryValue === true;
+      console.log('📦 getAbandonedCarts - Using allQuery.includeRecent:', allQueryValue, '->', includeRecentBool);
+    }
+    
+    console.log('📦 getAbandonedCarts final:', { 
       companyId, 
       includeRecent, 
       includeRecentType: typeof includeRecent,
       includeRecentBool,
       includeRecentBoolType: typeof includeRecentBool,
     });
+    
     return this.abandonedCartsService.getAbandonedCarts(merchantId, companyId, includeRecentBool);
   }
 
