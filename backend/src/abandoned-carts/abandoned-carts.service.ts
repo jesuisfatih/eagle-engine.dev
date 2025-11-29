@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AbandonedCartsService {
+  private readonly logger = new Logger(AbandonedCartsService.name);
+
   constructor(private prisma: PrismaService) {}
 
   async getAbandonedCarts(merchantId: string, companyId?: string) {
@@ -54,6 +56,56 @@ export class AbandonedCartsService {
     });
   }
 
+  /**
+   * Get cart activity logs
+   */
+  async getCartActivityLogs(cartId: string) {
+    const logs = await this.prisma.activityLog.findMany({
+      where: {
+        merchantId: '6ecc682b-98ee-472d-977b-cffbbae081b8',
+        eventType: {
+          in: ['cart_created', 'cart_items_added', 'cart_item_added', 'cart_item_removed', 'cart_item_updated', 'cart_company_updated'],
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 1000,
+    });
+
+    // Filter by cartId in payload
+    return logs.filter(log => {
+      const payload = log.payload as any;
+      return payload?.cartId === cartId;
+    });
+  }
+
+  /**
+   * Get all cart activity logs for merchant
+   */
+  async getAllCartActivityLogs(merchantId: string, limit = 100) {
+    return this.prisma.activityLog.findMany({
+      where: {
+        merchantId,
+        eventType: {
+          in: ['cart_created', 'cart_items_added', 'cart_item_added', 'cart_item_removed', 'cart_item_updated', 'cart_company_updated'],
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: limit,
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
   async syncShopifyCart(data: any) {
     const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
     
@@ -96,28 +148,91 @@ export class AbandonedCartsService {
       },
     });
 
+    const isNewCart = !cart;
+    const previousItemCount = cart ? (await this.prisma.cartItem.count({ where: { cartId: cart.id } })) : 0;
+
     if (!cart) {
       // Create new cart (can be anonymous if no userId)
+      // For anonymous users, we need a valid companyId - use a special anonymous company or create one
+      let finalCompanyId = companyId;
+      if (!finalCompanyId) {
+        // Find or create anonymous company for this merchant
+        const anonymousCompany = await this.prisma.company.findFirst({
+          where: {
+            merchantId,
+            name: 'Anonymous Customers',
+          },
+        });
+        
+        if (anonymousCompany) {
+          finalCompanyId = anonymousCompany.id;
+        } else {
+          // Create anonymous company
+          const newAnonymousCompany = await this.prisma.company.create({
+            data: {
+              merchantId,
+              name: 'Anonymous Customers',
+              status: 'active',
+            },
+          });
+          finalCompanyId = newAnonymousCompany.id;
+        }
+      }
+
       cart = await this.prisma.cart.create({
         data: {
           merchantId,
-          companyId,
+          companyId: finalCompanyId,
           createdByUserId: userId || merchantId, // Use merchantId as fallback for anonymous
           shopifyCartId: data.cartToken || data.shopifyCartId,
           status: 'draft',
+          metadata: {
+            isAnonymous: !userId,
+            customerEmail: data.customerEmail || null,
+            shopifyCustomerId: data.shopifyCustomerId || null,
+            source: 'shopify_snippet',
+          },
         },
+      });
+
+      // Log cart creation
+      await this.logCartActivity(cart.id, merchantId, finalCompanyId, 'cart_created', {
+        isAnonymous: !userId,
+        customerEmail: data.customerEmail,
+        itemCount: data.items?.length || 0,
       });
     } else {
       // Update existing cart
+      const oldCompanyId = cart.companyId;
       await this.prisma.cart.update({
         where: { id: cart.id },
         data: {
           companyId: companyId || cart.companyId,
           createdByUserId: userId || cart.createdByUserId,
           updatedAt: new Date(),
+          metadata: {
+            ...((cart.metadata as any) || {}),
+            isAnonymous: !userId,
+            customerEmail: data.customerEmail || (cart.metadata as any)?.customerEmail || null,
+            shopifyCustomerId: data.shopifyCustomerId || (cart.metadata as any)?.shopifyCustomerId || null,
+            lastSyncAt: new Date().toISOString(),
+          },
         },
       });
+
+      // Log cart update if company changed
+      if (oldCompanyId !== (companyId || cart.companyId)) {
+        await this.logCartActivity(cart.id, merchantId, companyId || cart.companyId, 'cart_company_updated', {
+          oldCompanyId,
+          newCompanyId: companyId || cart.companyId,
+        });
+      }
     }
+
+    // Get current items before update
+    const currentItems = await this.prisma.cartItem.findMany({
+      where: { cartId: cart.id },
+    });
 
     // Update cart items
     // Clear existing items
@@ -125,6 +240,7 @@ export class AbandonedCartsService {
       where: { cartId: cart.id },
     });
 
+    const newItems: any[] = [];
     // Add new items
     for (const item of data.items || []) {
       const variantId = item.variant_id || item.variantId;
@@ -138,7 +254,7 @@ export class AbandonedCartsService {
           include: { product: true },
         });
 
-        await this.prisma.cartItem.create({
+        const cartItem = await this.prisma.cartItem.create({
           data: {
             cartId: cart.id,
             variantId: variant?.id,
@@ -151,10 +267,81 @@ export class AbandonedCartsService {
             unitPrice: price > 1000 ? price / 100 : price,
           },
         });
+        newItems.push(cartItem);
+      }
+    }
+
+    // Log cart item changes
+    const newItemCount = newItems.length;
+    if (isNewCart) {
+      await this.logCartActivity(cart.id, merchantId, cart.companyId, 'cart_items_added', {
+        itemCount: newItemCount,
+        items: newItems.map(i => ({ sku: i.sku, title: i.title, quantity: i.quantity })),
+      });
+    } else if (previousItemCount !== newItemCount) {
+      // Items changed
+      const addedItems = newItems.filter(ni => !currentItems.some(ci => ci.shopifyVariantId.toString() === ni.shopifyVariantId.toString()));
+      const removedItems = currentItems.filter(ci => !newItems.some(ni => ni.shopifyVariantId.toString() === ci.shopifyVariantId.toString()));
+      const updatedItems = newItems.filter(ni => {
+        const oldItem = currentItems.find(ci => ci.shopifyVariantId.toString() === ni.shopifyVariantId.toString());
+        return oldItem && oldItem.quantity !== ni.quantity;
+      });
+
+      if (addedItems.length > 0) {
+        await this.logCartActivity(cart.id, merchantId, cart.companyId, 'cart_item_added', {
+          items: addedItems.map(i => ({ sku: i.sku, title: i.title, quantity: i.quantity })),
+        });
+      }
+      if (removedItems.length > 0) {
+        await this.logCartActivity(cart.id, merchantId, cart.companyId, 'cart_item_removed', {
+          items: removedItems.map(i => ({ sku: i.sku, title: i.title })),
+        });
+      }
+      if (updatedItems.length > 0) {
+        await this.logCartActivity(cart.id, merchantId, cart.companyId, 'cart_item_updated', {
+          items: updatedItems.map(i => {
+            const oldItem = currentItems.find(ci => ci.shopifyVariantId.toString() === i.shopifyVariantId.toString());
+            return {
+              sku: i.sku,
+              title: i.title,
+              oldQuantity: oldItem?.quantity,
+              newQuantity: i.quantity,
+            };
+          }),
+        });
       }
     }
 
     return cart;
+  }
+
+  /**
+   * Log cart activity
+   */
+  private async logCartActivity(
+    cartId: string,
+    merchantId: string,
+    companyId: string | null,
+    eventType: string,
+    data: any,
+  ) {
+    try {
+      await this.prisma.activityLog.create({
+        data: {
+          merchantId,
+          companyId: companyId || undefined,
+          eventType,
+          payload: {
+            cartId,
+            ...data,
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+    } catch (error) {
+      this.logger.error('Failed to log cart activity', error);
+      // Don't throw - logging failure shouldn't break cart sync
+    }
   }
 
   async trackCart(data: any) {

@@ -6,12 +6,43 @@ import Modal from '@/components/Modal';
 export default function AbandonedCartsPage() {
   const [carts, setCarts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activityLogs, setActivityLogs] = useState<any[]>([]);
+  const [showActivityModal, setShowActivityModal] = useState<{show: boolean; cartId: string | null}>({
+    show: false,
+    cartId: null,
+  });
 
   useEffect(() => {
     loadCarts();
-    const interval = setInterval(loadCarts, 30000);
+    loadActivityLogs();
+    const interval = setInterval(() => {
+      loadCarts();
+      loadActivityLogs();
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const loadActivityLogs = async () => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/abandoned-carts/activity?limit=50`);
+      const data = await response.json();
+      setActivityLogs(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setActivityLogs([]);
+    }
+  };
+
+  const loadCartActivity = async (cartId: string) => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const response = await fetch(`${API_URL}/api/v1/abandoned-carts/activity/${cartId}`);
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    } catch (err) {
+      return [];
+    }
+  };
 
   const loadCarts = async () => {
     try {
@@ -91,12 +122,21 @@ export default function AbandonedCartsPage() {
                             <div className="small text-muted">{cart.createdBy.email}</div>
                           </>
                         ) : (
-                          <span className="badge bg-label-warning">Anonymous User</span>
+                          <>
+                            <span className="badge bg-label-warning mb-1">Anonymous User</span>
+                            {(cart.metadata as any)?.customerEmail && (
+                              <div className="small text-muted mt-1">{(cart.metadata as any).customerEmail}</div>
+                            )}
+                          </>
                         )}
                       </td>
                       <td>
                         {cart.company?.name ? (
-                          cart.company.name
+                          cart.company.name === 'Anonymous Customers' ? (
+                            <span className="badge bg-label-warning">Anonymous</span>
+                          ) : (
+                            cart.company.name
+                          )
                         ) : (
                           <span className="badge bg-label-warning">Anonymous</span>
                         )}
@@ -105,15 +145,87 @@ export default function AbandonedCartsPage() {
                       <td className="fw-semibold">${calculateTotal(cart).toFixed(2)}</td>
                       <td className="small">{new Date(cart.updatedAt).toLocaleString()}</td>
                       <td>
-                        <button
-                          onClick={() => sendReminder(cart.id, cart.createdBy?.email)}
-                          className="btn btn-sm btn-primary"
-                        >
-                          <i className="ti ti-mail me-1"></i>Send Reminder
-                        </button>
+                        <div className="btn-group">
+                          <button
+                            onClick={async () => {
+                              const logs = await loadCartActivity(cart.id);
+                              setShowActivityModal({ show: true, cartId: cart.id });
+                              // Store logs temporarily
+                              (window as any).__cartActivityLogs = logs;
+                            }}
+                            className="btn btn-sm btn-label-secondary"
+                            title="View Activity Logs"
+                          >
+                            <i className="ti ti-history"></i>
+                          </button>
+                          <button
+                            onClick={() => sendReminder(cart.id, cart.createdBy?.email || (cart.metadata as any)?.customerEmail)}
+                            className="btn btn-sm btn-primary"
+                            disabled={!cart.createdBy?.email && !(cart.metadata as any)?.customerEmail}
+                          >
+                            <i className="ti ti-mail me-1"></i>Send Reminder
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Activity Logs Section */}
+      <div className="card mt-4">
+        <div className="card-header d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Recent Cart Activity</h5>
+          <button onClick={loadActivityLogs} className="btn btn-sm btn-label-secondary">
+            <i className="ti ti-refresh me-1"></i>Refresh
+          </button>
+        </div>
+        <div className="card-body">
+          {activityLogs.length === 0 ? (
+            <p className="text-muted text-center py-3 mb-0">No recent cart activity</p>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Event</th>
+                    <th>Cart ID</th>
+                    <th>Company</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activityLogs.map((log) => {
+                    const payload = log.payload as any;
+                    return (
+                      <tr key={log.id}>
+                        <td className="small">{new Date(log.createdAt).toLocaleString()}</td>
+                        <td>
+                          <span className={`badge ${
+                            log.eventType === 'cart_created' ? 'bg-label-success' :
+                            log.eventType === 'cart_item_added' ? 'bg-label-primary' :
+                            log.eventType === 'cart_item_removed' ? 'bg-label-danger' :
+                            'bg-label-info'
+                          }`}>
+                            {log.eventType.replace('cart_', '').replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td className="small font-monospace">{payload?.cartId?.substring(0, 8)}...</td>
+                        <td className="small">{log.company?.name || <span className="badge bg-label-warning">Anonymous</span>}</td>
+                        <td className="small">
+                          {payload?.itemCount && <span>{payload.itemCount} items</span>}
+                          {payload?.items && payload.items.length > 0 && (
+                            <span>{payload.items.map((i: any) => i.title || i.sku).join(', ')}</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -131,6 +243,71 @@ export default function AbandonedCartsPage() {
           confirmText="OK"
           type="success"
         />
+      )}
+
+      {/* Cart Activity Modal */}
+      {showActivityModal.show && showActivityModal.cartId && (
+        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Cart Activity Logs</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowActivityModal({ show: false, cartId: null })}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="table-responsive">
+                  <table className="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Time</th>
+                        <th>Event</th>
+                        <th>Details</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {((window as any).__cartActivityLogs || []).map((log: any) => {
+                        const payload = log.payload as any;
+                        return (
+                          <tr key={log.id}>
+                            <td className="small">{new Date(log.createdAt).toLocaleString()}</td>
+                            <td>
+                              <span className={`badge ${
+                                log.eventType === 'cart_created' ? 'bg-label-success' :
+                                log.eventType === 'cart_item_added' ? 'bg-label-primary' :
+                                log.eventType === 'cart_item_removed' ? 'bg-label-danger' :
+                                'bg-label-info'
+                              }`}>
+                                {log.eventType.replace('cart_', '').replace('_', ' ')}
+                              </span>
+                            </td>
+                            <td className="small">
+                              <pre className="mb-0" style={{ fontSize: '11px', maxHeight: '100px', overflow: 'auto' }}>
+                                {JSON.stringify(payload, null, 2)}
+                              </pre>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowActivityModal({ show: false, cartId: null })}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
