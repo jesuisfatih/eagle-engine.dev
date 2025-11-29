@@ -29,19 +29,9 @@ export class AbandonedCartsService {
     if (companyId) {
       where.companyId = companyId;
     } else {
-      // For admin view, show all carts including anonymous ones
-      // Anonymous carts can have:
-      // 1. companyId = anonymousCompany.id (new carts)
-      // 2. companyId = null (old carts before anonymous company was created)
-      if (anonymousCompany) {
-        where.OR = [
-          { companyId: anonymousCompany.id },
-          { companyId: null }, // Old anonymous carts
-        ];
-      } else {
-        // If no anonymous company exists, show carts with null companyId
-        where.companyId = null;
-      }
+      // For admin view, show ALL carts (all companies + anonymous)
+      // Don't filter by companyId - show everything
+      // Anonymous carts will be identified by company.name === 'Anonymous Customers'
     }
 
     // For admin view with includeRecent, show all carts. Otherwise show old carts
