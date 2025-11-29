@@ -210,21 +210,31 @@ export class AbandonedCartsService {
         }
       }
 
-      cart = await this.prisma.cart.create({
-        data: {
-          merchantId,
-          companyId: finalCompanyId,
-          createdByUserId: userId || merchantId, // Use merchantId as fallback for anonymous
-          shopifyCartId: cleanCartToken, // Use cleaned token
-          status: 'draft',
-          metadata: {
-            isAnonymous: !userId,
-            customerEmail: data.customerEmail || null,
-            shopifyCustomerId: data.shopifyCustomerId || null,
-            source: 'shopify_snippet',
-          },
+      // For anonymous users, createdByUserId must be null (foreign key constraint)
+      const cartData: any = {
+        merchantId,
+        companyId: finalCompanyId,
+        shopifyCartId: cleanCartToken, // Use cleaned token
+        status: 'draft',
+        metadata: {
+          isAnonymous: !userId,
+          customerEmail: data.customerEmail || null,
+          shopifyCustomerId: data.shopifyCustomerId || null,
+          source: 'shopify_snippet',
         },
+      };
+      
+      // Only set createdByUserId if we have a valid user ID
+      if (userId) {
+        cartData.createdByUserId = userId;
+      }
+      // For anonymous users, createdByUserId will be null (schema allows this)
+      
+      cart = await this.prisma.cart.create({
+        data: cartData,
       });
+      
+      this.logger.log(`Cart created: id=${cart.id}, companyId=${cart.companyId}, isAnonymous=${!userId}`);
 
       // Log cart creation
       await this.logCartActivity(cart.id, merchantId, finalCompanyId, 'cart_created', {

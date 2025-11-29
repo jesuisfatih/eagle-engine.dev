@@ -330,9 +330,11 @@ export class AuthService {
       include: { company: true },
     });
 
-    // Sync to Shopify
+    // Sync to Shopify immediately (even if email not verified)
     try {
+      this.logger.log(`Syncing new user ${user.email} to Shopify (register)`);
       await this.shopifyCustomerSync.syncUserToShopify(user.id);
+      this.logger.log(`✅ User ${user.email} synced to Shopify successfully`);
       
       // Reload user to get Shopify ID
       const userWithShopify = await this.prisma.companyUser.findUnique({
@@ -556,10 +558,13 @@ export class AuthService {
 
     // Sync user to Shopify after registration
     try {
-      this.logger.log(`Syncing user ${updatedUser.email} to Shopify after registration`);
+      this.logger.log(`Syncing user ${updatedUser.email} to Shopify after invitation acceptance`);
       
       // Sync user to Shopify
       const shopifyCustomer = await this.shopifyCustomerSync.syncUserToShopify(updatedUser.id);
+      this.logger.log(`✅ User ${updatedUser.email} synced to Shopify successfully`, {
+        shopifyCustomerId: shopifyCustomer?.id,
+      });
       
       // Reload user to get Shopify customer ID
       const userWithShopify = await this.prisma.companyUser.findUnique({
