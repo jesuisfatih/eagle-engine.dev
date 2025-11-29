@@ -286,10 +286,11 @@ export class AbandonedCartsService {
         )
       );
       const removedItems = currentItems.filter(ci => {
-        if (!ci.shopifyVariantId) return false;
+        const ciVariantId = ci.shopifyVariantId;
+        if (!ciVariantId) return false;
         return !newItems.some(ni => {
           if (!ni.shopifyVariantId) return false;
-          return ni.shopifyVariantId.toString() === ci.shopifyVariantId.toString();
+          return ni.shopifyVariantId.toString() === ciVariantId.toString();
         });
       });
       const updatedItems = newItems.filter(ni => {
