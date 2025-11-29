@@ -226,9 +226,13 @@ export class AuthService {
           billingAddress: body.companyInfo.billingAddress,
           status: 'active',
         },
-        include: { merchant: true },
       });
     }
+
+    // Get merchant for Shopify sync
+    const merchant = await this.prisma.merchant.findUnique({
+      where: { id: user.company.merchantId },
+    });
 
     // Sync user to Shopify after registration
     try {
@@ -243,7 +247,7 @@ export class AuthService {
       });
 
       // Update Shopify customer with B2B metafields if company info provided
-      if (updatedCompany?.merchant && body.companyInfo && userWithShopify?.shopifyCustomerId) {
+      if (merchant && body.companyInfo && userWithShopify?.shopifyCustomerId) {
         try {
           const metafields = [
             {
@@ -310,8 +314,8 @@ export class AuthService {
           }
 
           await this.shopifyRest.updateCustomerMetafields(
-            updatedCompany.merchant.shopDomain,
-            updatedCompany.merchant.accessToken,
+            merchant.shopDomain,
+            merchant.accessToken,
             userWithShopify.shopifyCustomerId.toString(),
             metafields,
           );

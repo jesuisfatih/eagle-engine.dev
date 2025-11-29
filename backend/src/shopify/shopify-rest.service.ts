@@ -209,7 +209,9 @@ export class ShopifyRestService {
             },
           ),
         );
-        results.push(response.data.metafield);
+        if (response.data?.metafield) {
+          results.push(response.data.metafield);
+        }
       }
 
       return results;

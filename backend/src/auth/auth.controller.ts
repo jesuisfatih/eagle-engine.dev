@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, Res, HttpStatus, Delete, Param, Headers, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Res, HttpStatus, Delete, Param, Headers, UseGuards, Logger } from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { SessionSyncService } from './session-sync.service';
@@ -12,6 +12,8 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private authService: AuthService,
     private sessionSyncService: SessionSyncService,
@@ -134,7 +136,7 @@ export class AuthController {
 
   @Public()
   @Post('shopify-customer-sync')
-  async shopifyCustomerSync(@Body() body: {
+  async syncShopifyCustomer(@Body() body: {
     shopifyCustomerId: string;
     email: string;
     fingerprint?: string;
