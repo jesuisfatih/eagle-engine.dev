@@ -62,15 +62,12 @@ self.addEventListener('fetch', (event) => {
 // IndexedDB helpers
 async function openDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('eagle_auth_db', 1);
+    // Use version 2 to fix version error
+    const request = indexedDB.open('eagle_auth_db', 2);
     
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
-      // Delete old stores if they exist
-      if (db.objectStoreNames.contains('auth_store')) {
-        db.deleteObjectStore('auth_store');
-      }
-      // Create new store
+      // Create store if it doesn't exist
       if (!db.objectStoreNames.contains('auth_store')) {
         db.createObjectStore('auth_store', { keyPath: 'key' });
       }

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
-import Header from "@/components/Header";
+import LayoutWrapper from "@/components/LayoutWrapper";
 
 export const metadata: Metadata = {
   title: "Eagle B2B - Company Portal",
@@ -44,19 +43,7 @@ export default function RootLayout({
         <script src="https://app.eagledtfsupply.com/vendor/js/menu.js" defer></script>
       </head>
       <body className="bg-body">
-        <div className="layout-wrapper layout-content-navbar">
-          <div className="layout-container">
-            <Sidebar />
-            <div className="layout-page">
-              <Header />
-              <div className="content-wrapper">
-                <div className="container-xxl flex-grow-1 container-p-y">
-                  {children}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <LayoutWrapper>{children}</LayoutWrapper>
         <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
       </body>
     </html>

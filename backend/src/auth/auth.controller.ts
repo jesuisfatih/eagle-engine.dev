@@ -1,14 +1,24 @@
-import { Controller, Post, Body, Get, Query, Res, HttpStatus, Delete, Param, Headers } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, Res, HttpStatus, Delete, Param, Headers, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { SessionSyncService } from './session-sync.service';
 import { Public } from './decorators/public.decorator';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { ShopifySsoService } from '../shopify/shopify-sso.service';
+import { ShopifyCustomerSyncService } from '../shopify/shopify-customer-sync.service';
+import { ShopifyRestService } from '../shopify/shopify-rest.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
     private sessionSyncService: SessionSyncService,
+    private shopifySso: ShopifySsoService,
+    private shopifyCustomerSync: ShopifyCustomerSyncService,
+    private shopifyRest: ShopifyRestService,
+    private prisma: PrismaService,
   ) {}
 
   @Public()
@@ -165,11 +175,124 @@ export class AuthController {
     }
   }
 
-  @Public()
+  /**
+   * Generate Shopify SSO URL for logged-in user
+   * Used when user logs in at accounts.eagledtfsupply.com and wants to go to Shopify
+   * 
+   * Usage:
+   * POST /api/v1/auth/shopify-sso
+   * Headers: Authorization: Bearer {token}
+   * Body: { returnTo?: string }
+   */
+  @UseGuards(JwtAuthGuard)
   @Post('shopify-sso')
-  async getShopifySsoUrl(@Body() body: any, @Res() res: Response) {
-    // SSO handled by frontend/snippet - endpoint kept for compatibility
-    return res.json({ ssoUrl: null, message: 'SSO handled client-side' });
+  async getShopifySsoUrl(
+    @CurrentUser() user: any,
+    @Body() body: { returnTo?: string },
+    @Res() res: Response,
+  ) {
+    try {
+      // 1. Ensure user is synced to Shopify
+      if (!user.shopifyCustomerId) {
+        await this.shopifyCustomerSync.syncUserToShopify(user.id);
+        // Reload user
+        const updatedUser = await this.prisma.companyUser.findUnique({
+          where: { id: user.id },
+        });
+        if (updatedUser) {
+          user.shopifyCustomerId = updatedUser.shopifyCustomerId;
+        }
+      }
+
+      // 2. Get merchant settings for SSO mode
+      const company = await this.prisma.company.findUnique({
+        where: { id: user.companyId },
+        include: { merchant: true },
+      });
+
+      if (!company?.merchant) {
+        return res.status(HttpStatus.BAD_REQUEST).json({
+          error: 'Merchant not found',
+        });
+      }
+
+      const settings = (company.merchant.settings as any) || {};
+      const ssoMode = settings.ssoMode || 'alternative';
+      const returnTo = body.returnTo || '/checkout';
+
+      // 3. Generate SSO URL based on mode
+      if (ssoMode === 'multipass' && settings.multipassSecret) {
+        // Multipass SSO (Shopify Plus)
+        const ssoUrl = this.shopifySso.generateSsoUrl({
+          email: user.email,
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
+          customerId: user.shopifyCustomerId?.toString(),
+          returnTo,
+        });
+
+        return res.json({
+          ssoUrl,
+          mode: 'multipass',
+        });
+      } else {
+        // Alternative: Customer Account API invite token
+        try {
+          if (!user.shopifyCustomerId) {
+            throw new Error('Customer not synced to Shopify');
+          }
+
+          // Create customer invite token
+          const inviteResponse = await this.shopifyRest.createCustomerInvite(
+            company.merchant.shopDomain,
+            company.merchant.accessToken,
+            user.shopifyCustomerId.toString(),
+          );
+
+          // Extract invite token from URL
+          const inviteUrl = inviteResponse.customer_invite?.invite_url || '';
+          const tokenMatch = inviteUrl.match(/token=([^&]+)/);
+          const inviteToken = tokenMatch ? tokenMatch[1] : null;
+
+          if (inviteToken) {
+            // Use invite token in login URL
+            const shopDomain = company.merchant.shopDomain;
+            const loginUrl = `https://${shopDomain}/account/login?email=${encodeURIComponent(user.email)}&token=${inviteToken}&return_to=${encodeURIComponent(returnTo)}`;
+
+            return res.json({
+              ssoUrl: loginUrl,
+              mode: 'customer_account_api',
+              message: 'Customer invite token created. User will be logged in automatically.',
+            });
+          } else {
+            // Fallback: Just email
+            const shopDomain = company.merchant.shopDomain;
+            const loginUrl = `https://${shopDomain}/account/login?email=${encodeURIComponent(user.email)}&return_to=${encodeURIComponent(returnTo)}`;
+
+            return res.json({
+              ssoUrl: loginUrl,
+              mode: 'email_only',
+              message: 'Email pre-filled. Customer must enter password.',
+            });
+          }
+        } catch (inviteError: any) {
+          this.logger.warn('Customer invite failed, using email-only login', inviteError);
+          // Fallback: Just email
+          const shopDomain = company.merchant.shopDomain;
+          const loginUrl = `https://${shopDomain}/account/login?email=${encodeURIComponent(user.email)}&return_to=${encodeURIComponent(returnTo)}`;
+
+          return res.json({
+            ssoUrl: loginUrl,
+            mode: 'email_only',
+            message: 'Email pre-filled. Customer must enter password.',
+          });
+        }
+      }
+    } catch (error: any) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        error: `SSO generation failed: ${error.message}`,
+      });
+    }
   }
 
 
