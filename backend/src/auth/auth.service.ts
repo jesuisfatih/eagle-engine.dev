@@ -494,7 +494,12 @@ export class AuthService {
         }
       }
     } catch (shopifyError: any) {
-      this.logger.error('Shopify sync failed during registration', shopifyError);
+      this.logger.error(`❌ [REGISTER] Shopify sync failed for user ${user.email}`, {
+        error: shopifyError.message,
+        stack: shopifyError.stack,
+        response: shopifyError.response?.data,
+        status: shopifyError.response?.status,
+      });
       // Continue anyway - user is registered
     }
 
@@ -661,7 +666,12 @@ export class AuthService {
 
       this.logger.log(`User ${updatedUser.email} successfully synced to Shopify`);
     } catch (shopifyError: any) {
-      this.logger.error('Failed to sync user to Shopify after registration', shopifyError);
+      this.logger.error(`❌ [ACCEPT_INVITATION] Shopify sync failed for user ${updatedUser.email}`, {
+        error: shopifyError.message,
+        stack: shopifyError.stack,
+        response: shopifyError.response?.data,
+        status: shopifyError.response?.status,
+      });
       // Continue anyway - user is registered in Eagle
     }
 
