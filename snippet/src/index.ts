@@ -70,34 +70,68 @@ class EagleSnippet {
   private setupCartTracking() {
     // Listen to Shopify cart changes
     if (typeof window !== 'undefined') {
+      console.log('🦅 Eagle: Setting up cart tracking');
+      
       // Intercept fetch for cart updates
       const originalFetch = window.fetch;
       window.fetch = async (...args) => {
         const response = await originalFetch(...args);
         
         const url = args[0]?.toString() || '';
-        if (url.includes('/cart/') || url.includes('/cart.js')) {
-          this.syncCartToEagle();
+        if (url.includes('/cart/') || url.includes('/cart.js') || url.includes('/cart/add.js')) {
+          console.log('🦅 Eagle: Cart-related fetch detected:', url);
+          // Delay sync to ensure cart is updated
+          setTimeout(() => this.syncCartToEagle(), 500);
         }
         
         return response;
       };
 
-      // Track cart on page load
-      this.syncCartToEagle();
+      // Track cart on page load (with delay to ensure cart.js is available)
+      setTimeout(() => {
+        console.log('🦅 Eagle: Initial cart sync');
+        this.syncCartToEagle();
+      }, 1000);
       
       // Periodic cart sync
-      setInterval(() => this.syncCartToEagle(), 30000); // 30 seconds
+      setInterval(() => {
+        console.log('🦅 Eagle: Periodic cart sync');
+        this.syncCartToEagle();
+      }, 30000); // 30 seconds
+      
+      // Also listen to DOM events for cart updates
+      document.addEventListener('cart:updated', () => {
+        console.log('🦅 Eagle: Cart updated event detected');
+        this.syncCartToEagle();
+      });
     }
   }
 
   private async syncCartToEagle() {
     try {
+      console.log('🦅 Eagle: Fetching cart data...');
       const cartResponse = await fetch('/cart.js');
+      
+      if (!cartResponse.ok) {
+        console.error('🦅 Eagle: Failed to fetch cart.js:', cartResponse.status, cartResponse.statusText);
+        return;
+      }
+      
       const cart = await cartResponse.json();
+      console.log('🦅 Eagle: Cart data received:', {
+        token: cart.token,
+        itemCount: cart.items?.length || 0,
+        items: cart.items,
+      });
       
       if (!cart.items || cart.items.length === 0) {
+        console.log('🦅 Eagle: Cart is empty, skipping sync');
         return; // Empty cart, don't sync
+      }
+      
+      if (!cart.token) {
+        console.warn('🦅 Eagle: Cart token missing, cannot sync');
+        return;
       }
       
       this.cartToken = cart.token;
