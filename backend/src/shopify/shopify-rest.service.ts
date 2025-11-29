@@ -185,7 +185,7 @@ export class ShopifyRestService {
 
       // Create new metafields
       const createUrl = `https://${shop}/admin/api/2024-01/metafields.json`;
-      const results = [];
+      const results: any[] = [];
 
       for (const metafield of metafields) {
         const response = await firstValueFrom(
