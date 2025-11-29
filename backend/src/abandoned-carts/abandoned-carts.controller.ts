@@ -15,8 +15,8 @@ export class AbandonedCartsController {
     @Query('includeRecent') includeRecent?: string,
   ) {
     const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
-    // Convert string to boolean - handle 'true', 'True', 'TRUE', true, etc.
-    const includeRecentBool = includeRecent === 'true' || includeRecent === 'True' || includeRecent === 'TRUE' || includeRecent === true;
+    // Convert string to boolean - handle 'true', 'True', 'TRUE', etc.
+    const includeRecentBool = includeRecent === 'true' || includeRecent === 'True' || includeRecent === 'TRUE';
     console.log('📦 getAbandonedCarts called:', { 
       companyId, 
       includeRecent, 
