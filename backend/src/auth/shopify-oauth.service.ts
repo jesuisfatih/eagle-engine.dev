@@ -139,9 +139,7 @@ export class ShopifyOauthService {
       type: 'merchant',
     };
     
-    const jwtToken = this.jwtService.sign(jwtPayload, {
-      expiresIn: this.config.get<string>('JWT_EXPIRES_IN', '7d'),
-    });
+    const jwtToken = this.jwtService.sign(jwtPayload);
 
     return {
       merchant,

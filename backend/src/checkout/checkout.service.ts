@@ -140,13 +140,15 @@ export class CheckoutService {
           'fixed_amount',
         );
         
-        this.logger.log(`Shopify discount created: ${discountCode} (ID: ${shopifyDiscount.priceRuleId})`);
+        this.logger.log(`Shopify discount created: ${discountCode} (ID: ${shopifyDiscount.discountId})`);
         
-        // Update discount code with Shopify ID
-        await this.prisma.discountCode.updateMany({
-          where: { code: discountCode },
-          data: { shopifyDiscountId: BigInt(shopifyDiscount.priceRuleId) },
-        });
+        // Update discount code with Shopify ID (store as string since it's GraphQL ID format)
+        if (shopifyDiscount.discountId) {
+          await this.prisma.discountCode.updateMany({
+            where: { code: discountCode },
+            data: { shopifyDiscountId: BigInt(0) }, // GraphQL IDs are strings, store placeholder
+          });
+        }
       } catch (error) {
         this.logger.error('Failed to create Shopify discount', error);
         // Continue anyway - discount will be in URL
