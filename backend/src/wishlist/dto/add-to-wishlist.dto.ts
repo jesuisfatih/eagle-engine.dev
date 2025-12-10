@@ -15,6 +15,10 @@ export class AddToWishlistDto {
 
   @IsString()
   @IsOptional()
+  variantTitle?: string;
+
+  @IsString()
+  @IsOptional()
   productImage?: string;
 
   @IsNumber()

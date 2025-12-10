@@ -19,38 +19,40 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 export class AddressesController {
   constructor(private addressesService: AddressesService) {}
 
-  // Tüm adresleri getir
+  // Get all addresses
   @Get()
   async getAddresses(
     @CurrentUser('sub') userId: string,
     @CurrentUser('companyId') companyId: string,
+    @CurrentUser('merchantId') merchantId: string,
   ) {
-    if (!userId) {
-      throw new BadRequestException('User ID required');
+    if (!userId || !merchantId) {
+      throw new BadRequestException('User ID and Merchant ID required');
     }
-    return this.addressesService.getAddresses(userId, companyId);
+    return this.addressesService.getAddresses(userId, companyId, merchantId);
   }
 
-  // Tek adres getir
+  // Get single address
   @Get(':id')
   async getAddress(@Param('id') id: string) {
     return this.addressesService.getAddressById(id);
   }
 
-  // Yeni adres oluştur
+  // Create new address
   @Post()
   async createAddress(
     @CurrentUser('sub') userId: string,
     @CurrentUser('companyId') companyId: string,
+    @CurrentUser('merchantId') merchantId: string,
     @Body() dto: CreateAddressDto,
   ) {
-    if (!userId) {
-      throw new BadRequestException('User ID required');
+    if (!userId || !merchantId) {
+      throw new BadRequestException('User ID and Merchant ID required');
     }
-    return this.addressesService.createAddress(userId, companyId, dto);
+    return this.addressesService.createAddress(userId, companyId, merchantId, dto);
   }
 
-  // Adres güncelle
+  // Update address
   @Put(':id')
   async updateAddress(
     @Param('id') id: string,
@@ -59,7 +61,7 @@ export class AddressesController {
     return this.addressesService.updateAddress(id, dto);
   }
 
-  // Adres sil
+  // Delete address
   @Delete(':id')
   async deleteAddress(
     @Param('id') id: string,
@@ -69,13 +71,14 @@ export class AddressesController {
     return { success: true };
   }
 
-  // Default adres yap
+  // Set as default address
   @Post(':id/default')
   async setDefaultAddress(
     @Param('id') id: string,
     @CurrentUser('sub') userId: string,
     @CurrentUser('companyId') companyId: string,
+    @CurrentUser('merchantId') merchantId: string,
   ) {
-    return this.addressesService.setDefaultAddress(id, userId, companyId);
+    return this.addressesService.setDefaultAddress(id, userId, companyId, merchantId);
   }
 }

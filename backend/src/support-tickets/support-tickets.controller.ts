@@ -20,7 +20,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 export class SupportTicketsController {
   constructor(private supportTicketsService: SupportTicketsService) {}
 
-  // Müşteri ticket'larını getir
+  // Get tickets
   @Get()
   async getTickets(
     @CurrentUser('sub') userId: string,
@@ -29,21 +29,21 @@ export class SupportTicketsController {
     @CurrentUser('role') role: string,
     @Query('userId') queryUserId?: string,
   ) {
-    // Admin ise tüm ticket'ları getir
+    // Admin gets all tickets
     if (role === 'admin' || role === 'merchant_admin') {
       return this.supportTicketsService.getAllTickets(merchantId);
     }
 
-    // Belirli bir user'ın ticket'ları isteniyorsa
+    // If specific user's tickets requested
     if (queryUserId) {
-      return this.supportTicketsService.getTicketsByUser(queryUserId);
+      return this.supportTicketsService.getTicketsByUser(queryUserId, merchantId);
     }
 
-    // Kendi ticket'larını getir
-    return this.supportTicketsService.getTicketsByUser(userId);
+    // Get own tickets
+    return this.supportTicketsService.getTicketsByUser(userId, merchantId);
   }
 
-  // Yeni ticket oluştur
+  // Create new ticket
   @Post()
   async createTicket(
     @CurrentUser('sub') userId: string,
@@ -63,13 +63,13 @@ export class SupportTicketsController {
     );
   }
 
-  // Ticket detayı
+  // Get ticket detail
   @Get(':id')
   async getTicket(@Param('id') id: string) {
     return this.supportTicketsService.getTicketById(id);
   }
 
-  // Ticket güncelle (status, response ekle)
+  // Update ticket (status, add response)
   @Put(':id')
   async updateTicket(
     @Param('id') id: string,
@@ -78,7 +78,7 @@ export class SupportTicketsController {
     return this.supportTicketsService.updateTicket(id, dto);
   }
 
-  // Ticket'a yanıt ekle
+  // Add response to ticket
   @Post(':id/responses')
   async addResponse(
     @Param('id') id: string,
@@ -91,10 +91,11 @@ export class SupportTicketsController {
     }
 
     const isAdmin = role === 'admin' || role === 'merchant_admin';
-    return this.supportTicketsService.addResponse(id, userId, message, isAdmin);
+    const userName = isAdmin ? 'Support Staff' : 'Customer';
+    return this.supportTicketsService.addResponse(id, userId, userName, message, isAdmin);
   }
 
-  // İstatistikler (admin için)
+  // Stats (for admin)
   @Get('stats/overview')
   async getStats(
     @CurrentUser('merchantId') merchantId: string,

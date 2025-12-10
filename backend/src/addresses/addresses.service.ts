@@ -1,173 +1,179 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAddressDto, UpdateAddressDto, AddressType } from './dto/address.dto';
-import { v4 as uuidv4 } from 'uuid';
-
-export interface Address {
-  id: string;
-  userId: string;
-  companyId: string;
-  label: string;
-  firstName: string;
-  lastName: string;
-  company?: string;
-  address1: string;
-  address2?: string;
-  city: string;
-  province?: string;
-  provinceCode?: string;
-  country: string;
-  countryCode?: string;
-  zip: string;
-  phone?: string;
-  type: AddressType;
-  isDefault: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 @Injectable()
 export class AddressesService {
-  private addresses: Map<string, Address> = new Map();
-
   constructor(private prisma: PrismaService) {}
 
-  async getAddresses(userId: string, companyId: string): Promise<Address[]> {
-    return Array.from(this.addresses.values())
-      .filter((a) => a.userId === userId || a.companyId === companyId)
-      .sort((a, b) => {
-        // Default adresler önce
-        if (a.isDefault && !b.isDefault) return -1;
-        if (!a.isDefault && b.isDefault) return 1;
-        return b.createdAt.getTime() - a.createdAt.getTime();
-      });
+  async getAddresses(userId: string, companyId: string, merchantId: string) {
+    return this.prisma.address.findMany({
+      where: {
+        merchantId,
+        OR: [
+          { companyUserId: userId },
+          { companyId },
+        ],
+      },
+      orderBy: [
+        { isDefault: 'desc' },
+        { createdAt: 'desc' },
+      ],
+    });
   }
 
-  async getAddressById(id: string): Promise<Address> {
-    const address = this.addresses.get(id);
+  async getAddressById(id: string) {
+    const address = await this.prisma.address.findUnique({
+      where: { id },
+    });
+    
     if (!address) {
       throw new NotFoundException('Address not found');
     }
+    
     return address;
   }
 
   async createAddress(
     userId: string,
     companyId: string,
+    merchantId: string,
     dto: CreateAddressDto,
-  ): Promise<Address> {
-    // Eğer bu default yapılıyorsa, diğer default'ları kaldır
+  ) {
+    // If this is set as default, clear other defaults
     if (dto.isDefault) {
-      await this.clearDefaultAddresses(userId, companyId, dto.type);
+      await this.clearDefaultAddresses(companyId, merchantId, dto.type);
     }
 
-    const address: Address = {
-      id: uuidv4(),
-      userId,
-      companyId,
-      label: dto.label,
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-      company: dto.company,
-      address1: dto.address1,
-      address2: dto.address2,
-      city: dto.city,
-      province: dto.province,
-      provinceCode: dto.provinceCode,
-      country: dto.country,
-      countryCode: dto.countryCode,
-      zip: dto.zip,
-      phone: dto.phone,
-      type: dto.type || AddressType.BOTH,
-      isDefault: dto.isDefault || false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    this.addresses.set(address.id, address);
-    return address;
+    return this.prisma.address.create({
+      data: {
+        merchantId,
+        companyId,
+        companyUserId: userId,
+        label: dto.label,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        company: dto.company,
+        address1: dto.address1,
+        address2: dto.address2,
+        city: dto.city,
+        province: dto.province,
+        provinceCode: dto.provinceCode,
+        country: dto.country,
+        countryCode: dto.countryCode || 'US',
+        zip: dto.zip,
+        phone: dto.phone,
+        isDefault: dto.isDefault || false,
+        isBilling: dto.type === AddressType.BILLING || dto.type === AddressType.BOTH,
+        isShipping: dto.type === AddressType.SHIPPING || dto.type === AddressType.BOTH,
+      },
+    });
   }
 
-  async updateAddress(id: string, dto: UpdateAddressDto): Promise<Address> {
+  async updateAddress(id: string, dto: UpdateAddressDto) {
     const address = await this.getAddressById(id);
 
-    // Eğer bu default yapılıyorsa, diğer default'ları kaldır
+    // If setting as default, clear other defaults
     if (dto.isDefault && !address.isDefault) {
       await this.clearDefaultAddresses(
-        address.userId,
         address.companyId,
-        dto.type || address.type,
+        address.merchantId,
+        dto.type,
       );
     }
 
-    const updated: Address = {
-      ...address,
-      ...dto,
-      updatedAt: new Date(),
-    };
-
-    this.addresses.set(id, updated);
-    return updated;
+    return this.prisma.address.update({
+      where: { id },
+      data: {
+        label: dto.label,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        company: dto.company,
+        address1: dto.address1,
+        address2: dto.address2,
+        city: dto.city,
+        province: dto.province,
+        provinceCode: dto.provinceCode,
+        country: dto.country,
+        countryCode: dto.countryCode,
+        zip: dto.zip,
+        phone: dto.phone,
+        isDefault: dto.isDefault,
+        isBilling: dto.type === AddressType.BILLING || dto.type === AddressType.BOTH,
+        isShipping: dto.type === AddressType.SHIPPING || dto.type === AddressType.BOTH,
+      },
+    });
   }
 
-  async deleteAddress(id: string, userId: string): Promise<void> {
+  async deleteAddress(id: string, userId: string) {
     const address = await this.getAddressById(id);
 
-    if (address.userId !== userId) {
+    if (address.companyUserId !== userId) {
       throw new BadRequestException('You can only delete your own addresses');
     }
 
-    this.addresses.delete(id);
+    return this.prisma.address.delete({
+      where: { id },
+    });
   }
 
   async setDefaultAddress(
     id: string,
     userId: string,
     companyId: string,
-  ): Promise<Address> {
+    merchantId: string,
+  ) {
     const address = await this.getAddressById(id);
 
-    // Aynı tip adreslerin default'larını kaldır
-    await this.clearDefaultAddresses(userId, companyId, address.type);
+    // Clear other defaults
+    await this.clearDefaultAddresses(companyId, merchantId);
 
-    address.isDefault = true;
-    address.updatedAt = new Date();
-    this.addresses.set(id, address);
-
-    return address;
+    return this.prisma.address.update({
+      where: { id },
+      data: { isDefault: true },
+    });
   }
 
   private async clearDefaultAddresses(
-    userId: string,
     companyId: string,
+    merchantId: string,
     type?: AddressType,
-  ): Promise<void> {
-    const userAddresses = Array.from(this.addresses.values()).filter(
-      (a) =>
-        (a.userId === userId || a.companyId === companyId) &&
-        a.isDefault &&
-        (type === undefined || a.type === type),
-    );
+  ) {
+    const where: any = {
+      companyId,
+      merchantId,
+      isDefault: true,
+    };
 
-    for (const addr of userAddresses) {
-      addr.isDefault = false;
-      addr.updatedAt = new Date();
-      this.addresses.set(addr.id, addr);
+    if (type === AddressType.BILLING) {
+      where.isBilling = true;
+    } else if (type === AddressType.SHIPPING) {
+      where.isShipping = true;
     }
+
+    await this.prisma.address.updateMany({
+      where,
+      data: { isDefault: false },
+    });
   }
 
   async getDefaultAddress(
-    userId: string,
     companyId: string,
+    merchantId: string,
     type: AddressType,
-  ): Promise<Address | null> {
-    return (
-      Array.from(this.addresses.values()).find(
-        (a) =>
-          (a.userId === userId || a.companyId === companyId) &&
-          a.isDefault &&
-          (a.type === type || a.type === AddressType.BOTH),
-      ) || null
-    );
+  ) {
+    const where: any = {
+      companyId,
+      merchantId,
+      isDefault: true,
+    };
+
+    if (type === AddressType.BILLING) {
+      where.isBilling = true;
+    } else if (type === AddressType.SHIPPING) {
+      where.isShipping = true;
+    }
+
+    return this.prisma.address.findFirst({ where });
   }
 }
