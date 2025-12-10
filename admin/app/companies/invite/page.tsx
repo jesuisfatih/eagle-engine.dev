@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { adminFetch } from '@/lib/api-client';
 
 export default function InviteCompanyPage() {
   const router = useRouter();
@@ -14,12 +15,9 @@ export default function InviteCompanyPage() {
     setLoading(true);
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      
       // Create company
-      const companyResp = await fetch(`${API_URL}/api/v1/companies`, {
+      const companyResp = await adminFetch('/api/v1/companies', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: companyName,
           email: email,
@@ -30,9 +28,8 @@ export default function InviteCompanyPage() {
       const company = await companyResp.json();
 
       // Invite user
-      await fetch(`${API_URL}/api/v1/companies/${company.id}/users`, {
+      await adminFetch(`/api/v1/companies/${company.id}/users`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: email,
           role: 'admin',

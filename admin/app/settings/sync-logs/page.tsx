@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { adminFetch } from '@/lib/api-client';
 
 export default function SyncLogsPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -11,8 +12,7 @@ export default function SyncLogsPage() {
 
   const loadLogs = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/sync/status`);
+      const response = await adminFetch('/api/v1/sync/status');
       const data = await response.json();
       setLogs(Array.isArray(data) ? data : []);
     } catch (err) {

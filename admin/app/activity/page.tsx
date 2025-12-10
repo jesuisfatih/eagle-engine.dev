@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { adminFetch } from '@/lib/api-client';
 
 export default function ActivityPage() {
   const [activities, setActivities] = useState<any[]>([]);
@@ -11,11 +12,10 @@ export default function ActivityPage() {
 
   const loadActivity = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       const [orders, companies, pricingRules] = await Promise.all([
-        fetch(`${API_URL}/api/v1/orders`).then(r => r.json()).catch(() => []),
-        fetch(`${API_URL}/api/v1/companies`).then(r => r.json()).catch(() => []),
-        fetch(`${API_URL}/api/v1/pricing/rules`).then(r => r.json()).catch(() => []),
+        adminFetch('/api/v1/orders').then(r => r.json()).catch(() => []),
+        adminFetch('/api/v1/companies').then(r => r.json()).catch(() => []),
+        adminFetch('/api/v1/pricing/rules').then(r => r.json()).catch(() => []),
       ]);
       
       const activities: any[] = [];

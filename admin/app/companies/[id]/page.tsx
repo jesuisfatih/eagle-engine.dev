@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Modal from '@/components/Modal';
 import CompanyEditModal from '@/components/CompanyEditModal';
+import { adminFetch } from '@/lib/api-client';
 
 export default function CompanyDetailPage() {
   const params = useParams();
@@ -22,10 +23,9 @@ export default function CompanyDetailPage() {
 
   const loadCompany = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       const [companyData, usersData] = await Promise.all([
-        fetch(`${API_URL}/api/v1/companies/${params.id}`).then(r => r.json()),
-        fetch(`${API_URL}/api/v1/companies/${params.id}/users`).then(r => r.json()),
+        adminFetch(`/api/v1/companies/${params.id}`).then(r => r.json()),
+        adminFetch(`/api/v1/companies/${params.id}/users`).then(r => r.json()),
       ]);
       setCompany(companyData);
       setUsers(Array.isArray(usersData) ? usersData : []);
@@ -42,10 +42,8 @@ export default function CompanyDetailPage() {
 
   const handleInviteUser = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/companies/${params.id}/users`, {
+      const response = await adminFetch(`/api/v1/companies/${params.id}/users`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
       });
       
@@ -72,10 +70,8 @@ export default function CompanyDetailPage() {
 
   const handleEditCompany = async (data: any) => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      await fetch(`${API_URL}/api/v1/companies/${params.id}`, {
+      await adminFetch(`/api/v1/companies/${params.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
       setShowEditModal(false);
@@ -90,10 +86,8 @@ export default function CompanyDetailPage() {
 
   const approveCompany = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/companies/${params.id}`, {
+      const response = await adminFetch(`/api/v1/companies/${params.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'active' }),
       });
       
@@ -363,8 +357,7 @@ export default function CompanyDetailPage() {
                               onClick={async () => {
                                 if (confirm('Verify this user\'s email address?')) {
                                   try {
-                                    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-                                    const response = await fetch(`${API_URL}/api/v1/companies/users/${user.id}/verify-email`, {
+                                    const response = await adminFetch(`/api/v1/companies/users/${user.id}/verify-email`, {
                                       method: 'POST',
                                     });
                                     if (response.ok) {

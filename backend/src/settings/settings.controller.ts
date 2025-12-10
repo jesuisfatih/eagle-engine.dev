@@ -1,16 +1,18 @@
-import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Put, Body, UseGuards, BadRequestException } from '@nestjs/common';
 import { SettingsService } from './settings.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('settings')
-@Public()
+@UseGuards(JwtAuthGuard)
 export class SettingsController {
   constructor(private settingsService: SettingsService) {}
 
   @Get('merchant')
   async getMerchantSettings(@CurrentUser('merchantId') merchantId: string) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.settingsService.getMerchantSettings(merchantId);
   }
 
@@ -19,6 +21,9 @@ export class SettingsController {
     @CurrentUser('merchantId') merchantId: string,
     @Body() body: any,
   ) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.settingsService.updateMerchantSettings(merchantId, body);
   }
 
@@ -27,11 +32,17 @@ export class SettingsController {
     @CurrentUser('merchantId') merchantId: string,
     @Body('enabled') enabled: boolean,
   ) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.settingsService.toggleSnippet(merchantId, enabled);
   }
 
   @Get('company')
   async getCompanySettings(@CurrentUser('companyId') companyId: string) {
+    if (!companyId) {
+      throw new BadRequestException('Company ID required');
+    }
     return this.settingsService.getCompanySettings(companyId);
   }
 
@@ -40,19 +51,28 @@ export class SettingsController {
     @CurrentUser('companyId') companyId: string,
     @Body() body: any,
   ) {
+    if (!companyId) {
+      throw new BadRequestException('Company ID required');
+    }
     return this.settingsService.updateCompanySettings(companyId, body);
   }
 
   @Get('sso')
-  async getSsoSettings() {
-    // Default merchant for now
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async getSsoSettings(@CurrentUser('merchantId') merchantId: string) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.settingsService.getSsoSettings(merchantId);
   }
 
   @Put('sso')
-  async updateSsoSettings(@Body() body: { mode: string; multipassSecret?: string; storefrontToken?: string }) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async updateSsoSettings(
+    @CurrentUser('merchantId') merchantId: string,
+    @Body() body: { mode: string; multipassSecret?: string; storefrontToken?: string },
+  ) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.settingsService.updateSsoSettings(merchantId, body);
   }
 }

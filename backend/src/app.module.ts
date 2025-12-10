@@ -28,6 +28,9 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { SettingsModule } from './settings/settings.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { AbandonedCartsModule } from './abandoned-carts/abandoned-carts.module';
+import { SupportTicketsModule } from './support-tickets/support-tickets.module';
+import { WishlistModule } from './wishlist/wishlist.module';
+import { AddressesModule } from './addresses/addresses.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
@@ -72,6 +75,9 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
     SettingsModule,
     UploadsModule,
     AbandonedCartsModule,
+    SupportTicketsModule,
+    WishlistModule,
+    AddressesModule,
   ],
   controllers: [AppController],
   providers: [

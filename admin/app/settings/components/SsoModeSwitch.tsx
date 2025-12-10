@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { adminFetch } from '@/lib/api-client';
 
 export default function SsoModeSwitch() {
   const [multipassMode, setMultipassMode] = useState(false);
@@ -14,8 +15,7 @@ export default function SsoModeSwitch() {
 
   const loadSettings = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/settings/sso`);
+      const response = await adminFetch('/api/v1/settings/sso');
       if (response.ok) {
         const data = await response.json();
         setMultipassMode(data.mode === 'multipass');
@@ -34,10 +34,8 @@ export default function SsoModeSwitch() {
     setLoading(true);
     
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/settings/sso`, {
+      const response = await adminFetch('/api/v1/settings/sso', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode: enabled ? 'multipass' : 'alternative',
           multipassSecret: enabled ? multipassSecret : '',

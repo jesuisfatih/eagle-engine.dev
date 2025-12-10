@@ -14,7 +14,7 @@ export async function getCompanyId(): Promise<string> {
 
 export async function getMerchantId(): Promise<string> {
   if (typeof window === 'undefined') return '';
-  return localStorage.getItem('eagle_merchantId') || '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  return localStorage.getItem('eagle_merchantId') || '';
 }
 
 export function getUserIdSync(): string {
@@ -29,6 +29,6 @@ export function getCompanyIdSync(): string {
 
 export function getMerchantIdSync(): string {
   if (typeof window === 'undefined') return '';
-  return localStorage.getItem('eagle_merchantId') || '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  return localStorage.getItem('eagle_merchantId') || '';
 }
 

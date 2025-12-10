@@ -91,9 +91,19 @@ export class AbandonedCartsService {
    * Get cart activity logs
    */
   async getCartActivityLogs(cartId: string) {
+    // First get the cart to find merchant ID
+    const cart = await this.prisma.cart.findUnique({
+      where: { id: cartId },
+      select: { merchantId: true },
+    });
+    
+    if (!cart) {
+      return [];
+    }
+    
     const logs = await this.prisma.activityLog.findMany({
       where: {
-        merchantId: '6ecc682b-98ee-472d-977b-cffbbae081b8',
+        merchantId: cart.merchantId,
         eventType: {
           in: ['cart_created', 'cart_items_added', 'cart_item_added', 'cart_item_removed', 'cart_item_updated', 'cart_company_updated'],
         },
@@ -138,7 +148,32 @@ export class AbandonedCartsService {
   }
 
   async syncShopifyCart(data: any) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    // Get merchant by shop domain - this is critical for multi-tenant support
+    let merchantId: string | null = null;
+    
+    if (data.shop) {
+      const merchant = await this.prisma.merchant.findFirst({
+        where: { shopDomain: data.shop },
+      });
+      if (merchant) {
+        merchantId = merchant.id;
+      }
+    }
+    
+    // Fallback: if no shop provided, try to get merchant from user email or customer
+    if (!merchantId && data.customerEmail) {
+      const user = await this.prisma.companyUser.findUnique({
+        where: { email: data.customerEmail },
+        include: { company: { include: { merchant: true } } },
+      });
+      if (user?.company?.merchantId) {
+        merchantId = user.company.merchantId;
+      }
+    }
+    
+    if (!merchantId) {
+      throw new Error('Could not determine merchant for cart sync');
+    }
     
     // Try to find user by email or shopifyCustomerId
     let companyId = data.companyId || null;
@@ -430,9 +465,10 @@ export class AbandonedCartsService {
   async trackCart(data: any) {
     // This is called from snippet - same as sync but with different data structure
     try {
-      this.logger.log(`📦 Tracking cart: token=${data.cartToken}, items=${data.items?.length || 0}, email=${data.customerEmail || 'anonymous'}`);
+      this.logger.log(`📦 Tracking cart: token=${data.cartToken}, items=${data.items?.length || 0}, email=${data.customerEmail || 'anonymous'}, shop=${data.shop || 'unknown'}`);
       
       const result = await this.syncShopifyCart({
+        shop: data.shop, // Pass shop domain for merchant lookup
         cartToken: data.cartToken || data.shopifyCartId,
         shopifyCartId: data.cartToken || data.shopifyCartId,
         customerEmail: data.customerEmail,

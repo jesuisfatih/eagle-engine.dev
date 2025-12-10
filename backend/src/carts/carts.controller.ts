@@ -8,15 +8,15 @@ import {
   Param,
   Query,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { CartsService } from './carts.service';
 import { CartItemsService } from './cart-items.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('carts')
-@Public()
+@UseGuards(JwtAuthGuard)
 export class CartsController {
   constructor(
     private cartsService: CartsService,
@@ -25,12 +25,13 @@ export class CartsController {
 
   @Get('active')
   async getActiveCart(
-    @Query('companyId') companyId?: string,
-    @Query('userId') userId?: string,
+    @CurrentUser('companyId') companyId: string,
+    @CurrentUser('sub') userId: string,
   ) {
-    const cId = companyId || 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d';
-    const uId = userId || 'c67273cf-acea-41db-9ff5-8f6e3bbb5c38';
-    return this.cartsService.findActiveCart(cId, uId);
+    if (!companyId || !userId) {
+      throw new BadRequestException('Company ID and User ID required');
+    }
+    return this.cartsService.findActiveCart(companyId, userId);
   }
 
   @Get(':id')
@@ -39,11 +40,14 @@ export class CartsController {
   }
 
   @Post()
-  async createCart(@Body() body: any) {
-    const merchantId = body.merchantId || '6ecc682b-98ee-472d-977b-cffbbae081b8';
-    const companyId = body.companyId || 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d';
-    const userId = body.createdByUserId || 'c67273cf-acea-41db-9ff5-8f6e3bbb5c38';
-    
+  async createCart(
+    @CurrentUser('merchantId') merchantId: string,
+    @CurrentUser('companyId') companyId: string,
+    @CurrentUser('sub') userId: string,
+  ) {
+    if (!merchantId || !companyId || !userId) {
+      throw new BadRequestException('Merchant ID, Company ID and User ID required');
+    }
     return this.cartsService.create(companyId, userId, merchantId);
   }
 
@@ -93,7 +97,13 @@ export class CartsController {
   }
 
   @Post(':id/approve')
-  async approve(@Param('id') cartId: string, @CurrentUser('userId') userId: string) {
+  async approve(
+    @Param('id') cartId: string,
+    @CurrentUser('sub') userId: string,
+  ) {
+    if (!userId) {
+      throw new BadRequestException('User ID required');
+    }
     return this.cartsService.approve(cartId, userId);
   }
 
@@ -107,6 +117,9 @@ export class CartsController {
     @CurrentUser('companyId') companyId: string,
     @Query('status') status?: string,
   ) {
+    if (!companyId) {
+      throw new BadRequestException('Company ID required');
+    }
     return this.cartsService.listCompanyCarts(companyId, status);
   }
 }

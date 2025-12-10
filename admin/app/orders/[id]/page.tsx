@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { adminFetch } from '@/lib/api-client';
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -14,8 +15,7 @@ export default function OrderDetailPage() {
 
   const loadOrder = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/orders/${params.id}`);
+      const response = await adminFetch(`/api/v1/orders/${params.id}`);
       const data = await response.json();
       setOrder(data);
     } catch (err) {

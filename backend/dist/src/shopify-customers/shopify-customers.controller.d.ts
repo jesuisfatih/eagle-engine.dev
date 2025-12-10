@@ -2,7 +2,7 @@ import { ShopifyCustomersService } from './shopify-customers.service';
 export declare class ShopifyCustomersController {
     private shopifyCustomersService;
     constructor(shopifyCustomersService: ShopifyCustomersService);
-    findAll(search?: string): Promise<{
+    findAll(merchantId: string, search?: string): Promise<{
         shopifyCustomerId: string;
         id: string;
         createdAt: Date;
@@ -38,7 +38,7 @@ export declare class ShopifyCustomersController {
         rawData: import("@prisma/client/runtime/client").JsonValue | null;
         syncedAt: Date;
     } | null>;
-    convertToCompany(customerId: string): Promise<{
+    convertToCompany(customerId: string, merchantId: string): Promise<{
         company: {
             name: string;
             id: string;

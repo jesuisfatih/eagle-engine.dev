@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { accountsApi } from '@/lib/api-client';
+import { accountsFetch } from '@/lib/api-client';
 
 export default function CartPage() {
   const [cart, setCart] = useState<any>(null);
@@ -14,11 +14,7 @@ export default function CartPage() {
   const loadCart = async () => {
     setLoading(true);
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const companyId = localStorage.getItem('eagle_companyId') || '';
-      const userId = localStorage.getItem('eagle_userId') || '';
-      
-      const response = await fetch(`${API_URL}/api/v1/carts/active?companyId=${companyId}&userId=${userId}`);
+      const response = await accountsFetch('/api/v1/carts/active');
       
       if (response.ok && response.status !== 204) {
         try {
@@ -45,20 +41,12 @@ export default function CartPage() {
     
     try {
       // Step 1: Fetch user profile and address information
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const token = localStorage.getItem('eagle_token') || '';
-      
       let userData: any = null;
       let addressData: any = null;
       
       try {
         // Get user profile
-        const userResponse = await fetch(`${API_URL}/api/v1/company-users/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+        const userResponse = await accountsFetch('/api/v1/company-users/me');
         
         if (userResponse.ok) {
           userData = await userResponse.json();
@@ -66,12 +54,7 @@ export default function CartPage() {
         
         // Get user addresses (try to get default or first address)
         try {
-          const addressResponse = await fetch(`${API_URL}/api/v1/addresses`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
+          const addressResponse = await accountsFetch('/api/v1/addresses');
           
           if (addressResponse.ok) {
             const addresses = await addressResponse.json();
@@ -108,8 +91,24 @@ export default function CartPage() {
         sessionStorage.setItem('eagle_checkout_autofill', JSON.stringify(checkoutData));
       }
       
-      // Step 3: Use Shopify's cart/add endpoint to add items to browser's cart cookie
-      const shopDomain = 'eagle-dtf-supply0.myshopify.com';
+      // Step 3: Get shop domain from company data
+      const companyId = localStorage.getItem('eagle_companyId') || '';
+      let shopDomain = '';
+      
+      try {
+        const companyResponse = await accountsFetch(`/api/v1/companies/${companyId}`);
+        if (companyResponse.ok) {
+          const companyData = await companyResponse.json();
+          shopDomain = companyData.merchant?.shopDomain || '';
+        }
+      } catch (e) {
+        console.error('Failed to get shop domain:', e);
+      }
+      
+      if (!shopDomain) {
+        throw new Error('Shop domain not found');
+      }
+      
       const shopUrl = `https://${shopDomain}`;
       
       // Add all items to Shopify cart using /cart/add.js
@@ -135,12 +134,8 @@ export default function CartPage() {
       
       try {
         const userId = localStorage.getItem('eagle_userId') || '';
-        const checkoutResponse = await fetch(`${API_URL}/api/v1/checkout/create`, {
+        const checkoutResponse = await accountsFetch('/api/v1/checkout/create', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
           body: JSON.stringify({ 
             cartId: cart.id,
             userId: userId || undefined,
@@ -172,12 +167,8 @@ export default function CartPage() {
         // Get discount code from backend if available
         let discountParam = '';
         try {
-          const discountResponse = await fetch(`${API_URL}/api/v1/checkout/create`, {
+          const discountResponse = await accountsFetch('/api/v1/checkout/create', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
             body: JSON.stringify({ cartId: cart.id }),
           });
           
@@ -240,13 +231,25 @@ export default function CartPage() {
     } catch (err) {
       console.error('Checkout error:', err);
       
-      // Fallback: Use cart URL format
+      // Fallback: Use cart URL format - need to get shopDomain again
+      const companyId = localStorage.getItem('eagle_companyId') || '';
+      let fallbackShopDomain = '';
+      try {
+        const companyResponse = await accountsFetch(`/api/v1/companies/${companyId}`);
+        if (companyResponse.ok) {
+          const companyData = await companyResponse.json();
+          fallbackShopDomain = companyData.merchant?.shopDomain || '';
+        }
+      } catch (e) {
+        console.error('Fallback shop domain fetch failed:', e);
+      }
+      
       const cartItems = cart.items.map((item: any) => 
         `${item.shopifyVariantId}:${item.quantity}`
       ).join(',');
       
-      if (cartItems) {
-        window.location.href = `https://eagle-dtf-supply0.myshopify.com/cart/${cartItems}`;
+      if (cartItems && fallbackShopDomain) {
+        window.location.href = `https://${fallbackShopDomain}/cart/${cartItems}`;
       } else {
         alert('Failed to proceed to checkout. Please try again.');
       }
@@ -257,10 +260,8 @@ export default function CartPage() {
     if (!cart) return;
     
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/carts/${cart.id}/items/${itemId}`, {
+      const response = await accountsFetch(`/api/v1/carts/${cart.id}/items/${itemId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quantity }),
       });
       
@@ -275,7 +276,9 @@ export default function CartPage() {
   const removeItem = async (itemId: string) => {
     if (!cart) return;
     try {
-      await accountsApi.removeCartItem(cart.id, itemId);
+      await accountsFetch(`/api/v1/carts/${cart.id}/items/${itemId}`, {
+        method: 'DELETE',
+      });
       loadCart();
     } catch (err) {
       console.error(err);
@@ -284,14 +287,17 @@ export default function CartPage() {
 
   const createCart = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const merchantId = localStorage.getItem('eagle_merchantId') || '6ecc682b-98ee-472d-977b-cffbbae081b8';
+      const merchantId = localStorage.getItem('eagle_merchantId') || '';
       const companyId = localStorage.getItem('eagle_companyId') || '';
       const userId = localStorage.getItem('eagle_userId') || '';
       
-      const response = await fetch(`${API_URL}/api/v1/carts`, {
+      if (!merchantId) {
+        alert('Merchant not found. Please login again.');
+        return;
+      }
+      
+      const response = await accountsFetch('/api/v1/carts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ merchantId, companyId, createdByUserId: userId }),
       });
       

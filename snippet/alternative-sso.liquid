@@ -2,11 +2,17 @@
 <!-- Works with Standard Shopify ($29/month) -->
 <!-- Add to theme.liquid before </body> -->
 
+<!-- 
+  CONFIGURATION: Use Shopify metafields for multi-tenant support
+  Set shop.metafields.eagle.api_url for your Eagle API endpoint
+-->
+
 <script>
 (function() {
   'use strict';
   
-  const EAGLE_API = 'https://api.eagledtfsupply.com';
+  // Configuration: Use Shopify metafields for multi-tenant support
+  const EAGLE_API = '{{ shop.metafields.eagle.api_url | default: 'https://api.eagledtfsupply.com' }}';
   const customer = {{ customer | json }};
   
   /**

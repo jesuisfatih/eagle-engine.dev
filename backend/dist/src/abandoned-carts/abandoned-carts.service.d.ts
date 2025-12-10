@@ -1,8 +1,9 @@
 import { PrismaService } from '../prisma/prisma.service';
 export declare class AbandonedCartsService {
     private prisma;
+    private readonly logger;
     constructor(prisma: PrismaService);
-    getAbandonedCarts(merchantId: string): Promise<({
+    getAbandonedCarts(merchantId: string, companyId?: string, includeRecent?: boolean): Promise<({
         company: {
             name: string;
             id: string;
@@ -94,7 +95,74 @@ export declare class AbandonedCartsService {
         notes: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
     })[]>;
+    getCartActivityLogs(cartId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        merchantId: string;
+        shopifyCustomerId: bigint | null;
+        shopifyProductId: bigint | null;
+        companyId: string | null;
+        companyUserId: string | null;
+        sessionId: string | null;
+        eagleToken: string | null;
+        eventType: string;
+        productId: string | null;
+        variantId: string | null;
+        shopifyVariantId: bigint | null;
+        payload: import("@prisma/client/runtime/client").JsonValue | null;
+        ipAddress: string | null;
+        userAgent: string | null;
+        referrer: string | null;
+    }[]>;
+    getAllCartActivityLogs(merchantId: string, limit?: number): Promise<({
+        company: {
+            name: string;
+            id: string;
+        } | null;
+    } & {
+        id: string;
+        createdAt: Date;
+        merchantId: string;
+        shopifyCustomerId: bigint | null;
+        shopifyProductId: bigint | null;
+        companyId: string | null;
+        companyUserId: string | null;
+        sessionId: string | null;
+        eagleToken: string | null;
+        eventType: string;
+        productId: string | null;
+        variantId: string | null;
+        shopifyVariantId: bigint | null;
+        payload: import("@prisma/client/runtime/client").JsonValue | null;
+        ipAddress: string | null;
+        userAgent: string | null;
+        referrer: string | null;
+    })[]>;
     syncShopifyCart(data: any): Promise<{
+        id: string;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        merchantId: string;
+        companyId: string;
+        subtotal: import("@prisma/client-runtime-utils").Decimal;
+        currency: string;
+        createdByUserId: string;
+        discountTotal: import("@prisma/client-runtime-utils").Decimal;
+        taxTotal: import("@prisma/client-runtime-utils").Decimal;
+        total: import("@prisma/client-runtime-utils").Decimal;
+        appliedPricingRules: import("@prisma/client/runtime/client").JsonValue | null;
+        shopifyCartId: string | null;
+        shopifyCheckoutUrl: string | null;
+        approvedByUserId: string | null;
+        approvedAt: Date | null;
+        convertedToOrderId: string | null;
+        convertedAt: Date | null;
+        notes: string | null;
+        metadata: import("@prisma/client/runtime/client").JsonValue | null;
+    }>;
+    private logCartActivity;
+    trackCart(data: any): Promise<{
         id: string;
         status: string;
         createdAt: Date;

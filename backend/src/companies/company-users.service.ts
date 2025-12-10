@@ -20,6 +20,25 @@ export class CompanyUsersService {
     });
   }
 
+  async findById(userId: string) {
+    return this.prisma.companyUser.findUnique({
+      where: { id: userId },
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+            merchant: {
+              select: {
+                shopDomain: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
   async invite(companyId: string, data: { email: string; role?: string }) {
     const invitationToken = crypto.randomBytes(32).toString('hex');
 

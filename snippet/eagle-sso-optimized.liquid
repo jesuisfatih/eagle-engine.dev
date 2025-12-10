@@ -2,12 +2,21 @@
 <!-- Ultra-fast, seamless authentication -->
 <!-- Add to theme.liquid before </body> -->
 
+<!-- 
+  CONFIGURATION: Add these settings to your Shopify theme:
+  1. Go to Online Store > Themes > Customize > Theme Settings
+  2. Add "Eagle API URL" and "Eagle Accounts URL" settings
+  Or configure them below:
+-->
+
 <script>
 (function() {
   'use strict';
   
-  const EAGLE_API = 'https://api.eagledtfsupply.com';
-  const EAGLE_ACCOUNTS = 'https://accounts.eagledtfsupply.com';
+  // Configuration: Use Shopify metafields or theme settings for multi-tenant support
+  // Format: {{ shop.metafields.eagle.api_url | default: settings.eagle_api_url | default: 'https://api.eagledtfsupply.com' }}
+  const EAGLE_API = '{{ shop.metafields.eagle.api_url | default: 'https://api.eagledtfsupply.com' }}';
+  const EAGLE_ACCOUNTS = '{{ shop.metafields.eagle.accounts_url | default: 'https://accounts.eagledtfsupply.com' }}';
   
   // Shopify customer data
   const customer = {{ customer | json }};

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { publicFetch } from '@/lib/api-client';
 
 type AccountType = 'b2b' | 'normal';
 
@@ -62,10 +63,8 @@ export default function RegisterPage() {
     setError('');
     
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/auth/send-verification-code`, {
+      const response = await publicFetch('/api/v1/auth/send-verification-code', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email }),
       });
 
@@ -98,10 +97,8 @@ export default function RegisterPage() {
     setError('');
     
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/auth/verify-email-code`, {
+      const response = await publicFetch('/api/v1/auth/verify-email-code', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           email: formData.email, 
           code: verificationCodeInput 
@@ -193,10 +190,8 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/auth/register`, {
+      const response = await publicFetch('/api/v1/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,

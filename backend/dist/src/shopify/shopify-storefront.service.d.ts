@@ -9,10 +9,11 @@ export declare class ShopifyStorefrontService {
     private config;
     private readonly logger;
     constructor(httpService: HttpService, config: ConfigService);
-    createCart(shop: string, storefrontAccessToken: string, lines: CartLineItem[], discountCodes?: string[]): Promise<{
+    createCart(shop: string, storefrontAccessToken: string, lines: CartLineItem[], discountCodes?: string[], customerAccessToken?: string): Promise<{
         cartId: any;
         checkoutUrl: any;
         total: any;
     }>;
+    createCustomerAccessToken(shop: string, storefrontAccessToken: string, email: string, password: string): Promise<string | null>;
 }
 export {};

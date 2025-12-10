@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, adminFetch } from '@/lib/api-client';
 import Modal from '@/components/Modal';
 import SearchBar from './components/SearchBar';
 import StatusFilter from './components/StatusFilter';
@@ -23,22 +23,21 @@ export default function CompaniesPage() {
 
   const loadStats = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const data = await fetch(`${API_URL}/api/v1/companies/stats`).then(r => r.json());
+      const response = await adminFetch('/api/v1/companies/stats');
+      const data = await response.json();
       setStats(data);
     } catch (err) {}
   };
 
   const loadData = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const [companiesData, customersData] = await Promise.all([
+      const [companiesData, customersResponse] = await Promise.all([
         apiClient.getCompanies().catch(() => []),
-        fetch(`${API_URL}/api/v1/shopify-customers`).then(r => r.json()).catch(() => []),
+        adminFetch('/api/v1/shopify-customers').then(r => r.json()).catch(() => []),
       ]);
       setCompanies(companiesData);
       setAllCompanies(companiesData);
-      setShopifyCustomers(Array.isArray(customersData) ? customersData : []);
+      setShopifyCustomers(Array.isArray(customersResponse) ? customersResponse : []);
     } catch (err) {
       console.error('Load error:', err);
     } finally {
@@ -77,13 +76,8 @@ export default function CompaniesPage() {
     setConvertModal({ show: false, customerId: null });
     
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/shopify-customers/${convertModal.customerId}/convert-to-company`, {
+      const response = await adminFetch(`/api/v1/shopify-customers/${convertModal.customerId}/convert-to-company`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('eagle_admin_token')}`,
-          'Content-Type': 'application/json',
-        },
       });
       
       if (response.ok) {
@@ -207,10 +201,8 @@ export default function CompaniesPage() {
                                     onClick={async () => {
                                       if (confirm('Approve this company? All users will be activated.')) {
                                         try {
-                                          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-                                          const response = await fetch(`${API_URL}/api/v1/companies/${company.id}/approve`, {
+                                          const response = await adminFetch(`/api/v1/companies/${company.id}/approve`, {
                                             method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
                                           });
                                           if (response.ok) {
                                             alert('Company approved successfully!');
@@ -237,10 +229,8 @@ export default function CompaniesPage() {
                                       const reason = prompt('Rejection reason (optional):');
                                       if (reason !== null) {
                                         try {
-                                          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-                                          const response = await fetch(`${API_URL}/api/v1/companies/${company.id}/reject`, {
+                                          const response = await adminFetch(`/api/v1/companies/${company.id}/reject`, {
                                             method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
                                             body: JSON.stringify({ reason: reason || undefined }),
                                           });
                                           if (response.ok) {
@@ -275,8 +265,7 @@ export default function CompaniesPage() {
                                 onClick={async () => {
                                   if (confirm('Delete this company?')) {
                                     try {
-                                      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-                                      await fetch(`${API_URL}/api/v1/companies/${company.id}`, { method: 'DELETE' });
+                                      await adminFetch(`/api/v1/companies/${company.id}`, { method: 'DELETE' });
                                       loadData();
                                     } catch (err) {}
                                   }

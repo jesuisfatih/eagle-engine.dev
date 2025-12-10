@@ -36,6 +36,14 @@ let MailService = MailService_1 = class MailService {
         this.logger.log(`📧 Password reset sent to ${email}`);
         return { success: true, resetUrl };
     }
+    async sendVerificationCode(email, code) {
+        this.logger.log(`📧 Verification code sent to ${email}: ${code}`);
+        return {
+            success: true,
+            message: 'Verification code sent',
+            code,
+        };
+    }
 };
 exports.MailService = MailService;
 exports.MailService = MailService = MailService_1 = __decorate([

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { adminFetch } from '@/lib/api-client';
 
 export default function TopCompanies() {
   const [companies, setCompanies] = useState<any[]>([]);
@@ -11,8 +12,7 @@ export default function TopCompanies() {
 
   const loadTopCompanies = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/analytics/top-companies?limit=5`);
+      const response = await adminFetch('/api/v1/analytics/top-companies?limit=5');
       const data = await response.json();
       setCompanies(Array.isArray(data) ? data : []);
     } catch (err) {

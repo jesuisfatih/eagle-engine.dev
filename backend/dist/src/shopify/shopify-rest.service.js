@@ -90,6 +90,114 @@ let ShopifyRestService = ShopifyRestService_1 = class ShopifyRestService {
     async getCustomers(shop, accessToken, limit = 250) {
         return this.get(shop, accessToken, `/customers.json?limit=${limit}`);
     }
+    async createCustomerInvite(shop, accessToken, customerId) {
+        const url = `https://${shop}/admin/api/2024-10/customers/${customerId}/send_invite.json`;
+        try {
+            const response = await (0, rxjs_1.firstValueFrom)(this.httpService.post(url, {
+                customer_invite: {
+                    to: '',
+                    from: '',
+                    subject: 'Welcome to our store',
+                    custom_message: 'Please login to complete your purchase',
+                },
+            }, {
+                headers: {
+                    'X-Shopify-Access-Token': accessToken,
+                    'Content-Type': 'application/json',
+                },
+            }));
+            return response.data;
+        }
+        catch (error) {
+            this.logger.error(`Customer invite failed: ${url}`, error.response?.data);
+            throw error;
+        }
+    }
+    async updateCustomerSubscription(shop, accessToken, customerId, acceptsMarketing) {
+        const url = this.shopifyService.buildAdminApiUrl(shop, `/customers/${customerId}.json`);
+        try {
+            const response = await (0, rxjs_1.firstValueFrom)(this.httpService.put(url, {
+                customer: {
+                    accepts_marketing: acceptsMarketing,
+                },
+            }, {
+                headers: {
+                    'X-Shopify-Access-Token': accessToken,
+                    'Content-Type': 'application/json',
+                },
+            }));
+            return response.data;
+        }
+        catch (error) {
+            this.logger.error(`Customer subscription update failed: ${url}`, error.response?.data);
+            throw error;
+        }
+    }
+    async updateCustomerMetafields(shop, accessToken, customerId, metafields) {
+        const getUrl = `https://${shop}/admin/api/2024-10/customers/${customerId}/metafields.json`;
+        try {
+            const existingResponse = await (0, rxjs_1.firstValueFrom)(this.httpService.get(getUrl, {
+                headers: {
+                    'X-Shopify-Access-Token': accessToken,
+                    'Content-Type': 'application/json',
+                },
+            }));
+            const existingMetafields = existingResponse.data.metafields || [];
+            for (const metafield of existingMetafields) {
+                if (metafields.some(m => m.namespace === metafield.namespace && m.key === metafield.key)) {
+                    await (0, rxjs_1.firstValueFrom)(this.httpService.delete(`https://${shop}/admin/api/2024-10/metafields/${metafield.id}.json`, {
+                        headers: {
+                            'X-Shopify-Access-Token': accessToken,
+                            'Content-Type': 'application/json',
+                        },
+                    }));
+                }
+            }
+            const createUrl = `https://${shop}/admin/api/2024-10/metafields.json`;
+            const results = [];
+            for (const metafield of metafields) {
+                const response = await (0, rxjs_1.firstValueFrom)(this.httpService.post(createUrl, {
+                    metafield: {
+                        namespace: metafield.namespace,
+                        key: metafield.key,
+                        value: metafield.value,
+                        type: metafield.type,
+                        owner_resource: 'customer',
+                        owner_id: customerId,
+                    },
+                }, {
+                    headers: {
+                        'X-Shopify-Access-Token': accessToken,
+                        'Content-Type': 'application/json',
+                    },
+                }));
+                if (response.data?.metafield) {
+                    results.push(response.data.metafield);
+                }
+            }
+            return results;
+        }
+        catch (error) {
+            this.logger.error(`Metafield update failed: ${getUrl}`, error.response?.data);
+            throw error;
+        }
+    }
+    async getCustomerMetafields(shop, accessToken, customerId) {
+        const url = `https://${shop}/admin/api/2024-10/customers/${customerId}/metafields.json`;
+        try {
+            const response = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, {
+                headers: {
+                    'X-Shopify-Access-Token': accessToken,
+                    'Content-Type': 'application/json',
+                },
+            }));
+            return response.data.metafields || [];
+        }
+        catch (error) {
+            this.logger.error(`Get metafields failed: ${url}`, error.response?.data);
+            return [];
+        }
+    }
     async getProducts(shop, accessToken, limit = 250) {
         return this.get(shop, accessToken, `/products.json?limit=${limit}`);
     }

@@ -110,17 +110,31 @@ export class SessionSyncService {
     };
   }
 
-  private async getOrCreateProspectCompany(email: string) {
+  private async getOrCreateProspectCompany(email: string, merchantId?: string) {
     const domain = email.split('@')[1];
     
+    // Find existing company
     let company = await this.prisma.company.findFirst({
-      where: { email: { contains: domain } },
+      where: { 
+        email: { contains: domain },
+        ...(merchantId ? { merchantId } : {}),
+      },
     });
 
     if (!company) {
+      // Need merchantId to create company
+      if (!merchantId) {
+        // Try to find any merchant as fallback
+        const merchant = await this.prisma.merchant.findFirst();
+        if (!merchant) {
+          throw new Error('No merchant found to create prospect company');
+        }
+        merchantId = merchant.id;
+      }
+      
       company = await this.prisma.company.create({
         data: {
-          merchantId: '6ecc682b-98ee-472d-977b-cffbbae081b8',
+          merchantId,
           name: `Prospect - ${domain}`,
           email,
           status: 'prospect',

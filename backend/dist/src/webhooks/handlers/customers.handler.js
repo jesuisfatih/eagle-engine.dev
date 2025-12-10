@@ -13,18 +13,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CustomersHandler = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
+const shopify_service_1 = require("../../shopify/shopify.service");
 let CustomersHandler = CustomersHandler_1 = class CustomersHandler {
     prisma;
+    shopifyService;
     logger = new common_1.Logger(CustomersHandler_1.name);
-    constructor(prisma) {
+    constructor(prisma, shopifyService) {
         this.prisma = prisma;
+        this.shopifyService = shopifyService;
     }
     async handleCustomerCreate(customerData, headers) {
         try {
             const shop = headers['x-shopify-shop-domain'];
-            const merchant = await this.prisma.merchant.findUnique({
-                where: { shopDomain: shop },
-            });
+            const merchant = await this.shopifyService.getMerchantByShopDomain(shop);
             if (!merchant) {
                 this.logger.warn(`Merchant not found for shop: ${shop}`);
                 return { success: false };
@@ -76,6 +77,7 @@ let CustomersHandler = CustomersHandler_1 = class CustomersHandler {
 exports.CustomersHandler = CustomersHandler;
 exports.CustomersHandler = CustomersHandler = CustomersHandler_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        shopify_service_1.ShopifyService])
 ], CustomersHandler);
 //# sourceMappingURL=customers.handler.js.map

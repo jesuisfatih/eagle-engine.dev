@@ -17,85 +17,81 @@ const common_1 = require("@nestjs/common");
 const sync_service_1 = require("./sync.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
-const public_decorator_1 = require("../auth/decorators/public.decorator");
 let SyncController = class SyncController {
     syncService;
     constructor(syncService) {
         this.syncService = syncService;
     }
     async triggerInitialSync(merchantId) {
-        return this.syncService.triggerInitialSync(merchantId);
-    }
-    async triggerInitialSyncAuth(merchantId) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.syncService.triggerInitialSync(merchantId);
     }
     async triggerCustomersSync(merchantId) {
-        const id = merchantId || '6ecc682b-98ee-472d-977b-cffbbae081b8';
-        return this.syncService.triggerCustomersSync(id);
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
+        return this.syncService.triggerCustomersSync(merchantId);
     }
     async triggerProductsSync(merchantId) {
-        const id = merchantId || '6ecc682b-98ee-472d-977b-cffbbae081b8';
-        return this.syncService.triggerProductsSync(id);
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
+        return this.syncService.triggerProductsSync(merchantId);
     }
     async triggerOrdersSync(merchantId) {
-        const id = merchantId || '6ecc682b-98ee-472d-977b-cffbbae081b8';
-        return this.syncService.triggerOrdersSync(id);
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
+        return this.syncService.triggerOrdersSync(merchantId);
     }
-    async getSyncStatus() {
-        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    async getSyncStatus(merchantId) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.syncService.getSyncStatus(merchantId);
     }
 };
 exports.SyncController = SyncController;
 __decorate([
-    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('initial'),
-    __param(0, (0, common_1.Body)('merchantId')),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], SyncController.prototype, "triggerInitialSync", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, common_1.Post)('initial-auth'),
-    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], SyncController.prototype, "triggerInitialSyncAuth", null);
-__decorate([
-    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('customers'),
-    __param(0, (0, common_1.Body)('merchantId')),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], SyncController.prototype, "triggerCustomersSync", null);
 __decorate([
-    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('products'),
-    __param(0, (0, common_1.Body)('merchantId')),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], SyncController.prototype, "triggerProductsSync", null);
 __decorate([
-    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('orders'),
-    __param(0, (0, common_1.Body)('merchantId')),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], SyncController.prototype, "triggerOrdersSync", null);
 __decorate([
-    (0, public_decorator_1.Public)(),
     (0, common_1.Get)('status'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], SyncController.prototype, "getSyncStatus", null);
 exports.SyncController = SyncController = __decorate([
     (0, common_1.Controller)('sync'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [sync_service_1.SyncService])
 ], SyncController);
 //# sourceMappingURL=sync.controller.js.map

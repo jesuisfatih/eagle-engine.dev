@@ -12,6 +12,7 @@ export class WebhooksController {
   ) {}
 
   @Public()
+  @UseGuards(WebhookAuthGuard)
   @Post('orders/create')
   @HttpCode(200)
   async orderCreate(@Body() body: any, @Headers() headers: any) {
@@ -19,6 +20,7 @@ export class WebhooksController {
   }
 
   @Public()
+  @UseGuards(WebhookAuthGuard)
   @Post('orders/paid')
   @HttpCode(200)
   async orderPaid(@Body() body: any, @Headers() headers: any) {
@@ -26,6 +28,7 @@ export class WebhooksController {
   }
 
   @Public()
+  @UseGuards(WebhookAuthGuard)
   @Post('customers/create')
   @HttpCode(200)
   async customerCreate(@Body() body: any, @Headers() headers: any) {

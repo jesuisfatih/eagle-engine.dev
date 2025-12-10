@@ -47,17 +47,19 @@ exports.ShopifySsoService = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const crypto = __importStar(require("crypto"));
+const prisma_service_1 = require("../prisma/prisma.service");
 let ShopifySsoService = ShopifySsoService_1 = class ShopifySsoService {
     configService;
+    prisma;
     logger = new common_1.Logger(ShopifySsoService_1.name);
-    shopifyDomain;
-    multipassSecret;
-    constructor(configService) {
+    constructor(configService, prisma) {
         this.configService = configService;
-        this.shopifyDomain = this.configService.get('SHOPIFY_STORE_DOMAIN') || 'eagle-dtf-supply0.myshopify.com';
-        this.multipassSecret = this.configService.get('SHOPIFY_MULTIPASS_SECRET') || '';
+        this.prisma = prisma;
     }
-    generateMultipassToken(customerData) {
+    generateMultipassToken(multipassSecret, customerData) {
+        if (!multipassSecret) {
+            throw new Error('Multipass secret is required');
+        }
         try {
             const multipassData = {
                 email: customerData.email,
@@ -70,12 +72,12 @@ let ShopifySsoService = ShopifySsoService_1 = class ShopifySsoService {
             const jsonData = JSON.stringify(multipassData);
             const encryptionKey = crypto
                 .createHash('sha256')
-                .update(this.multipassSecret)
+                .update(multipassSecret)
                 .digest()
                 .slice(0, 32);
             const signingKey = crypto
                 .createHash('sha256')
-                .update(this.multipassSecret)
+                .update(multipassSecret)
                 .digest();
             const iv = crypto.randomBytes(16);
             const cipher = crypto.createCipheriv('aes-256-cbc', encryptionKey, iv);
@@ -96,15 +98,15 @@ let ShopifySsoService = ShopifySsoService_1 = class ShopifySsoService {
             throw error;
         }
     }
-    generateSsoUrl(customerData) {
-        const token = this.generateMultipassToken(customerData);
-        return `https://${this.shopifyDomain}/account/login/multipass/${token}`;
+    generateSsoUrl(shopDomain, multipassSecret, customerData) {
+        const token = this.generateMultipassToken(multipassSecret, customerData);
+        return `https://${shopDomain}/account/login/multipass/${token}`;
     }
-    async verifyShopifySession(shopifyCustomerId) {
+    async verifyShopifySession(shopDomain, accessToken, shopifyCustomerId) {
         try {
-            const response = await fetch(`https://${this.shopifyDomain}/admin/api/2024-01/customers/${shopifyCustomerId}.json`, {
+            const response = await fetch(`https://${shopDomain}/admin/api/2024-10/customers/${shopifyCustomerId}.json`, {
                 headers: {
-                    'X-Shopify-Access-Token': this.configService.get('SHOPIFY_ACCESS_TOKEN') || '',
+                    'X-Shopify-Access-Token': accessToken,
                 },
             });
             return response.ok;
@@ -118,6 +120,7 @@ let ShopifySsoService = ShopifySsoService_1 = class ShopifySsoService {
 exports.ShopifySsoService = ShopifySsoService;
 exports.ShopifySsoService = ShopifySsoService = ShopifySsoService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [config_1.ConfigService])
+    __metadata("design:paramtypes", [config_1.ConfigService,
+        prisma_service_1.PrismaService])
 ], ShopifySsoService);
 //# sourceMappingURL=shopify-sso.service.js.map

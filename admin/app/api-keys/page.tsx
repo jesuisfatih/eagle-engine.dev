@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import ApiKeyModal from '@/components/ApiKeyModal';
 import Modal from '@/components/Modal';
+import { adminFetch } from '@/lib/api-client';
 
 export default function ApiKeysPage() {
   const [keys, setKeys] = useState<any[]>([]);
@@ -19,8 +20,7 @@ export default function ApiKeysPage() {
   const loadKeys = async () => {
     setLoading(true);
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/api-keys`);
+      const response = await adminFetch('/api/v1/api-keys');
       if (response.ok) {
         const data = await response.json();
         setKeys(Array.isArray(data) ? data : []);
@@ -34,10 +34,8 @@ export default function ApiKeysPage() {
 
   const handleGenerate = async (keyName: string) => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/api-keys`, {
+      const response = await adminFetch('/api/v1/api-keys', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: keyName }),
       });
 
@@ -60,8 +58,7 @@ export default function ApiKeysPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/api-keys/${id}`, {
+      const response = await adminFetch(`/api/v1/api-keys/${id}`, {
         method: 'DELETE',
       });
 

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ShopifyCustomerSyncService } from '../shopify/shopify-customer-sync.service';
+import { ShopifyService } from '../shopify/shopify.service';
 
 @Injectable()
 export class ShopifyWebhookSyncService {
@@ -9,13 +10,12 @@ export class ShopifyWebhookSyncService {
   constructor(
     private prisma: PrismaService,
     private shopifyCustomerSync: ShopifyCustomerSyncService,
+    private shopifyService: ShopifyService,
   ) {}
 
   async handleOrderCreate(orderData: any, shop: string) {
     // When order created in Shopify, link to Eagle company if exists
-    const merchant = await this.prisma.merchant.findUnique({
-      where: { shopDomain: shop },
-    });
+    const merchant = await this.shopifyService.getMerchantByShopDomain(shop);
 
     if (!merchant || !orderData.customer) return;
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Modal from '@/components/Modal';
+import { adminFetch } from '@/lib/api-client';
 
 export default function QuotesPage() {
   const [quotes, setQuotes] = useState<any[]>([]);
@@ -16,8 +17,7 @@ export default function QuotesPage() {
   const loadQuotes = async () => {
     setLoading(true);
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/quotes`);
+      const response = await adminFetch('/api/v1/quotes');
       const data = await response.json();
       setQuotes(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -29,8 +29,7 @@ export default function QuotesPage() {
 
   const approveQuote = async (quoteId: string) => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/quotes/${quoteId}/approve`, {
+      const response = await adminFetch(`/api/v1/quotes/${quoteId}/approve`, {
         method: 'POST',
       });
       

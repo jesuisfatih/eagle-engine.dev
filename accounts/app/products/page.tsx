@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { accountsApi } from '@/lib/api-client';
+import { accountsFetch } from '@/lib/api-client';
 import ProductCard from './components/ProductCard';
 
 export default function ProductsPage() {
@@ -14,22 +14,47 @@ export default function ProductsPage() {
 
   const loadProducts = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const productsData = await fetch(`${API_URL}/api/v1/catalog/products?limit=100`).then(r => r.json());
+      const productsResponse = await accountsFetch('/api/v1/catalog/products?limit=100');
+      const productsData = await productsResponse.json();
       
-      // Get pricing - simplified
+      // Get variant IDs for pricing calculation
+      const allVariantIds = (Array.isArray(productsData) ? productsData : [])
+        .flatMap(p => p.variants?.map((v: any) => v.shopifyVariantId?.toString()) || [])
+        .filter(Boolean);
+      
+      // Get actual B2B pricing from API
+      let pricingMap: Record<string, any> = {};
+      if (allVariantIds.length > 0) {
+        try {
+          const pricingResponse = await accountsFetch('/api/v1/pricing/calculate', {
+            method: 'POST',
+            body: JSON.stringify({ variantIds: allVariantIds }),
+          });
+          if (pricingResponse.ok) {
+            const pricingData = await pricingResponse.json();
+            pricingMap = (pricingData.prices || []).reduce((acc: any, p: any) => {
+              acc[p.variantId] = p;
+              return acc;
+            }, {});
+          }
+        } catch (e) {
+          console.error('Pricing fetch error:', e);
+        }
+      }
+      
       const productsWithPricing = (Array.isArray(productsData) ? productsData : []).map(product => {
         const variant = product.variants?.[0];
-        const basePrice = variant?.price || 0;
+        const basePrice = parseFloat(variant?.price) || 0;
+        const pricing = pricingMap[variant?.shopifyVariantId?.toString()] || {};
         
-        // Apply 25% B2B discount (from pricing rules)
-        const companyPrice = basePrice * 0.75; // 25% off
+        const companyPrice = pricing.companyPrice || basePrice;
+        const discount = pricing.discountPercentage || 0;
         
         return {
           ...product,
           companyPrice,
           listPrice: basePrice,
-          discount: 25,
+          discount,
           image: product.images?.[0]?.url || 'https://via.placeholder.com/150',
           vendor: product.vendor || 'Eagle DTF',
         };
@@ -46,7 +71,6 @@ export default function ProductsPage() {
   const displayProducts = products;
 
   const handleAddToCart = async (productId: string) => {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
     const product = displayProducts.find(p => p.id === productId);
     
     if (!product || !product.variants?.[0]) {
@@ -56,11 +80,15 @@ export default function ProductsPage() {
     const variant = product.variants[0];
     const companyId = localStorage.getItem('eagle_companyId') || '';
     const userId = localStorage.getItem('eagle_userId') || '';
-    const merchantId = localStorage.getItem('eagle_merchantId') || '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    const merchantId = localStorage.getItem('eagle_merchantId') || '';
+    
+    if (!merchantId) {
+      throw new Error('Merchant not found. Please login again.');
+    }
     
     try {
       // Step 1: Get or create cart
-      let cartResponse = await fetch(`${API_URL}/api/v1/carts/active?companyId=${companyId}&userId=${userId}`);
+      const cartResponse = await accountsFetch('/api/v1/carts/active');
       let cart = null;
 
       if (cartResponse.ok) {
@@ -69,19 +97,14 @@ export default function ProductsPage() {
 
       if (!cart || !cart.id) {
         // Create new cart
-        const merchantId = localStorage.getItem('eagle_merchantId') || '6ecc682b-98ee-472d-977b-cffbbae081b8';
         const cartData = {
           merchantId,
           companyId,
           createdByUserId: userId
         };
 
-        const createResponse = await fetch(`${API_URL}/api/v1/carts`, {
+        const createResponse = await accountsFetch('/api/v1/carts', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
           body: JSON.stringify(cartData),
         });
 
@@ -99,9 +122,8 @@ export default function ProductsPage() {
       }
 
       // Step 2: Add item to cart
-      const addItemResponse = await fetch(`${API_URL}/api/v1/carts/${cart.id}/items`, {
+      const addItemResponse = await accountsFetch(`/api/v1/carts/${cart.id}/items`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           variantId: variant.id,
           shopifyVariantId: variant.shopifyVariantId.toString(),

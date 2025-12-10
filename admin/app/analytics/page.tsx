@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import TopCompanies from './components/TopCompanies';
 import DateRangeFilter from './components/DateRangeFilter';
+import { adminFetch } from '@/lib/api-client';
 
 export default function AnalyticsPage() {
   const [stats, setStats] = useState({
@@ -20,11 +21,10 @@ export default function AnalyticsPage() {
 
   const loadAnalytics = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       const [dashboardData, funnelData, productsData] = await Promise.all([
-        fetch(`${API_URL}/api/v1/analytics/dashboard`).then(r => r.json()).catch(() => ({})),
-        fetch(`${API_URL}/api/v1/analytics/funnel`).then(r => r.json()).catch(() => null),
-        fetch(`${API_URL}/api/v1/analytics/top-products`).then(r => r.json()).catch(() => []),
+        adminFetch('/api/v1/analytics/dashboard').then(r => r.json()).catch(() => ({})),
+        adminFetch('/api/v1/analytics/funnel').then(r => r.json()).catch(() => null),
+        adminFetch('/api/v1/analytics/top-products').then(r => r.json()).catch(() => []),
       ]);
       setStats(dashboardData);
       setFunnel(funnelData);

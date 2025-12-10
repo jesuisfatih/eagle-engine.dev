@@ -2,13 +2,12 @@ import { PricingService } from './pricing.service';
 export declare class PricingController {
     private pricingService;
     constructor(pricingService: PricingService);
-    calculatePrices(body: {
+    calculatePrices(merchantId: string, companyId: string, body: {
         variantIds: string[];
-        companyId?: string;
         quantities?: any;
         cartTotal?: number;
     }): Promise<import("./pricing-calculator.service").CalculatedPrice[]>;
-    getRules(isActive?: string, companyId?: string): Promise<({
+    getRules(merchantId: string, isActive?: string, companyId?: string): Promise<({
         targetCompany: {
             name: string;
             id: string;
@@ -38,7 +37,7 @@ export declare class PricingController {
         validFrom: Date | null;
         validUntil: Date | null;
     })[]>;
-    getRule(id: string): Promise<{
+    getRule(id: string, merchantId: string): Promise<{
         targetCompany: {
             name: string;
             id: string;
@@ -68,7 +67,7 @@ export declare class PricingController {
         validFrom: Date | null;
         validUntil: Date | null;
     }>;
-    createRule(body: any): Promise<{
+    createRule(merchantId: string, body: any): Promise<{
         name: string;
         id: string;
         createdAt: Date;
@@ -93,7 +92,7 @@ export declare class PricingController {
         validFrom: Date | null;
         validUntil: Date | null;
     }>;
-    updateRule(id: string, body: any): Promise<{
+    updateRule(id: string, merchantId: string, body: any): Promise<{
         name: string;
         id: string;
         createdAt: Date;
@@ -118,7 +117,7 @@ export declare class PricingController {
         validFrom: Date | null;
         validUntil: Date | null;
     }>;
-    deleteRule(id: string): Promise<{
+    deleteRule(id: string, merchantId: string): Promise<{
         name: string;
         id: string;
         createdAt: Date;
@@ -143,7 +142,7 @@ export declare class PricingController {
         validFrom: Date | null;
         validUntil: Date | null;
     }>;
-    toggleRule(id: string, isActive: boolean): Promise<{
+    toggleRule(id: string, merchantId: string, isActive: boolean): Promise<{
         name: string;
         id: string;
         createdAt: Date;

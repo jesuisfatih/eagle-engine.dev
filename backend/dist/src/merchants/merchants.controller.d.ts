@@ -2,7 +2,7 @@ import { MerchantsService } from './merchants.service';
 export declare class MerchantsController {
     private merchantsService;
     constructor(merchantsService: MerchantsService);
-    getMe(): Promise<{
+    getMe(merchantId: string): Promise<{
         id: string;
         shopDomain: string;
         shopifyShopId: bigint | null;
@@ -16,13 +16,13 @@ export declare class MerchantsController {
         createdAt: Date;
         updatedAt: Date;
     } | null>;
-    getStats(): Promise<{
+    getStats(merchantId: string): Promise<{
         totalCompanies: number;
         totalUsers: number;
         totalOrders: number;
         totalRevenue: number | import("@prisma/client-runtime-utils").Decimal;
     }>;
-    updateSettings(settings: any): Promise<{
+    updateSettings(merchantId: string, settings: any): Promise<{
         id: string;
         shopDomain: string;
         shopifyShopId: bigint | null;
@@ -36,7 +36,7 @@ export declare class MerchantsController {
         createdAt: Date;
         updatedAt: Date;
     }>;
-    toggleSnippet(enabled: boolean): Promise<{
+    toggleSnippet(merchantId: string, enabled: boolean): Promise<{
         id: string;
         shopDomain: string;
         shopifyShopId: bigint | null;

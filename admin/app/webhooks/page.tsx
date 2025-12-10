@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { adminFetch } from '@/lib/api-client';
 
 export default function WebhooksPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -11,12 +12,10 @@ export default function WebhooksPage() {
 
   const loadLogs = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      
       // Get orders and customers as proxy for webhook activity
       const [orders, customers] = await Promise.all([
-        fetch(`${API_URL}/api/v1/orders`).then(r => r.json()).catch(() => []),
-        fetch(`${API_URL}/api/v1/shopify-customers`).then(r => r.json()).catch(() => []),
+        adminFetch('/api/v1/orders').then(r => r.json()).catch(() => []),
+        adminFetch('/api/v1/shopify-customers').then(r => r.json()).catch(() => []),
       ]);
       
       const webhookLogs: any[] = [];

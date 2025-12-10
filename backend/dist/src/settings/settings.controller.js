@@ -15,34 +15,53 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SettingsController = void 0;
 const common_1 = require("@nestjs/common");
 const settings_service_1 = require("./settings.service");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
-const public_decorator_1 = require("../auth/decorators/public.decorator");
 let SettingsController = class SettingsController {
     settingsService;
     constructor(settingsService) {
         this.settingsService = settingsService;
     }
     async getMerchantSettings(merchantId) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.settingsService.getMerchantSettings(merchantId);
     }
     async updateMerchantSettings(merchantId, body) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.settingsService.updateMerchantSettings(merchantId, body);
     }
     async toggleSnippet(merchantId, enabled) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.settingsService.toggleSnippet(merchantId, enabled);
     }
     async getCompanySettings(companyId) {
+        if (!companyId) {
+            throw new common_1.BadRequestException('Company ID required');
+        }
         return this.settingsService.getCompanySettings(companyId);
     }
     async updateCompanySettings(companyId, body) {
+        if (!companyId) {
+            throw new common_1.BadRequestException('Company ID required');
+        }
         return this.settingsService.updateCompanySettings(companyId, body);
     }
-    async getSsoSettings() {
-        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    async getSsoSettings(merchantId) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.settingsService.getSsoSettings(merchantId);
     }
-    async updateSsoSettings(body) {
-        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    async updateSsoSettings(merchantId, body) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.settingsService.updateSsoSettings(merchantId, body);
     }
 };
@@ -87,20 +106,22 @@ __decorate([
 ], SettingsController.prototype, "updateCompanySettings", null);
 __decorate([
     (0, common_1.Get)('sso'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "getSsoSettings", null);
 __decorate([
     (0, common_1.Put)('sso'),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "updateSsoSettings", null);
 exports.SettingsController = SettingsController = __decorate([
     (0, common_1.Controller)('settings'),
-    (0, public_decorator_1.Public)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [settings_service_1.SettingsService])
 ], SettingsController);
 //# sourceMappingURL=settings.controller.js.map

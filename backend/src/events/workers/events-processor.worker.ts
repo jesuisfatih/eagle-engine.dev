@@ -1,8 +1,17 @@
 import { Processor, Process } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bull';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ShopifyService } from '../../shopify/shopify.service';
+
+interface JwtPayload {
+  sub: string;
+  email: string;
+  type: string;
+  companyId?: string;
+  merchantId?: string;
+}
 
 @Processor('events-raw-queue')
 export class EventsProcessorWorker {
@@ -11,6 +20,7 @@ export class EventsProcessorWorker {
   constructor(
     private prisma: PrismaService,
     private shopifyService: ShopifyService,
+    private jwtService: JwtService,
   ) {}
 
   @Process('process-event')
@@ -30,13 +40,20 @@ export class EventsProcessorWorker {
       let companyUserId: string | undefined;
 
       if (event.eagleToken) {
-        // User is logged in to accounts panel
-        const user = await this.prisma.companyUser.findFirst({
-          where: { email: event.eagleToken }, // Simplified - should decode JWT
-        });
-        if (user) {
-          companyUserId = user.id;
-          companyId = user.companyId;
+        // Decode JWT token to get user info
+        try {
+          const payload = this.jwtService.verify<JwtPayload>(event.eagleToken);
+          if (payload && payload.sub) {
+            const user = await this.prisma.companyUser.findUnique({
+              where: { id: payload.sub },
+            });
+            if (user) {
+              companyUserId = user.id;
+              companyId = user.companyId;
+            }
+          }
+        } catch (jwtError) {
+          this.logger.warn(`Invalid eagleToken in event: ${jwtError.message}`);
         }
       } else if (event.shopifyCustomerId) {
         // Try to match with Shopify customer

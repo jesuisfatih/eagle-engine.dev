@@ -9,6 +9,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EventsModule = void 0;
 const common_1 = require("@nestjs/common");
 const bull_1 = require("@nestjs/bull");
+const jwt_1 = require("@nestjs/jwt");
+const config_1 = require("@nestjs/config");
 const events_service_1 = require("./events.service");
 const events_controller_1 = require("./events.controller");
 const events_processor_worker_1 = require("./workers/events-processor.worker");
@@ -21,6 +23,13 @@ exports.EventsModule = EventsModule = __decorate([
         imports: [
             bull_1.BullModule.registerQueue({
                 name: 'events-raw-queue',
+            }),
+            jwt_1.JwtModule.registerAsync({
+                inject: [config_1.ConfigService],
+                useFactory: (config) => ({
+                    secret: config.get('JWT_SECRET'),
+                    signOptions: { expiresIn: '7d' },
+                }),
             }),
             shopify_module_1.ShopifyModule,
         ],

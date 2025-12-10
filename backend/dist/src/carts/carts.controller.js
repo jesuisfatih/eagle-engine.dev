@@ -16,8 +16,8 @@ exports.CartsController = void 0;
 const common_1 = require("@nestjs/common");
 const carts_service_1 = require("./carts.service");
 const cart_items_service_1 = require("./cart-items.service");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
-const public_decorator_1 = require("../auth/decorators/public.decorator");
 let CartsController = class CartsController {
     cartsService;
     cartItemsService;
@@ -26,17 +26,18 @@ let CartsController = class CartsController {
         this.cartItemsService = cartItemsService;
     }
     async getActiveCart(companyId, userId) {
-        const cId = companyId || 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d';
-        const uId = userId || 'c67273cf-acea-41db-9ff5-8f6e3bbb5c38';
-        return this.cartsService.findActiveCart(cId, uId);
+        if (!companyId || !userId) {
+            throw new common_1.BadRequestException('Company ID and User ID required');
+        }
+        return this.cartsService.findActiveCart(companyId, userId);
     }
     async getCart(id) {
         return this.cartsService.findById(id);
     }
-    async createCart(body) {
-        const merchantId = body.merchantId || '6ecc682b-98ee-472d-977b-cffbbae081b8';
-        const companyId = body.companyId || 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d';
-        const userId = body.createdByUserId || 'c67273cf-acea-41db-9ff5-8f6e3bbb5c38';
+    async createCart(merchantId, companyId, userId) {
+        if (!merchantId || !companyId || !userId) {
+            throw new common_1.BadRequestException('Merchant ID, Company ID and User ID required');
+        }
         return this.cartsService.create(companyId, userId, merchantId);
     }
     async addItem(cartId, body) {
@@ -57,20 +58,26 @@ let CartsController = class CartsController {
         return this.cartsService.submitForApproval(cartId);
     }
     async approve(cartId, userId) {
+        if (!userId) {
+            throw new common_1.BadRequestException('User ID required');
+        }
         return this.cartsService.approve(cartId, userId);
     }
     async reject(cartId) {
         return this.cartsService.reject(cartId);
     }
     async listCompanyCarts(companyId, status) {
+        if (!companyId) {
+            throw new common_1.BadRequestException('Company ID required');
+        }
         return this.cartsService.listCompanyCarts(companyId, status);
     }
 };
 exports.CartsController = CartsController;
 __decorate([
     (0, common_1.Get)('active'),
-    __param(0, (0, common_1.Query)('companyId')),
-    __param(1, (0, common_1.Query)('userId')),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('companyId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('sub')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
@@ -84,9 +91,11 @@ __decorate([
 ], CartsController.prototype, "getCart", null);
 __decorate([
     (0, common_1.Post)(),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('companyId')),
+    __param(2, (0, current_user_decorator_1.CurrentUser)('sub')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", Promise)
 ], CartsController.prototype, "createCart", null);
 __decorate([
@@ -124,7 +133,7 @@ __decorate([
 __decorate([
     (0, common_1.Post)(':id/approve'),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, current_user_decorator_1.CurrentUser)('userId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('sub')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
@@ -146,7 +155,7 @@ __decorate([
 ], CartsController.prototype, "listCompanyCarts", null);
 exports.CartsController = CartsController = __decorate([
     (0, common_1.Controller)('carts'),
-    (0, public_decorator_1.Public)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [carts_service_1.CartsService,
         cart_items_service_1.CartItemsService])
 ], CartsController);

@@ -11,7 +11,7 @@ export class ShopifyService {
     private config: ConfigService,
     private prisma: PrismaService,
   ) {
-    this.apiVersion = this.config.get<string>('SHOPIFY_API_VERSION', '2025-01');
+    this.apiVersion = this.config.get<string>('SHOPIFY_API_VERSION', '2024-10');
   }
 
   async getMerchantAccessToken(merchantId: string): Promise<string> {
@@ -27,9 +27,27 @@ export class ShopifyService {
   }
 
   async getMerchantByShopDomain(shopDomain: string) {
-    return this.prisma.merchant.findUnique({
+    if (!shopDomain) {
+      this.logger.warn('getMerchantByShopDomain called with empty shopDomain');
+      return null;
+    }
+    
+    // Try exact match first
+    let merchant = await this.prisma.merchant.findFirst({
       where: { shopDomain },
     });
+    
+    // Try partial match if exact doesn't work
+    if (!merchant && shopDomain.includes('.myshopify.com')) {
+      const shopName = shopDomain.replace('.myshopify.com', '');
+      merchant = await this.prisma.merchant.findFirst({
+        where: { 
+          shopDomain: { contains: shopName },
+        },
+      });
+    }
+    
+    return merchant;
   }
 
   getApiVersion(): string {

@@ -44,6 +44,10 @@ let CustomersSyncWorker = CustomersSyncWorker_1 = class CustomersSyncWorker {
                 const customers = result.customers.edges;
                 for (const edge of customers) {
                     const customer = edge.node;
+                    const totalSpent = customer.amountSpent?.amount
+                        ? parseFloat(customer.amountSpent.amount)
+                        : 0;
+                    const ordersCount = customer.numberOfOrders || 0;
                     await this.prisma.shopifyCustomer.upsert({
                         where: {
                             merchantId_shopifyCustomerId: {
@@ -60,8 +64,8 @@ let CustomersSyncWorker = CustomersSyncWorker_1 = class CustomersSyncWorker {
                             phone: customer.phone,
                             tags: customer.tags?.join(', '),
                             note: customer.note,
-                            totalSpent: customer.totalSpent ? parseFloat(customer.totalSpent) : 0,
-                            ordersCount: customer.ordersCount || 0,
+                            totalSpent,
+                            ordersCount,
                             addresses: customer.addresses || [],
                             rawData: customer,
                         },
@@ -72,8 +76,8 @@ let CustomersSyncWorker = CustomersSyncWorker_1 = class CustomersSyncWorker {
                             phone: customer.phone,
                             tags: customer.tags?.join(', '),
                             note: customer.note,
-                            totalSpent: customer.totalSpent ? parseFloat(customer.totalSpent) : 0,
-                            ordersCount: customer.ordersCount || 0,
+                            totalSpent,
+                            ordersCount,
                             addresses: customer.addresses || [],
                             rawData: customer,
                             syncedAt: new Date(),

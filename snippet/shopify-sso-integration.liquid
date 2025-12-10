@@ -1,12 +1,18 @@
 <!-- Shopify SSO Integration for Eagle B2B -->
 <!-- Add this to your theme.liquid file, before </body> -->
 
+<!-- 
+  CONFIGURATION: Use Shopify metafields for multi-tenant support
+  Set shop.metafields.eagle.api_url and shop.metafields.eagle.accounts_url
+-->
+
 <script>
 (function() {
   'use strict';
   
-  const EAGLE_API_URL = 'https://api.eagledtfsupply.com';
-  const EAGLE_ACCOUNTS_URL = 'https://accounts.eagledtfsupply.com';
+  // Configuration: Use Shopify metafields for multi-tenant support
+  const EAGLE_API_URL = '{{ shop.metafields.eagle.api_url | default: 'https://api.eagledtfsupply.com' }}';
+  const EAGLE_ACCOUNTS_URL = '{{ shop.metafields.eagle.accounts_url | default: 'https://accounts.eagledtfsupply.com' }}';
   
   // Check if customer is logged in Shopify
   const shopifyCustomer = {{ customer | json }};

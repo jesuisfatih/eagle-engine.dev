@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UploadsController = void 0;
 const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
-const public_decorator_1 = require("../auth/decorators/public.decorator");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 let UploadsController = class UploadsController {
     async uploadImage(file) {
         return {
@@ -36,6 +36,6 @@ __decorate([
 ], UploadsController.prototype, "uploadImage", null);
 exports.UploadsController = UploadsController = __decorate([
     (0, common_1.Controller)('uploads'),
-    (0, public_decorator_1.Public)()
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard)
 ], UploadsController);
 //# sourceMappingURL=uploads.controller.js.map

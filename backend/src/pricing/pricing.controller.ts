@@ -8,24 +8,30 @@ import {
   Param,
   Query,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { PricingService } from './pricing.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('pricing')
-@Public()
+@UseGuards(JwtAuthGuard)
 export class PricingController {
   constructor(private pricingService: PricingService) {}
 
   // Calculate prices for variants
   @Post('calculate')
   async calculatePrices(
-    @Body() body: { variantIds: string[]; companyId?: string; quantities?: any; cartTotal?: number },
+    @CurrentUser('merchantId') merchantId: string,
+    @CurrentUser('companyId') companyId: string,
+    @Body() body: { variantIds: string[]; quantities?: any; cartTotal?: number },
   ) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
-    const companyId = body.companyId || 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d';
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
+    if (!companyId) {
+      throw new BadRequestException('Company ID required');
+    }
     const variantIds = body.variantIds.map((id) => BigInt(id));
 
     return this.pricingService.calculatePrices({
@@ -40,10 +46,13 @@ export class PricingController {
   // Pricing Rules Management
   @Get('rules')
   async getRules(
+    @CurrentUser('merchantId') merchantId: string,
     @Query('isActive') isActive?: string,
     @Query('companyId') companyId?: string,
   ) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     const filters: any = {};
     if (isActive !== undefined) {
       filters.isActive = isActive === 'true';
@@ -56,32 +65,59 @@ export class PricingController {
   }
 
   @Get('rules/:id')
-  async getRule(@Param('id') id: string) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async getRule(
+    @Param('id') id: string,
+    @CurrentUser('merchantId') merchantId: string,
+  ) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.pricingService.getRule(id, merchantId);
   }
 
   @Post('rules')
-  async createRule(@Body() body: any) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async createRule(
+    @CurrentUser('merchantId') merchantId: string,
+    @Body() body: any,
+  ) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.pricingService.createRule(merchantId, body);
   }
 
   @Put('rules/:id')
-  async updateRule(@Param('id') id: string, @Body() body: any) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async updateRule(
+    @Param('id') id: string,
+    @CurrentUser('merchantId') merchantId: string,
+    @Body() body: any,
+  ) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.pricingService.updateRule(id, merchantId, body);
   }
 
   @Delete('rules/:id')
-  async deleteRule(@Param('id') id: string) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async deleteRule(
+    @Param('id') id: string,
+    @CurrentUser('merchantId') merchantId: string,
+  ) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.pricingService.deleteRule(id, merchantId);
   }
 
   @Put('rules/:id/toggle')
-  async toggleRule(@Param('id') id: string, @Body('isActive') isActive: boolean) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async toggleRule(
+    @Param('id') id: string,
+    @CurrentUser('merchantId') merchantId: string,
+    @Body('isActive') isActive: boolean,
+  ) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.pricingService.toggleRuleActive(id, merchantId, isActive);
   }
 }

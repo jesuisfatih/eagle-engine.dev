@@ -13,15 +13,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EventsProcessorWorker = void 0;
 const bull_1 = require("@nestjs/bull");
 const common_1 = require("@nestjs/common");
+const jwt_1 = require("@nestjs/jwt");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const shopify_service_1 = require("../../shopify/shopify.service");
 let EventsProcessorWorker = EventsProcessorWorker_1 = class EventsProcessorWorker {
     prisma;
     shopifyService;
+    jwtService;
     logger = new common_1.Logger(EventsProcessorWorker_1.name);
-    constructor(prisma, shopifyService) {
+    constructor(prisma, shopifyService, jwtService) {
         this.prisma = prisma;
         this.shopifyService = shopifyService;
+        this.jwtService = jwtService;
     }
     async processEvent(job) {
         const event = job.data;
@@ -34,12 +37,20 @@ let EventsProcessorWorker = EventsProcessorWorker_1 = class EventsProcessorWorke
             let companyId;
             let companyUserId;
             if (event.eagleToken) {
-                const user = await this.prisma.companyUser.findFirst({
-                    where: { email: event.eagleToken },
-                });
-                if (user) {
-                    companyUserId = user.id;
-                    companyId = user.companyId;
+                try {
+                    const payload = this.jwtService.verify(event.eagleToken);
+                    if (payload && payload.sub) {
+                        const user = await this.prisma.companyUser.findUnique({
+                            where: { id: payload.sub },
+                        });
+                        if (user) {
+                            companyUserId = user.id;
+                            companyId = user.companyId;
+                        }
+                    }
+                }
+                catch (jwtError) {
+                    this.logger.warn(`Invalid eagleToken in event: ${jwtError.message}`);
                 }
             }
             else if (event.shopifyCustomerId) {
@@ -113,6 +124,7 @@ __decorate([
 exports.EventsProcessorWorker = EventsProcessorWorker = EventsProcessorWorker_1 = __decorate([
     (0, bull_1.Processor)('events-raw-queue'),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        shopify_service_1.ShopifyService])
+        shopify_service_1.ShopifyService,
+        jwt_1.JwtService])
 ], EventsProcessorWorker);
 //# sourceMappingURL=events-processor.worker.js.map

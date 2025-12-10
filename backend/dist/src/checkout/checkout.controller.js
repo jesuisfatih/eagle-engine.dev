@@ -15,27 +15,32 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CheckoutController = void 0;
 const common_1 = require("@nestjs/common");
 const checkout_service_1 = require("./checkout.service");
-const public_decorator_1 = require("../auth/decorators/public.decorator");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
 let CheckoutController = class CheckoutController {
     checkoutService;
     constructor(checkoutService) {
         this.checkoutService = checkoutService;
     }
-    async createCheckout(cartId) {
-        return this.checkoutService.createCheckout(cartId);
+    async createCheckout(userId, body) {
+        if (!userId) {
+            throw new common_1.BadRequestException('User ID required');
+        }
+        return this.checkoutService.createCheckout(body.cartId, userId);
     }
 };
 exports.CheckoutController = CheckoutController;
 __decorate([
     (0, common_1.Post)('create'),
-    __param(0, (0, common_1.Body)('cartId')),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], CheckoutController.prototype, "createCheckout", null);
 exports.CheckoutController = CheckoutController = __decorate([
     (0, common_1.Controller)('checkout'),
-    (0, public_decorator_1.Public)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [checkout_service_1.CheckoutService])
 ], CheckoutController);
 //# sourceMappingURL=checkout.controller.js.map

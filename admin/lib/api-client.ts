@@ -146,6 +146,36 @@ class ApiClient {
 
 export const apiClient = new ApiClient(API_URL);
 
+/**
+ * Authenticated fetch wrapper for admin pages
+ * Use this instead of raw fetch() to automatically include Authorization header
+ */
+export async function adminFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('eagle_admin_token') : null;
+  
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+  
+  if (token) {
+    (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+}
+
+/**
+ * Get current merchant ID from localStorage
+ */
+export function getMerchantId(): string {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem('eagle_merchantId') || '';
+}
+
 
 
 

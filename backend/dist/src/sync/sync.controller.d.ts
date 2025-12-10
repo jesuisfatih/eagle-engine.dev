@@ -6,20 +6,16 @@ export declare class SyncController {
         message: string;
         syncLogId: string;
     }>;
-    triggerInitialSyncAuth(merchantId: string): Promise<{
-        message: string;
-        syncLogId: string;
-    }>;
-    triggerCustomersSync(merchantId?: string): Promise<{
+    triggerCustomersSync(merchantId: string): Promise<{
         message: string;
     }>;
-    triggerProductsSync(merchantId?: string): Promise<{
+    triggerProductsSync(merchantId: string): Promise<{
         message: string;
     }>;
-    triggerOrdersSync(merchantId?: string): Promise<{
+    triggerOrdersSync(merchantId: string): Promise<{
         message: string;
     }>;
-    getSyncStatus(): Promise<{
+    getSyncStatus(merchantId: string): Promise<{
         id: string;
         status: string;
         merchantId: string;

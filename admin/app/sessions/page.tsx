@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Modal from '@/components/Modal';
+import { adminFetch } from '@/lib/api-client';
 
 export default function SessionsPage() {
   const [sessions, setSessions] = useState<any[]>([]);
@@ -18,8 +19,7 @@ export default function SessionsPage() {
   const loadSessions = async () => {
     setLoading(true);
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/auth/sessions`);
+      const response = await adminFetch('/api/v1/auth/sessions');
       
       if (response.ok) {
         const data = await response.json();
@@ -35,8 +35,7 @@ export default function SessionsPage() {
 
   const forceLogout = async (sessionId: string) => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/auth/sessions/${sessionId}`, {
+      const response = await adminFetch(`/api/v1/auth/sessions/${sessionId}`, {
         method: 'DELETE',
       });
       

@@ -18,6 +18,8 @@ const shopify_admin_discount_service_1 = require("../shopify/shopify-admin-disco
 const shopify_storefront_service_1 = require("../shopify/shopify-storefront.service");
 const discount_engine_service_1 = require("./discount-engine.service");
 const pricing_calculator_service_1 = require("../pricing/pricing-calculator.service");
+const shopify_sso_service_1 = require("../shopify/shopify-sso.service");
+const shopify_customer_sync_service_1 = require("../shopify/shopify-customer-sync.service");
 let CheckoutService = CheckoutService_1 = class CheckoutService {
     prisma;
     shopifyRest;
@@ -25,16 +27,20 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
     shopifyStorefront;
     discountEngine;
     pricingCalculator;
+    shopifySso;
+    shopifyCustomerSync;
     logger = new common_1.Logger(CheckoutService_1.name);
-    constructor(prisma, shopifyRest, shopifyAdminDiscount, shopifyStorefront, discountEngine, pricingCalculator) {
+    constructor(prisma, shopifyRest, shopifyAdminDiscount, shopifyStorefront, discountEngine, pricingCalculator, shopifySso, shopifyCustomerSync) {
         this.prisma = prisma;
         this.shopifyRest = shopifyRest;
         this.shopifyAdminDiscount = shopifyAdminDiscount;
         this.shopifyStorefront = shopifyStorefront;
         this.discountEngine = discountEngine;
         this.pricingCalculator = pricingCalculator;
+        this.shopifySso = shopifySso;
+        this.shopifyCustomerSync = shopifyCustomerSync;
     }
-    async createCheckout(cartId) {
+    async createCheckout(cartId, userId) {
         const cart = await this.prisma.cart.findUnique({
             where: { id: cartId },
             include: {
@@ -43,7 +49,13 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
                         variant: true,
                     },
                 },
-                company: true,
+                company: {
+                    include: {
+                        users: userId ? {
+                            where: { id: userId },
+                        } : false,
+                    },
+                },
             },
         });
         if (!cart) {
@@ -54,6 +66,43 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
         });
         if (!merchant) {
             throw new Error('Merchant not found');
+        }
+        let user = null;
+        let shopifyCustomerAccessToken;
+        let ssoUrl;
+        if (userId) {
+            user = await this.prisma.companyUser.findUnique({
+                where: { id: userId },
+                include: {
+                    company: true,
+                },
+            });
+            if (user && user.email) {
+                try {
+                    if (!user.shopifyCustomerId) {
+                        await this.shopifyCustomerSync.syncUserToShopify(userId);
+                        user = await this.prisma.companyUser.findUnique({
+                            where: { id: userId },
+                        });
+                    }
+                    const settings = merchant.settings || {};
+                    const ssoMode = settings.ssoMode || 'alternative';
+                    if (ssoMode === 'multipass' && settings.multipassSecret) {
+                        ssoUrl = this.shopifySso.generateSsoUrl(merchant.shopDomain, settings.multipassSecret, {
+                            email: user.email,
+                            firstName: user.firstName || '',
+                            lastName: user.lastName || '',
+                            customerId: user.shopifyCustomerId?.toString(),
+                            returnTo: '/checkout',
+                        });
+                    }
+                    else {
+                    }
+                }
+                catch (ssoErr) {
+                    this.logger.warn('SSO setup failed, continuing without SSO', ssoErr);
+                }
+            }
         }
         const pricing = await this.pricingCalculator.calculateCartPricing(cartId);
         let shopifyTotal = 0;
@@ -87,9 +136,13 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
         const storefrontToken = settings.storefrontToken || '';
         if (storefrontToken) {
             try {
-                const result = await this.shopifyStorefront.createCart(merchant.shopDomain, storefrontToken, lines, discountCode ? [discountCode] : undefined);
+                const result = await this.shopifyStorefront.createCart(merchant.shopDomain, storefrontToken, lines, discountCode ? [discountCode] : undefined, shopifyCustomerAccessToken);
                 checkoutUrl = result.checkoutUrl;
                 this.logger.log(`Checkout URL created via Storefront API: ${checkoutUrl}`);
+                if (ssoUrl) {
+                    const ssoReturnTo = new URL(ssoUrl).searchParams.get('return_to') || checkoutUrl;
+                    checkoutUrl = ssoUrl.replace(/return_to=[^&]*/, `return_to=${encodeURIComponent(checkoutUrl)}`);
+                }
             }
             catch (error) {
                 this.logger.warn('Storefront API failed, using fallback cart URL', error);
@@ -112,6 +165,13 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
             discountCode,
             total: pricing.subtotal,
             savings: discountAmount,
+            ssoUrl,
+            userData: user ? {
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                phone: user.phone,
+            } : null,
         };
     }
     buildCartUrl(shopDomain, items, discountCode) {
@@ -128,6 +188,8 @@ exports.CheckoutService = CheckoutService = CheckoutService_1 = __decorate([
         shopify_admin_discount_service_1.ShopifyAdminDiscountService,
         shopify_storefront_service_1.ShopifyStorefrontService,
         discount_engine_service_1.DiscountEngineService,
-        pricing_calculator_service_1.PricingCalculatorService])
+        pricing_calculator_service_1.PricingCalculatorService,
+        shopify_sso_service_1.ShopifySsoService,
+        shopify_customer_sync_service_1.ShopifyCustomerSyncService])
 ], CheckoutService);
 //# sourceMappingURL=checkout.service.js.map

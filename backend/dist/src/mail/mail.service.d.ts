@@ -15,4 +15,9 @@ export declare class MailService {
         success: boolean;
         resetUrl: string;
     }>;
+    sendVerificationCode(email: string, code: string): Promise<{
+        success: boolean;
+        message: string;
+        code: string;
+    }>;
 }

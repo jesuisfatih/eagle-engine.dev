@@ -11,18 +11,34 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var AuthController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
 const auth_service_1 = require("./auth.service");
 const session_sync_service_1 = require("./session-sync.service");
 const public_decorator_1 = require("./decorators/public.decorator");
-let AuthController = class AuthController {
+const jwt_auth_guard_1 = require("./guards/jwt-auth.guard");
+const current_user_decorator_1 = require("./decorators/current-user.decorator");
+const shopify_sso_service_1 = require("../shopify/shopify-sso.service");
+const shopify_customer_sync_service_1 = require("../shopify/shopify-customer-sync.service");
+const shopify_rest_service_1 = require("../shopify/shopify-rest.service");
+const prisma_service_1 = require("../prisma/prisma.service");
+let AuthController = AuthController_1 = class AuthController {
     authService;
     sessionSyncService;
-    constructor(authService, sessionSyncService) {
+    shopifySso;
+    shopifyCustomerSync;
+    shopifyRest;
+    prisma;
+    logger = new common_1.Logger(AuthController_1.name);
+    constructor(authService, sessionSyncService, shopifySso, shopifyCustomerSync, shopifyRest, prisma) {
         this.authService = authService;
         this.sessionSyncService = sessionSyncService;
+        this.shopifySso = shopifySso;
+        this.shopifyCustomerSync = shopifyCustomerSync;
+        this.shopifyRest = shopifyRest;
+        this.prisma = prisma;
     }
     async login(body, res) {
         try {
@@ -32,7 +48,14 @@ let AuthController = class AuthController {
                     message: 'Invalid credentials',
                 });
             }
-            const token = await this.authService.generateToken(user);
+            const payload = {
+                sub: user.id,
+                email: user.email,
+                type: 'company_user',
+                companyId: user.companyId,
+                merchantId: user.company?.merchantId,
+            };
+            const token = await this.authService.generateToken(payload);
             return res.json({
                 token,
                 user: {
@@ -40,7 +63,9 @@ let AuthController = class AuthController {
                     email: user.email,
                     firstName: user.firstName,
                     lastName: user.lastName,
+                    role: user.role,
                     companyId: user.companyId,
+                    merchantId: user.company?.merchantId,
                 },
             });
         }
@@ -69,10 +94,89 @@ let AuthController = class AuthController {
             return res.redirect('https://accounts.eagledtfsupply.com/login?error=shopify_auth_failed');
         }
     }
-    async acceptInvitation(body) {
-        return this.authService.acceptInvitation(body);
+    async validateInvitation(token, res) {
+        try {
+            const user = await this.prisma.companyUser.findFirst({
+                where: { invitationToken: token },
+                include: { company: true },
+            });
+            if (!user) {
+                return res.status(common_1.HttpStatus.NOT_FOUND).json({
+                    error: 'Invalid invitation token',
+                });
+            }
+            if (user.invitationAcceptedAt) {
+                return res.status(common_1.HttpStatus.BAD_REQUEST).json({
+                    error: 'Invitation already accepted',
+                });
+            }
+            return res.json({
+                email: user.email,
+                companyName: user.company.name,
+                valid: true,
+            });
+        }
+        catch (error) {
+            return res.status(common_1.HttpStatus.INTERNAL_SERVER_ERROR).json({
+                error: 'Failed to validate invitation',
+            });
+        }
     }
-    async shopifyCustomerSync(body) {
+    async sendVerificationCode(body, res) {
+        try {
+            const result = await this.authService.sendVerificationCode(body.email);
+            return res.json(result);
+        }
+        catch (error) {
+            return res.status(common_1.HttpStatus.BAD_REQUEST).json({
+                error: error.message || 'Failed to send verification code',
+            });
+        }
+    }
+    async verifyEmailCode(body, res) {
+        try {
+            const isValid = await this.authService.verifyEmailCode(body.email, body.code);
+            return res.json({ valid: isValid });
+        }
+        catch (error) {
+            return res.status(common_1.HttpStatus.BAD_REQUEST).json({
+                error: error.message || 'Failed to verify code',
+            });
+        }
+    }
+    async register(body, res) {
+        try {
+            this.logger.log(`📝 [REGISTER] Registration request received for email: ${body.email}`);
+            const result = await this.authService.register(body);
+            this.logger.log(`✅ [REGISTER] Registration successful for email: ${body.email}`);
+            return res.json(result);
+        }
+        catch (error) {
+            this.logger.error(`❌ [REGISTER] Registration failed for email: ${body.email}`, {
+                error: error.message,
+                stack: error.stack,
+            });
+            return res.status(common_1.HttpStatus.BAD_REQUEST).json({
+                error: error.message || 'Registration failed',
+            });
+        }
+    }
+    async acceptInvitation(body) {
+        try {
+            this.logger.log(`📝 [ACCEPT_INVITATION] Invitation acceptance request received for token: ${body.token?.substring(0, 10)}...`);
+            const result = await this.authService.acceptInvitation(body);
+            this.logger.log(`✅ [ACCEPT_INVITATION] Invitation accepted successfully`);
+            return result;
+        }
+        catch (error) {
+            this.logger.error(`❌ [ACCEPT_INVITATION] Invitation acceptance failed`, {
+                error: error.message,
+                stack: error.stack,
+            });
+            throw error;
+        }
+    }
+    async syncShopifyCustomer(body) {
         return this.sessionSyncService.syncFromShopify(body.shopifyCustomerId, body.email, body.fingerprint);
     }
     async resolveContext(auth) {
@@ -123,8 +227,87 @@ let AuthController = class AuthController {
             });
         }
     }
-    async getShopifySsoUrl(body, res) {
-        return res.json({ ssoUrl: null, message: 'SSO handled client-side' });
+    async getShopifySsoUrl(user, body, res) {
+        try {
+            if (!user.shopifyCustomerId) {
+                await this.shopifyCustomerSync.syncUserToShopify(user.id);
+                const updatedUser = await this.prisma.companyUser.findUnique({
+                    where: { id: user.id },
+                });
+                if (updatedUser) {
+                    user.shopifyCustomerId = updatedUser.shopifyCustomerId;
+                }
+            }
+            const company = await this.prisma.company.findUnique({
+                where: { id: user.companyId },
+                include: { merchant: true },
+            });
+            if (!company?.merchant) {
+                return res.status(common_1.HttpStatus.BAD_REQUEST).json({
+                    error: 'Merchant not found',
+                });
+            }
+            const settings = company.merchant.settings || {};
+            const ssoMode = settings.ssoMode || 'alternative';
+            const returnTo = body.returnTo || '/checkout';
+            if (ssoMode === 'multipass' && settings.multipassSecret) {
+                const ssoUrl = this.shopifySso.generateSsoUrl(company.merchant.shopDomain, settings.multipassSecret, {
+                    email: user.email,
+                    firstName: user.firstName || '',
+                    lastName: user.lastName || '',
+                    customerId: user.shopifyCustomerId?.toString(),
+                    returnTo,
+                });
+                return res.json({
+                    ssoUrl,
+                    mode: 'multipass',
+                });
+            }
+            else {
+                try {
+                    if (!user.shopifyCustomerId) {
+                        throw new Error('Customer not synced to Shopify');
+                    }
+                    const inviteResponse = await this.shopifyRest.createCustomerInvite(company.merchant.shopDomain, company.merchant.accessToken, user.shopifyCustomerId.toString());
+                    const inviteUrl = inviteResponse.customer_invite?.invite_url || '';
+                    const tokenMatch = inviteUrl.match(/token=([^&]+)/);
+                    const inviteToken = tokenMatch ? tokenMatch[1] : null;
+                    if (inviteToken) {
+                        const shopDomain = company.merchant.shopDomain;
+                        const loginUrl = `https://${shopDomain}/account/login?email=${encodeURIComponent(user.email)}&token=${inviteToken}&return_to=${encodeURIComponent(returnTo)}`;
+                        return res.json({
+                            ssoUrl: loginUrl,
+                            mode: 'customer_account_api',
+                            message: 'Customer invite token created. User will be logged in automatically.',
+                        });
+                    }
+                    else {
+                        const shopDomain = company.merchant.shopDomain;
+                        const loginUrl = `https://${shopDomain}/account/login?email=${encodeURIComponent(user.email)}&return_to=${encodeURIComponent(returnTo)}`;
+                        return res.json({
+                            ssoUrl: loginUrl,
+                            mode: 'email_only',
+                            message: 'Email pre-filled. Customer must enter password.',
+                        });
+                    }
+                }
+                catch (inviteError) {
+                    this.logger.warn('Customer invite failed, using email-only login', inviteError);
+                    const shopDomain = company.merchant.shopDomain;
+                    const loginUrl = `https://${shopDomain}/account/login?email=${encodeURIComponent(user.email)}&return_to=${encodeURIComponent(returnTo)}`;
+                    return res.json({
+                        ssoUrl: loginUrl,
+                        mode: 'email_only',
+                        message: 'Email pre-filled. Customer must enter password.',
+                    });
+                }
+            }
+        }
+        catch (error) {
+            return res.status(common_1.HttpStatus.INTERNAL_SERVER_ERROR).json({
+                error: `SSO generation failed: ${error.message}`,
+            });
+        }
     }
     async getCurrentUser(token, res) {
         try {
@@ -172,6 +355,42 @@ __decorate([
 ], AuthController.prototype, "shopifyCallback", null);
 __decorate([
     (0, public_decorator_1.Public)(),
+    (0, common_1.Get)('validate-invitation'),
+    __param(0, (0, common_1.Query)('token')),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "validateInvitation", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('send-verification-code'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "sendVerificationCode", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('verify-email-code'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "verifyEmailCode", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('register'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "register", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('accept-invitation'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -185,7 +404,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], AuthController.prototype, "shopifyCustomerSync", null);
+], AuthController.prototype, "syncShopifyCustomer", null);
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Get)('resolve'),
@@ -221,12 +440,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "validateToken", null);
 __decorate([
-    (0, public_decorator_1.Public)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Post)('shopify-sso'),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Res)()),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object, Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "getShopifySsoUrl", null);
 __decorate([
@@ -238,9 +458,13 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "getCurrentUser", null);
-exports.AuthController = AuthController = __decorate([
+exports.AuthController = AuthController = AuthController_1 = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService,
-        session_sync_service_1.SessionSyncService])
+        session_sync_service_1.SessionSyncService,
+        shopify_sso_service_1.ShopifySsoService,
+        shopify_customer_sync_service_1.ShopifyCustomerSyncService,
+        shopify_rest_service_1.ShopifyRestService,
+        prisma_service_1.PrismaService])
 ], AuthController);
 //# sourceMappingURL=auth.controller.js.map

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { accountsApi } from '@/lib/api-client';
+import { accountsFetch } from '@/lib/api-client';
 import Link from 'next/link';
 
 export default function AccountsDashboard() {
@@ -20,13 +20,12 @@ export default function AccountsDashboard() {
 
   const loadData = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       const companyId = localStorage.getItem('eagle_companyId') || '';
       
       const [ordersData, companyData, cartData] = await Promise.all([
-        fetch(`${API_URL}/api/v1/orders?companyId=${companyId}`).then(r => r.json()).catch(() => []),
-        fetch(`${API_URL}/api/v1/companies/${companyId}`).then(r => r.json()).catch(() => null),
-        fetch(`${API_URL}/api/v1/carts/active`).then(r => r.json()).catch(() => null),
+        accountsFetch('/api/v1/orders').then(r => r.json()).catch(() => []),
+        accountsFetch(`/api/v1/companies/${companyId}`).then(r => r.json()).catch(() => null),
+        accountsFetch('/api/v1/carts/active').then(r => r.json()).catch(() => null),
       ]);
       
       setCompanyName(companyData?.name || 'Company');

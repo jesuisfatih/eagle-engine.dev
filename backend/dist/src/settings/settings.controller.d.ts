@@ -59,12 +59,12 @@ export declare class SettingsController {
         companyGroup: string | null;
         createdByShopifyCustomerId: bigint | null;
     }>;
-    getSsoSettings(): Promise<{
+    getSsoSettings(merchantId: string): Promise<{
         mode: any;
         multipassSecret: any;
         storefrontToken: any;
     }>;
-    updateSsoSettings(body: {
+    updateSsoSettings(merchantId: string, body: {
         mode: string;
         multipassSecret?: string;
         storefrontToken?: string;

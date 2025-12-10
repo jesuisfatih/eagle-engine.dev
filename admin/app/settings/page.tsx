@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, adminFetch } from '@/lib/api-client';
 import Modal from '@/components/Modal';
 import SnippetTester from './components/SnippetTester';
 import SyncProgress from './components/SyncProgress';
@@ -9,10 +9,11 @@ import SsoModeSwitch from './components/SsoModeSwitch';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<any>({
-    shopDomain: 'eagle-dtf-supply0.myshopify.com',
-    apiKey: '98a8a8002dd04e2cffe78d72f3c23927',
+    shopDomain: '',
+    apiKey: '',
     snippetEnabled: true,
   });
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [modal, setModal] = useState<{show: boolean; type: 'success' | 'error'; message: string}>({
@@ -20,6 +21,30 @@ export default function SettingsPage() {
     type: 'success',
     message: '',
   });
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      setLoading(true);
+      const response = await adminFetch('/api/v1/merchants/settings');
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSettings({
+          shopDomain: data.shopDomain || '',
+          apiKey: data.apiKey || '',
+          snippetEnabled: data.snippetEnabled ?? true,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load settings:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const snippetCode = `<script src="https://cdn.eagledtfsupply.com/snippet.iife.js" 
   data-api-url="https://api.eagledtfsupply.com" 
@@ -47,12 +72,8 @@ export default function SettingsPage() {
 
     setSaving(true);
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/merchants/settings`, {
+      const response = await adminFetch('/api/v1/merchants/settings', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           shopDomain: settings.shopDomain,
           apiKey: settings.apiKey,
@@ -79,12 +100,22 @@ export default function SettingsPage() {
   const handleSync = async (type: 'customers' | 'products' | 'orders' | 'initial') => {
     setSyncing(true);
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
+      const merchantId = localStorage.getItem('eagle_merchantId') || '';
+      
+      if (!merchantId) {
+        setModal({
+          show: true,
+          type: 'error',
+          message: 'Merchant ID not found. Please configure merchant settings.',
+        });
+        setSyncing(false);
+        return;
+      }
+      
       if (type === 'initial') {
-        await fetch(`${API_URL}/api/v1/sync/initial`, { 
+        await adminFetch('/api/v1/sync/initial', { 
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ merchantId: '6ecc682b-98ee-472d-977b-cffbbae081b8' })
+          body: JSON.stringify({ merchantId })
         });
         setModal({
           show: true,
@@ -92,7 +123,9 @@ export default function SettingsPage() {
           message: 'Full sync started! Check back in a few minutes.',
         });
       } else {
-        await fetch(`${API_URL}/api/v1/sync/${type}`, { method: 'POST' });
+        await adminFetch(`/api/v1/sync/${type}`, {
+          method: 'POST',
+        });
         setModal({
           show: true,
           type: 'success',
@@ -180,8 +213,7 @@ export default function SettingsPage() {
             <button
               onClick={async () => {
                 try {
-                  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-                  await fetch(`${API_URL}/api/v1/sync/customers`, { method: 'POST' });
+                  await adminFetch('/api/v1/sync/customers', { method: 'POST' });
                   setModal({
                     show: true,
                     type: 'success',

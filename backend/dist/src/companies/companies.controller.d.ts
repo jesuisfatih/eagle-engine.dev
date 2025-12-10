@@ -4,7 +4,11 @@ export declare class CompaniesController {
     private companiesService;
     private companyUsersService;
     constructor(companiesService: CompaniesService, companyUsersService: CompanyUsersService);
-    findAll(status?: string, search?: string): Promise<({
+    findAll(merchantId: string, status?: string, search?: string): Promise<({
+        _count: {
+            orders: number;
+            users: number;
+        };
         users: {
             id: string;
             email: string;
@@ -13,10 +17,6 @@ export declare class CompaniesController {
             isActive: boolean;
             role: string;
         }[];
-        _count: {
-            orders: number;
-            users: number;
-        };
     } & {
         name: string;
         id: string;
@@ -35,14 +35,14 @@ export declare class CompaniesController {
         companyGroup: string | null;
         createdByShopifyCustomerId: bigint | null;
     })[]>;
-    getStats(): Promise<{
+    getStats(merchantId: string): Promise<{
         total: number;
         active: number;
         pending: number;
         suspended: number;
         totalUsers: number;
     }>;
-    findOne(id: string): Promise<{
+    findOne(id: string, merchantId: string): Promise<{
         orders: {
             id: string;
             createdAt: Date;
@@ -69,24 +69,6 @@ export declare class CompaniesController {
             lineItems: import("@prisma/client/runtime/client").JsonValue | null;
             discountCodes: import("@prisma/client/runtime/client").JsonValue | null;
         }[];
-        users: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            shopifyCustomerId: bigint | null;
-            email: string;
-            firstName: string | null;
-            lastName: string | null;
-            companyId: string;
-            isActive: boolean;
-            passwordHash: string | null;
-            role: string;
-            permissions: import("@prisma/client/runtime/client").JsonValue;
-            lastLoginAt: Date | null;
-            invitationToken: string | null;
-            invitationSentAt: Date | null;
-            invitationAcceptedAt: Date | null;
-        }[];
         pricingRules: {
             name: string;
             id: string;
@@ -112,6 +94,24 @@ export declare class CompaniesController {
             validFrom: Date | null;
             validUntil: Date | null;
         }[];
+        users: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            shopifyCustomerId: bigint | null;
+            email: string;
+            firstName: string | null;
+            lastName: string | null;
+            companyId: string;
+            isActive: boolean;
+            passwordHash: string | null;
+            role: string;
+            permissions: import("@prisma/client/runtime/client").JsonValue;
+            lastLoginAt: Date | null;
+            invitationToken: string | null;
+            invitationSentAt: Date | null;
+            invitationAcceptedAt: Date | null;
+        }[];
     } & {
         name: string;
         id: string;
@@ -130,7 +130,7 @@ export declare class CompaniesController {
         companyGroup: string | null;
         createdByShopifyCustomerId: bigint | null;
     }>;
-    create(body: any): Promise<{
+    create(merchantId: string, body: any): Promise<{
         name: string;
         id: string;
         status: string;
@@ -148,7 +148,7 @@ export declare class CompaniesController {
         companyGroup: string | null;
         createdByShopifyCustomerId: bigint | null;
     }>;
-    update(id: string, body: any): Promise<{
+    update(id: string, merchantId: string, body: any): Promise<{
         name: string;
         id: string;
         status: string;
@@ -166,7 +166,45 @@ export declare class CompaniesController {
         companyGroup: string | null;
         createdByShopifyCustomerId: bigint | null;
     }>;
-    delete(id: string): Promise<{
+    approve(id: string, merchantId: string): Promise<{
+        name: string;
+        id: string;
+        status: string;
+        settings: import("@prisma/client/runtime/client").JsonValue;
+        createdAt: Date;
+        updatedAt: Date;
+        merchantId: string;
+        email: string | null;
+        phone: string | null;
+        legalName: string | null;
+        taxId: string | null;
+        website: string | null;
+        billingAddress: import("@prisma/client/runtime/client").JsonValue | null;
+        shippingAddress: import("@prisma/client/runtime/client").JsonValue | null;
+        companyGroup: string | null;
+        createdByShopifyCustomerId: bigint | null;
+    }>;
+    reject(id: string, merchantId: string, body: {
+        reason?: string;
+    }): Promise<{
+        name: string;
+        id: string;
+        status: string;
+        settings: import("@prisma/client/runtime/client").JsonValue;
+        createdAt: Date;
+        updatedAt: Date;
+        merchantId: string;
+        email: string | null;
+        phone: string | null;
+        legalName: string | null;
+        taxId: string | null;
+        website: string | null;
+        billingAddress: import("@prisma/client/runtime/client").JsonValue | null;
+        shippingAddress: import("@prisma/client/runtime/client").JsonValue | null;
+        companyGroup: string | null;
+        createdByShopifyCustomerId: bigint | null;
+    }>;
+    delete(id: string, merchantId: string): Promise<{
         name: string;
         id: string;
         status: string;
@@ -203,6 +241,24 @@ export declare class CompaniesController {
         invitationAcceptedAt: Date | null;
     }[]>;
     inviteUser(companyId: string, body: any): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        shopifyCustomerId: bigint | null;
+        email: string;
+        firstName: string | null;
+        lastName: string | null;
+        companyId: string;
+        isActive: boolean;
+        passwordHash: string | null;
+        role: string;
+        permissions: import("@prisma/client/runtime/client").JsonValue;
+        lastLoginAt: Date | null;
+        invitationToken: string | null;
+        invitationSentAt: Date | null;
+        invitationAcceptedAt: Date | null;
+    }>;
+    verifyUserEmail(userId: string): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;

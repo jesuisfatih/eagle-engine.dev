@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiClient } from '@/lib/api-client';
+import { adminFetch } from '@/lib/api-client';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -16,8 +16,7 @@ export default function OrdersPage() {
 
   const loadOrders = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/orders`);
+      const response = await adminFetch('/api/v1/orders');
       const data = await response.json();
       setOrders(Array.isArray(data) ? data : []);
       setAllOrders(Array.isArray(data) ? data : []);

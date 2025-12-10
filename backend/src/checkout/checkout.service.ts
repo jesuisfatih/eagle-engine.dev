@@ -83,14 +83,18 @@ export class CheckoutService {
           const ssoMode = settings.ssoMode || 'alternative';
 
           if (ssoMode === 'multipass' && settings.multipassSecret) {
-            // Generate Multipass SSO URL
-            ssoUrl = this.shopifySso.generateSsoUrl({
-              email: user.email,
-              firstName: user.firstName || '',
-              lastName: user.lastName || '',
-              customerId: user.shopifyCustomerId?.toString(),
-              returnTo: '/checkout', // Will be updated with actual checkout URL
-            });
+            // Generate Multipass SSO URL with merchant-specific credentials
+            ssoUrl = this.shopifySso.generateSsoUrl(
+              merchant.shopDomain,
+              settings.multipassSecret,
+              {
+                email: user.email,
+                firstName: user.firstName || '',
+                lastName: user.lastName || '',
+                customerId: user.shopifyCustomerId?.toString(),
+                returnTo: '/checkout', // Will be updated with actual checkout URL
+              },
+            );
           } else {
             // Alternative SSO: Use Storefront API customerAccessToken
             // First, we need to get/create customer access token

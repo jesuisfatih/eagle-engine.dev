@@ -1,9 +1,9 @@
-import { Controller, Post, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Post, UseInterceptors, UploadedFile, UseGuards } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Public } from '../auth/decorators/public.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('uploads')
-@Public()
+@UseGuards(JwtAuthGuard)
 export class UploadsController {
   @Post('image')
   @UseInterceptors(FileInterceptor('file'))

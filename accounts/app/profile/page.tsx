@@ -1,15 +1,81 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { accountsFetch } from '@/lib/api-client';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState({
-    firstName: 'Muhammed',
-    lastName: 'Adıgüzel',
-    email: 'mhmmdadgzl@outlook.com',
-    phone: '+905397278524',
-    role: 'admin',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    role: '',
   });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      const response = await accountsFetch('/api/v1/company-users/me');
+      
+      if (response.ok) {
+        const data = await response.json();
+        setProfile({
+          firstName: data.firstName || '',
+          lastName: data.lastName || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          role: data.role || 'member',
+        });
+      }
+    } catch (err) {
+      console.error('Load profile error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveProfile = async () => {
+    setSaving(true);
+    setMessage(null);
+    
+    try {
+      const response = await accountsFetch('/api/v1/company-users/me', {
+        method: 'PUT',
+        body: JSON.stringify({
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          phone: profile.phone,
+        }),
+      });
+      
+      if (response.ok) {
+        setMessage({type: 'success', text: 'Profile updated successfully!'});
+        // Update localStorage
+        localStorage.setItem('eagle_userName', `${profile.firstName} ${profile.lastName}`);
+      } else {
+        setMessage({type: 'error', text: 'Failed to update profile'});
+      }
+    } catch (err) {
+      setMessage({type: 'error', text: 'Failed to update profile'});
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <div className="spinner-border text-primary"></div>
+        <p className="mt-2">Loading profile...</p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -58,54 +124,19 @@ export default function ProfilePage() {
                   />
                 </div>
               </div>
+              
+              {message && (
+                <div className={`alert ${message.type === 'success' ? 'alert-success' : 'alert-danger'} mt-3`}>
+                  {message.text}
+                </div>
+              )}
+              
               <button
-                onClick={async () => {
-                  try {
-                    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-                    const response = await fetch(`${API_URL}/api/v1/company-users/me`, {
-                      method: 'PUT',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(profile),
-                    });
-                    
-                    const modal = document.createElement('div');
-                    modal.className = 'modal fade show d-block';
-                    modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
-                    modal.innerHTML = response.ok ? `
-                      <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                          <div class="modal-header">
-                            <h5 class="modal-title">✅ Success</h5>
-                            <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
-                          </div>
-                          <div class="modal-body">Profile updated successfully!</div>
-                          <div class="modal-footer">
-                            <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">OK</button>
-                          </div>
-                        </div>
-                      </div>
-                    ` : `
-                      <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                          <div class="modal-header">
-                            <h5 class="modal-title">❌ Error</h5>
-                            <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
-                          </div>
-                          <div class="modal-body">Failed to update profile</div>
-                          <div class="modal-footer">
-                            <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">OK</button>
-                          </div>
-                        </div>
-                      </div>
-                    `;
-                    document.body.appendChild(modal);
-                  } catch (err) {
-                    console.error(err);
-                  }
-                }}
+                onClick={saveProfile}
+                disabled={saving}
                 className="btn btn-primary mt-3"
               >
-                Save Changes
+                {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </div>
@@ -125,12 +156,7 @@ export default function ProfilePage() {
                 <label className="form-label">Confirm Password</label>
                 <input type="password" className="form-control" />
               </div>
-              <button
-                onClick={() => {
-                  alert('Password update feature - implement backend endpoint');
-                }}
-                className="btn btn-primary"
-              >
+              <button className="btn btn-primary">
                 Update Password
               </button>
             </div>
@@ -141,8 +167,8 @@ export default function ProfilePage() {
           <div className="card">
             <div className="card-body text-center">
               <div className="avatar avatar-xl mx-auto mb-3">
-                <span className="avatar-initial rounded-circle bg-label-primary">
-                  {profile.firstName[0]}{profile.lastName[0]}
+                <span className="avatar-initial rounded-circle bg-label-primary" style={{width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px'}}>
+                  {profile.firstName?.[0] || ''}{profile.lastName?.[0] || ''}
                 </span>
               </div>
               <h5 className="mb-1">{profile.firstName} {profile.lastName}</h5>
@@ -155,4 +181,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-

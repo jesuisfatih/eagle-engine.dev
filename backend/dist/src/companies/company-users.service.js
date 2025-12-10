@@ -41,15 +41,23 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var CompanyUsersService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CompanyUsersService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const shopify_rest_service_1 = require("../shopify/shopify-rest.service");
 const crypto = __importStar(require("crypto"));
-let CompanyUsersService = class CompanyUsersService {
+let CompanyUsersService = CompanyUsersService_1 = class CompanyUsersService {
     prisma;
-    constructor(prisma) {
+    shopifyRest;
+    logger = new common_1.Logger(CompanyUsersService_1.name);
+    constructor(prisma, shopifyRest) {
         this.prisma = prisma;
+        this.shopifyRest = shopifyRest;
     }
     async findByCompany(companyId) {
         return this.prisma.companyUser.findMany({
@@ -81,10 +89,39 @@ let CompanyUsersService = class CompanyUsersService {
             where: { id: userId },
         });
     }
+    async verifyEmail(userId) {
+        const user = await this.prisma.companyUser.findUnique({
+            where: { id: userId },
+            include: { company: { include: { merchant: true } } },
+        });
+        if (!user) {
+            throw new Error('User not found');
+        }
+        const permissions = user.permissions || {};
+        permissions.emailVerified = true;
+        const updatedUser = await this.prisma.companyUser.update({
+            where: { id: userId },
+            data: {
+                permissions,
+            },
+        });
+        if (user.shopifyCustomerId && user.company.merchant) {
+            try {
+                await this.shopifyRest.updateCustomerSubscription(user.company.merchant.shopDomain, user.company.merchant.accessToken, user.shopifyCustomerId.toString(), true);
+                this.logger.log(`Customer ${user.email} subscribed to marketing after email verification`);
+            }
+            catch (error) {
+                this.logger.error(`Failed to update Shopify subscription for ${user.email}`, error);
+            }
+        }
+        return updatedUser;
+    }
 };
 exports.CompanyUsersService = CompanyUsersService;
-exports.CompanyUsersService = CompanyUsersService = __decorate([
+exports.CompanyUsersService = CompanyUsersService = CompanyUsersService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __param(1, (0, common_1.Inject)((0, common_1.forwardRef)(() => shopify_rest_service_1.ShopifyRestService))),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        shopify_rest_service_1.ShopifyRestService])
 ], CompanyUsersService);
 //# sourceMappingURL=company-users.service.js.map

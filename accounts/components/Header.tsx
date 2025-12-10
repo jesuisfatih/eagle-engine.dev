@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { accountsFetch } from '@/lib/api-client';
 
 export default function Header() {
   const router = useRouter();
@@ -15,18 +16,13 @@ export default function Header() {
 
   const loadCartCount = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       const token = localStorage.getItem('eagle_token');
       const companyId = localStorage.getItem('eagle_companyId');
       const userId = localStorage.getItem('eagle_userId');
       
       if (!token || !companyId || !userId) return;
       
-      const response = await fetch(`${API_URL}/api/v1/carts/active?companyId=${companyId}&userId=${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await accountsFetch(`/api/v1/carts/active?companyId=${companyId}&userId=${userId}`);
       
       if (response.ok && response.status !== 204) {
         const cart = await response.json();

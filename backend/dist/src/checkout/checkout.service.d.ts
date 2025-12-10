@@ -4,6 +4,8 @@ import { ShopifyAdminDiscountService } from '../shopify/shopify-admin-discount.s
 import { ShopifyStorefrontService } from '../shopify/shopify-storefront.service';
 import { DiscountEngineService } from './discount-engine.service';
 import { PricingCalculatorService } from '../pricing/pricing-calculator.service';
+import { ShopifySsoService } from '../shopify/shopify-sso.service';
+import { ShopifyCustomerSyncService } from '../shopify/shopify-customer-sync.service';
 export declare class CheckoutService {
     private prisma;
     private shopifyRest;
@@ -11,13 +13,22 @@ export declare class CheckoutService {
     private shopifyStorefront;
     private discountEngine;
     private pricingCalculator;
+    private shopifySso;
+    private shopifyCustomerSync;
     private readonly logger;
-    constructor(prisma: PrismaService, shopifyRest: ShopifyRestService, shopifyAdminDiscount: ShopifyAdminDiscountService, shopifyStorefront: ShopifyStorefrontService, discountEngine: DiscountEngineService, pricingCalculator: PricingCalculatorService);
-    createCheckout(cartId: string): Promise<{
+    constructor(prisma: PrismaService, shopifyRest: ShopifyRestService, shopifyAdminDiscount: ShopifyAdminDiscountService, shopifyStorefront: ShopifyStorefrontService, discountEngine: DiscountEngineService, pricingCalculator: PricingCalculatorService, shopifySso: ShopifySsoService, shopifyCustomerSync: ShopifyCustomerSyncService);
+    createCheckout(cartId: string, userId?: string): Promise<{
         checkoutUrl: string;
         discountCode: string | undefined;
         total: number;
         savings: number;
+        ssoUrl: string | undefined;
+        userData: {
+            email: any;
+            firstName: any;
+            lastName: any;
+            phone: any;
+        } | null;
     }>;
     private buildCartUrl;
 }

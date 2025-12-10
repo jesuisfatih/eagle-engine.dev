@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { accountsFetch } from '@/lib/api-client';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -16,8 +17,7 @@ export default function ProductDetailPage() {
 
   const loadProduct = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/catalog/products/${params.id}`);
+      const response = await accountsFetch(`/api/v1/catalog/products/${params.id}`);
       const data = await response.json();
       setProduct(data);
     } catch (err) {

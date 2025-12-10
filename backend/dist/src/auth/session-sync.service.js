@@ -109,15 +109,25 @@ let SessionSyncService = SessionSyncService_1 = class SessionSyncService {
             shopifyCustomerId: user.shopifyCustomerId?.toString(),
         };
     }
-    async getOrCreateProspectCompany(email) {
+    async getOrCreateProspectCompany(email, merchantId) {
         const domain = email.split('@')[1];
         let company = await this.prisma.company.findFirst({
-            where: { email: { contains: domain } },
+            where: {
+                email: { contains: domain },
+                ...(merchantId ? { merchantId } : {}),
+            },
         });
         if (!company) {
+            if (!merchantId) {
+                const merchant = await this.prisma.merchant.findFirst();
+                if (!merchant) {
+                    throw new Error('No merchant found to create prospect company');
+                }
+                merchantId = merchant.id;
+            }
             company = await this.prisma.company.create({
                 data: {
-                    merchantId: '6ecc682b-98ee-472d-977b-cffbbae081b8',
+                    merchantId,
                     name: `Prospect - ${domain}`,
                     email,
                     status: 'prospect',

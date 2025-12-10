@@ -1,25 +1,33 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { accountsApi } from '@/lib/api-client';
+import { accountsFetch } from '@/lib/api-client';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [shopDomain, setShopDomain] = useState('');
 
   useEffect(() => {
     loadOrders();
+    loadShopDomain();
   }, []);
+
+  const loadShopDomain = async () => {
+    try {
+      const companyId = localStorage.getItem('eagle_companyId') || '';
+      const response = await accountsFetch(`/api/v1/companies/${companyId}`);
+      if (response.ok) {
+        const company = await response.json();
+        setShopDomain(company.merchant?.shopDomain || '');
+      }
+    } catch (err) {}
+  };
 
   const loadOrders = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      
-      // Get current user's company
-      const companyId = localStorage.getItem('eagle_companyId') || '';
-      
-      // Fetch orders for this company
-      const response = await fetch(`${API_URL}/api/v1/orders?companyId=${companyId}`);
+      // Fetch orders for this company (auth from token)
+      const response = await accountsFetch('/api/v1/orders');
       const data = await response.json();
       setOrders(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -84,6 +92,10 @@ export default function OrdersPage() {
                         <button
                           onClick={async () => {
                             try {
+                              if (!shopDomain) {
+                                alert('Shop domain not found');
+                                return;
+                              }
                               // Direct Shopify reorder
                               const variantIds = order.lineItems?.map((item: any) => 
                                 `${item.variant_id}:${item.quantity}`
@@ -91,7 +103,7 @@ export default function OrdersPage() {
                               
                               if (variantIds) {
                                 // Redirect to Shopify with cart items
-                                window.location.href = `https://eagle-dtf-supply0.myshopify.com/cart/${variantIds}`;
+                                window.location.href = `https://${shopDomain}/cart/${variantIds}`;
                               } else {
                                 alert('No items to reorder');
                               }

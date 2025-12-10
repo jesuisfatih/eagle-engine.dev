@@ -8,6 +8,10 @@ export declare class CompaniesService {
         status?: string;
         search?: string;
     }): Promise<({
+        _count: {
+            orders: number;
+            users: number;
+        };
         users: {
             id: string;
             email: string;
@@ -16,10 +20,6 @@ export declare class CompaniesService {
             isActive: boolean;
             role: string;
         }[];
-        _count: {
-            orders: number;
-            users: number;
-        };
     } & {
         name: string;
         id: string;
@@ -65,24 +65,6 @@ export declare class CompaniesService {
             lineItems: import("@prisma/client/runtime/client").JsonValue | null;
             discountCodes: import("@prisma/client/runtime/client").JsonValue | null;
         }[];
-        users: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            shopifyCustomerId: bigint | null;
-            email: string;
-            firstName: string | null;
-            lastName: string | null;
-            companyId: string;
-            isActive: boolean;
-            passwordHash: string | null;
-            role: string;
-            permissions: import("@prisma/client/runtime/client").JsonValue;
-            lastLoginAt: Date | null;
-            invitationToken: string | null;
-            invitationSentAt: Date | null;
-            invitationAcceptedAt: Date | null;
-        }[];
         pricingRules: {
             name: string;
             id: string;
@@ -108,6 +90,24 @@ export declare class CompaniesService {
             validFrom: Date | null;
             validUntil: Date | null;
         }[];
+        users: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            shopifyCustomerId: bigint | null;
+            email: string;
+            firstName: string | null;
+            lastName: string | null;
+            companyId: string;
+            isActive: boolean;
+            passwordHash: string | null;
+            role: string;
+            permissions: import("@prisma/client/runtime/client").JsonValue;
+            lastLoginAt: Date | null;
+            invitationToken: string | null;
+            invitationSentAt: Date | null;
+            invitationAcceptedAt: Date | null;
+        }[];
     } & {
         name: string;
         id: string;
@@ -127,6 +127,42 @@ export declare class CompaniesService {
         createdByShopifyCustomerId: bigint | null;
     }>;
     create(merchantId: string, data: any): Promise<{
+        name: string;
+        id: string;
+        status: string;
+        settings: import("@prisma/client/runtime/client").JsonValue;
+        createdAt: Date;
+        updatedAt: Date;
+        merchantId: string;
+        email: string | null;
+        phone: string | null;
+        legalName: string | null;
+        taxId: string | null;
+        website: string | null;
+        billingAddress: import("@prisma/client/runtime/client").JsonValue | null;
+        shippingAddress: import("@prisma/client/runtime/client").JsonValue | null;
+        companyGroup: string | null;
+        createdByShopifyCustomerId: bigint | null;
+    }>;
+    approve(id: string, merchantId: string): Promise<{
+        name: string;
+        id: string;
+        status: string;
+        settings: import("@prisma/client/runtime/client").JsonValue;
+        createdAt: Date;
+        updatedAt: Date;
+        merchantId: string;
+        email: string | null;
+        phone: string | null;
+        legalName: string | null;
+        taxId: string | null;
+        website: string | null;
+        billingAddress: import("@prisma/client/runtime/client").JsonValue | null;
+        shippingAddress: import("@prisma/client/runtime/client").JsonValue | null;
+        companyGroup: string | null;
+        createdByShopifyCustomerId: bigint | null;
+    }>;
+    reject(id: string, merchantId: string, reason?: string): Promise<{
         name: string;
         id: string;
         status: string;

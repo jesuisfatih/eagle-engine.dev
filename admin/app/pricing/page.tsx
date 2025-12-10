@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, adminFetch } from '@/lib/api-client';
 import Modal from '@/components/Modal';
 import PricingEditModal from '@/components/PricingEditModal';
 
@@ -61,8 +61,7 @@ export default function PricingPage() {
 
   const loadProducts = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/catalog/products?limit=500`);
+      const response = await adminFetch('/api/v1/catalog/products?limit=500');
       const data = await response.json();
       
       // Create flat list of products with variants
@@ -82,8 +81,7 @@ export default function PricingPage() {
   const loadRules = async () => {
     setLoading(true);
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/pricing/rules`);
+      const response = await adminFetch('/api/v1/pricing/rules');
       const data = await response.json();
       setRules(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -96,10 +94,8 @@ export default function PricingPage() {
 
   const handleCreate = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/pricing/rules`, {
+      const response = await adminFetch('/api/v1/pricing/rules', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 

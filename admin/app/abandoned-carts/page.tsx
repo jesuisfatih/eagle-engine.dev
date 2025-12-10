@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Modal from '@/components/Modal';
+import { adminFetch } from '@/lib/api-client';
 
 export default function AbandonedCartsPage() {
   const [carts, setCarts] = useState<any[]>([]);
@@ -24,8 +25,7 @@ export default function AbandonedCartsPage() {
 
   const loadActivityLogs = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/abandoned-carts/activity?limit=50`);
+      const response = await adminFetch('/api/v1/abandoned-carts/activity?limit=50');
       const data = await response.json();
       setActivityLogs(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -35,8 +35,7 @@ export default function AbandonedCartsPage() {
 
   const loadCartActivity = async (cartId: string) => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/abandoned-carts/activity/${cartId}`);
+      const response = await adminFetch(`/api/v1/abandoned-carts/activity/${cartId}`);
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     } catch (err) {
@@ -46,11 +45,8 @@ export default function AbandonedCartsPage() {
 
   const loadCarts = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       // Get all carts including recent ones (for admin view)
-      const url = `${API_URL}/api/v1/abandoned-carts?includeRecent=true`;
-      console.log('🔗 Fetching abandoned carts from:', url);
-      const response = await fetch(url);
+      const response = await adminFetch('/api/v1/abandoned-carts?includeRecent=true');
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);

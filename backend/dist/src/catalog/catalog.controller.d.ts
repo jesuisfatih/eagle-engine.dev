@@ -2,7 +2,7 @@ import { CatalogService } from './catalog.service';
 export declare class CatalogController {
     private catalogService;
     constructor(catalogService: CatalogService);
-    getProducts(search?: string, limit?: string): Promise<({
+    getProducts(merchantId: string, search?: string, limit?: string): Promise<({
         variants: {
             id: string;
             createdAt: Date;

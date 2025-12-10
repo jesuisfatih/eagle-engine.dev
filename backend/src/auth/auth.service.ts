@@ -111,6 +111,7 @@ export class AuthService {
         lastName: user.lastName,
         role: user.role,
         companyId: user.companyId,
+        merchantId: user.company.merchantId,
       },
     };
   }
@@ -121,11 +122,28 @@ export class AuthService {
       include: { company: true },
     });
 
-    if (user && password) {
-      return user;
+    if (!user || !user.passwordHash) {
+      return null;
     }
 
-    return null;
+    // Verify password with bcrypt
+    const isPasswordValid = await this.comparePasswords(password, user.passwordHash);
+    
+    if (!isPasswordValid) {
+      return null;
+    }
+
+    if (!user.isActive) {
+      return null;
+    }
+
+    // Update last login
+    await this.prisma.companyUser.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
+    return user;
   }
 
   async findUserByEmail(email: string): Promise<any> {
@@ -135,7 +153,38 @@ export class AuthService {
     });
   }
 
-  async createUserFromShopify(data: { email: string; shopifyCustomerId: string }): Promise<any> {
+  async createUserFromShopify(data: { email: string; shopifyCustomerId: string; merchantId?: string }): Promise<any> {
+    // Find or create a default company for Shopify customers
+    let companyId: string;
+    
+    if (data.merchantId) {
+      // Find or create default company for this merchant
+      let company = await this.prisma.company.findFirst({
+        where: { 
+          merchantId: data.merchantId,
+          name: 'Shopify Customers',
+        },
+      });
+      
+      if (!company) {
+        company = await this.prisma.company.create({
+          data: {
+            merchantId: data.merchantId,
+            name: 'Shopify Customers',
+            status: 'active',
+          },
+        });
+      }
+      companyId = company.id;
+    } else {
+      // Fallback: find any company
+      const company = await this.prisma.company.findFirst();
+      if (!company) {
+        throw new Error('No company found to assign Shopify customer');
+      }
+      companyId = company.id;
+    }
+    
     return this.prisma.companyUser.create({
       data: {
         email: data.email,
@@ -143,7 +192,7 @@ export class AuthService {
         firstName: '',
         lastName: '',
         role: 'buyer',
-        companyId: 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d', // Default company
+        companyId,
         isActive: true,
       },
       include: { company: true },

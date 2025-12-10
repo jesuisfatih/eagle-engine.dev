@@ -1,24 +1,24 @@
 'use client';
 
+import { adminFetch } from '@/lib/api-client';
+
 export default function ReportsPage() {
   const generateReport = async (type: string) => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      
       // Fetch data
       let data: any[] = [];
       switch (type) {
         case 'sales':
-          data = await fetch(`${API_URL}/api/v1/orders`).then(r => r.json());
+          data = await adminFetch('/api/v1/orders').then(r => r.json());
           break;
         case 'customers':
-          data = await fetch(`${API_URL}/api/v1/shopify-customers`).then(r => r.json());
+          data = await adminFetch('/api/v1/shopify-customers').then(r => r.json());
           break;
         case 'inventory':
-          data = await fetch(`${API_URL}/api/v1/catalog/products`).then(r => r.json());
+          data = await adminFetch('/api/v1/catalog/products').then(r => r.json());
           break;
         case 'pricing':
-          data = await fetch(`${API_URL}/api/v1/pricing/rules`).then(r => r.json());
+          data = await adminFetch('/api/v1/pricing/rules').then(r => r.json());
           break;
       }
       

@@ -18,7 +18,7 @@ let CompaniesModule = class CompaniesModule {
 exports.CompaniesModule = CompaniesModule;
 exports.CompaniesModule = CompaniesModule = __decorate([
     (0, common_1.Module)({
-        imports: [shopify_module_1.ShopifyModule],
+        imports: [(0, common_1.forwardRef)(() => shopify_module_1.ShopifyModule)],
         controllers: [companies_controller_1.CompaniesController],
         providers: [companies_service_1.CompaniesService, company_users_service_1.CompanyUsersService, shopify_company_sync_service_1.ShopifyCompanySyncService],
         exports: [companies_service_1.CompaniesService, company_users_service_1.CompanyUsersService],

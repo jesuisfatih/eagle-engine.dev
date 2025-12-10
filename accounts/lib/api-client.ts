@@ -127,6 +127,39 @@ class AccountsApiClient {
 
 export const accountsApi = new AccountsApiClient(API_URL);
 
+// Helper function for authenticated fetch - similar to adminFetch
+export async function accountsFetch(endpoint: string, options: RequestInit = {}) {
+  const token = typeof window !== 'undefined' 
+    ? localStorage.getItem('eagle_token') 
+    : null;
+  
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+  
+  if (token) {
+    (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return fetch(`${API_URL}${endpoint}`, { ...options, headers });
+}
+
+// Helper function for public endpoints (no auth required)
+export async function publicFetch(endpoint: string, options: RequestInit = {}) {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+  
+  return fetch(`${API_URL}${endpoint}`, { ...options, headers });
+}
+
+// Get API URL for external use
+export function getApiUrl() {
+  return API_URL;
+}
+
 
 
 

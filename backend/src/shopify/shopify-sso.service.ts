@@ -1,30 +1,36 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ShopifySsoService {
   private readonly logger = new Logger(ShopifySsoService.name);
-  private readonly shopifyDomain: string;
-  private readonly multipassSecret: string;
 
-  constructor(private configService: ConfigService) {
-    this.shopifyDomain = this.configService.get('SHOPIFY_STORE_DOMAIN') || 'eagle-dtf-supply0.myshopify.com';
-    // Multipass secret from Shopify Admin -> Settings -> Customer accounts -> Multipass
-    this.multipassSecret = this.configService.get('SHOPIFY_MULTIPASS_SECRET') || '';
-  }
+  constructor(
+    private configService: ConfigService,
+    private prisma: PrismaService,
+  ) {}
 
   /**
    * Generate Shopify Multipass token for SSO
    * User logs in Eagle → Automatically logged in Shopify
+   * @param multipassSecret - The merchant's multipass secret from Shopify Admin
    */
-  generateMultipassToken(customerData: {
-    email: string;
-    firstName?: string;
-    lastName?: string;
-    customerId?: string;
-    returnTo?: string;
-  }): string {
+  generateMultipassToken(
+    multipassSecret: string,
+    customerData: {
+      email: string;
+      firstName?: string;
+      lastName?: string;
+      customerId?: string;
+      returnTo?: string;
+    },
+  ): string {
+    if (!multipassSecret) {
+      throw new Error('Multipass secret is required');
+    }
+    
     try {
       const multipassData = {
         email: customerData.email,
@@ -41,13 +47,13 @@ export class ShopifySsoService {
       // Step 2: Encrypt with AES-256-CBC
       const encryptionKey = crypto
         .createHash('sha256')
-        .update(this.multipassSecret)
+        .update(multipassSecret)
         .digest()
         .slice(0, 32);
 
       const signingKey = crypto
         .createHash('sha256')
-        .update(this.multipassSecret)
+        .update(multipassSecret)
         .digest();
 
       const iv = crypto.randomBytes(16);
@@ -78,31 +84,43 @@ export class ShopifySsoService {
   }
 
   /**
-   * Generate Shopify SSO URL
+   * Generate Shopify SSO URL for a specific merchant
+   * @param shopDomain - The merchant's Shopify store domain
+   * @param multipassSecret - The merchant's multipass secret
    */
-  generateSsoUrl(customerData: {
-    email: string;
-    firstName?: string;
-    lastName?: string;
-    customerId?: string;
-    returnTo?: string;
-  }): string {
-    const token = this.generateMultipassToken(customerData);
-    return `https://${this.shopifyDomain}/account/login/multipass/${token}`;
+  generateSsoUrl(
+    shopDomain: string,
+    multipassSecret: string,
+    customerData: {
+      email: string;
+      firstName?: string;
+      lastName?: string;
+      customerId?: string;
+      returnTo?: string;
+    },
+  ): string {
+    const token = this.generateMultipassToken(multipassSecret, customerData);
+    return `https://${shopDomain}/account/login/multipass/${token}`;
   }
 
   /**
    * Verify Shopify customer is logged in
    * Check if customer has valid Shopify session
+   * @param shopDomain - The merchant's Shopify store domain
+   * @param accessToken - The merchant's Shopify access token
    */
-  async verifyShopifySession(shopifyCustomerId: string): Promise<boolean> {
+  async verifyShopifySession(
+    shopDomain: string,
+    accessToken: string,
+    shopifyCustomerId: string,
+  ): Promise<boolean> {
     try {
       // Check if customer exists in Shopify
       const response = await fetch(
-        `https://${this.shopifyDomain}/admin/api/2024-01/customers/${shopifyCustomerId}.json`,
+        `https://${shopDomain}/admin/api/2024-10/customers/${shopifyCustomerId}.json`,
         {
           headers: {
-            'X-Shopify-Access-Token': this.configService.get('SHOPIFY_ACCESS_TOKEN') || '',
+            'X-Shopify-Access-Token': accessToken,
           },
         }
       );

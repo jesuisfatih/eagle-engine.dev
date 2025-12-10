@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.WebhooksController = void 0;
 const common_1 = require("@nestjs/common");
 const public_decorator_1 = require("../auth/decorators/public.decorator");
+const webhook_auth_guard_1 = require("../common/guards/webhook-auth.guard");
 const orders_handler_1 = require("./handlers/orders.handler");
 const customers_handler_1 = require("./handlers/customers.handler");
 let WebhooksController = class WebhooksController {
@@ -37,6 +38,7 @@ let WebhooksController = class WebhooksController {
 exports.WebhooksController = WebhooksController;
 __decorate([
     (0, public_decorator_1.Public)(),
+    (0, common_1.UseGuards)(webhook_auth_guard_1.WebhookAuthGuard),
     (0, common_1.Post)('orders/create'),
     (0, common_1.HttpCode)(200),
     __param(0, (0, common_1.Body)()),
@@ -47,6 +49,7 @@ __decorate([
 ], WebhooksController.prototype, "orderCreate", null);
 __decorate([
     (0, public_decorator_1.Public)(),
+    (0, common_1.UseGuards)(webhook_auth_guard_1.WebhookAuthGuard),
     (0, common_1.Post)('orders/paid'),
     (0, common_1.HttpCode)(200),
     __param(0, (0, common_1.Body)()),
@@ -57,6 +60,7 @@ __decorate([
 ], WebhooksController.prototype, "orderPaid", null);
 __decorate([
     (0, public_decorator_1.Public)(),
+    (0, common_1.UseGuards)(webhook_auth_guard_1.WebhookAuthGuard),
     (0, common_1.Post)('customers/create'),
     (0, common_1.HttpCode)(200),
     __param(0, (0, common_1.Body)()),

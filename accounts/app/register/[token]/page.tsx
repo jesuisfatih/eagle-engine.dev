@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { publicFetch } from '@/lib/api-client';
 
 export default function RegisterPage() {
   const params = useParams();
@@ -33,9 +34,8 @@ export default function RegisterPage() {
 
   const loadInvitationData = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       // Validate token by trying to get user info
-      const response = await fetch(`${API_URL}/api/v1/auth/validate-invitation?token=${params.token}`);
+      const response = await publicFetch(`/api/v1/auth/validate-invitation?token=${params.token}`);
       
       if (response.ok) {
         const data = await response.json();
@@ -83,10 +83,8 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/auth/accept-invitation`, {
+      const response = await publicFetch('/api/v1/auth/accept-invitation', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: params.token,
           password: formData.password,

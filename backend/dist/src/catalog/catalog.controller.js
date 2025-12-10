@@ -15,14 +15,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CatalogController = void 0;
 const common_1 = require("@nestjs/common");
 const catalog_service_1 = require("./catalog.service");
-const public_decorator_1 = require("../auth/decorators/public.decorator");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
 let CatalogController = class CatalogController {
     catalogService;
     constructor(catalogService) {
         this.catalogService = catalogService;
     }
-    async getProducts(search, limit) {
-        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    async getProducts(merchantId, search, limit) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.catalogService.getProducts(merchantId, {
             search,
             limit: limit ? parseInt(limit) : undefined,
@@ -38,10 +41,11 @@ let CatalogController = class CatalogController {
 exports.CatalogController = CatalogController;
 __decorate([
     (0, common_1.Get)('products'),
-    __param(0, (0, common_1.Query)('search')),
-    __param(1, (0, common_1.Query)('limit')),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(1, (0, common_1.Query)('search')),
+    __param(2, (0, common_1.Query)('limit')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", Promise)
 ], CatalogController.prototype, "getProducts", null);
 __decorate([
@@ -60,7 +64,7 @@ __decorate([
 ], CatalogController.prototype, "getVariant", null);
 exports.CatalogController = CatalogController = __decorate([
     (0, common_1.Controller)('catalog'),
-    (0, public_decorator_1.Public)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [catalog_service_1.CatalogService])
 ], CatalogController);
 //# sourceMappingURL=catalog.controller.js.map

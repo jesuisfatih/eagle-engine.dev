@@ -14,20 +14,21 @@ exports.OrdersHandler = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const shopify_webhook_sync_service_1 = require("../shopify-webhook-sync.service");
+const shopify_service_1 = require("../../shopify/shopify.service");
 let OrdersHandler = OrdersHandler_1 = class OrdersHandler {
     prisma;
     webhookSync;
+    shopifyService;
     logger = new common_1.Logger(OrdersHandler_1.name);
-    constructor(prisma, webhookSync) {
+    constructor(prisma, webhookSync, shopifyService) {
         this.prisma = prisma;
         this.webhookSync = webhookSync;
+        this.shopifyService = shopifyService;
     }
     async handleOrderCreate(orderData, headers) {
         try {
             const shop = headers['x-shopify-shop-domain'];
-            const merchant = await this.prisma.merchant.findUnique({
-                where: { shopDomain: shop },
-            });
+            const merchant = await this.shopifyService.getMerchantByShopDomain(shop);
             if (!merchant) {
                 this.logger.warn(`Merchant not found for shop: ${shop}`);
                 return { success: false };
@@ -78,9 +79,7 @@ let OrdersHandler = OrdersHandler_1 = class OrdersHandler {
     async handleOrderPaid(orderData, headers) {
         try {
             const shop = headers['x-shopify-shop-domain'];
-            const merchant = await this.prisma.merchant.findUnique({
-                where: { shopDomain: shop },
-            });
+            const merchant = await this.shopifyService.getMerchantByShopDomain(shop);
             if (!merchant) {
                 return { success: false };
             }
@@ -107,6 +106,7 @@ exports.OrdersHandler = OrdersHandler;
 exports.OrdersHandler = OrdersHandler = OrdersHandler_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        shopify_webhook_sync_service_1.ShopifyWebhookSyncService])
+        shopify_webhook_sync_service_1.ShopifyWebhookSyncService,
+        shopify_service_1.ShopifyService])
 ], OrdersHandler);
 //# sourceMappingURL=orders.handler.js.map

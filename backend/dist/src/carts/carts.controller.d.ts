@@ -4,7 +4,7 @@ export declare class CartsController {
     private cartsService;
     private cartItemsService;
     constructor(cartsService: CartsService, cartItemsService: CartItemsService);
-    getActiveCart(companyId?: string, userId?: string): Promise<({
+    getActiveCart(companyId: string, userId: string): Promise<({
         items: ({
             variant: ({
                 product: {
@@ -222,7 +222,7 @@ export declare class CartsController {
         notes: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
     }>;
-    createCart(body: any): Promise<{
+    createCart(merchantId: string, companyId: string, userId: string): Promise<{
         company: {
             name: string;
             id: string;

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ShopifyWebhookSyncService } from '../shopify-webhook-sync.service';
+import { ShopifyService } from '../../shopify/shopify.service';
 
 @Injectable()
 export class OrdersHandler {
@@ -9,15 +10,14 @@ export class OrdersHandler {
   constructor(
     private prisma: PrismaService,
     private webhookSync: ShopifyWebhookSyncService,
+    private shopifyService: ShopifyService,
   ) {}
 
   async handleOrderCreate(orderData: any, headers: any) {
     try {
       const shop = headers['x-shopify-shop-domain'];
       
-      const merchant = await this.prisma.merchant.findUnique({
-        where: { shopDomain: shop },
-      });
+      const merchant = await this.shopifyService.getMerchantByShopDomain(shop);
 
       if (!merchant) {
         this.logger.warn(`Merchant not found for shop: ${shop}`);
@@ -79,9 +79,7 @@ export class OrdersHandler {
     try {
       const shop = headers['x-shopify-shop-domain'];
       
-      const merchant = await this.prisma.merchant.findUnique({
-        where: { shopDomain: shop },
-      });
+      const merchant = await this.shopifyService.getMerchantByShopDomain(shop);
 
       if (!merchant) {
         return { success: false };

@@ -38,7 +38,16 @@ export class AuthController {
         });
       }
 
-      const token = await this.authService.generateToken(user);
+      // Generate proper JWT payload with merchantId
+      const payload = {
+        sub: user.id,
+        email: user.email,
+        type: 'company_user' as const,
+        companyId: user.companyId,
+        merchantId: user.company?.merchantId,
+      };
+
+      const token = await this.authService.generateToken(payload);
 
       return res.json({
         token,
@@ -47,7 +56,9 @@ export class AuthController {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
+          role: user.role,
           companyId: user.companyId,
+          merchantId: user.company?.merchantId,
         },
       });
     } catch (error) {
@@ -313,14 +324,18 @@ export class AuthController {
 
       // 3. Generate SSO URL based on mode
       if (ssoMode === 'multipass' && settings.multipassSecret) {
-        // Multipass SSO (Shopify Plus)
-        const ssoUrl = this.shopifySso.generateSsoUrl({
-          email: user.email,
-          firstName: user.firstName || '',
-          lastName: user.lastName || '',
-          customerId: user.shopifyCustomerId?.toString(),
-          returnTo,
-        });
+        // Multipass SSO (Shopify Plus) - use merchant-specific credentials
+        const ssoUrl = this.shopifySso.generateSsoUrl(
+          company.merchant.shopDomain,
+          settings.multipassSecret,
+          {
+            email: user.email,
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            customerId: user.shopifyCustomerId?.toString(),
+            returnTo,
+          },
+        );
 
         return res.json({
           ssoUrl,

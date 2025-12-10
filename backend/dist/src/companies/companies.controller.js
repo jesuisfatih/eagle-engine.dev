@@ -16,7 +16,8 @@ exports.CompaniesController = void 0;
 const common_1 = require("@nestjs/common");
 const companies_service_1 = require("./companies.service");
 const company_users_service_1 = require("./company-users.service");
-const public_decorator_1 = require("../auth/decorators/public.decorator");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
 let CompaniesController = class CompaniesController {
     companiesService;
     companyUsersService;
@@ -24,28 +25,52 @@ let CompaniesController = class CompaniesController {
         this.companiesService = companiesService;
         this.companyUsersService = companyUsersService;
     }
-    async findAll(status, search) {
-        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    async findAll(merchantId, status, search) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.companiesService.findAll(merchantId, { status, search });
     }
-    async getStats() {
-        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    async getStats(merchantId) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.companiesService.getStats(merchantId);
     }
-    async findOne(id) {
-        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    async findOne(id, merchantId) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.companiesService.findOne(id, merchantId);
     }
-    async create(body) {
-        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    async create(merchantId, body) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.companiesService.create(merchantId, body);
     }
-    async update(id, body) {
-        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    async update(id, merchantId, body) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.companiesService.update(id, merchantId, body);
     }
-    async delete(id) {
-        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    async approve(id, merchantId) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
+        return this.companiesService.approve(id, merchantId);
+    }
+    async reject(id, merchantId, body) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
+        return this.companiesService.reject(id, merchantId, body.reason);
+    }
+    async delete(id, merchantId) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.companiesService.delete(id, merchantId);
     }
     async getCompanyUsers(companyId) {
@@ -54,49 +79,75 @@ let CompaniesController = class CompaniesController {
     async inviteUser(companyId, body) {
         return this.companyUsersService.invite(companyId, body);
     }
+    async verifyUserEmail(userId) {
+        return this.companyUsersService.verifyEmail(userId);
+    }
 };
 exports.CompaniesController = CompaniesController;
 __decorate([
     (0, common_1.Get)(),
-    __param(0, (0, common_1.Query)('status')),
-    __param(1, (0, common_1.Query)('search')),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(1, (0, common_1.Query)('status')),
+    __param(2, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", Promise)
 ], CompaniesController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)('stats'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], CompaniesController.prototype, "getStats", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], CompaniesController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Post)(),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], CompaniesController.prototype, "create", null);
 __decorate([
     (0, common_1.Put)(':id'),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [String, String, Object]),
     __metadata("design:returntype", Promise)
 ], CompaniesController.prototype, "update", null);
 __decorate([
+    (0, common_1.Post)(':id/approve'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], CompaniesController.prototype, "approve", null);
+__decorate([
+    (0, common_1.Post)(':id/reject'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], CompaniesController.prototype, "reject", null);
+__decorate([
     (0, common_1.Delete)(':id'),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], CompaniesController.prototype, "delete", null);
 __decorate([
@@ -114,9 +165,16 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], CompaniesController.prototype, "inviteUser", null);
+__decorate([
+    (0, common_1.Post)('users/:userId/verify-email'),
+    __param(0, (0, common_1.Param)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], CompaniesController.prototype, "verifyUserEmail", null);
 exports.CompaniesController = CompaniesController = __decorate([
     (0, common_1.Controller)('companies'),
-    (0, public_decorator_1.Public)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [companies_service_1.CompaniesService,
         company_users_service_1.CompanyUsersService])
 ], CompaniesController);

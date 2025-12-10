@@ -24,7 +24,7 @@ export class ShopifyStorefrontService {
     discountCodes?: string[],
     customerAccessToken?: string, // For authenticated checkout
   ) {
-    const url = `https://${shop}/api/2025-01/graphql.json`;
+    const url = `https://${shop}/api/2024-10/graphql.json`;
 
     const mutation = `
       mutation cartCreate($input: CartInput!) {
@@ -136,7 +136,7 @@ export class ShopifyStorefrontService {
     email: string,
     password: string,
   ): Promise<string | null> {
-    const url = `https://${shop}/api/2025-01/graphql.json`;
+    const url = `https://${shop}/api/2024-10/graphql.json`;
 
     const mutation = `
       mutation customerAccessTokenCreate($input: CustomerAccessTokenCreateInput!) {

@@ -8,15 +8,15 @@ import {
   Param,
   Query,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { CompaniesService } from './companies.service';
 import { CompanyUsersService } from './company-users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('companies')
-@Public()
+@UseGuards(JwtAuthGuard)
 export class CompaniesController {
   constructor(
     private companiesService: CompaniesService,
@@ -25,52 +25,89 @@ export class CompaniesController {
 
   @Get()
   async findAll(
+    @CurrentUser('merchantId') merchantId: string,
     @Query('status') status?: string,
     @Query('search') search?: string,
   ) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.companiesService.findAll(merchantId, { status, search });
   }
 
   @Get('stats')
-  async getStats() {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async getStats(@CurrentUser('merchantId') merchantId: string) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.companiesService.getStats(merchantId);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser('merchantId') merchantId: string,
+  ) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.companiesService.findOne(id, merchantId);
   }
 
   @Post()
-  async create(@Body() body: any) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async create(
+    @CurrentUser('merchantId') merchantId: string,
+    @Body() body: any,
+  ) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.companiesService.create(merchantId, body);
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() body: any) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async update(
+    @Param('id') id: string,
+    @CurrentUser('merchantId') merchantId: string,
+    @Body() body: any,
+  ) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.companiesService.update(id, merchantId, body);
   }
 
   @Post(':id/approve')
-  async approve(@Param('id') id: string) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async approve(
+    @Param('id') id: string,
+    @CurrentUser('merchantId') merchantId: string,
+  ) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.companiesService.approve(id, merchantId);
   }
 
   @Post(':id/reject')
-  async reject(@Param('id') id: string, @Body() body: { reason?: string }) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async reject(
+    @Param('id') id: string,
+    @CurrentUser('merchantId') merchantId: string,
+    @Body() body: { reason?: string },
+  ) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.companiesService.reject(id, merchantId, body.reason);
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async delete(
+    @Param('id') id: string,
+    @CurrentUser('merchantId') merchantId: string,
+  ) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.companiesService.delete(id, merchantId);
   }
 

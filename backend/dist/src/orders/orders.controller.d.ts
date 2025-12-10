@@ -2,7 +2,7 @@ import { OrdersService } from './orders.service';
 export declare class OrdersController {
     private ordersService;
     constructor(ordersService: OrdersService);
-    findAll(companyId?: string, status?: string): Promise<({
+    findAll(merchantId: string, companyId?: string, status?: string): Promise<({
         company: {
             name: string;
             id: string;
@@ -39,11 +39,11 @@ export declare class OrdersController {
         lineItems: import("@prisma/client/runtime/client").JsonValue | null;
         discountCodes: import("@prisma/client/runtime/client").JsonValue | null;
     })[]>;
-    getStats(): Promise<{
+    getStats(merchantId: string): Promise<{
         total: number;
         totalRevenue: number | import("@prisma/client-runtime-utils").Decimal;
     }>;
-    findOne(id: string): Promise<({
+    findOne(id: string, merchantId: string): Promise<({
         company: {
             name: string;
             id: string;

@@ -10,6 +10,23 @@ export declare class ShopifyRestService {
     put<T>(shop: string, accessToken: string, path: string, data: any): Promise<T>;
     delete<T>(shop: string, accessToken: string, path: string): Promise<T>;
     getCustomers(shop: string, accessToken: string, limit?: number): Promise<unknown>;
+    createCustomerInvite(shop: string, accessToken: string, customerId: string): Promise<{
+        customer_invite: {
+            to: string;
+            from: string;
+            subject: string;
+            custom_message: string;
+            invite_url: string;
+        };
+    }>;
+    updateCustomerSubscription(shop: string, accessToken: string, customerId: string, acceptsMarketing: boolean): Promise<any>;
+    updateCustomerMetafields(shop: string, accessToken: string, customerId: string, metafields: Array<{
+        namespace: string;
+        key: string;
+        value: string;
+        type: string;
+    }>): Promise<any>;
+    getCustomerMetafields(shop: string, accessToken: string, customerId: string): Promise<any[]>;
     getProducts(shop: string, accessToken: string, limit?: number): Promise<unknown>;
     getOrders(shop: string, accessToken: string, limit?: number): Promise<unknown>;
     createDiscountCode(shop: string, accessToken: string, data: any): Promise<unknown>;

@@ -14,18 +14,19 @@ exports.ShopifyWebhookSyncService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const shopify_customer_sync_service_1 = require("../shopify/shopify-customer-sync.service");
+const shopify_service_1 = require("../shopify/shopify.service");
 let ShopifyWebhookSyncService = ShopifyWebhookSyncService_1 = class ShopifyWebhookSyncService {
     prisma;
     shopifyCustomerSync;
+    shopifyService;
     logger = new common_1.Logger(ShopifyWebhookSyncService_1.name);
-    constructor(prisma, shopifyCustomerSync) {
+    constructor(prisma, shopifyCustomerSync, shopifyService) {
         this.prisma = prisma;
         this.shopifyCustomerSync = shopifyCustomerSync;
+        this.shopifyService = shopifyService;
     }
     async handleOrderCreate(orderData, shop) {
-        const merchant = await this.prisma.merchant.findUnique({
-            where: { shopDomain: shop },
-        });
+        const merchant = await this.shopifyService.getMerchantByShopDomain(shop);
         if (!merchant || !orderData.customer)
             return;
         const shopifyCustomerId = BigInt(orderData.customer.id);
@@ -58,6 +59,7 @@ exports.ShopifyWebhookSyncService = ShopifyWebhookSyncService;
 exports.ShopifyWebhookSyncService = ShopifyWebhookSyncService = ShopifyWebhookSyncService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        shopify_customer_sync_service_1.ShopifyCustomerSyncService])
+        shopify_customer_sync_service_1.ShopifyCustomerSyncService,
+        shopify_service_1.ShopifyService])
 ], ShopifyWebhookSyncService);
 //# sourceMappingURL=shopify-webhook-sync.service.js.map

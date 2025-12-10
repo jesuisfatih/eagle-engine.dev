@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { adminFetch } from '@/lib/api-client';
 
 export default function SyncProgress() {
   const [progress, setProgress] = useState({ customers: 0, products: 0, orders: 0 });
@@ -8,8 +9,7 @@ export default function SyncProgress() {
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-        const response = await fetch(`${API_URL}/api/v1/sync/status`);
+        const response = await adminFetch('/api/v1/sync/status');
         
         if (!response.ok) {
           // Silently fail - don't spam console

@@ -27,46 +27,108 @@ let ShopifyCustomerSyncService = ShopifyCustomerSyncService_1 = class ShopifyCus
         this.prisma = prisma;
     }
     async syncUserToShopify(userId) {
+        this.logger.log(`🔄 syncUserToShopify called for userId: ${userId}`);
         const user = await this.prisma.companyUser.findUnique({
             where: { id: userId },
             include: { company: true },
         });
-        if (!user)
-            return;
+        if (!user) {
+            this.logger.warn(`⚠️ syncUserToShopify: User not found (ID: ${userId})`);
+            throw new Error(`User not found: ${userId}`);
+        }
         const merchant = await this.prisma.merchant.findUnique({
             where: { id: user.company.merchantId },
         });
-        if (!merchant)
-            return;
+        if (!merchant) {
+            this.logger.warn(`⚠️ syncUserToShopify: Merchant not found for user ${user.email} (merchantId: ${user.company.merchantId})`);
+            throw new Error(`Merchant not found for user ${user.email}`);
+        }
+        this.logger.log(`🔄 syncUserToShopify: Starting sync for user ${user.email}`, {
+            userId,
+            merchantId: merchant.id,
+            shopDomain: merchant.shopDomain,
+        });
         try {
+            if (user.shopifyCustomerId) {
+                this.logger.log(`User ${user.email} already has Shopify customer ID: ${user.shopifyCustomerId}`);
+                return await this.updateShopifyCustomer(userId);
+            }
+            const permissions = user.permissions || {};
+            const emailVerified = permissions.emailVerified || false;
             const customerData = {
                 customer: {
                     email: user.email,
-                    first_name: user.firstName,
-                    last_name: user.lastName,
-                    phone: user.company.phone,
+                    first_name: user.firstName || '',
+                    last_name: user.lastName || '',
+                    phone: user.company.phone || '',
                     addresses: user.company.billingAddress ? [user.company.billingAddress] : [],
                     tags: [`eagle-b2b-user`, `company-${user.companyId}`],
+                    accepts_marketing: emailVerified,
                 },
             };
             const url = this.shopifyService.buildAdminApiUrl(merchant.shopDomain, '/customers.json');
-            const response = await (0, rxjs_1.firstValueFrom)(this.httpService.post(url, customerData, {
-                headers: {
-                    'X-Shopify-Access-Token': merchant.accessToken,
-                    'Content-Type': 'application/json',
-                },
-            }));
+            this.logger.log(`Creating Shopify customer for ${user.email}`, {
+                email: user.email,
+                emailVerified,
+                shopDomain: merchant.shopDomain,
+            });
+            let response;
+            try {
+                response = await (0, rxjs_1.firstValueFrom)(this.httpService.post(url, customerData, {
+                    headers: {
+                        'X-Shopify-Access-Token': merchant.accessToken,
+                        'Content-Type': 'application/json',
+                    },
+                }));
+            }
+            catch (createError) {
+                if (createError.response?.status === 422 || createError.response?.data?.errors?.email) {
+                    this.logger.warn(`Customer ${user.email} already exists in Shopify, searching...`);
+                    const searchUrl = this.shopifyService.buildAdminApiUrl(merchant.shopDomain, `/customers/search.json?query=email:${encodeURIComponent(user.email)}`);
+                    const searchResponse = await (0, rxjs_1.firstValueFrom)(this.httpService.get(searchUrl, {
+                        headers: {
+                            'X-Shopify-Access-Token': merchant.accessToken,
+                        },
+                    }));
+                    if (searchResponse.data.customers && searchResponse.data.customers.length > 0) {
+                        const existingCustomer = searchResponse.data.customers[0];
+                        this.logger.log(`Found existing Shopify customer: ${existingCustomer.id}`);
+                        await this.prisma.companyUser.update({
+                            where: { id: userId },
+                            data: {
+                                shopifyCustomerId: BigInt(existingCustomer.id),
+                            },
+                        });
+                        return await this.updateShopifyCustomer(userId);
+                    }
+                    else {
+                        throw createError;
+                    }
+                }
+                else {
+                    throw createError;
+                }
+            }
             await this.prisma.companyUser.update({
                 where: { id: userId },
                 data: {
                     shopifyCustomerId: BigInt(response.data.customer.id),
                 },
             });
-            this.logger.log(`User ${user.email} synced to Shopify`);
+            this.logger.log(`✅ User ${user.email} synced to Shopify successfully`, {
+                shopifyCustomerId: response.data.customer.id,
+                email: user.email,
+            });
             return response.data.customer;
         }
         catch (error) {
-            this.logger.error('Failed to sync user to Shopify', error);
+            this.logger.error(`❌ Failed to sync user ${user.email} to Shopify`, {
+                error: error.message,
+                stack: error.stack,
+                response: error.response?.data,
+                status: error.response?.status,
+                url: error.config?.url,
+            });
             throw error;
         }
     }
@@ -84,12 +146,15 @@ let ShopifyCustomerSyncService = ShopifyCustomerSyncService_1 = class ShopifyCus
             return;
         try {
             const url = this.shopifyService.buildAdminApiUrl(merchant.shopDomain, `/customers/${user.shopifyCustomerId}.json`);
+            const permissions = user.permissions || {};
+            const emailVerified = permissions.emailVerified || false;
             const customerData = {
                 customer: {
                     email: user.email,
                     first_name: user.firstName,
                     last_name: user.lastName,
                     phone: user.company.phone,
+                    accepts_marketing: emailVerified,
                 },
             };
             await (0, rxjs_1.firstValueFrom)(this.httpService.put(url, customerData, {

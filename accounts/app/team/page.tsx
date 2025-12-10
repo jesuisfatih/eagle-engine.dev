@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import InviteMemberModal from './components/InviteMemberModal';
 import Modal from '@/components/Modal';
+import { accountsFetch } from '@/lib/api-client';
 
 export default function TeamPage() {
   const [members, setMembers] = useState<any[]>([]);
@@ -17,12 +18,10 @@ export default function TeamPage() {
 
   const handleInvite = async (email: string, role: string) => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
       const companyId = localStorage.getItem('eagle_companyId') || '';
       
-      const response = await fetch(`${API_URL}/api/v1/companies/${companyId}/users`, {
+      const response = await accountsFetch(`/api/v1/companies/${companyId}/users`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, role }),
       });
       
@@ -41,10 +40,9 @@ export default function TeamPage() {
 
   const loadMembers = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const companyId = 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d';
+      const companyId = localStorage.getItem('eagle_companyId') || '';
       
-      const response = await fetch(`${API_URL}/api/v1/companies/${companyId}/users`);
+      const response = await accountsFetch(`/api/v1/companies/${companyId}/users`);
       const data = await response.json();
       setMembers(Array.isArray(data) ? data : []);
     } catch (err) {

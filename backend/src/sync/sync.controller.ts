@@ -1,50 +1,50 @@
-import { Controller, Post, Get, Param, UseGuards, Body } from '@nestjs/common';
+import { Controller, Post, Get, Param, UseGuards, Body, BadRequestException } from '@nestjs/common';
 import { SyncService } from './sync.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('sync')
+@UseGuards(JwtAuthGuard)
 export class SyncController {
   constructor(private syncService: SyncService) {}
 
-  @Public()
   @Post('initial')
-  async triggerInitialSync(@Body('merchantId') merchantId: string) {
+  async triggerInitialSync(@CurrentUser('merchantId') merchantId: string) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.syncService.triggerInitialSync(merchantId);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Post('initial-auth')
-  async triggerInitialSyncAuth(@CurrentUser('merchantId') merchantId: string) {
-    return this.syncService.triggerInitialSync(merchantId);
-  }
-
-  @Public()
   @Post('customers')
-  async triggerCustomersSync(@Body('merchantId') merchantId?: string) {
-    const id = merchantId || '6ecc682b-98ee-472d-977b-cffbbae081b8';
-    return this.syncService.triggerCustomersSync(id);
+  async triggerCustomersSync(@CurrentUser('merchantId') merchantId: string) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
+    return this.syncService.triggerCustomersSync(merchantId);
   }
 
-  @Public()
   @Post('products')
-  async triggerProductsSync(@Body('merchantId') merchantId?: string) {
-    const id = merchantId || '6ecc682b-98ee-472d-977b-cffbbae081b8';
-    return this.syncService.triggerProductsSync(id);
+  async triggerProductsSync(@CurrentUser('merchantId') merchantId: string) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
+    return this.syncService.triggerProductsSync(merchantId);
   }
 
-  @Public()
   @Post('orders')
-  async triggerOrdersSync(@Body('merchantId') merchantId?: string) {
-    const id = merchantId || '6ecc682b-98ee-472d-977b-cffbbae081b8';
-    return this.syncService.triggerOrdersSync(id);
+  async triggerOrdersSync(@CurrentUser('merchantId') merchantId: string) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
+    return this.syncService.triggerOrdersSync(merchantId);
   }
 
-  @Public()
   @Get('status')
-  async getSyncStatus() {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async getSyncStatus(@CurrentUser('merchantId') merchantId: string) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.syncService.getSyncStatus(merchantId);
   }
 }

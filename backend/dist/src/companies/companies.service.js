@@ -97,6 +97,42 @@ let CompaniesService = class CompaniesService {
         }
         return company;
     }
+    async approve(id, merchantId) {
+        const company = await this.findOne(id, merchantId);
+        const updatedCompany = await this.prisma.company.update({
+            where: { id },
+            data: {
+                status: 'active',
+            },
+        });
+        await this.prisma.companyUser.updateMany({
+            where: { companyId: id },
+            data: {
+                isActive: true,
+            },
+        });
+        try {
+            await this.shopifyCompanySync.syncCompanyToShopify(id);
+        }
+        catch (error) {
+            console.error('Company Shopify sync failed after approval:', error);
+        }
+        return updatedCompany;
+    }
+    async reject(id, merchantId, reason) {
+        const company = await this.findOne(id, merchantId);
+        const updatedCompany = await this.prisma.company.update({
+            where: { id },
+            data: {
+                status: 'rejected',
+                settings: {
+                    ...company.settings,
+                    rejectionReason: reason,
+                },
+            },
+        });
+        return updatedCompany;
+    }
     async update(id, merchantId, data) {
         await this.findOne(id, merchantId);
         const company = await this.prisma.company.update({

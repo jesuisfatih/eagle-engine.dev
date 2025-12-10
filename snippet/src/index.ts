@@ -161,6 +161,7 @@ class EagleSnippet {
         })),
         totalPrice: cart.total_price,
         currency: cart.currency,
+        shop: this.config.shop, // Include shop domain for merchant lookup
       };
       
       console.log('🦅 Eagle: Sending cart to backend', {
@@ -495,7 +496,35 @@ class EagleSnippet {
 (function () {
   const scriptTag = document.currentScript as HTMLScriptElement;
   const apiUrl = scriptTag?.getAttribute('data-api-url') || 'https://api.eagledtfsupply.com';
-  const shop = scriptTag?.getAttribute('data-shop') || '';
+  
+  // Try to get shop domain from multiple sources
+  let shop = scriptTag?.getAttribute('data-shop') || '';
+  
+  if (!shop && typeof window !== 'undefined') {
+    // Try window.Shopify.shop
+    if ((window as any).Shopify?.shop) {
+      shop = (window as any).Shopify.shop;
+    }
+    // Try window.location.hostname
+    else if (window.location.hostname.includes('.myshopify.com')) {
+      shop = window.location.hostname;
+    }
+    // Try Shopify.Checkout.apiHost
+    else if ((window as any).Shopify?.Checkout?.apiHost) {
+      shop = (window as any).Shopify.Checkout.apiHost;
+    }
+    // Try meta tag
+    else {
+      const shopMeta = document.querySelector('meta[name="shopify-shop"]');
+      if (shopMeta) {
+        shop = shopMeta.getAttribute('content') || '';
+      }
+    }
+  }
+
+  if (!shop) {
+    console.warn('🦅 Eagle: Could not detect shop domain');
+  }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {

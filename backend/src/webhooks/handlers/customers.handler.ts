@@ -1,19 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ShopifyService } from '../../shopify/shopify.service';
 
 @Injectable()
 export class CustomersHandler {
   private readonly logger = new Logger(CustomersHandler.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private shopifyService: ShopifyService,
+  ) {}
 
   async handleCustomerCreate(customerData: any, headers: any) {
     try {
       const shop = headers['x-shopify-shop-domain'];
       
-      const merchant = await this.prisma.merchant.findUnique({
-        where: { shopDomain: shop },
-      });
+      const merchant = await this.shopifyService.getMerchantByShopDomain(shop);
 
       if (!merchant) {
         this.logger.warn(`Merchant not found for shop: ${shop}`);

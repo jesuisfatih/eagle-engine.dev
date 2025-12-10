@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { publicFetch } from '@/lib/api-client';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,10 +25,8 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/auth/login`, {
+      const response = await publicFetch('/api/v1/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
@@ -35,11 +34,13 @@ export default function LoginPage() {
         const data = await response.json();
         
         // Store auth data
-        localStorage.setItem('eagle_token', data.token);
+        localStorage.setItem('eagle_token', data.accessToken || data.token);
         localStorage.setItem('eagle_userId', data.user.id);
         localStorage.setItem('eagle_companyId', data.user.companyId);
+        localStorage.setItem('eagle_merchantId', data.user.merchantId || '');
         localStorage.setItem('eagle_userEmail', data.user.email);
         localStorage.setItem('eagle_userName', `${data.user.firstName} ${data.user.lastName}`);
+        localStorage.setItem('eagle_userRole', data.user.role || 'member');
         localStorage.setItem('eagle_loginTime', Date.now().toString());
         
         // Redirect to dashboard

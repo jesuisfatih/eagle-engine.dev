@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, UseGuards, BadRequestException } from '@nestjs/common';
 import { AbandonedCartsService } from './abandoned-carts.service';
 import { Public } from '../auth/decorators/public.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -8,51 +8,39 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 export class AbandonedCartsController {
   constructor(private abandonedCartsService: AbandonedCartsService) {}
 
-  @Public()
+  @UseGuards(JwtAuthGuard)
   @Get()
   async getAbandonedCarts(
+    @CurrentUser('merchantId') merchantId: string,
     @Query('companyId') companyId?: string,
     @Query('includeRecent') includeRecent?: string | boolean,
-    @Query() allQuery?: any, // Get all query params for debugging
   ) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     
-    // Debug: Log all query parameters
-    console.log('📦 getAbandonedCarts - All query params:', JSON.stringify(allQuery));
-    console.log('📦 getAbandonedCarts - includeRecent param:', includeRecent, typeof includeRecent);
-    
-    // Convert string to boolean - handle 'true', 'True', 'TRUE', etc.
-    // Also handle if it comes as boolean from query transformation
+    // Convert string to boolean
     let includeRecentBool = false;
     if (includeRecent === 'true' || includeRecent === 'True' || includeRecent === 'TRUE' || includeRecent === true) {
       includeRecentBool = true;
     }
-    
-    // Fallback: check allQuery if includeRecent is undefined
-    if (includeRecent === undefined && allQuery?.includeRecent) {
-      const allQueryValue = allQuery.includeRecent;
-      includeRecentBool = allQueryValue === 'true' || allQueryValue === 'True' || allQueryValue === 'TRUE' || allQueryValue === true;
-      console.log('📦 getAbandonedCarts - Using allQuery.includeRecent:', allQueryValue, '->', includeRecentBool);
-    }
-    
-    console.log('📦 getAbandonedCarts final:', { 
-      companyId, 
-      includeRecent, 
-      includeRecentType: typeof includeRecent,
-      includeRecentBool,
-      includeRecentBoolType: typeof includeRecentBool,
-    });
     
     return this.abandonedCartsService.getAbandonedCarts(merchantId, companyId, includeRecentBool);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('my-carts')
-  async getMyAbandonedCarts(@CurrentUser('companyId') companyId: string) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async getMyAbandonedCarts(
+    @CurrentUser('merchantId') merchantId: string,
+    @CurrentUser('companyId') companyId: string,
+  ) {
+    if (!merchantId || !companyId) {
+      throw new BadRequestException('Merchant ID and Company ID required');
+    }
     return this.abandonedCartsService.getAbandonedCarts(merchantId, companyId);
   }
 
+  // Public endpoints for snippet tracking
   @Public()
   @Post('sync')
   async syncCart(@Body() data: any) {
@@ -66,28 +54,13 @@ export class AbandonedCartsController {
       cartToken: data.cartToken,
       itemCount: data.items?.length || 0,
       customerEmail: data.customerEmail,
-      isAnonymous: !data.customerEmail,
-      items: data.items?.map((i: any) => ({
-        variantId: i.variant_id || i.variantId,
-        productId: i.product_id || i.productId,
-        price: i.price,
-      })),
     });
     try {
       const result = await this.abandonedCartsService.trackCart(data);
       console.log('✅ Cart tracked successfully:', result.id);
       return result;
     } catch (error: any) {
-      console.error('❌ Cart tracking failed:', {
-        message: error.message,
-        stack: error.stack,
-        data: {
-          cartToken: data.cartToken,
-          itemCount: data.items?.length,
-          firstItem: data.items?.[0],
-        },
-      });
-      // Return proper error response
+      console.error('❌ Cart tracking failed:', error.message);
       return {
         statusCode: 500,
         message: error.message || 'Internal server error',
@@ -102,10 +75,15 @@ export class AbandonedCartsController {
     return this.abandonedCartsService.getCartActivityLogs(cartId);
   }
 
-  @Public()
+  @UseGuards(JwtAuthGuard)
   @Get('activity')
-  async getAllCartActivity(@Query('limit') limit?: string) {
-    const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async getAllCartActivity(
+    @CurrentUser('merchantId') merchantId: string,
+    @Query('limit') limit?: string,
+  ) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
     return this.abandonedCartsService.getAllCartActivityLogs(merchantId, limit ? parseInt(limit) : 100);
   }
 }

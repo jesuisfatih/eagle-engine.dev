@@ -17,6 +17,7 @@ const session_sync_service_1 = require("./session-sync.service");
 const jwt_strategy_1 = require("./strategies/jwt.strategy");
 const shopify_oauth_service_1 = require("./shopify-oauth.service");
 const shopify_module_1 = require("../shopify/shopify.module");
+const mail_module_1 = require("../mail/mail.module");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -25,6 +26,7 @@ exports.AuthModule = AuthModule = __decorate([
         imports: [
             passport_1.PassportModule.register({ defaultStrategy: 'jwt' }),
             shopify_module_1.ShopifyModule,
+            mail_module_1.MailModule,
             jwt_1.JwtModule.registerAsync({
                 imports: [config_1.ConfigModule],
                 inject: [config_1.ConfigService],

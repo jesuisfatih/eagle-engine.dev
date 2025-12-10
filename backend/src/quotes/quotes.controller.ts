@@ -1,30 +1,41 @@
-import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, UseGuards, BadRequestException } from '@nestjs/common';
 import { QuotesService } from './quotes.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('quotes')
-@Public()
+@UseGuards(JwtAuthGuard)
 export class QuotesController {
   constructor(private quotesService: QuotesService) {}
 
   @Get()
-  async findAll() {
-    // Return all quotes for demo
-    return [];
+  async findAll(@CurrentUser('companyId') companyId: string) {
+    if (!companyId) {
+      throw new BadRequestException('Company ID required');
+    }
+    return this.quotesService.findAll(companyId);
   }
 
   @Post()
-  async create(@Body() body: any) {
-    const companyId = body.companyId || '6ecc682b-98ee-472d-977b-cffbbae081b8';
-    const userId = body.userId || '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async create(
+    @CurrentUser('companyId') companyId: string,
+    @CurrentUser('sub') userId: string,
+    @Body() body: any,
+  ) {
+    if (!companyId || !userId) {
+      throw new BadRequestException('Company ID and User ID required');
+    }
     return this.quotesService.create(companyId, userId, body);
   }
 
   @Post(':id/approve')
-  async approve(@Param('id') id: string) {
-    const userId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+  async approve(
+    @Param('id') id: string,
+    @CurrentUser('sub') userId: string,
+  ) {
+    if (!userId) {
+      throw new BadRequestException('User ID required');
+    }
     return this.quotesService.approve(id, userId);
   }
 

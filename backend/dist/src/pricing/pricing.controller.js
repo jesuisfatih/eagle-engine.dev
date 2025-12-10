@@ -15,15 +15,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PricingController = void 0;
 const common_1 = require("@nestjs/common");
 const pricing_service_1 = require("./pricing.service");
-const public_decorator_1 = require("../auth/decorators/public.decorator");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
 let PricingController = class PricingController {
     pricingService;
     constructor(pricingService) {
         this.pricingService = pricingService;
     }
-    async calculatePrices(body) {
-        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
-        const companyId = body.companyId || 'f0c2b2a5-4858-4d82-a542-5ce3bfe23a6d';
+    async calculatePrices(merchantId, companyId, body) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
+        if (!companyId) {
+            throw new common_1.BadRequestException('Company ID required');
+        }
         const variantIds = body.variantIds.map((id) => BigInt(id));
         return this.pricingService.calculatePrices({
             merchantId,
@@ -33,8 +38,10 @@ let PricingController = class PricingController {
             cartTotal: body.cartTotal,
         });
     }
-    async getRules(isActive, companyId) {
-        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    async getRules(merchantId, isActive, companyId) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         const filters = {};
         if (isActive !== undefined) {
             filters.isActive = isActive === 'true';
@@ -44,83 +51,101 @@ let PricingController = class PricingController {
         }
         return this.pricingService.getRules(merchantId, filters);
     }
-    async getRule(id) {
-        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    async getRule(id, merchantId) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.pricingService.getRule(id, merchantId);
     }
-    async createRule(body) {
-        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    async createRule(merchantId, body) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.pricingService.createRule(merchantId, body);
     }
-    async updateRule(id, body) {
-        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    async updateRule(id, merchantId, body) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.pricingService.updateRule(id, merchantId, body);
     }
-    async deleteRule(id) {
-        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    async deleteRule(id, merchantId) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.pricingService.deleteRule(id, merchantId);
     }
-    async toggleRule(id, isActive) {
-        const merchantId = '6ecc682b-98ee-472d-977b-cffbbae081b8';
+    async toggleRule(id, merchantId, isActive) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
         return this.pricingService.toggleRuleActive(id, merchantId, isActive);
     }
 };
 exports.PricingController = PricingController;
 __decorate([
     (0, common_1.Post)('calculate'),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('companyId')),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [String, String, Object]),
     __metadata("design:returntype", Promise)
 ], PricingController.prototype, "calculatePrices", null);
 __decorate([
     (0, common_1.Get)('rules'),
-    __param(0, (0, common_1.Query)('isActive')),
-    __param(1, (0, common_1.Query)('companyId')),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(1, (0, common_1.Query)('isActive')),
+    __param(2, (0, common_1.Query)('companyId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", Promise)
 ], PricingController.prototype, "getRules", null);
 __decorate([
     (0, common_1.Get)('rules/:id'),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], PricingController.prototype, "getRule", null);
 __decorate([
     (0, common_1.Post)('rules'),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], PricingController.prototype, "createRule", null);
 __decorate([
     (0, common_1.Put)('rules/:id'),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [String, String, Object]),
     __metadata("design:returntype", Promise)
 ], PricingController.prototype, "updateRule", null);
 __decorate([
     (0, common_1.Delete)('rules/:id'),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], PricingController.prototype, "deleteRule", null);
 __decorate([
     (0, common_1.Put)('rules/:id/toggle'),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)('isActive')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(2, (0, common_1.Body)('isActive')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Boolean]),
+    __metadata("design:paramtypes", [String, String, Boolean]),
     __metadata("design:returntype", Promise)
 ], PricingController.prototype, "toggleRule", null);
 exports.PricingController = PricingController = __decorate([
     (0, common_1.Controller)('pricing'),
-    (0, public_decorator_1.Public)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [pricing_service_1.PricingService])
 ], PricingController);
 //# sourceMappingURL=pricing.controller.js.map

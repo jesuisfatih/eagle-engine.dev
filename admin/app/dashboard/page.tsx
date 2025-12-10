@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, adminFetch } from '@/lib/api-client';
 import QuickActions from './components/QuickActions';
 import StatsRefresh from './components/StatsRefresh';
 import Modal from '@/components/Modal';
@@ -17,8 +17,7 @@ export default function DashboardPage() {
 
   const loadStats = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      const response = await fetch(`${API_URL}/api/v1/merchants/stats`);
+      const response = await adminFetch('/api/v1/merchants/stats');
       const data = await response.json();
       setStats(data);
       setError('');
@@ -39,11 +38,16 @@ export default function DashboardPage() {
 
   const triggerSync = async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
-      await fetch(`${API_URL}/api/v1/sync/initial`, {
+      const merchantId = localStorage.getItem('eagle_merchantId') || '';
+      
+      if (!merchantId) {
+        setSyncModal({show: true, message: '❌ Merchant ID not found. Please configure merchant settings.'});
+        return;
+      }
+      
+      await adminFetch('/api/v1/sync/initial', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ merchantId: '6ecc682b-98ee-472d-977b-cffbbae081b8' })
+        body: JSON.stringify({ merchantId })
       });
       setSyncModal({show: true, message: '✅ Sync started! Data will appear in a few minutes.'});
       setTimeout(() => {
