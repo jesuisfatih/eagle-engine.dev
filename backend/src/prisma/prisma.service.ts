@@ -77,6 +77,26 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.prisma.syncLog;
   }
 
+  get wishlist() {
+    return this.prisma.wishlist;
+  }
+
+  get wishlistItem() {
+    return this.prisma.wishlistItem;
+  }
+
+  get address() {
+    return this.prisma.address;
+  }
+
+  get supportTicket() {
+    return this.prisma.supportTicket;
+  }
+
+  get ticketResponse() {
+    return this.prisma.ticketResponse;
+  }
+
   async onModuleInit() {
     try {
       await this.$connect();
