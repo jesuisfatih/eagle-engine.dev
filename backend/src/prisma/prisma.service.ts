@@ -25,6 +25,18 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.prisma.$disconnect();
   }
 
+  $queryRaw(query: TemplateStringsArray, ...values: any[]) {
+    return this.prisma.$queryRaw(query, ...values);
+  }
+
+  $executeRaw(query: TemplateStringsArray, ...values: any[]) {
+    return this.prisma.$executeRaw(query, ...values);
+  }
+
+  $transaction(fn: any) {
+    return this.prisma.$transaction(fn);
+  }
+
   get merchant() {
     return this.prisma.merchant;
   }
