@@ -1,5 +1,6 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
 import * as crypto from 'crypto';
@@ -24,6 +25,7 @@ export class ShopifyOauthService {
   constructor(
     private config: ConfigService,
     private prisma: PrismaService,
+    private jwtService: JwtService,
   ) {
     this.apiKey = this.config.get<string>('SHOPIFY_API_KEY') || '';
     this.apiSecret = this.config.get<string>('SHOPIFY_API_SECRET') || '';
@@ -129,9 +131,21 @@ export class ShopifyOauthService {
 
     this.logger.log(`Merchant ${merchant.shopDomain} authenticated successfully`);
 
+    // Generate JWT for merchant
+    const jwtPayload = {
+      sub: merchant.id,
+      merchantId: merchant.id,
+      shopDomain: merchant.shopDomain,
+      type: 'merchant',
+    };
+    
+    const jwtToken = this.jwtService.sign(jwtPayload, {
+      expiresIn: this.config.get<string>('JWT_EXPIRES_IN', '7d'),
+    });
+
     return {
       merchant,
-      accessToken: 'GENERATE_JWT_FOR_MERCHANT_HERE', // TODO: Generate JWT for merchant
+      accessToken: jwtToken,
     };
   }
 }

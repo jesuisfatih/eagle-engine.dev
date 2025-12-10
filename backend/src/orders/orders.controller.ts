@@ -11,32 +11,50 @@ export class OrdersController {
   @Get()
   async findAll(
     @CurrentUser('merchantId') merchantId: string,
-    @Query('companyId') companyId?: string,
+    @CurrentUser('companyId') userCompanyId: string,
+    @CurrentUser('role') role: string,
+    @Query('companyId') queryCompanyId?: string,
     @Query('status') status?: string,
   ) {
     if (!merchantId) {
       throw new BadRequestException('Merchant ID required');
     }
+    
+    // Security: Company users can only see their own company's orders
+    // Admin/merchant can see all or filter by company
+    let companyId = queryCompanyId;
+    
+    if (userCompanyId) {
+      // User is a company user - force their companyId filter
+      companyId = userCompanyId;
+    }
+    
     return this.ordersService.findAll(merchantId, { companyId, status });
   }
 
   @Get('stats')
-  async getStats(@CurrentUser('merchantId') merchantId: string) {
+  async getStats(
+    @CurrentUser('merchantId') merchantId: string,
+    @CurrentUser('companyId') companyId: string,
+  ) {
     if (!merchantId) {
       throw new BadRequestException('Merchant ID required');
     }
-    return this.ordersService.getStats(merchantId);
+    // If user has companyId, get stats for their company only
+    return this.ordersService.getStats(merchantId, companyId);
   }
 
   @Get(':id')
   async findOne(
     @Param('id') id: string,
     @CurrentUser('merchantId') merchantId: string,
+    @CurrentUser('companyId') companyId: string,
   ) {
     if (!merchantId) {
       throw new BadRequestException('Merchant ID required');
     }
-    return this.ordersService.findOne(id, merchantId);
+    // Pass companyId to ensure user can only access their company's orders
+    return this.ordersService.findOne(id, merchantId, companyId);
   }
 }
 

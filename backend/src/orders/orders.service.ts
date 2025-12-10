@@ -39,9 +39,16 @@ export class OrdersService {
     });
   }
 
-  async findOne(id: string, merchantId: string) {
+  async findOne(id: string, merchantId: string, companyId?: string) {
+    const where: any = { id, merchantId };
+    
+    // If companyId provided, enforce it (for company users)
+    if (companyId) {
+      where.companyId = companyId;
+    }
+    
     return this.prisma.orderLocal.findFirst({
-      where: { id, merchantId },
+      where,
       include: {
         company: true,
         companyUser: true,
@@ -49,11 +56,17 @@ export class OrdersService {
     });
   }
 
-  async getStats(merchantId: string) {
+  async getStats(merchantId: string, companyId?: string) {
+    const where: any = { merchantId };
+    
+    if (companyId) {
+      where.companyId = companyId;
+    }
+    
     const [total, totalRevenue] = await Promise.all([
-      this.prisma.orderLocal.count({ where: { merchantId } }),
+      this.prisma.orderLocal.count({ where }),
       this.prisma.orderLocal.aggregate({
-        where: { merchantId },
+        where,
         _sum: { totalPrice: true },
       }),
     ]);

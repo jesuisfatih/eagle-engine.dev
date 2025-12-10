@@ -57,6 +57,10 @@ export class ShopifyService {
   buildAdminApiUrl(shop: string, path: string): string {
     return `https://${shop}/admin/api/${this.apiVersion}${path}`;
   }
+
+  buildAdminGraphQLUrl(shop: string): string {
+    return `https://${shop}/admin/api/${this.apiVersion}/graphql.json`;
+  }
 }
 
 

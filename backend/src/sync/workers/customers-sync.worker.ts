@@ -55,7 +55,10 @@ export class CustomersSyncWorker {
           const totalSpent = customer.amountSpent?.amount 
             ? parseFloat(customer.amountSpent.amount) 
             : 0;
-          const ordersCount = customer.numberOfOrders || 0;
+          // Shopify returns numberOfOrders as String, convert to Int
+          const ordersCount = customer.numberOfOrders 
+            ? parseInt(customer.numberOfOrders, 10) 
+            : 0;
           
           await this.prisma.shopifyCustomer.upsert({
             where: {
