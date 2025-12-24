@@ -1,14 +1,28 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { adminFetch } from '@/lib/api-client';
+import { 
+  PageHeader, 
+  PageContent, 
+  StatsCard,
+  DataTable,
+  type DataTableColumn,
+  StatusBadge,
+  showToast
+} from '@/components/ui';
+import type { OrderWithItems } from '@/types';
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<any[]>([]);
-  const [allOrders, setAllOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('');
-  const [companyFilter, setCompanyFilter] = useState('');
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    paid: 0,
+    revenue: 0,
+  });
 
   useEffect(() => {
     loadOrders();
@@ -16,134 +30,222 @@ export default function OrdersPage() {
 
   const loadOrders = async () => {
     try {
+      setLoading(true);
       const response = await adminFetch('/api/v1/orders');
       const data = await response.json();
-      setOrders(Array.isArray(data) ? data : []);
-      setAllOrders(Array.isArray(data) ? data : []);
+      const orderList = Array.isArray(data) ? data : [];
+      setOrders(orderList);
+      
+      // Calculate stats
+      setStats({
+        total: orderList.length,
+        pending: orderList.filter((o: OrderWithItems) => o.paymentStatus === 'pending').length,
+        paid: orderList.filter((o: OrderWithItems) => o.paymentStatus === 'paid').length,
+        revenue: orderList.reduce((sum: number, o: OrderWithItems) => sum + Number(o.totalPrice || 0), 0),
+      });
     } catch (err) {
       console.error('Load orders error:', err);
       setOrders([]);
-      setAllOrders([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const applyFilters = () => {
-    let filtered = [...allOrders];
+  const exportCSV = () => {
+    const csv = 'Order,Company,Total,Status,Date\n' + orders.map(o => 
+      `${o.orderNumber},${o.company?.name || 'N/A'},${o.totalPrice},${o.paymentStatus},${new Date(o.createdAt).toLocaleDateString()}`
+    ).join('\n');
     
-    if (statusFilter) {
-      filtered = filtered.filter(o => o.financialStatus === statusFilter);
-    }
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orders-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
     
-    if (companyFilter) {
-      filtered = filtered.filter(o => o.companyId === companyFilter);
-    }
-    
-    setOrders(filtered);
+    showToast('success', 'Orders exported successfully!');
   };
+
+  // Table columns
+  const columns: DataTableColumn<OrderWithItems>[] = [
+    {
+      key: 'orderNumber',
+      label: 'Order ID',
+      sortable: true,
+      render: (order) => (
+        <Link href={`/orders/${order.id}`} className="fw-semibold text-primary">
+          #{order.orderNumber}
+        </Link>
+      ),
+    },
+    {
+      key: 'company',
+      label: 'Company',
+      sortable: true,
+      render: (order) => order.company?.name || 'N/A',
+    },
+    {
+      key: 'createdAt',
+      label: 'Date',
+      sortable: true,
+      render: (order) => new Date(order.createdAt).toLocaleDateString(),
+    },
+    {
+      key: 'totalPrice',
+      label: 'Total',
+      sortable: true,
+      className: 'fw-semibold',
+      render: (order) => `$${Number(order.totalPrice || 0).toFixed(2)}`,
+    },
+    {
+      key: 'paymentStatus',
+      label: 'Payment',
+      sortable: true,
+      render: (order) => (
+        <StatusBadge 
+          status={order.paymentStatus} 
+          colorMap={{
+            paid: 'success',
+            pending: 'warning',
+            refunded: 'info',
+            failed: 'danger',
+          }}
+        />
+      ),
+    },
+    {
+      key: 'fulfillmentStatus',
+      label: 'Fulfillment',
+      sortable: true,
+      render: (order) => (
+        <StatusBadge 
+          status={order.fulfillmentStatus} 
+          colorMap={{
+            fulfilled: 'success',
+            partial: 'warning',
+            unfulfilled: 'secondary',
+          }}
+        />
+      ),
+    },
+  ];
+
+  // Row actions
+  const rowActions = (order: OrderWithItems) => (
+    <div className="btn-group">
+      <Link href={`/orders/${order.id}`} className="btn btn-sm btn-primary">
+        <i className="ti ti-eye"></i>
+      </Link>
+      {order.shopifyOrderId && (
+        <a 
+          href={`https://admin.shopify.com/store/eagledtfsupply/orders/${order.shopifyOrderId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-sm btn-outline-primary"
+          title="View in Shopify"
+        >
+          <i className="ti ti-external-link"></i>
+        </a>
+      )}
+    </div>
+  );
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h4 className="fw-bold mb-1">Orders</h4>
-          <p className="mb-0 text-muted">Manage all B2B orders</p>
+      <PageHeader
+        title="Orders"
+        subtitle={`${orders.length} total orders`}
+        actions={[
+          { 
+            label: 'Export CSV', 
+            icon: 'download', 
+            variant: 'success',
+            onClick: exportCSV 
+          },
+          { 
+            label: 'Refresh', 
+            icon: 'refresh', 
+            variant: 'secondary',
+            onClick: loadOrders 
+          },
+        ]}
+      />
+
+      {/* Stats Cards */}
+      <div className="row g-4 mb-4">
+        <div className="col-sm-6 col-lg-3">
+          <StatsCard 
+            title="Total Orders" 
+            value={stats.total} 
+            icon="shopping-cart"
+            iconColor="primary"
+            loading={loading}
+          />
         </div>
-        <div className="d-flex gap-2">
-          <button
-            onClick={() => {
-              const csv = 'Order,Company,Total,Status\n' + orders.map(o => 
-                `${o.shopifyOrderNumber},${o.company?.name || 'N/A'},${o.totalPrice},${o.financialStatus}`
-              ).join('\n');
-              const blob = new Blob([csv], { type: 'text/csv' });
-              const url = window.URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = 'orders.csv';
-              a.click();
-            }}
-            className="btn btn-success"
-          >
-            <i className="ti ti-download me-1"></i>Export CSV
-          </button>
-          <select
-            className="form-select"
-            style={{width: '150px'}}
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setTimeout(applyFilters, 100);
-            }}
-          >
-            <option value="">All Status</option>
-            <option value="paid">Paid</option>
-            <option value="pending">Pending</option>
-            <option value="refunded">Refunded</option>
-          </select>
-          <button onClick={() => {
-            setStatusFilter('');
-            setCompanyFilter('');
-            setOrders(allOrders);
-          }} className="btn btn-sm btn-label-secondary">
-            <i className="ti ti-x me-1"></i>Clear
-          </button>
+        <div className="col-sm-6 col-lg-3">
+          <StatsCard 
+            title="Pending" 
+            value={stats.pending} 
+            icon="clock"
+            iconColor="warning"
+            loading={loading}
+          />
+        </div>
+        <div className="col-sm-6 col-lg-3">
+          <StatsCard 
+            title="Paid" 
+            value={stats.paid} 
+            icon="check"
+            iconColor="success"
+            loading={loading}
+          />
+        </div>
+        <div className="col-sm-6 col-lg-3">
+          <StatsCard 
+            title="Revenue" 
+            value={`$${stats.revenue.toFixed(2)}`} 
+            icon="currency-dollar"
+            iconColor="info"
+            loading={loading}
+          />
         </div>
       </div>
 
-      <div className="card">
-        <div className="card-body">
-          {loading ? (
-            <div className="text-center py-4">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-            </div>
-          ) : orders.length === 0 ? (
-            <div className="text-center py-5">
-              <i className="ti ti-shopping-cart ti-3x text-muted mb-3"></i>
-              <h5>No orders yet</h5>
-              <p className="text-muted">Orders will appear here after customers make purchases</p>
-            </div>
-          ) : (
-            <div className="table-responsive">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Order ID</th>
-                    <th>Company</th>
-                    <th>Date</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.map((order) => (
-                    <tr key={order.id}>
-                      <td className="fw-semibold">#{order.shopifyOrderNumber}</td>
-                      <td>{order.company?.name || 'N/A'}</td>
-                      <td className="small">{new Date(order.createdAt).toLocaleDateString()}</td>
-                      <td className="fw-semibold">${order.totalPrice}</td>
-                      <td>
-                        <span className="badge bg-label-success">
-                          {order.financialStatus}
-                        </span>
-                      </td>
-                      <td>
-                        <a href={`/orders/${order.id}`} className="btn btn-sm btn-primary">
-                          <i className="ti ti-eye me-1"></i>
-                          View
-                        </a>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Orders Table */}
+      <PageContent
+        loading={loading}
+        empty={{
+          show: !loading && orders.length === 0,
+          icon: 'shopping-cart',
+          title: 'No orders yet',
+          message: 'Orders will appear here after customers make purchases.',
+        }}
+      >
+        <DataTable
+          data={orders}
+          columns={columns}
+          loading={loading}
+          searchable
+          searchPlaceholder="Search orders..."
+          searchFields={['orderNumber', 'company.name']}
+          statusFilter={{
+            field: 'paymentStatus',
+            options: [
+              { value: 'paid', label: 'Paid', color: 'success' },
+              { value: 'pending', label: 'Pending', color: 'warning' },
+              { value: 'refunded', label: 'Refunded', color: 'info' },
+              { value: 'failed', label: 'Failed', color: 'danger' },
+            ],
+          }}
+          defaultSortKey="createdAt"
+          defaultSortOrder="desc"
+          rowActions={rowActions}
+          onRowClick={(order) => window.location.href = `/orders/${order.id}`}
+          emptyIcon="shopping-cart"
+          emptyTitle="No orders found"
+          emptyMessage="Try adjusting your search or filter criteria."
+        />
+      </PageContent>
     </div>
   );
 }

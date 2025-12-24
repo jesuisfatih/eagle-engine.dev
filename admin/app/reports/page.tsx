@@ -6,7 +6,7 @@ export default function ReportsPage() {
   const generateReport = async (type: string) => {
     try {
       // Fetch data
-      let data: any[] = [];
+      let data: unknown[] = [];
       switch (type) {
         case 'sales':
           data = await adminFetch('/api/v1/orders').then(r => r.json());

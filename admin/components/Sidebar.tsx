@@ -2,114 +2,89 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 
-const menuItems = [
+/**
+ * Menu Item Interface
+ */
+interface MenuItem {
+  title: string;
+  icon: string;
+  href: string;
+}
+
+/**
+ * Menu Group Interface
+ */
+interface MenuGroup {
+  label: string;
+  items: MenuItem[];
+}
+
+/**
+ * Organized menu structure with groups
+ */
+const menuGroups: MenuGroup[] = [
   {
-    title: 'Dashboard',
-    icon: 'ti-smart-home',
-    href: '/dashboard',
+    label: '',
+    items: [
+      { title: 'Dashboard', icon: 'ti-smart-home', href: '/dashboard' },
+    ],
   },
   {
-    title: 'Companies',
-    icon: 'ti-building',
-    href: '/companies',
+    label: 'BUSINESS',
+    items: [
+      { title: 'Companies', icon: 'ti-building', href: '/companies' },
+      { title: 'Users', icon: 'ti-users', href: '/users' },
+      { title: 'Orders', icon: 'ti-shopping-cart', href: '/orders' },
+      { title: 'Quotes', icon: 'ti-file-invoice', href: '/quotes' },
+      { title: 'Abandoned Carts', icon: 'ti-shopping-cart-off', href: '/abandoned-carts' },
+    ],
   },
   {
-    title: 'Users',
-    icon: 'ti-users',
-    href: '/users',
+    label: 'CATALOG',
+    items: [
+      { title: 'Products', icon: 'ti-package', href: '/catalog' },
+      { title: 'Pricing Rules', icon: 'ti-discount', href: '/pricing' },
+    ],
   },
   {
-    title: 'Pricing Rules',
-    icon: 'ti-discount',
-    href: '/pricing',
+    label: 'ANALYTICS',
+    items: [
+      { title: 'Analytics', icon: 'ti-chart-line', href: '/analytics' },
+      { title: 'Reports', icon: 'ti-file-analytics', href: '/reports' },
+      { title: 'Activity', icon: 'ti-activity', href: '/activity' },
+      { title: 'Sessions', icon: 'ti-device-desktop', href: '/sessions' },
+    ],
   },
   {
-    title: 'Orders',
-    icon: 'ti-shopping-cart',
-    href: '/orders',
+    label: 'SYSTEM',
+    items: [
+      { title: 'Settings', icon: 'ti-settings', href: '/settings' },
+      { title: 'Webhooks', icon: 'ti-webhook', href: '/webhooks' },
+      { title: 'Integrations', icon: 'ti-plug', href: '/integrations' },
+      { title: 'API Keys', icon: 'ti-key', href: '/api-keys' },
+    ],
   },
   {
-    title: 'Analytics',
-    icon: 'ti-chart-line',
-    href: '/analytics',
-  },
-  {
-    title: 'Abandoned Carts',
-    icon: 'ti-shopping-cart-off',
-    href: '/abandoned-carts',
-  },
-  {
-    title: 'Quotes',
-    icon: 'ti-file-invoice',
-    href: '/quotes',
-  },
-  {
-    title: 'Settings',
-    icon: 'ti-settings',
-    href: '/settings',
-  },
-  {
-    title: 'Sync Logs',
-    icon: 'ti-file-text',
-    href: '/settings/sync-logs',
-  },
-  {
-    title: 'Reports',
-    icon: 'ti-file-analytics',
-    href: '/reports',
-  },
-  {
-    title: 'Webhooks',
-    icon: 'ti-webhook',
-    href: '/webhooks',
-  },
-  {
-    title: 'Activity',
-    icon: 'ti-activity',
-    href: '/activity',
-  },
-  {
-    title: 'Customers',
-    icon: 'ti-user-check',
-    href: '/customers',
-  },
-  {
-    title: 'Catalog',
-    icon: 'ti-package',
-    href: '/catalog',
-  },
-  {
-    title: 'Integrations',
-    icon: 'ti-plug',
-    href: '/integrations',
-  },
-  {
-    title: 'Email Templates',
-    icon: 'ti-mail',
-    href: '/email-templates',
-  },
-  {
-    title: 'Permissions',
-    icon: 'ti-shield-lock',
-    href: '/permissions',
-  },
-  {
-    title: 'API Keys',
-    icon: 'ti-key',
-    href: '/api-keys',
-  },
-  {
-    title: 'Sessions',
-    icon: 'ti-device-desktop',
-    href: '/sessions',
-  },
-  {
-    title: 'Support',
-    icon: 'ti-help',
-    href: '/support',
+    label: 'SUPPORT',
+    items: [
+      { title: 'Support Tickets', icon: 'ti-help', href: '/support' },
+      { title: 'Customers', icon: 'ti-user-check', href: '/customers' },
+    ],
   },
 ];
+
+/**
+ * Check if a menu item is active
+ */
+function isMenuItemActive(pathname: string | null, href: string): boolean {
+  if (!pathname) return false;
+  if (pathname === href) return true;
+  // Child route match (e.g., /companies/123 matches /companies)
+  if (pathname.startsWith(href + '/')) return true;
+  return false;
+}
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -133,21 +108,30 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <ul className="menu-inner py-1 ps ps--active-y">
-        {menuItems.map((item) => {
-          // Exact match or child route match (but not parent-child conflict)
-          const isExactMatch = pathname === item.href;
-          const isChildRoute = pathname?.startsWith(item.href + '/');
-          const isActive = isExactMatch || (isChildRoute && !menuItems.some(mi => pathname === mi.href));
-          
-          return (
-            <li key={item.href} className={`menu-item ${isActive ? 'active' : ''}`}>
-              <Link href={item.href} className="menu-link">
-                <i className={`menu-icon tf-icons ti ${item.icon}`}></i>
-                <div>{item.title}</div>
-              </Link>
-            </li>
-          );
-        })}
+        {menuGroups.map((group, groupIndex) => (
+          <div key={groupIndex}>
+            {/* Group Label */}
+            {group.label && (
+              <li className="menu-header small text-uppercase">
+                <span className="menu-header-text">{group.label}</span>
+              </li>
+            )}
+            
+            {/* Group Items */}
+            {group.items.map((item) => {
+              const isActive = isMenuItemActive(pathname, item.href);
+              
+              return (
+                <li key={item.href} className={`menu-item ${isActive ? 'active' : ''}`}>
+                  <Link href={item.href} className="menu-link">
+                    <i className={`menu-icon tf-icons ti ${item.icon}`}></i>
+                    <div>{item.title}</div>
+                  </Link>
+                </li>
+              );
+            })}
+          </div>
+        ))}
       </ul>
     </aside>
   );

@@ -6,11 +6,17 @@ import Link from 'next/link';
 import Modal from '@/components/Modal';
 import CompanyEditModal from '@/components/CompanyEditModal';
 import { adminFetch } from '@/lib/api-client';
+import type { Company, UserWithCompany, Order, PricingRule, CompanyFormData } from '@/types';
+
+interface CompanyDetail extends Company {
+  orders?: Order[];
+  pricingRules?: PricingRule[];
+}
 
 export default function CompanyDetailPage() {
   const params = useParams();
-  const [company, setCompany] = useState<any>(null);
-  const [users, setUsers] = useState<any[]>([]);
+  const [company, setCompany] = useState<CompanyDetail | null>(null);
+  const [users, setUsers] = useState<UserWithCompany[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -59,16 +65,16 @@ export default function CompanyDetailPage() {
       } else {
         throw new Error('Failed to send invitation');
       }
-    } catch (err: any) {
+    } catch (err) {
       setInviteResult({
         show: true,
         type: 'error',
-        message: err.message,
+        message: err instanceof Error ? err.message : 'An error occurred',
       });
     }
   };
 
-  const handleEditCompany = async (data: any) => {
+  const handleEditCompany = async (data: CompanyFormData) => {
     try {
       await adminFetch(`/api/v1/companies/${params.id}`, {
         method: 'PUT',
@@ -97,8 +103,8 @@ export default function CompanyDetailPage() {
       } else {
         setApproveModal({show: true, message: '❌ Failed to approve company'});
       }
-    } catch (err: any) {
-      setApproveModal({show: true, message: '❌ Error: ' + err.message});
+    } catch (err) {
+      setApproveModal({show: true, message: '❌ Error: ' + (err instanceof Error ? err.message : 'Unknown error')});
     }
   };
 
@@ -219,7 +225,7 @@ export default function CompanyDetailPage() {
                 </div>
                 <div className="d-flex justify-content-between">
                   <span className="text-muted">Total Spent</span>
-                  <span className="fw-bold">${company?.orders?.reduce((sum: number, o: any) => sum + Number(o.totalPrice || 0), 0).toFixed(2) || '0.00'}</span>
+                  <span className="fw-bold">${company?.orders?.reduce((sum: number, o) => sum + Number(o.total || 0), 0).toFixed(2) || '0.00'}</span>
                 </div>
               </div>
             </div>
@@ -232,7 +238,7 @@ export default function CompanyDetailPage() {
                 {company?.pricingRules?.length === 0 ? (
                   <p className="text-muted small mb-0">No pricing rules assigned</p>
                 ) : (
-                  company?.pricingRules?.map((rule: any) => (
+                  company?.pricingRules?.map((rule) => (
                     <div key={rule.id} className="mb-2">
                       <span className="badge bg-label-success">{rule.name}</span>
                     </div>
@@ -264,7 +270,7 @@ export default function CompanyDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {company.orders.slice(0, 5).map((order: any) => (
+                  {company.orders.slice(0, 5).map((order) => (
                     <tr key={order.id}>
                       <td className="fw-semibold">#{order.shopifyOrderNumber}</td>
                       <td className="small">{new Date(order.createdAt).toLocaleDateString()}</td>

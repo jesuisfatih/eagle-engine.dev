@@ -1,8 +1,9 @@
 import { AbandonedCartsService } from './abandoned-carts.service';
+import { TrackCartDto, SyncCartDto, GetAbandonedCartsQueryDto } from './dto/abandoned-cart.dto';
 export declare class AbandonedCartsController {
     private abandonedCartsService;
     constructor(abandonedCartsService: AbandonedCartsService);
-    getAbandonedCarts(merchantId: string, companyId?: string, includeRecent?: string | boolean): Promise<({
+    getAbandonedCarts(merchantId: string, query: GetAbandonedCartsQueryDto): Promise<({
         company: {
             name: string;
             id: string;
@@ -62,12 +63,12 @@ export declare class AbandonedCartsController {
             productId: string | null;
             variantId: string | null;
             shopifyVariantId: bigint | null;
+            discountAmount: import("@prisma/client-runtime-utils").Decimal;
             sku: string | null;
             variantTitle: string | null;
             quantity: number;
             listPrice: import("@prisma/client-runtime-utils").Decimal;
             unitPrice: import("@prisma/client-runtime-utils").Decimal;
-            discountAmount: import("@prisma/client-runtime-utils").Decimal;
             lineTotal: import("@prisma/client-runtime-utils").Decimal | null;
             appliedPricingRuleId: string | null;
         })[];
@@ -154,12 +155,12 @@ export declare class AbandonedCartsController {
             productId: string | null;
             variantId: string | null;
             shopifyVariantId: bigint | null;
+            discountAmount: import("@prisma/client-runtime-utils").Decimal;
             sku: string | null;
             variantTitle: string | null;
             quantity: number;
             listPrice: import("@prisma/client-runtime-utils").Decimal;
             unitPrice: import("@prisma/client-runtime-utils").Decimal;
-            discountAmount: import("@prisma/client-runtime-utils").Decimal;
             lineTotal: import("@prisma/client-runtime-utils").Decimal | null;
             appliedPricingRuleId: string | null;
         })[];
@@ -186,7 +187,7 @@ export declare class AbandonedCartsController {
         notes: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
     })[]>;
-    syncCart(data: any): Promise<{
+    syncCart(dto: SyncCartDto): Promise<{
         id: string;
         status: string;
         createdAt: Date;
@@ -209,7 +210,7 @@ export declare class AbandonedCartsController {
         notes: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
     }>;
-    trackCart(data: any): Promise<{
+    trackCart(dto: TrackCartDto): Promise<{
         id: string;
         status: string;
         createdAt: Date;

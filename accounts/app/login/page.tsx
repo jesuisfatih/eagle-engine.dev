@@ -49,7 +49,8 @@ export default function LoginPage() {
         const errorData = await response.json();
         setError(errorData.message || 'Invalid credentials');
       }
-    } catch (err: any) {
+    } catch (err) {
+      console.error('Login error:', err);
       setError('Connection error. Please try again.');
     } finally {
       setLoading(false);

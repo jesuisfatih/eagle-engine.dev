@@ -12,6 +12,7 @@ var CheckoutService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CheckoutService = void 0;
 const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
 const prisma_service_1 = require("../prisma/prisma.service");
 const shopify_rest_service_1 = require("../shopify/shopify-rest.service");
 const shopify_admin_discount_service_1 = require("../shopify/shopify-admin-discount.service");
@@ -21,6 +22,7 @@ const pricing_calculator_service_1 = require("../pricing/pricing-calculator.serv
 const shopify_sso_service_1 = require("../shopify/shopify-sso.service");
 const shopify_customer_sync_service_1 = require("../shopify/shopify-customer-sync.service");
 let CheckoutService = CheckoutService_1 = class CheckoutService {
+    config;
     prisma;
     shopifyRest;
     shopifyAdminDiscount;
@@ -30,7 +32,9 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
     shopifySso;
     shopifyCustomerSync;
     logger = new common_1.Logger(CheckoutService_1.name);
-    constructor(prisma, shopifyRest, shopifyAdminDiscount, shopifyStorefront, discountEngine, pricingCalculator, shopifySso, shopifyCustomerSync) {
+    storefrontToken;
+    constructor(config, prisma, shopifyRest, shopifyAdminDiscount, shopifyStorefront, discountEngine, pricingCalculator, shopifySso, shopifyCustomerSync) {
+        this.config = config;
         this.prisma = prisma;
         this.shopifyRest = shopifyRest;
         this.shopifyAdminDiscount = shopifyAdminDiscount;
@@ -39,6 +43,7 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
         this.pricingCalculator = pricingCalculator;
         this.shopifySso = shopifySso;
         this.shopifyCustomerSync = shopifyCustomerSync;
+        this.storefrontToken = this.config.get('SHOPIFY_STOREFRONT_TOKEN', '');
     }
     async createCheckout(cartId, userId) {
         const cart = await this.prisma.cart.findUnique({
@@ -117,32 +122,77 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
             discountCode = await this.discountEngine.generateDiscountCode(merchant.id, cart.companyId, cartId, discountAmount);
             try {
                 const shopifyDiscount = await this.shopifyAdminDiscount.createPriceRule(merchant.shopDomain, merchant.accessToken, discountCode, discountAmount, 'fixed_amount');
-                this.logger.log(`Shopify discount created: ${discountCode} (ID: ${shopifyDiscount.priceRuleId})`);
-                await this.prisma.discountCode.updateMany({
-                    where: { code: discountCode },
-                    data: { shopifyDiscountId: BigInt(shopifyDiscount.priceRuleId) },
-                });
+                this.logger.log(`Shopify discount created: ${discountCode} (ID: ${shopifyDiscount.discountId})`);
+                if (shopifyDiscount.discountId) {
+                    await this.prisma.discountCode.updateMany({
+                        where: { code: discountCode },
+                        data: { shopifyDiscountId: BigInt(0) },
+                    });
+                }
             }
             catch (error) {
                 this.logger.error('Failed to create Shopify discount', error);
             }
         }
         const lines = cart.items.map((item) => ({
-            merchandiseId: `gid://shopify/ProductVariant/${item.shopifyVariantId}`,
+            merchandiseId: this.shopifyStorefront.formatVariantId(item.shopifyVariantId),
             quantity: item.quantity,
         }));
         let checkoutUrl;
         const settings = merchant.settings || {};
-        const storefrontToken = settings.storefrontToken || '';
-        if (storefrontToken) {
+        const storefrontToken = this.storefrontToken || settings.storefrontToken || '';
+        if (storefrontToken && user) {
             try {
-                const result = await this.shopifyStorefront.createCart(merchant.shopDomain, storefrontToken, lines, discountCode ? [discountCode] : undefined, shopifyCustomerAccessToken);
+                const shippingAddress = await this.getShippingAddress(user);
+                const buyerIdentity = {
+                    email: user.email,
+                    phone: user.company?.phone || undefined,
+                    countryCode: 'TR',
+                    deliveryAddressPreferences: shippingAddress
+                        ? [
+                            {
+                                deliveryAddress: {
+                                    firstName: user.firstName || '',
+                                    lastName: user.lastName || '',
+                                    address1: shippingAddress.address1 || '',
+                                    address2: shippingAddress.address2 || '',
+                                    city: shippingAddress.city || '',
+                                    province: shippingAddress.province || '',
+                                    country: shippingAddress.country || 'Turkey',
+                                    zip: shippingAddress.zip || '',
+                                    phone: shippingAddress.phone || user.company?.phone || '',
+                                },
+                            },
+                        ]
+                        : undefined,
+                };
+                const result = await this.shopifyStorefront.createCheckoutWithBuyerIdentity(merchant.shopDomain, storefrontToken, lines, buyerIdentity, discountCode ? [discountCode] : undefined);
                 checkoutUrl = result.checkoutUrl;
-                this.logger.log(`Checkout URL created via Storefront API: ${checkoutUrl}`);
+                this.logger.log(`Checkout URL created with buyer identity: ${checkoutUrl}`, {
+                    email: user.email,
+                });
                 if (ssoUrl) {
                     const ssoReturnTo = new URL(ssoUrl).searchParams.get('return_to') || checkoutUrl;
                     checkoutUrl = ssoUrl.replace(/return_to=[^&]*/, `return_to=${encodeURIComponent(checkoutUrl)}`);
                 }
+            }
+            catch (error) {
+                this.logger.warn('Storefront API with buyer identity failed, trying basic cart', error);
+                try {
+                    const result = await this.shopifyStorefront.createCart(merchant.shopDomain, storefrontToken, lines, discountCode ? [discountCode] : undefined);
+                    checkoutUrl = result.checkoutUrl;
+                }
+                catch (fallbackError) {
+                    this.logger.warn('Storefront API failed, using fallback cart URL', fallbackError);
+                    checkoutUrl = this.buildCartUrl(merchant.shopDomain, cart.items, discountCode);
+                }
+            }
+        }
+        else if (storefrontToken) {
+            try {
+                const result = await this.shopifyStorefront.createCart(merchant.shopDomain, storefrontToken, lines, discountCode ? [discountCode] : undefined, shopifyCustomerAccessToken);
+                checkoutUrl = result.checkoutUrl;
+                this.logger.log(`Checkout URL created via Storefront API: ${checkoutUrl}`);
             }
             catch (error) {
                 this.logger.warn('Storefront API failed, using fallback cart URL', error);
@@ -179,11 +229,31 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
         const baseUrl = `https://${shopDomain}/cart/${cartItems}`;
         return discountCode ? `${baseUrl}?discount=${discountCode}` : baseUrl;
     }
+    async getShippingAddress(user) {
+        const address = await this.prisma.address.findFirst({
+            where: {
+                companyId: user.companyId,
+                isShipping: true,
+                isDefault: true,
+            },
+        });
+        if (address) {
+            return address;
+        }
+        if (user.company?.shippingAddress) {
+            return user.company.shippingAddress;
+        }
+        if (user.company?.billingAddress) {
+            return user.company.billingAddress;
+        }
+        return null;
+    }
 };
 exports.CheckoutService = CheckoutService;
 exports.CheckoutService = CheckoutService = CheckoutService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+    __metadata("design:paramtypes", [config_1.ConfigService,
+        prisma_service_1.PrismaService,
         shopify_rest_service_1.ShopifyRestService,
         shopify_admin_discount_service_1.ShopifyAdminDiscountService,
         shopify_storefront_service_1.ShopifyStorefrontService,

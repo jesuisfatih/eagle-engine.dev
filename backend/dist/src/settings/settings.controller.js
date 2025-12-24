@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const settings_service_1 = require("./settings.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
+const settings_dto_1 = require("./dto/settings.dto");
 let SettingsController = class SettingsController {
     settingsService;
     constructor(settingsService) {
@@ -28,17 +29,17 @@ let SettingsController = class SettingsController {
         }
         return this.settingsService.getMerchantSettings(merchantId);
     }
-    async updateMerchantSettings(merchantId, body) {
+    async updateMerchantSettings(merchantId, dto) {
         if (!merchantId) {
             throw new common_1.BadRequestException('Merchant ID required');
         }
-        return this.settingsService.updateMerchantSettings(merchantId, body);
+        return this.settingsService.updateMerchantSettings(merchantId, dto);
     }
-    async toggleSnippet(merchantId, enabled) {
+    async toggleSnippet(merchantId, dto) {
         if (!merchantId) {
             throw new common_1.BadRequestException('Merchant ID required');
         }
-        return this.settingsService.toggleSnippet(merchantId, enabled);
+        return this.settingsService.toggleSnippet(merchantId, dto.enabled);
     }
     async getCompanySettings(companyId) {
         if (!companyId) {
@@ -46,11 +47,11 @@ let SettingsController = class SettingsController {
         }
         return this.settingsService.getCompanySettings(companyId);
     }
-    async updateCompanySettings(companyId, body) {
+    async updateCompanySettings(companyId, dto) {
         if (!companyId) {
             throw new common_1.BadRequestException('Company ID required');
         }
-        return this.settingsService.updateCompanySettings(companyId, body);
+        return this.settingsService.updateCompanySettings(companyId, dto);
     }
     async getSsoSettings(merchantId) {
         if (!merchantId) {
@@ -58,11 +59,11 @@ let SettingsController = class SettingsController {
         }
         return this.settingsService.getSsoSettings(merchantId);
     }
-    async updateSsoSettings(merchantId, body) {
+    async updateSsoSettings(merchantId, dto) {
         if (!merchantId) {
             throw new common_1.BadRequestException('Merchant ID required');
         }
-        return this.settingsService.updateSsoSettings(merchantId, body);
+        return this.settingsService.updateSsoSettings(merchantId, dto);
     }
 };
 exports.SettingsController = SettingsController;
@@ -78,15 +79,15 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [String, settings_dto_1.UpdateMerchantSettingsDto]),
     __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "updateMerchantSettings", null);
 __decorate([
     (0, common_1.Put)('snippet/toggle'),
     __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
-    __param(1, (0, common_1.Body)('enabled')),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Boolean]),
+    __metadata("design:paramtypes", [String, settings_dto_1.ToggleSnippetDto]),
     __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "toggleSnippet", null);
 __decorate([
@@ -101,7 +102,7 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)('companyId')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [String, settings_dto_1.UpdateCompanySettingsDto]),
     __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "updateCompanySettings", null);
 __decorate([
@@ -116,7 +117,7 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [String, settings_dto_1.UpdateSsoSettingsDto]),
     __metadata("design:returntype", Promise)
 ], SettingsController.prototype, "updateSsoSettings", null);
 exports.SettingsController = SettingsController = __decorate([

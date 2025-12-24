@@ -22,7 +22,8 @@ export default function RequestInvitationPage() {
       // TODO: Add endpoint for requesting invitation
       // For now, show message that admin needs to invite
       setSuccess(true);
-    } catch (err: any) {
+    } catch (err) {
+      console.error('Request invitation error:', err);
       setError('Failed to request invitation. Please contact support.');
     } finally {
       setLoading(false);

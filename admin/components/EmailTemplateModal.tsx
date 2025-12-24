@@ -1,12 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { EmailTemplate } from '@/types';
+
+interface EmailTemplateData {
+  type: string;
+  subject: string;
+  body: string;
+}
 
 interface EmailTemplateModalProps {
   show: boolean;
-  template: { type: string; subject: string; body: string } | null;
+  template: EmailTemplateData | null;
   onClose: () => void;
-  onSave: (template: any) => void;
+  onSave: (template: EmailTemplateData) => void;
 }
 
 export default function EmailTemplateModal({ show, template, onClose, onSave }: EmailTemplateModalProps) {

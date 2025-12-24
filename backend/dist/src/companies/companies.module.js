@@ -11,6 +11,7 @@ const common_1 = require("@nestjs/common");
 const companies_service_1 = require("./companies.service");
 const companies_controller_1 = require("./companies.controller");
 const company_users_service_1 = require("./company-users.service");
+const company_users_controller_1 = require("./company-users.controller");
 const shopify_company_sync_service_1 = require("./shopify-company-sync.service");
 const shopify_module_1 = require("../shopify/shopify.module");
 let CompaniesModule = class CompaniesModule {
@@ -19,7 +20,7 @@ exports.CompaniesModule = CompaniesModule;
 exports.CompaniesModule = CompaniesModule = __decorate([
     (0, common_1.Module)({
         imports: [(0, common_1.forwardRef)(() => shopify_module_1.ShopifyModule)],
-        controllers: [companies_controller_1.CompaniesController],
+        controllers: [companies_controller_1.CompaniesController, company_users_controller_1.CompanyUsersController],
         providers: [companies_service_1.CompaniesService, company_users_service_1.CompanyUsersService, shopify_company_sync_service_1.ShopifyCompanySyncService],
         exports: [companies_service_1.CompaniesService, company_users_service_1.CompanyUsersService],
     })

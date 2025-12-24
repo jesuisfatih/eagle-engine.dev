@@ -2,9 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { adminFetch } from '@/lib/api-client';
+import type { WebhookLog, Order, ShopifyCustomerAdmin } from '@/types';
+
+interface WebhookEntry {
+  id: string;
+  eventType: string;
+  createdAt: string;
+  status: 'success' | 'error';
+}
 
 export default function WebhooksPage() {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<WebhookEntry[]>([]);
 
   useEffect(() => {
     loadLogs();
@@ -18,8 +26,8 @@ export default function WebhooksPage() {
         adminFetch('/api/v1/shopify-customers').then(r => r.json()).catch(() => []),
       ]);
       
-      const webhookLogs: any[] = [];
-      orders.forEach((order: any) => {
+      const webhookLogs: WebhookEntry[] = [];
+      (orders as Order[]).forEach((order) => {
         webhookLogs.push({
           id: order.id,
           eventType: 'orders/create',
@@ -27,7 +35,7 @@ export default function WebhooksPage() {
           status: 'success',
         });
       });
-      customers.forEach((customer: any) => {
+      (customers as ShopifyCustomerAdmin[]).forEach((customer) => {
         webhookLogs.push({
           id: customer.id,
           eventType: 'customers/create',

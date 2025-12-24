@@ -46,8 +46,9 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
             };
         }
         else if (payload.type === 'merchant') {
+            const merchantId = payload.merchantId || payload.sub;
             const merchant = await this.prisma.merchant.findUnique({
-                where: { id: payload.sub },
+                where: { id: merchantId },
             });
             if (!merchant || merchant.status !== 'active') {
                 throw new common_1.UnauthorizedException('Merchant not found or inactive');
@@ -56,6 +57,7 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
                 userId: merchant.id,
                 email: payload.email,
                 merchantId: merchant.id,
+                shopDomain: merchant.shopDomain,
                 type: 'merchant',
             };
         }

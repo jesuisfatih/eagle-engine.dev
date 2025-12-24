@@ -1,16 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { CompanyFormData, Company } from '@/types';
 
 interface CompanyEditModalProps {
   show: boolean;
-  company: any;
+  company: Company | null;
   onClose: () => void;
-  onSave: (data: any) => void;
+  onSave: (data: CompanyFormData) => void;
 }
 
 export default function CompanyEditModal({ show, company, onClose, onSave }: CompanyEditModalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CompanyFormData>({
     name: '',
     email: '',
     phone: '',

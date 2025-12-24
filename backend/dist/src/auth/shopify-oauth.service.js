@@ -49,26 +49,29 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ShopifyOauthService = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
+const jwt_1 = require("@nestjs/jwt");
 const prisma_service_1 = require("../prisma/prisma.service");
 const axios_1 = __importDefault(require("axios"));
 const crypto = __importStar(require("crypto"));
 let ShopifyOauthService = ShopifyOauthService_1 = class ShopifyOauthService {
     config;
     prisma;
+    jwtService;
     logger = new common_1.Logger(ShopifyOauthService_1.name);
     apiKey;
     apiSecret;
     scopes;
     apiVersion;
     redirectUri;
-    constructor(config, prisma) {
+    constructor(config, prisma, jwtService) {
         this.config = config;
         this.prisma = prisma;
+        this.jwtService = jwtService;
         this.apiKey = this.config.get('SHOPIFY_API_KEY') || '';
         this.apiSecret = this.config.get('SHOPIFY_API_SECRET') || '';
         this.scopes = this.config.get('SHOPIFY_SCOPES') || '';
         this.apiVersion = this.config.get('SHOPIFY_API_VERSION', '2024-10');
-        this.redirectUri = `${this.config.get('API_URL')}/auth/shopify/callback`;
+        this.redirectUri = `${this.config.get('API_URL')}/api/v1/auth/shopify/callback`;
     }
     getInstallUrl(shop) {
         const nonce = crypto.randomBytes(16).toString('hex');
@@ -144,9 +147,16 @@ let ShopifyOauthService = ShopifyOauthService_1 = class ShopifyOauthService {
             },
         });
         this.logger.log(`Merchant ${merchant.shopDomain} authenticated successfully`);
+        const jwtPayload = {
+            sub: merchant.id,
+            merchantId: merchant.id,
+            shopDomain: merchant.shopDomain,
+            type: 'merchant',
+        };
+        const jwtToken = this.jwtService.sign(jwtPayload);
         return {
             merchant,
-            accessToken: 'GENERATE_JWT_FOR_MERCHANT_HERE',
+            accessToken: jwtToken,
         };
     }
 };
@@ -154,6 +164,7 @@ exports.ShopifyOauthService = ShopifyOauthService;
 exports.ShopifyOauthService = ShopifyOauthService = ShopifyOauthService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [config_1.ConfigService,
-        prisma_service_1.PrismaService])
+        prisma_service_1.PrismaService,
+        jwt_1.JwtService])
 ], ShopifyOauthService);
 //# sourceMappingURL=shopify-oauth.service.js.map

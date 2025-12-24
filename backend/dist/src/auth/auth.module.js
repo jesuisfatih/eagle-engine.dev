@@ -16,6 +16,7 @@ const auth_controller_1 = require("./auth.controller");
 const session_sync_service_1 = require("./session-sync.service");
 const jwt_strategy_1 = require("./strategies/jwt.strategy");
 const shopify_oauth_service_1 = require("./shopify-oauth.service");
+const login_security_service_1 = require("./login-security.service");
 const shopify_module_1 = require("../shopify/shopify.module");
 const mail_module_1 = require("../mail/mail.module");
 let AuthModule = class AuthModule {
@@ -39,8 +40,8 @@ exports.AuthModule = AuthModule = __decorate([
             }),
         ],
         controllers: [auth_controller_1.AuthController],
-        providers: [auth_service_1.AuthService, session_sync_service_1.SessionSyncService, jwt_strategy_1.JwtStrategy, shopify_oauth_service_1.ShopifyOauthService],
-        exports: [auth_service_1.AuthService, session_sync_service_1.SessionSyncService, jwt_1.JwtModule],
+        providers: [auth_service_1.AuthService, session_sync_service_1.SessionSyncService, jwt_strategy_1.JwtStrategy, shopify_oauth_service_1.ShopifyOauthService, login_security_service_1.LoginSecurityService],
+        exports: [auth_service_1.AuthService, session_sync_service_1.SessionSyncService, jwt_1.JwtModule, login_security_service_1.LoginSecurityService],
     })
 ], AuthModule);
 //# sourceMappingURL=auth.module.js.map

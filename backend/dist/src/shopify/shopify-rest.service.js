@@ -91,7 +91,7 @@ let ShopifyRestService = ShopifyRestService_1 = class ShopifyRestService {
         return this.get(shop, accessToken, `/customers.json?limit=${limit}`);
     }
     async createCustomerInvite(shop, accessToken, customerId) {
-        const url = `https://${shop}/admin/api/2024-10/customers/${customerId}/send_invite.json`;
+        const url = this.shopifyService.buildAdminApiUrl(shop, `/customers/${customerId}/send_invite.json`);
         try {
             const response = await (0, rxjs_1.firstValueFrom)(this.httpService.post(url, {
                 customer_invite: {
@@ -134,7 +134,7 @@ let ShopifyRestService = ShopifyRestService_1 = class ShopifyRestService {
         }
     }
     async updateCustomerMetafields(shop, accessToken, customerId, metafields) {
-        const getUrl = `https://${shop}/admin/api/2024-10/customers/${customerId}/metafields.json`;
+        const getUrl = this.shopifyService.buildAdminApiUrl(shop, `/customers/${customerId}/metafields.json`);
         try {
             const existingResponse = await (0, rxjs_1.firstValueFrom)(this.httpService.get(getUrl, {
                 headers: {
@@ -145,7 +145,7 @@ let ShopifyRestService = ShopifyRestService_1 = class ShopifyRestService {
             const existingMetafields = existingResponse.data.metafields || [];
             for (const metafield of existingMetafields) {
                 if (metafields.some(m => m.namespace === metafield.namespace && m.key === metafield.key)) {
-                    await (0, rxjs_1.firstValueFrom)(this.httpService.delete(`https://${shop}/admin/api/2024-10/metafields/${metafield.id}.json`, {
+                    await (0, rxjs_1.firstValueFrom)(this.httpService.delete(this.shopifyService.buildAdminApiUrl(shop, `/metafields/${metafield.id}.json`), {
                         headers: {
                             'X-Shopify-Access-Token': accessToken,
                             'Content-Type': 'application/json',
@@ -153,7 +153,7 @@ let ShopifyRestService = ShopifyRestService_1 = class ShopifyRestService {
                     }));
                 }
             }
-            const createUrl = `https://${shop}/admin/api/2024-10/metafields.json`;
+            const createUrl = this.shopifyService.buildAdminApiUrl(shop, '/metafields.json');
             const results = [];
             for (const metafield of metafields) {
                 const response = await (0, rxjs_1.firstValueFrom)(this.httpService.post(createUrl, {
@@ -183,7 +183,7 @@ let ShopifyRestService = ShopifyRestService_1 = class ShopifyRestService {
         }
     }
     async getCustomerMetafields(shop, accessToken, customerId) {
-        const url = `https://${shop}/admin/api/2024-10/customers/${customerId}/metafields.json`;
+        const url = this.shopifyService.buildAdminApiUrl(shop, `/customers/${customerId}/metafields.json`);
         try {
             const response = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, {
                 headers: {

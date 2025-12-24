@@ -3,11 +3,19 @@ export declare class SettingsService {
     private prisma;
     constructor(prisma: PrismaService);
     getMerchantSettings(merchantId: string): Promise<{
-        planName: string;
-        settings: import("@prisma/client/runtime/client").JsonValue;
-        snippetEnabled: boolean;
-        lastSyncAt: Date | null;
-    } | null>;
+        stats: {
+            totalCustomers: number;
+            syncedCustomers: number;
+            totalProducts: number;
+            totalOrders: number;
+        };
+        id?: string | undefined;
+        shopDomain?: string | undefined;
+        planName?: string | undefined;
+        settings?: import("@prisma/client/runtime/client").JsonValue | undefined;
+        snippetEnabled?: boolean | undefined;
+        lastSyncAt?: Date | null | undefined;
+    }>;
     updateMerchantSettings(merchantId: string, settings: any): Promise<{
         id: string;
         shopDomain: string;

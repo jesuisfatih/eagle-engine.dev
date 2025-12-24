@@ -55,10 +55,10 @@ export default function SsoModeSwitch() {
       
       // Show success message
       alert(`✅ SSO mode changed to: ${enabled ? 'Multipass' : 'Alternative'}`);
-    } catch (err: any) {
+    } catch (err) {
       // Revert on error
       setMultipassMode(previousMode);
-      alert(`❌ Failed to update SSO settings: ${err.message || 'Unknown error'}`);
+      alert(`❌ Failed to update SSO settings: ${err instanceof Error ? err.message : 'Unknown error'}`);
       console.error('SSO toggle error:', err);
     } finally {
       setLoading(false);

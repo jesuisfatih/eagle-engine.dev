@@ -5,9 +5,17 @@ import { apiClient, adminFetch } from '@/lib/api-client';
 import QuickActions from './components/QuickActions';
 import StatsRefresh from './components/StatsRefresh';
 import Modal from '@/components/Modal';
+import type { MerchantStats } from '@/types';
+
+interface DashboardStats extends MerchantStats {
+  totalCompanies?: number;
+  totalUsers?: number;
+  totalOrders?: number;
+  totalRevenue?: number;
+}
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -21,8 +29,8 @@ export default function DashboardPage() {
       const data = await response.json();
       setStats(data);
       setError('');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
       setStats({
         totalCompanies: 0,
         totalUsers: 0,
@@ -54,8 +62,8 @@ export default function DashboardPage() {
         loadStats();
         window.location.reload();
       }, 3000);
-    } catch (err: any) {
-      setSyncModal({show: true, message: '❌ Sync failed: ' + err.message});
+    } catch (err) {
+      setSyncModal({show: true, message: '❌ Sync failed: ' + (err instanceof Error ? err.message : 'Unknown error')});
     }
   };
 

@@ -15,8 +15,10 @@ var AuthController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
+const throttler_1 = require("@nestjs/throttler");
 const auth_service_1 = require("./auth.service");
 const session_sync_service_1 = require("./session-sync.service");
+const login_security_service_1 = require("./login-security.service");
 const public_decorator_1 = require("./decorators/public.decorator");
 const jwt_auth_guard_1 = require("./guards/jwt-auth.guard");
 const current_user_decorator_1 = require("./decorators/current-user.decorator");
@@ -24,30 +26,98 @@ const shopify_sso_service_1 = require("../shopify/shopify-sso.service");
 const shopify_customer_sync_service_1 = require("../shopify/shopify-customer-sync.service");
 const shopify_rest_service_1 = require("../shopify/shopify-rest.service");
 const prisma_service_1 = require("../prisma/prisma.service");
+const shopify_oauth_service_1 = require("./shopify-oauth.service");
+const config_1 = require("@nestjs/config");
+const jwt_1 = require("@nestjs/jwt");
+const auth_dto_1 = require("./dto/auth.dto");
 let AuthController = AuthController_1 = class AuthController {
     authService;
     sessionSyncService;
+    loginSecurity;
     shopifySso;
     shopifyCustomerSync;
     shopifyRest;
     prisma;
+    shopifyOauth;
+    config;
+    jwtService;
     logger = new common_1.Logger(AuthController_1.name);
-    constructor(authService, sessionSyncService, shopifySso, shopifyCustomerSync, shopifyRest, prisma) {
+    adminUrl;
+    constructor(authService, sessionSyncService, loginSecurity, shopifySso, shopifyCustomerSync, shopifyRest, prisma, shopifyOauth, config, jwtService) {
         this.authService = authService;
         this.sessionSyncService = sessionSyncService;
+        this.loginSecurity = loginSecurity;
         this.shopifySso = shopifySso;
         this.shopifyCustomerSync = shopifyCustomerSync;
         this.shopifyRest = shopifyRest;
         this.prisma = prisma;
+        this.shopifyOauth = shopifyOauth;
+        this.config = config;
+        this.jwtService = jwtService;
+        this.adminUrl = this.config.get('ADMIN_URL', 'https://admin.eagledtfsupply.com');
+        this.adminUsername = this.config.get('ADMIN_USERNAME', 'admin');
+        this.adminPassword = this.config.get('ADMIN_PASSWORD', 'eagle2025');
     }
-    async login(body, res) {
+    adminUsername;
+    adminPassword;
+    async adminLogin(dto, res) {
         try {
-            const user = await this.authService.validateUser(body.email, body.password);
-            if (!user) {
+            if (dto.username !== this.adminUsername || dto.password !== this.adminPassword) {
                 return res.status(common_1.HttpStatus.UNAUTHORIZED).json({
                     message: 'Invalid credentials',
                 });
             }
+            const merchant = await this.prisma.merchant.findFirst({
+                where: { status: 'active' },
+            });
+            if (!merchant) {
+                return res.status(common_1.HttpStatus.NOT_FOUND).json({
+                    message: 'No merchant configured',
+                });
+            }
+            const payload = {
+                sub: 'admin',
+                type: 'merchant',
+                merchantId: merchant.id,
+                shopDomain: merchant.shopDomain,
+            };
+            const token = this.jwtService.sign(payload);
+            this.logger.log(`✅ [ADMIN_LOGIN] Admin logged in for merchant: ${merchant.shopDomain}`);
+            return res.json({
+                token,
+                merchantId: merchant.id,
+                shopDomain: merchant.shopDomain,
+            });
+        }
+        catch (error) {
+            this.logger.error(`❌ [ADMIN_LOGIN] Login failed: ${error.message}`);
+            return res.status(common_1.HttpStatus.INTERNAL_SERVER_ERROR).json({
+                message: 'Login failed',
+            });
+        }
+    }
+    async login(dto, req, res) {
+        const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+        const identifier = `${dto.email}:${clientIp}`;
+        try {
+            const attemptCheck = await this.loginSecurity.checkLoginAttempt(identifier);
+            if (!attemptCheck.allowed) {
+                return res.status(common_1.HttpStatus.TOO_MANY_REQUESTS).json({
+                    success: false,
+                    message: attemptCheck.message,
+                    lockoutSeconds: attemptCheck.lockoutSeconds,
+                });
+            }
+            const user = await this.authService.validateUser(dto.email, dto.password);
+            if (!user) {
+                const failResult = await this.loginSecurity.recordFailedAttempt(identifier);
+                return res.status(common_1.HttpStatus.UNAUTHORIZED).json({
+                    success: false,
+                    message: failResult.message || 'Invalid credentials',
+                    remainingAttempts: failResult.remainingAttempts,
+                });
+            }
+            await this.loginSecurity.clearAttempts(identifier);
             const payload = {
                 sub: user.id,
                 email: user.email,
@@ -56,7 +126,9 @@ let AuthController = AuthController_1 = class AuthController {
                 merchantId: user.company?.merchantId,
             };
             const token = await this.authService.generateToken(payload);
+            this.logger.log(`✅ [LOGIN] User logged in: ${user.email}`);
             return res.json({
+                success: true,
                 token,
                 user: {
                     id: user.id,
@@ -70,9 +142,11 @@ let AuthController = AuthController_1 = class AuthController {
             });
         }
         catch (error) {
-            return res.status(common_1.HttpStatus.INTERNAL_SERVER_ERROR).json({
-                message: 'Login failed',
-                error: error.message,
+            await this.loginSecurity.recordFailedAttempt(identifier);
+            this.logger.error(`❌ [LOGIN] Login failed for ${dto.email}: ${error.message}`);
+            return res.status(common_1.HttpStatus.UNAUTHORIZED).json({
+                success: false,
+                message: 'Invalid credentials',
             });
         }
     }
@@ -122,9 +196,9 @@ let AuthController = AuthController_1 = class AuthController {
             });
         }
     }
-    async sendVerificationCode(body, res) {
+    async sendVerificationCode(dto, res) {
         try {
-            const result = await this.authService.sendVerificationCode(body.email);
+            const result = await this.authService.sendVerificationCode(dto.email);
             return res.json(result);
         }
         catch (error) {
@@ -133,9 +207,9 @@ let AuthController = AuthController_1 = class AuthController {
             });
         }
     }
-    async verifyEmailCode(body, res) {
+    async verifyEmailCode(dto, res) {
         try {
-            const isValid = await this.authService.verifyEmailCode(body.email, body.code);
+            const isValid = await this.authService.verifyEmailCode(dto.email, dto.code);
             return res.json({ valid: isValid });
         }
         catch (error) {
@@ -144,15 +218,15 @@ let AuthController = AuthController_1 = class AuthController {
             });
         }
     }
-    async register(body, res) {
+    async register(dto, res) {
         try {
-            this.logger.log(`📝 [REGISTER] Registration request received for email: ${body.email}`);
-            const result = await this.authService.register(body);
-            this.logger.log(`✅ [REGISTER] Registration successful for email: ${body.email}`);
+            this.logger.log(`📝 [REGISTER] Registration request received for email: ${dto.email}`);
+            const result = await this.authService.register(dto);
+            this.logger.log(`✅ [REGISTER] Registration successful for email: ${dto.email}`);
             return res.json(result);
         }
         catch (error) {
-            this.logger.error(`❌ [REGISTER] Registration failed for email: ${body.email}`, {
+            this.logger.error(`❌ [REGISTER] Registration failed for email: ${dto.email}`, {
                 error: error.message,
                 stack: error.stack,
             });
@@ -161,10 +235,10 @@ let AuthController = AuthController_1 = class AuthController {
             });
         }
     }
-    async acceptInvitation(body) {
+    async acceptInvitation(dto) {
         try {
-            this.logger.log(`📝 [ACCEPT_INVITATION] Invitation acceptance request received for token: ${body.token?.substring(0, 10)}...`);
-            const result = await this.authService.acceptInvitation(body);
+            this.logger.log(`📝 [ACCEPT_INVITATION] Invitation acceptance request received for token: ${dto.token?.substring(0, 10)}...`);
+            const result = await this.authService.acceptInvitation(dto);
             this.logger.log(`✅ [ACCEPT_INVITATION] Invitation accepted successfully`);
             return result;
         }
@@ -176,8 +250,8 @@ let AuthController = AuthController_1 = class AuthController {
             throw error;
         }
     }
-    async syncShopifyCustomer(body) {
-        return this.sessionSyncService.syncFromShopify(body.shopifyCustomerId, body.email, body.fingerprint);
+    async syncShopifyCustomer(dto) {
+        return this.sessionSyncService.syncFromShopify(dto.shopifyCustomerId, dto.email, dto.fingerprint);
     }
     async resolveContext(auth) {
         const token = auth?.replace('Bearer ', '');
@@ -332,15 +406,86 @@ let AuthController = AuthController_1 = class AuthController {
             });
         }
     }
+    async shopifyInstall(shop, res) {
+        try {
+            if (!shop) {
+                return res.status(common_1.HttpStatus.BAD_REQUEST).json({
+                    error: 'Shop domain is required',
+                    example: '/auth/shopify/install?shop=your-shop.myshopify.com',
+                });
+            }
+            const shopDomain = shop.includes('.myshopify.com')
+                ? shop
+                : `${shop}.myshopify.com`;
+            this.logger.log(`🔐 [OAUTH] Starting OAuth install for shop: ${shopDomain}`);
+            const installUrl = this.shopifyOauth.getInstallUrl(shopDomain);
+            return res.redirect(installUrl);
+        }
+        catch (error) {
+            this.logger.error(`❌ [OAUTH] Install failed: ${error.message}`);
+            return res.redirect(`${this.adminUrl}/login?error=oauth_install_failed`);
+        }
+    }
+    async shopifyOauthCallback(code, shop, hmac, timestamp, state, res) {
+        try {
+            this.logger.log(`🔐 [OAUTH] Callback received for shop: ${shop}`);
+            const result = await this.shopifyOauth.handleCallback({
+                code,
+                shop,
+                hmac,
+                timestamp,
+                state,
+            });
+            this.logger.log(`✅ [OAUTH] OAuth successful for merchant: ${result.merchant.id}`);
+            return res.redirect(`${this.adminUrl}/login?token=${result.accessToken}&shop=${shop}`);
+        }
+        catch (error) {
+            this.logger.error(`❌ [OAUTH] Callback failed: ${error.message}`);
+            return res.redirect(`${this.adminUrl}/login?error=oauth_failed&message=${encodeURIComponent(error.message)}`);
+        }
+    }
+    async getPasswordPolicy() {
+        return {
+            success: true,
+            policy: this.loginSecurity.getPasswordPolicy(),
+        };
+    }
+    async validatePassword(body) {
+        const result = this.loginSecurity.validatePassword(body.password);
+        const strength = this.loginSecurity.calculatePasswordStrength(body.password);
+        return {
+            success: true,
+            valid: result.valid,
+            errors: result.errors,
+            strength,
+            strengthLabel: this.getStrengthLabel(strength),
+        };
+    }
+    getStrengthLabel(strength) {
+        const labels = ['Very Weak', 'Weak', 'Fair', 'Strong', 'Very Strong'];
+        return labels[Math.min(strength, 4)];
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
     (0, public_decorator_1.Public)(),
-    (0, common_1.Post)('login'),
+    (0, throttler_1.Throttle)({ short: { limit: 5, ttl: 60000 } }),
+    (0, common_1.Post)('admin-login'),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [auth_dto_1.AdminLoginDto, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "adminLogin", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, throttler_1.Throttle)({ short: { limit: 5, ttl: 60000 } }),
+    (0, common_1.Post)('login'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [auth_dto_1.LoginDto, Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
 __decorate([
@@ -368,7 +513,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [auth_dto_1.SendVerificationCodeDto, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "sendVerificationCode", null);
 __decorate([
@@ -377,24 +522,26 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [auth_dto_1.VerifyEmailCodeDto, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "verifyEmailCode", null);
 __decorate([
     (0, public_decorator_1.Public)(),
+    (0, throttler_1.Throttle)({ short: { limit: 3, ttl: 60000 }, medium: { limit: 10, ttl: 300000 } }),
     (0, common_1.Post)('register'),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [auth_dto_1.RegisterDto, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "register", null);
 __decorate([
     (0, public_decorator_1.Public)(),
+    (0, throttler_1.Throttle)({ short: { limit: 5, ttl: 60000 } }),
     (0, common_1.Post)('accept-invitation'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [auth_dto_1.AcceptInvitationDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "acceptInvitation", null);
 __decorate([
@@ -402,7 +549,7 @@ __decorate([
     (0, common_1.Post)('shopify-customer-sync'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [auth_dto_1.ShopifyCustomerSyncDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "syncShopifyCustomer", null);
 __decorate([
@@ -458,13 +605,54 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "getCurrentUser", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Get)('shopify/install'),
+    __param(0, (0, common_1.Query)('shop')),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "shopifyInstall", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Get)('shopify/callback'),
+    __param(0, (0, common_1.Query)('code')),
+    __param(1, (0, common_1.Query)('shop')),
+    __param(2, (0, common_1.Query)('hmac')),
+    __param(3, (0, common_1.Query)('timestamp')),
+    __param(4, (0, common_1.Query)('state')),
+    __param(5, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String, String, String, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "shopifyOauthCallback", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Get)('password-policy'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "getPasswordPolicy", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('validate-password'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "validatePassword", null);
 exports.AuthController = AuthController = AuthController_1 = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService,
         session_sync_service_1.SessionSyncService,
+        login_security_service_1.LoginSecurityService,
         shopify_sso_service_1.ShopifySsoService,
         shopify_customer_sync_service_1.ShopifyCustomerSyncService,
         shopify_rest_service_1.ShopifyRestService,
-        prisma_service_1.PrismaService])
+        prisma_service_1.PrismaService,
+        shopify_oauth_service_1.ShopifyOauthService,
+        config_1.ConfigService,
+        jwt_1.JwtService])
 ], AuthController);
 //# sourceMappingURL=auth.controller.js.map

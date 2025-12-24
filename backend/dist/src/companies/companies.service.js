@@ -13,6 +13,59 @@ exports.CompaniesService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const shopify_company_sync_service_1 = require("./shopify-company-sync.service");
+const pagination_util_1 = require("../common/utils/pagination.util");
+const COMPANY_LIST_SELECT = {
+    id: true,
+    name: true,
+    email: true,
+    phone: true,
+    status: true,
+    shopifyCompanyId: true,
+    createdAt: true,
+    updatedAt: true,
+    _count: {
+        select: {
+            users: true,
+            orders: true,
+        },
+    },
+};
+const COMPANY_DETAIL_INCLUDE = {
+    users: {
+        select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            isActive: true,
+            lastLoginAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+    },
+    pricingRules: {
+        where: { isActive: true },
+        select: {
+            id: true,
+            name: true,
+            discountType: true,
+            discountValue: true,
+            priority: true,
+        },
+    },
+    orders: {
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+        select: {
+            id: true,
+            shopifyOrderId: true,
+            orderNumber: true,
+            totalPrice: true,
+            financialStatus: true,
+            createdAt: true,
+        },
+    },
+};
 let CompaniesService = class CompaniesService {
     prisma;
     shopifyCompanySync;
@@ -21,6 +74,12 @@ let CompaniesService = class CompaniesService {
         this.shopifyCompanySync = shopifyCompanySync;
     }
     async findAll(merchantId, filters) {
+        const pagination = {
+            page: filters?.page || 1,
+            limit: filters?.limit || 20,
+            sortBy: 'createdAt',
+            sortOrder: 'desc',
+        };
         const where = { merchantId };
         if (filters?.status) {
             where.status = filters.status;
@@ -31,42 +90,21 @@ let CompaniesService = class CompaniesService {
                 { email: { contains: filters.search, mode: 'insensitive' } },
             ];
         }
-        return this.prisma.company.findMany({
-            where,
-            include: {
-                users: {
-                    select: {
-                        id: true,
-                        email: true,
-                        firstName: true,
-                        lastName: true,
-                        role: true,
-                        isActive: true,
-                    },
-                },
-                _count: {
-                    select: {
-                        users: true,
-                        orders: true,
-                    },
-                },
-            },
-            orderBy: { createdAt: 'desc' },
-        });
+        const [data, total] = await Promise.all([
+            this.prisma.company.findMany({
+                where,
+                select: COMPANY_LIST_SELECT,
+                orderBy: (0, pagination_util_1.buildPrismaOrderBy)(pagination, ['createdAt', 'name', 'email']),
+                ...(0, pagination_util_1.buildPrismaSkipTake)(pagination),
+            }),
+            this.prisma.company.count({ where }),
+        ]);
+        return (0, pagination_util_1.createPaginatedResponse)(data, total, pagination);
     }
     async findOne(id, merchantId) {
         const company = await this.prisma.company.findFirst({
             where: { id, merchantId },
-            include: {
-                users: true,
-                pricingRules: {
-                    where: { isActive: true },
-                },
-                orders: {
-                    take: 10,
-                    orderBy: { createdAt: 'desc' },
-                },
-            },
+            include: COMPANY_DETAIL_INCLUDE,
         });
         if (!company) {
             throw new common_1.NotFoundException('Company not found');

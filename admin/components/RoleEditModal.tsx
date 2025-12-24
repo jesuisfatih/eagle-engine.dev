@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { RolePermission } from '@/types';
 
 interface RoleEditModalProps {
   show: boolean;
-  role: any;
+  role: RolePermission | null;
   onClose: () => void;
-  onSave: (role: any, permissions: string[]) => void;
+  onSave: (role: RolePermission, permissions: string[]) => void;
 }
 
 export default function RoleEditModal({ show, role, onClose, onSave }: RoleEditModalProps) {

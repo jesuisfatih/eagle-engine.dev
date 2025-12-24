@@ -14,24 +14,22 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AbandonedCartsController = void 0;
 const common_1 = require("@nestjs/common");
+const throttler_1 = require("@nestjs/throttler");
 const abandoned_carts_service_1 = require("./abandoned-carts.service");
 const public_decorator_1 = require("../auth/decorators/public.decorator");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
+const abandoned_cart_dto_1 = require("./dto/abandoned-cart.dto");
 let AbandonedCartsController = class AbandonedCartsController {
     abandonedCartsService;
     constructor(abandonedCartsService) {
         this.abandonedCartsService = abandonedCartsService;
     }
-    async getAbandonedCarts(merchantId, companyId, includeRecent) {
+    async getAbandonedCarts(merchantId, query) {
         if (!merchantId) {
             throw new common_1.BadRequestException('Merchant ID required');
         }
-        let includeRecentBool = false;
-        if (includeRecent === 'true' || includeRecent === 'True' || includeRecent === 'TRUE' || includeRecent === true) {
-            includeRecentBool = true;
-        }
-        return this.abandonedCartsService.getAbandonedCarts(merchantId, companyId, includeRecentBool);
+        return this.abandonedCartsService.getAbandonedCarts(merchantId, query.companyId, query.includeRecent);
     }
     async getMyAbandonedCarts(merchantId, companyId) {
         if (!merchantId || !companyId) {
@@ -39,17 +37,17 @@ let AbandonedCartsController = class AbandonedCartsController {
         }
         return this.abandonedCartsService.getAbandonedCarts(merchantId, companyId);
     }
-    async syncCart(data) {
-        return this.abandonedCartsService.syncShopifyCart(data);
+    async syncCart(dto) {
+        return this.abandonedCartsService.syncShopifyCart(dto);
     }
-    async trackCart(data) {
+    async trackCart(dto) {
         console.log('📦 Cart tracking received:', {
-            cartToken: data.cartToken,
-            itemCount: data.items?.length || 0,
-            customerEmail: data.customerEmail,
+            cartToken: dto.cartToken,
+            itemCount: dto.items?.length || 0,
+            customerEmail: dto.customerEmail,
         });
         try {
-            const result = await this.abandonedCartsService.trackCart(data);
+            const result = await this.abandonedCartsService.trackCart(dto);
             console.log('✅ Cart tracked successfully:', result.id);
             return result;
         }
@@ -74,16 +72,17 @@ let AbandonedCartsController = class AbandonedCartsController {
 };
 exports.AbandonedCartsController = AbandonedCartsController;
 __decorate([
+    (0, throttler_1.SkipThrottle)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Get)(),
     __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
-    __param(1, (0, common_1.Query)('companyId')),
-    __param(2, (0, common_1.Query)('includeRecent')),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:paramtypes", [String, abandoned_cart_dto_1.GetAbandonedCartsQueryDto]),
     __metadata("design:returntype", Promise)
 ], AbandonedCartsController.prototype, "getAbandonedCarts", null);
 __decorate([
+    (0, throttler_1.SkipThrottle)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Get)('my-carts'),
     __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
@@ -94,22 +93,25 @@ __decorate([
 ], AbandonedCartsController.prototype, "getMyAbandonedCarts", null);
 __decorate([
     (0, public_decorator_1.Public)(),
+    (0, throttler_1.Throttle)({ short: { limit: 5, ttl: 1000 }, medium: { limit: 20, ttl: 10000 } }),
     (0, common_1.Post)('sync'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [abandoned_cart_dto_1.SyncCartDto]),
     __metadata("design:returntype", Promise)
 ], AbandonedCartsController.prototype, "syncCart", null);
 __decorate([
     (0, public_decorator_1.Public)(),
+    (0, throttler_1.Throttle)({ short: { limit: 10, ttl: 1000 }, medium: { limit: 30, ttl: 10000 } }),
     (0, common_1.Post)('track'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [abandoned_cart_dto_1.TrackCartDto]),
     __metadata("design:returntype", Promise)
 ], AbandonedCartsController.prototype, "trackCart", null);
 __decorate([
     (0, public_decorator_1.Public)(),
+    (0, throttler_1.Throttle)({ short: { limit: 5, ttl: 1000 } }),
     (0, common_1.Get)('activity/:cartId'),
     __param(0, (0, common_1.Param)('cartId')),
     __metadata("design:type", Function),
@@ -117,6 +119,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AbandonedCartsController.prototype, "getCartActivity", null);
 __decorate([
+    (0, throttler_1.SkipThrottle)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Get)('activity'),
     __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),

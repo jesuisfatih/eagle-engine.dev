@@ -1,7 +1,20 @@
 'use client';
 
+import type { ProductVariant } from '@/types';
+
+// Extended product for display
+interface ProductForDisplay {
+  id: string;
+  title: string;
+  vendor: string;
+  companyPrice?: number;
+  listPrice?: number;
+  discount?: number;
+  variants?: ProductVariant[];
+}
+
 interface ProductCardProps {
-  product: any;
+  product: ProductForDisplay;
   onAddToCart: (productId: string) => void;
 }
 
@@ -77,8 +90,9 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
                     </div>
                   `;
                   document.body.appendChild(successModal);
-              } catch (err: any) {
+              } catch (err) {
                 modal.remove();
+                const errorMessage = err instanceof Error ? err.message : 'Unknown error';
                 const errorModal = document.createElement('div');
                 errorModal.className = 'modal fade show d-block';
                 errorModal.style.backgroundColor = 'rgba(0,0,0,0.5)';
@@ -89,7 +103,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
                         <h5 class="modal-title">❌ Error</h5>
                         <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
                       </div>
-                      <div class="modal-body">Failed to add to cart: ${err.message}</div>
+                      <div class="modal-body">Failed to add to cart: ${errorMessage}</div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">OK</button>
                       </div>

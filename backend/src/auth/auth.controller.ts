@@ -1,7 +1,9 @@
-import { Controller, Post, Body, Get, Query, Res, HttpStatus, Delete, Param, Headers, UseGuards, Logger } from '@nestjs/common';
-import type { Response } from 'express';
+import { Controller, Post, Body, Get, Query, Res, Req, HttpStatus, Delete, Param, Headers, UseGuards, Logger } from '@nestjs/common';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
+import type { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { SessionSyncService } from './session-sync.service';
+import { LoginSecurityService } from './login-security.service';
 import { Public } from './decorators/public.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -12,6 +14,15 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ShopifyOauthService } from './shopify-oauth.service';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { 
+  AdminLoginDto, 
+  LoginDto, 
+  RegisterDto, 
+  AcceptInvitationDto, 
+  SendVerificationCodeDto, 
+  VerifyEmailCodeDto,
+  ShopifyCustomerSyncDto 
+} from './dto/auth.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -21,6 +32,7 @@ export class AuthController {
   constructor(
     private authService: AuthService,
     private sessionSyncService: SessionSyncService,
+    private loginSecurity: LoginSecurityService,
     private shopifySso: ShopifySsoService,
     private shopifyCustomerSync: ShopifyCustomerSyncService,
     private shopifyRest: ShopifyRestService,
@@ -40,16 +52,18 @@ export class AuthController {
   /**
    * Admin panel login - simple username/password auth
    * Returns JWT with merchantId for API access
+   * Rate limited: 5 attempts per 60 seconds to prevent brute force
    */
   @Public()
+  @Throttle({ short: { limit: 5, ttl: 60000 } })
   @Post('admin-login')
   async adminLogin(
-    @Body() body: { username: string; password: string },
+    @Body() dto: AdminLoginDto,
     @Res() res: Response,
   ) {
     try {
       // Validate credentials
-      if (body.username !== this.adminUsername || body.password !== this.adminPassword) {
+      if (dto.username !== this.adminUsername || dto.password !== this.adminPassword) {
         return res.status(HttpStatus.UNAUTHORIZED).json({
           message: 'Invalid credentials',
         });
@@ -91,20 +105,46 @@ export class AuthController {
     }
   }
 
+  /**
+   * User login - Rate limited to prevent brute force attacks
+   * Includes login attempt tracking and lockout protection
+   */
   @Public()
+  @Throttle({ short: { limit: 5, ttl: 60000 } })
   @Post('login')
   async login(
-    @Body() body: { email: string; password: string },
+    @Body() dto: LoginDto,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+    const identifier = `${dto.email}:${clientIp}`;
+
     try {
-      const user = await this.authService.validateUser(body.email, body.password);
-      
-      if (!user) {
-        return res.status(HttpStatus.UNAUTHORIZED).json({
-          message: 'Invalid credentials',
+      // Check if login is allowed (not locked out)
+      const attemptCheck = await this.loginSecurity.checkLoginAttempt(identifier);
+      if (!attemptCheck.allowed) {
+        return res.status(HttpStatus.TOO_MANY_REQUESTS).json({
+          success: false,
+          message: attemptCheck.message,
+          lockoutSeconds: attemptCheck.lockoutSeconds,
         });
       }
+
+      const user = await this.authService.validateUser(dto.email, dto.password);
+      
+      if (!user) {
+        // Record failed attempt
+        const failResult = await this.loginSecurity.recordFailedAttempt(identifier);
+        return res.status(HttpStatus.UNAUTHORIZED).json({
+          success: false,
+          message: failResult.message || 'Invalid credentials',
+          remainingAttempts: failResult.remainingAttempts,
+        });
+      }
+
+      // Clear failed attempts on successful login
+      await this.loginSecurity.clearAttempts(identifier);
 
       // Generate proper JWT payload with merchantId
       const payload = {
@@ -117,7 +157,10 @@ export class AuthController {
 
       const token = await this.authService.generateToken(payload);
 
+      this.logger.log(`✅ [LOGIN] User logged in: ${user.email}`);
+
       return res.json({
+        success: true,
         token,
         user: {
           id: user.id,
@@ -129,10 +172,13 @@ export class AuthController {
           merchantId: user.company?.merchantId,
         },
       });
-    } catch (error) {
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        message: 'Login failed',
-        error: error.message,
+    } catch (error: any) {
+      // Record failed attempt on error
+      await this.loginSecurity.recordFailedAttempt(identifier);
+      this.logger.error(`❌ [LOGIN] Login failed for ${dto.email}: ${error.message}`);
+      return res.status(HttpStatus.UNAUTHORIZED).json({
+        success: false,
+        message: 'Invalid credentials',
       });
     }
   }
@@ -209,9 +255,9 @@ export class AuthController {
 
   @Public()
   @Post('send-verification-code')
-  async sendVerificationCode(@Body() body: { email: string }, @Res() res: Response) {
+  async sendVerificationCode(@Body() dto: SendVerificationCodeDto, @Res() res: Response) {
     try {
-      const result = await this.authService.sendVerificationCode(body.email);
+      const result = await this.authService.sendVerificationCode(dto.email);
       return res.json(result);
     } catch (error: any) {
       return res.status(HttpStatus.BAD_REQUEST).json({
@@ -222,9 +268,9 @@ export class AuthController {
 
   @Public()
   @Post('verify-email-code')
-  async verifyEmailCode(@Body() body: { email: string; code: string }, @Res() res: Response) {
+  async verifyEmailCode(@Body() dto: VerifyEmailCodeDto, @Res() res: Response) {
     try {
-      const isValid = await this.authService.verifyEmailCode(body.email, body.code);
+      const isValid = await this.authService.verifyEmailCode(dto.email, dto.code);
       return res.json({ valid: isValid });
     } catch (error: any) {
       return res.status(HttpStatus.BAD_REQUEST).json({
@@ -233,16 +279,20 @@ export class AuthController {
     }
   }
 
+  /**
+   * User registration - Rate limited to prevent spam
+   */
   @Public()
+  @Throttle({ short: { limit: 3, ttl: 60000 }, medium: { limit: 10, ttl: 300000 } })
   @Post('register')
-  async register(@Body() body: any, @Res() res: Response) {
+  async register(@Body() dto: RegisterDto, @Res() res: Response) {
     try {
-      this.logger.log(`📝 [REGISTER] Registration request received for email: ${body.email}`);
-      const result = await this.authService.register(body);
-      this.logger.log(`✅ [REGISTER] Registration successful for email: ${body.email}`);
+      this.logger.log(`📝 [REGISTER] Registration request received for email: ${dto.email}`);
+      const result = await this.authService.register(dto);
+      this.logger.log(`✅ [REGISTER] Registration successful for email: ${dto.email}`);
       return res.json(result);
     } catch (error: any) {
-      this.logger.error(`❌ [REGISTER] Registration failed for email: ${body.email}`, {
+      this.logger.error(`❌ [REGISTER] Registration failed for email: ${dto.email}`, {
         error: error.message,
         stack: error.stack,
       });
@@ -252,12 +302,16 @@ export class AuthController {
     }
   }
 
+  /**
+   * Accept invitation - Rate limited
+   */
   @Public()
+  @Throttle({ short: { limit: 5, ttl: 60000 } })
   @Post('accept-invitation')
-  async acceptInvitation(@Body() body: any) {
+  async acceptInvitation(@Body() dto: AcceptInvitationDto) {
     try {
-      this.logger.log(`📝 [ACCEPT_INVITATION] Invitation acceptance request received for token: ${body.token?.substring(0, 10)}...`);
-      const result = await this.authService.acceptInvitation(body);
+      this.logger.log(`📝 [ACCEPT_INVITATION] Invitation acceptance request received for token: ${dto.token?.substring(0, 10)}...`);
+      const result = await this.authService.acceptInvitation(dto);
       this.logger.log(`✅ [ACCEPT_INVITATION] Invitation accepted successfully`);
       return result;
     } catch (error: any) {
@@ -271,15 +325,11 @@ export class AuthController {
 
   @Public()
   @Post('shopify-customer-sync')
-  async syncShopifyCustomer(@Body() body: {
-    shopifyCustomerId: string;
-    email: string;
-    fingerprint?: string;
-  }) {
+  async syncShopifyCustomer(@Body() dto: ShopifyCustomerSyncDto) {
     return this.sessionSyncService.syncFromShopify(
-      body.shopifyCustomerId,
-      body.email,
-      body.fingerprint
+      dto.shopifyCustomerId,
+      dto.email,
+      dto.fingerprint
     );
   }
 
@@ -566,5 +616,42 @@ export class AuthController {
       this.logger.error(`❌ [OAUTH] Callback failed: ${error.message}`);
       return res.redirect(`${this.adminUrl}/login?error=oauth_failed&message=${encodeURIComponent(error.message)}`);
     }
+  }
+
+  /**
+   * Get password policy for frontend validation
+   * PUBLIC endpoint - no auth required
+   */
+  @Public()
+  @Get('password-policy')
+  async getPasswordPolicy() {
+    return {
+      success: true,
+      policy: this.loginSecurity.getPasswordPolicy(),
+    };
+  }
+
+  /**
+   * Validate password strength
+   * PUBLIC endpoint - for registration/password change forms
+   */
+  @Public()
+  @Post('validate-password')
+  async validatePassword(@Body() body: { password: string }) {
+    const result = this.loginSecurity.validatePassword(body.password);
+    const strength = this.loginSecurity.calculatePasswordStrength(body.password);
+    
+    return {
+      success: true,
+      valid: result.valid,
+      errors: result.errors,
+      strength,
+      strengthLabel: this.getStrengthLabel(strength),
+    };
+  }
+
+  private getStrengthLabel(strength: number): string {
+    const labels = ['Very Weak', 'Weak', 'Fair', 'Strong', 'Very Strong'];
+    return labels[Math.min(strength, 4)];
   }
 }

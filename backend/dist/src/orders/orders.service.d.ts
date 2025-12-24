@@ -42,7 +42,7 @@ export declare class OrdersService {
         lineItems: import("@prisma/client/runtime/client").JsonValue | null;
         discountCodes: import("@prisma/client/runtime/client").JsonValue | null;
     })[]>;
-    findOne(id: string, merchantId: string): Promise<({
+    findOne(id: string, merchantId: string, companyId?: string): Promise<({
         company: {
             name: string;
             id: string;
@@ -105,7 +105,7 @@ export declare class OrdersService {
         lineItems: import("@prisma/client/runtime/client").JsonValue | null;
         discountCodes: import("@prisma/client/runtime/client").JsonValue | null;
     }) | null>;
-    getStats(merchantId: string): Promise<{
+    getStats(merchantId: string, companyId?: string): Promise<{
         total: number;
         totalRevenue: number | import("@prisma/client-runtime-utils").Decimal;
     }>;

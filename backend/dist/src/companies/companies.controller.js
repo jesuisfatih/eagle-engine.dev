@@ -18,6 +18,7 @@ const companies_service_1 = require("./companies.service");
 const company_users_service_1 = require("./company-users.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
+const company_dto_1 = require("./dto/company.dto");
 let CompaniesController = class CompaniesController {
     companiesService;
     companyUsersService;
@@ -25,11 +26,11 @@ let CompaniesController = class CompaniesController {
         this.companiesService = companiesService;
         this.companyUsersService = companyUsersService;
     }
-    async findAll(merchantId, status, search) {
+    async findAll(merchantId, query) {
         if (!merchantId) {
             throw new common_1.BadRequestException('Merchant ID required');
         }
-        return this.companiesService.findAll(merchantId, { status, search });
+        return this.companiesService.findAll(merchantId, { status: query.status, search: query.search });
     }
     async getStats(merchantId) {
         if (!merchantId) {
@@ -43,17 +44,17 @@ let CompaniesController = class CompaniesController {
         }
         return this.companiesService.findOne(id, merchantId);
     }
-    async create(merchantId, body) {
+    async create(merchantId, dto) {
         if (!merchantId) {
             throw new common_1.BadRequestException('Merchant ID required');
         }
-        return this.companiesService.create(merchantId, body);
+        return this.companiesService.create(merchantId, dto);
     }
-    async update(id, merchantId, body) {
+    async update(id, merchantId, dto) {
         if (!merchantId) {
             throw new common_1.BadRequestException('Merchant ID required');
         }
-        return this.companiesService.update(id, merchantId, body);
+        return this.companiesService.update(id, merchantId, dto);
     }
     async approve(id, merchantId) {
         if (!merchantId) {
@@ -61,11 +62,11 @@ let CompaniesController = class CompaniesController {
         }
         return this.companiesService.approve(id, merchantId);
     }
-    async reject(id, merchantId, body) {
+    async reject(id, merchantId, dto) {
         if (!merchantId) {
             throw new common_1.BadRequestException('Merchant ID required');
         }
-        return this.companiesService.reject(id, merchantId, body.reason);
+        return this.companiesService.reject(id, merchantId, dto.reason);
     }
     async delete(id, merchantId) {
         if (!merchantId) {
@@ -76,8 +77,8 @@ let CompaniesController = class CompaniesController {
     async getCompanyUsers(companyId) {
         return this.companyUsersService.findByCompany(companyId);
     }
-    async inviteUser(companyId, body) {
-        return this.companyUsersService.invite(companyId, body);
+    async inviteUser(companyId, dto) {
+        return this.companyUsersService.invite(companyId, dto);
     }
     async verifyUserEmail(userId) {
         return this.companyUsersService.verifyEmail(userId);
@@ -87,10 +88,9 @@ exports.CompaniesController = CompaniesController;
 __decorate([
     (0, common_1.Get)(),
     __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
-    __param(1, (0, common_1.Query)('status')),
-    __param(2, (0, common_1.Query)('search')),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:paramtypes", [String, company_dto_1.GetCompaniesQueryDto]),
     __metadata("design:returntype", Promise)
 ], CompaniesController.prototype, "findAll", null);
 __decorate([
@@ -113,7 +113,7 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [String, company_dto_1.CreateCompanyDto]),
     __metadata("design:returntype", Promise)
 ], CompaniesController.prototype, "create", null);
 __decorate([
@@ -122,7 +122,7 @@ __decorate([
     __param(1, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:paramtypes", [String, String, company_dto_1.UpdateCompanyDto]),
     __metadata("design:returntype", Promise)
 ], CompaniesController.prototype, "update", null);
 __decorate([
@@ -139,7 +139,7 @@ __decorate([
     __param(1, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:paramtypes", [String, String, company_dto_1.RejectCompanyDto]),
     __metadata("design:returntype", Promise)
 ], CompaniesController.prototype, "reject", null);
 __decorate([
@@ -162,7 +162,7 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [String, company_dto_1.InviteUserDto]),
     __metadata("design:returntype", Promise)
 ], CompaniesController.prototype, "inviteUser", null);
 __decorate([

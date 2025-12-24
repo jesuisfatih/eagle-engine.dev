@@ -8,6 +8,9 @@ export declare class PrismaService implements OnModuleInit, OnModuleDestroy {
     constructor(config: ConfigService);
     $connect(): Promise<void>;
     $disconnect(): Promise<void>;
+    $queryRaw(query: TemplateStringsArray, ...values: any[]): import("@prisma/client").Prisma.PrismaPromise<unknown>;
+    $executeRaw(query: TemplateStringsArray, ...values: any[]): import("@prisma/client").Prisma.PrismaPromise<number>;
+    $transaction(fn: any): Promise<any[]>;
     get merchant(): import("@prisma/client").Prisma.MerchantDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     get shopifyCustomer(): import("@prisma/client").Prisma.ShopifyCustomerDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     get company(): import("@prisma/client").Prisma.CompanyDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
@@ -21,6 +24,11 @@ export declare class PrismaService implements OnModuleInit, OnModuleDestroy {
     get activityLog(): import("@prisma/client").Prisma.ActivityLogDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     get discountCode(): import("@prisma/client").Prisma.DiscountCodeDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     get syncLog(): import("@prisma/client").Prisma.SyncLogDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    get wishlist(): import("@prisma/client").Prisma.WishlistDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    get wishlistItem(): import("@prisma/client").Prisma.WishlistItemDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    get address(): import("@prisma/client").Prisma.AddressDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    get supportTicket(): import("@prisma/client").Prisma.SupportTicketDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    get ticketResponse(): import("@prisma/client").Prisma.TicketResponseDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     onModuleInit(): Promise<void>;
     onModuleDestroy(): Promise<void>;
     cleanDatabase(): Promise<any>;

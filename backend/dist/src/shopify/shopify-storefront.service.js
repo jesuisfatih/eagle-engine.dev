@@ -19,12 +19,17 @@ let ShopifyStorefrontService = ShopifyStorefrontService_1 = class ShopifyStorefr
     httpService;
     config;
     logger = new common_1.Logger(ShopifyStorefrontService_1.name);
+    apiVersion;
     constructor(httpService, config) {
         this.httpService = httpService;
         this.config = config;
+        this.apiVersion = this.config.get('SHOPIFY_API_VERSION', '2024-10');
+    }
+    buildStorefrontUrl(shop) {
+        return `https://${shop}/api/${this.apiVersion}/graphql.json`;
     }
     async createCart(shop, storefrontAccessToken, lines, discountCodes, customerAccessToken) {
-        const url = `https://${shop}/api/2024-10/graphql.json`;
+        const url = this.buildStorefrontUrl(shop);
         const mutation = `
       mutation cartCreate($input: CartInput!) {
         cartCreate(input: $input) {
@@ -113,7 +118,7 @@ let ShopifyStorefrontService = ShopifyStorefrontService_1 = class ShopifyStorefr
         }
     }
     async createCustomerAccessToken(shop, storefrontAccessToken, email, password) {
-        const url = `https://${shop}/api/2024-10/graphql.json`;
+        const url = this.buildStorefrontUrl(shop);
         const mutation = `
       mutation customerAccessTokenCreate($input: CustomerAccessTokenCreateInput!) {
         customerAccessTokenCreate(input: $input) {
@@ -163,6 +168,96 @@ let ShopifyStorefrontService = ShopifyStorefrontService_1 = class ShopifyStorefr
             this.logger.error('Failed to create customer access token', error);
             return null;
         }
+    }
+    async updateCartBuyerIdentity(shop, storefrontAccessToken, cartId, buyerIdentity) {
+        const url = this.buildStorefrontUrl(shop);
+        const mutation = `
+      mutation cartBuyerIdentityUpdate($cartId: ID!, $buyerIdentity: CartBuyerIdentityInput!) {
+        cartBuyerIdentityUpdate(cartId: $cartId, buyerIdentity: $buyerIdentity) {
+          cart {
+            id
+            checkoutUrl
+            buyerIdentity {
+              email
+              phone
+              deliveryAddressPreferences {
+                ... on MailingAddress {
+                  address1
+                  address2
+                  city
+                  province
+                  country
+                  zip
+                }
+              }
+            }
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+        const variables = {
+            cartId,
+            buyerIdentity: {
+                email: buyerIdentity.email,
+                phone: buyerIdentity.phone,
+                countryCode: buyerIdentity.countryCode || 'TR',
+                deliveryAddressPreferences: buyerIdentity.deliveryAddressPreferences,
+            },
+        };
+        try {
+            const response = await (0, rxjs_1.firstValueFrom)(this.httpService.post(url, { query: mutation, variables }, {
+                headers: {
+                    'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
+                    'Content-Type': 'application/json',
+                },
+            }));
+            if (response.data.errors) {
+                this.logger.error('Buyer identity update errors:', response.data.errors);
+                throw new Error(`Storefront API Error: ${JSON.stringify(response.data.errors)}`);
+            }
+            const result = response.data.data.cartBuyerIdentityUpdate;
+            if (result.userErrors?.length > 0) {
+                throw new Error(`Buyer identity update failed: ${result.userErrors[0].message}`);
+            }
+            const cart = result.cart;
+            this.logger.log(`Updated buyer identity for cart: ${cart.id}`, {
+                email: buyerIdentity.email,
+            });
+            return {
+                cartId: cart.id,
+                checkoutUrl: cart.checkoutUrl,
+                buyerIdentity: cart.buyerIdentity,
+            };
+        }
+        catch (error) {
+            this.logger.error('Failed to update cart buyer identity', error);
+            throw error;
+        }
+    }
+    async createCheckoutWithBuyerIdentity(shop, storefrontAccessToken, lines, buyerIdentity, discountCodes) {
+        const cart = await this.createCart(shop, storefrontAccessToken, lines, discountCodes);
+        const updatedCart = await this.updateCartBuyerIdentity(shop, storefrontAccessToken, cart.cartId, buyerIdentity);
+        this.logger.log(`Checkout ready with buyer identity`, {
+            cartId: updatedCart.cartId,
+            email: buyerIdentity.email,
+            checkoutUrl: updatedCart.checkoutUrl,
+        });
+        return {
+            cartId: updatedCart.cartId,
+            checkoutUrl: updatedCart.checkoutUrl,
+            email: buyerIdentity.email,
+        };
+    }
+    formatVariantId(variantId) {
+        const id = variantId.toString();
+        if (id.startsWith('gid://')) {
+            return id;
+        }
+        return `gid://shopify/ProductVariant/${id}`;
     }
 };
 exports.ShopifyStorefrontService = ShopifyStorefrontService;

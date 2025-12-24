@@ -1,14 +1,23 @@
 import { SettingsService } from './settings.service';
+import { UpdateMerchantSettingsDto, UpdateCompanySettingsDto, UpdateSsoSettingsDto, ToggleSnippetDto } from './dto/settings.dto';
 export declare class SettingsController {
     private settingsService;
     constructor(settingsService: SettingsService);
     getMerchantSettings(merchantId: string): Promise<{
-        planName: string;
-        settings: import("@prisma/client/runtime/client").JsonValue;
-        snippetEnabled: boolean;
-        lastSyncAt: Date | null;
-    } | null>;
-    updateMerchantSettings(merchantId: string, body: any): Promise<{
+        stats: {
+            totalCustomers: number;
+            syncedCustomers: number;
+            totalProducts: number;
+            totalOrders: number;
+        };
+        id?: string | undefined;
+        shopDomain?: string | undefined;
+        planName?: string | undefined;
+        settings?: import("@prisma/client/runtime/client").JsonValue | undefined;
+        snippetEnabled?: boolean | undefined;
+        lastSyncAt?: Date | null | undefined;
+    }>;
+    updateMerchantSettings(merchantId: string, dto: UpdateMerchantSettingsDto): Promise<{
         id: string;
         shopDomain: string;
         shopifyShopId: bigint | null;
@@ -22,7 +31,7 @@ export declare class SettingsController {
         createdAt: Date;
         updatedAt: Date;
     }>;
-    toggleSnippet(merchantId: string, enabled: boolean): Promise<{
+    toggleSnippet(merchantId: string, dto: ToggleSnippetDto): Promise<{
         id: string;
         shopDomain: string;
         shopifyShopId: bigint | null;
@@ -41,7 +50,7 @@ export declare class SettingsController {
         settings: import("@prisma/client/runtime/client").JsonValue;
         companyGroup: string | null;
     } | null>;
-    updateCompanySettings(companyId: string, body: any): Promise<{
+    updateCompanySettings(companyId: string, dto: UpdateCompanySettingsDto): Promise<{
         name: string;
         id: string;
         status: string;
@@ -64,11 +73,7 @@ export declare class SettingsController {
         multipassSecret: any;
         storefrontToken: any;
     }>;
-    updateSsoSettings(merchantId: string, body: {
-        mode: string;
-        multipassSecret?: string;
-        storefrontToken?: string;
-    }): Promise<{
+    updateSsoSettings(merchantId: string, dto: UpdateSsoSettingsDto): Promise<{
         id: string;
         shopDomain: string;
         shopifyShopId: bigint | null;

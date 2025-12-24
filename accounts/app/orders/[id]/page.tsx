@@ -5,10 +5,11 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import OrderTracking from '../components/OrderTracking';
 import { accountsFetch } from '@/lib/api-client';
+import type { Order } from '@eagle/types';
 
 export default function OrderDetailPage() {
   const params = useParams();
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     loadOrder();
@@ -70,7 +71,7 @@ export default function OrderDetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {order.lineItems?.map((item: any, i: number) => (
+                    {order.lineItems?.map((item: { name: string; quantity: number; price: number }, i: number) => (
                       <tr key={i}>
                         <td>{item.name}</td>
                         <td>{item.quantity}</td>

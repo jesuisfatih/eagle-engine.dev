@@ -47,20 +47,28 @@ let OrdersService = class OrdersService {
             take: 100,
         });
     }
-    async findOne(id, merchantId) {
+    async findOne(id, merchantId, companyId) {
+        const where = { id, merchantId };
+        if (companyId) {
+            where.companyId = companyId;
+        }
         return this.prisma.orderLocal.findFirst({
-            where: { id, merchantId },
+            where,
             include: {
                 company: true,
                 companyUser: true,
             },
         });
     }
-    async getStats(merchantId) {
+    async getStats(merchantId, companyId) {
+        const where = { merchantId };
+        if (companyId) {
+            where.companyId = companyId;
+        }
         const [total, totalRevenue] = await Promise.all([
-            this.prisma.orderLocal.count({ where: { merchantId } }),
+            this.prisma.orderLocal.count({ where }),
             this.prisma.orderLocal.aggregate({
-                where: { merchantId },
+                where,
                 _sum: { totalPrice: true },
             }),
         ]);

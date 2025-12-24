@@ -1,6 +1,73 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ShopifyCompanySyncService } from './shopify-company-sync.service';
+import { 
+  PaginationParams, 
+  parsePaginationParams, 
+  buildPrismaSkipTake, 
+  buildPrismaOrderBy,
+  createPaginatedResponse 
+} from '../common/utils/pagination.util';
+
+/**
+ * Optimized select for company list (minimal data)
+ */
+const COMPANY_LIST_SELECT = {
+  id: true,
+  name: true,
+  email: true,
+  phone: true,
+  status: true,
+  shopifyCompanyId: true,
+  createdAt: true,
+  updatedAt: true,
+  _count: {
+    select: {
+      users: true,
+      orders: true,
+    },
+  },
+} as const;
+
+/**
+ * Optimized include for company detail
+ */
+const COMPANY_DETAIL_INCLUDE = {
+  users: {
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      role: true,
+      isActive: true,
+      lastLoginAt: true,
+    },
+    orderBy: { createdAt: 'desc' as const },
+  },
+  pricingRules: {
+    where: { isActive: true },
+    select: {
+      id: true,
+      name: true,
+      discountType: true,
+      discountValue: true,
+      priority: true,
+    },
+  },
+  orders: {
+    take: 10,
+    orderBy: { createdAt: 'desc' as const },
+    select: {
+      id: true,
+      shopifyOrderId: true,
+      orderNumber: true,
+      totalPrice: true,
+      financialStatus: true,
+      createdAt: true,
+    },
+  },
+} as const;
 
 @Injectable()
 export class CompaniesService {
@@ -9,7 +76,14 @@ export class CompaniesService {
     private shopifyCompanySync: ShopifyCompanySyncService,
   ) {}
 
-  async findAll(merchantId: string, filters?: { status?: string; search?: string }) {
+  async findAll(merchantId: string, filters?: { status?: string; search?: string; page?: number; limit?: number }) {
+    const pagination: PaginationParams = {
+      page: filters?.page || 1,
+      limit: filters?.limit || 20,
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+    };
+
     const where: any = { merchantId };
 
     if (filters?.status) {
@@ -23,43 +97,23 @@ export class CompaniesService {
       ];
     }
 
-    return this.prisma.company.findMany({
-      where,
-      include: {
-        users: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            role: true,
-            isActive: true,
-          },
-        },
-        _count: {
-          select: {
-            users: true,
-            orders: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const [data, total] = await Promise.all([
+      this.prisma.company.findMany({
+        where,
+        select: COMPANY_LIST_SELECT,
+        orderBy: buildPrismaOrderBy(pagination, ['createdAt', 'name', 'email']),
+        ...buildPrismaSkipTake(pagination),
+      }),
+      this.prisma.company.count({ where }),
+    ]);
+
+    return createPaginatedResponse(data, total, pagination);
   }
 
   async findOne(id: string, merchantId: string) {
     const company = await this.prisma.company.findFirst({
       where: { id, merchantId },
-      include: {
-        users: true,
-        pricingRules: {
-          where: { isActive: true },
-        },
-        orders: {
-          take: 10,
-          orderBy: { createdAt: 'desc' },
-        },
-      },
+      include: COMPANY_DETAIL_INCLUDE,
     });
 
     if (!company) {

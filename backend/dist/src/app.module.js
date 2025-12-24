@@ -10,11 +10,13 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const bull_1 = require("@nestjs/bull");
+const throttler_1 = require("@nestjs/throttler");
 const core_1 = require("@nestjs/core");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const prisma_module_1 = require("./prisma/prisma.module");
 const redis_module_1 = require("./redis/redis.module");
+const common_module_1 = require("./common/common.module");
 const auth_module_1 = require("./auth/auth.module");
 const shopify_module_1 = require("./shopify/shopify.module");
 const sync_module_1 = require("./sync/sync.module");
@@ -36,6 +38,9 @@ const notifications_module_1 = require("./notifications/notifications.module");
 const settings_module_1 = require("./settings/settings.module");
 const uploads_module_1 = require("./uploads/uploads.module");
 const abandoned_carts_module_1 = require("./abandoned-carts/abandoned-carts.module");
+const support_tickets_module_1 = require("./support-tickets/support-tickets.module");
+const wishlist_module_1 = require("./wishlist/wishlist.module");
+const addresses_module_1 = require("./addresses/addresses.module");
 const jwt_auth_guard_1 = require("./auth/guards/jwt-auth.guard");
 const http_exception_filter_1 = require("./common/filters/http-exception.filter");
 let AppModule = class AppModule {
@@ -48,6 +53,23 @@ exports.AppModule = AppModule = __decorate([
                 isGlobal: true,
                 envFilePath: '.env',
             }),
+            throttler_1.ThrottlerModule.forRoot([
+                {
+                    name: 'short',
+                    ttl: 1000,
+                    limit: 10,
+                },
+                {
+                    name: 'medium',
+                    ttl: 10000,
+                    limit: 50,
+                },
+                {
+                    name: 'long',
+                    ttl: 60000,
+                    limit: 100,
+                },
+            ]),
             bull_1.BullModule.forRootAsync({
                 imports: [config_1.ConfigModule],
                 useFactory: (config) => ({
@@ -61,6 +83,7 @@ exports.AppModule = AppModule = __decorate([
             }),
             prisma_module_1.PrismaModule,
             redis_module_1.RedisModule,
+            common_module_1.CommonModule,
             auth_module_1.AuthModule,
             shopify_module_1.ShopifyModule,
             sync_module_1.SyncModule,
@@ -82,10 +105,17 @@ exports.AppModule = AppModule = __decorate([
             settings_module_1.SettingsModule,
             uploads_module_1.UploadsModule,
             abandoned_carts_module_1.AbandonedCartsModule,
+            support_tickets_module_1.SupportTicketsModule,
+            wishlist_module_1.WishlistModule,
+            addresses_module_1.AddressesModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [
             app_service_1.AppService,
+            {
+                provide: core_1.APP_GUARD,
+                useClass: throttler_1.ThrottlerGuard,
+            },
             {
                 provide: core_1.APP_GUARD,
                 useClass: jwt_auth_guard_1.JwtAuthGuard,

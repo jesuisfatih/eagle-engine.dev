@@ -11,6 +11,10 @@ export declare class RedisService implements OnModuleInit {
     get(key: string): Promise<string | null>;
     set(key: string, value: string, ttl?: number): Promise<void>;
     del(key: string): Promise<void>;
+    incr(key: string): Promise<number>;
+    expire(key: string, seconds: number): Promise<void>;
+    ttl(key: string): Promise<number>;
+    exists(key: string): Promise<boolean>;
     keys(pattern: string): Promise<string[]>;
     flushall(): Promise<void>;
 }

@@ -80,7 +80,8 @@ export default function RegisterPage() {
         const errorData = await response.json();
         setError(errorData.error || 'Failed to send verification code');
       }
-    } catch (err: any) {
+    } catch (err) {
+      console.error('Send verification error:', err);
       setError('Connection error. Please try again.');
     } finally {
       setLoading(false);
@@ -116,7 +117,8 @@ export default function RegisterPage() {
         const errorData = await response.json();
         setError(errorData.error || 'Verification failed');
       }
-    } catch (err: any) {
+    } catch (err) {
+      console.error('Verify code error:', err);
       setError('Connection error. Please try again.');
     } finally {
       setLoading(false);
@@ -252,7 +254,7 @@ export default function RegisterPage() {
         const errorData = await response.json();
         setError(errorData.error || 'Registration failed. Please try again.');
       }
-    } catch (err: any) {
+    } catch (err) {
       setError('Connection error. Please try again.');
       console.error('Registration error:', err);
     } finally {

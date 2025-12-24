@@ -63,12 +63,12 @@ export declare class AbandonedCartsService {
             productId: string | null;
             variantId: string | null;
             shopifyVariantId: bigint | null;
+            discountAmount: import("@prisma/client-runtime-utils").Decimal;
             sku: string | null;
             variantTitle: string | null;
             quantity: number;
             listPrice: import("@prisma/client-runtime-utils").Decimal;
             unitPrice: import("@prisma/client-runtime-utils").Decimal;
-            discountAmount: import("@prisma/client-runtime-utils").Decimal;
             lineTotal: import("@prisma/client-runtime-utils").Decimal | null;
             appliedPricingRuleId: string | null;
         })[];

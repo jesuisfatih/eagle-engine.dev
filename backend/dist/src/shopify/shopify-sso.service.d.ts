@@ -4,6 +4,7 @@ export declare class ShopifySsoService {
     private configService;
     private prisma;
     private readonly logger;
+    private readonly apiVersion;
     constructor(configService: ConfigService, prisma: PrismaService);
     generateMultipassToken(multipassSecret: string, customerData: {
         email: string;

@@ -1,11 +1,12 @@
 import { EventsService } from './events.service';
+import { CollectEventDto, GetEventsQueryDto, AnalyticsQueryDto } from './dto/event.dto';
 export declare class EventsController {
     private eventsService;
     constructor(eventsService: EventsService);
-    collectEvent(body: any): Promise<{
+    collectEvent(dto: CollectEventDto): Promise<{
         success: boolean;
     }>;
-    getCompanyEvents(companyId: string, eventType?: string, limit?: string): Promise<({
+    getCompanyEvents(companyId: string, query: GetEventsQueryDto): Promise<({
         companyUser: {
             email: string;
             firstName: string | null;
@@ -34,7 +35,7 @@ export declare class EventsController {
         userAgent: string | null;
         referrer: string | null;
     })[]>;
-    getAnalytics(merchantId: string, from?: string, to?: string): Promise<{
+    getAnalytics(merchantId: string, query: AnalyticsQueryDto): Promise<{
         totalEvents: number;
         productViews: number;
         addToCarts: number;

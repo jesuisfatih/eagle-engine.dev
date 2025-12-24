@@ -34,6 +34,15 @@ let PrismaService = PrismaService_1 = class PrismaService {
     async $disconnect() {
         return this.prisma.$disconnect();
     }
+    $queryRaw(query, ...values) {
+        return this.prisma.$queryRaw(query, ...values);
+    }
+    $executeRaw(query, ...values) {
+        return this.prisma.$executeRaw(query, ...values);
+    }
+    $transaction(fn) {
+        return this.prisma.$transaction(fn);
+    }
     get merchant() {
         return this.prisma.merchant;
     }
@@ -72,6 +81,21 @@ let PrismaService = PrismaService_1 = class PrismaService {
     }
     get syncLog() {
         return this.prisma.syncLog;
+    }
+    get wishlist() {
+        return this.prisma.wishlist;
+    }
+    get wishlistItem() {
+        return this.prisma.wishlistItem;
+    }
+    get address() {
+        return this.prisma.address;
+    }
+    get supportTicket() {
+        return this.prisma.supportTicket;
+    }
+    get ticketResponse() {
+        return this.prisma.ticketResponse;
     }
     async onModuleInit() {
         try {

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { accountsFetch } from '@/lib/api-client';
 import Link from 'next/link';
+import type { Order } from '@eagle/types';
 
 export default function AccountsDashboard() {
   const [stats, setStats] = useState({
@@ -11,7 +12,7 @@ export default function AccountsDashboard() {
     totalSpent: 0,
     cartItems: 0,
   });
-  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [companyName, setCompanyName] = useState('');
 
   useEffect(() => {
@@ -31,9 +32,16 @@ export default function AccountsDashboard() {
       setCompanyName(companyData?.name || 'Company');
       setRecentOrders(Array.isArray(ordersData) ? ordersData.slice(0, 5) : []);
       
-      const pending = ordersData.filter((o: any) => o.financialStatus === 'pending').length;
-      const completed = ordersData.filter((o: any) => o.financialStatus === 'paid').length;
-      const total = ordersData.reduce((sum: number, o: any) => sum + Number(o.totalPrice || 0), 0);
+      // Type the orders for proper filtering
+      interface OrderData {
+        financialStatus: string;
+        totalPrice?: string | number;
+      }
+      
+      const orders = Array.isArray(ordersData) ? ordersData as OrderData[] : [];
+      const pending = orders.filter(o => o.financialStatus === 'pending').length;
+      const completed = orders.filter(o => o.financialStatus === 'paid').length;
+      const total = orders.reduce((sum, o) => sum + Number(o.totalPrice || 0), 0);
       
       setStats({
         pendingOrders: pending,

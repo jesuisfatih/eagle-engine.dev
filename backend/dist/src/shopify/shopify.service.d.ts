@@ -23,4 +23,5 @@ export declare class ShopifyService {
     } | null>;
     getApiVersion(): string;
     buildAdminApiUrl(shop: string, path: string): string;
+    buildAdminGraphQLUrl(shop: string): string;
 }

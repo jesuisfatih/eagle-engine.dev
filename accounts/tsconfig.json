@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@eagle/types": ["../shared/types/index.ts"]
     }
   },
   "include": [

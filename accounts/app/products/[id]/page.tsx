@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { accountsFetch } from '@/lib/api-client';
+import type { Product } from '@eagle/types';
 
 export default function ProductDetailPage() {
   const params = useParams();
-  const [product, setProduct] = useState<any>(null);
+  const [product, setProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
 

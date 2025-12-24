@@ -1,4 +1,5 @@
 import { QuotesService } from './quotes.service';
+import { CreateQuoteDto } from './dto/quote.dto';
 export declare class QuotesController {
     private quotesService;
     constructor(quotesService: QuotesService);
@@ -57,12 +58,12 @@ export declare class QuotesController {
             productId: string | null;
             variantId: string | null;
             shopifyVariantId: bigint | null;
+            discountAmount: import("@prisma/client-runtime-utils").Decimal;
             sku: string | null;
             variantTitle: string | null;
             quantity: number;
             listPrice: import("@prisma/client-runtime-utils").Decimal;
             unitPrice: import("@prisma/client-runtime-utils").Decimal;
-            discountAmount: import("@prisma/client-runtime-utils").Decimal;
             lineTotal: import("@prisma/client-runtime-utils").Decimal | null;
             appliedPricingRuleId: string | null;
         })[];
@@ -89,7 +90,7 @@ export declare class QuotesController {
         notes: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
     })[]>;
-    create(companyId: string, userId: string, body: any): Promise<{
+    create(companyId: string, userId: string, dto: CreateQuoteDto): Promise<{
         id: string;
         status: string;
         createdAt: Date;

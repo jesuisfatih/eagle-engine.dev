@@ -14,8 +14,8 @@ export default function SnippetTester() {
       } else {
         setTestResult('❌ Snippet not accessible');
       }
-    } catch (err: any) {
-      setTestResult('❌ Error: ' + err.message);
+    } catch (err) {
+      setTestResult('❌ Error: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
   };
 

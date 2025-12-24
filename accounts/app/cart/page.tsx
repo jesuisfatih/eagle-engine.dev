@@ -3,8 +3,24 @@
 import { useState, useEffect } from 'react';
 import { accountsFetch } from '@/lib/api-client';
 
+// Cart item structure as returned by API
+interface CartItemData {
+  id: string;
+  shopifyVariantId: string;
+  quantity: number;
+  unitPrice: number;
+  product?: {
+    title: string;
+  };
+}
+
+interface CartData {
+  id: string;
+  items: CartItemData[];
+}
+
 export default function CartPage() {
-  const [cart, setCart] = useState<any>(null);
+  const [cart, setCart] = useState<CartData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,6 +49,27 @@ export default function CartPage() {
     }
   };
 
+  // Types for checkout data
+  interface UserData {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  }
+  
+  interface AddressData {
+    id: string;
+    firstName: string;
+    lastName: string;
+    address1: string;
+    address2?: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    isDefault?: boolean;
+  }
+
   const checkout = async () => {
     if (!cart || !cart.id || !cart.items || cart.items.length === 0) {
       alert('Cart is empty');
@@ -41,8 +78,8 @@ export default function CartPage() {
     
     try {
       // Step 1: Fetch user profile and address information
-      let userData: any = null;
-      let addressData: any = null;
+      let userData: UserData | null = null;
+      let addressData: AddressData | null = null;
       
       try {
         // Get user profile
@@ -57,9 +94,9 @@ export default function CartPage() {
           const addressResponse = await accountsFetch('/api/v1/addresses');
           
           if (addressResponse.ok) {
-            const addresses = await addressResponse.json();
+            const addresses: AddressData[] = await addressResponse.json();
             // Get default address or first address
-            addressData = addresses.find((addr: any) => addr.isDefault) || addresses[0] || null;
+            addressData = addresses.find(addr => addr.isDefault) || addresses[0] || null;
           }
         } catch (addrErr) {
           console.warn('Address fetch failed:', addrErr);
@@ -112,7 +149,7 @@ export default function CartPage() {
       const shopUrl = `https://${shopDomain}`;
       
       // Add all items to Shopify cart using /cart/add.js
-      const addPromises = cart.items.map((item: any) => {
+      const addPromises = cart.items.map((item: CartItemData) => {
         return fetch(`${shopUrl}/cart/add.js`, {
           method: 'POST',
           headers: {
@@ -244,7 +281,7 @@ export default function CartPage() {
         console.error('Fallback shop domain fetch failed:', e);
       }
       
-      const cartItems = cart.items.map((item: any) => 
+      const cartItems = cart.items.map((item: CartItemData) => 
         `${item.shopifyVariantId}:${item.quantity}`
       ).join(',');
       
@@ -309,7 +346,7 @@ export default function CartPage() {
     }
   };
 
-  const subtotal = cart?.items?.reduce((sum: number, item: any) => 
+  const subtotal = cart?.items?.reduce((sum: number, item: CartItemData) => 
     sum + (item.unitPrice * item.quantity), 0) || 0;
 
   return (
@@ -352,7 +389,7 @@ export default function CartPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {cart.items?.map((item: any) => (
+                    {cart.items?.map((item: CartItemData) => (
                       <tr key={item.id}>
                         <td>{item.product?.title || 'Product'}</td>
                         <td>${item.unitPrice}</td>

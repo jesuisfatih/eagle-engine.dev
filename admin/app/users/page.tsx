@@ -3,6 +3,15 @@
 import { useState, useEffect } from 'react';
 import Modal from '@/components/Modal';
 import { adminFetch } from '@/lib/api-client';
+import {
+  PageHeader,
+  PageContent,
+  StatsCard,
+  DataTable,
+  type DataTableColumn,
+  StatusBadge,
+  showToast
+} from '@/components/ui';
 
 interface User {
   id: string;
@@ -19,7 +28,12 @@ interface User {
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    admins: 0,
+    recentLogins: 0,
+  });
   
   const [roleModal, setRoleModal] = useState<{show: boolean; user: User | null; selectedRole: string}>({
     show: false, 
@@ -29,11 +43,6 @@ export default function UsersPage() {
   const [statusModal, setStatusModal] = useState<{show: boolean; user: User | null}>({
     show: false,
     user: null
-  });
-  const [resultModal, setResultModal] = useState<{show: boolean; message: string; type: 'success' | 'error'}>({
-    show: false, 
-    message: '',
-    type: 'success'
   });
   const [updating, setUpdating] = useState(false);
 
@@ -50,7 +59,7 @@ export default function UsersPage() {
       const allUsers: User[] = [];
       for (const company of (Array.isArray(companies) ? companies : [])) {
         if (company.users) {
-          company.users.forEach((user: any) => {
+          company.users.forEach((user: User) => {
             allUsers.push({
               ...user,
               companyId: company.id,
@@ -60,7 +69,19 @@ export default function UsersPage() {
         }
       }
       setUsers(allUsers);
+      
+      // Calculate stats
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      
+      setStats({
+        total: allUsers.length,
+        active: allUsers.filter(u => u.isActive).length,
+        admins: allUsers.filter(u => u.role?.toLowerCase() === 'admin').length,
+        recentLogins: allUsers.filter(u => u.lastLoginAt && new Date(u.lastLoginAt) > weekAgo).length,
+      });
     } catch (err) {
+      console.error('Load users error:', err);
       setUsers([]);
     } finally {
       setLoading(false);
@@ -80,15 +101,15 @@ export default function UsersPage() {
       setRoleModal({show: false, user: null, selectedRole: ''});
       
       if (response.ok) {
-        setResultModal({show: true, message: '✅ User role updated successfully!', type: 'success'});
+        showToast('success', 'User role updated successfully!');
         loadUsers();
       } else {
         const error = await response.json().catch(() => ({}));
-        setResultModal({show: true, message: `❌ ${error.message || 'Failed to update role'}`, type: 'error'});
+        showToast('error', error.message || 'Failed to update role');
       }
-    } catch (err: any) {
+    } catch (err) {
       setRoleModal({show: false, user: null, selectedRole: ''});
-      setResultModal({show: true, message: `❌ ${err.message || 'Failed to update role'}`, type: 'error'});
+      showToast('error', err instanceof Error ? err.message : 'Failed to update role');
     } finally {
       setUpdating(false);
     }
@@ -109,155 +130,193 @@ export default function UsersPage() {
       setStatusModal({show: false, user: null});
       
       if (response.ok) {
-        setResultModal({
-          show: true, 
-          message: `✅ User ${newStatus ? 'activated' : 'deactivated'} successfully!`, 
-          type: 'success'
-        });
+        showToast('success', `User ${newStatus ? 'activated' : 'deactivated'} successfully!`);
         loadUsers();
       } else {
         const error = await response.json().catch(() => ({}));
-        setResultModal({show: true, message: `❌ ${error.message || 'Failed to update status'}`, type: 'error'});
+        showToast('error', error.message || 'Failed to update status');
       }
-    } catch (err: any) {
+    } catch (err) {
       setStatusModal({show: false, user: null});
-      setResultModal({show: true, message: `❌ ${err.message || 'Failed to update status'}`, type: 'error'});
+      showToast('error', err instanceof Error ? err.message : 'Failed to update status');
     } finally {
       setUpdating(false);
     }
   };
 
-  const filteredUsers = users.filter(u => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      u.firstName?.toLowerCase().includes(query) ||
-      u.lastName?.toLowerCase().includes(query) ||
-      u.email?.toLowerCase().includes(query) ||
-      u.companyName?.toLowerCase().includes(query)
-    );
-  });
+  // Table columns
+  const columns: DataTableColumn<User>[] = [
+    {
+      key: 'name',
+      label: 'User',
+      sortable: true,
+      render: (user) => (
+        <div>
+          <div className="fw-semibold">{user.firstName} {user.lastName}</div>
+          <div className="small text-muted">{user.email}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'companyName',
+      label: 'Company',
+      sortable: true,
+    },
+    {
+      key: 'role',
+      label: 'Role',
+      sortable: true,
+      render: (user) => (
+        <StatusBadge
+          status={user.role}
+          colorMap={{
+            admin: 'danger',
+            manager: 'warning',
+            buyer: 'info',
+            viewer: 'secondary',
+          }}
+        />
+      ),
+    },
+    {
+      key: 'isActive',
+      label: 'Status',
+      sortable: true,
+      render: (user) => (
+        <StatusBadge
+          status={user.isActive ? 'Active' : 'Pending'}
+          colorMap={{
+            Active: 'success',
+            Pending: 'warning',
+          }}
+        />
+      ),
+    },
+    {
+      key: 'lastLoginAt',
+      label: 'Last Login',
+      sortable: true,
+      className: 'small',
+      render: (user) => user.lastLoginAt 
+        ? new Date(user.lastLoginAt).toLocaleDateString() 
+        : 'Never',
+    },
+  ];
 
-  const getRoleBadgeClass = (role: string) => {
-    switch (role?.toLowerCase()) {
-      case 'admin': return 'bg-label-danger';
-      case 'manager': return 'bg-label-warning';
-      case 'buyer': return 'bg-label-info';
-      case 'viewer': return 'bg-label-secondary';
-      default: return 'bg-label-primary';
-    }
-  };
+  // Row actions
+  const rowActions = (user: User) => (
+    <div className="d-flex gap-1">
+      <button
+        onClick={() => setRoleModal({
+          show: true, 
+          user, 
+          selectedRole: user.role
+        })}
+        className="btn btn-sm btn-icon btn-label-primary"
+        title="Edit Role"
+      >
+        <i className="ti ti-edit"></i>
+      </button>
+      <button
+        onClick={() => setStatusModal({show: true, user})}
+        className={`btn btn-sm btn-icon ${user.isActive ? 'btn-label-warning' : 'btn-label-success'}`}
+        title={user.isActive ? 'Deactivate User' : 'Activate User'}
+      >
+        <i className={`ti ${user.isActive ? 'ti-user-off' : 'ti-user-check'}`}></i>
+      </button>
+    </div>
+  );
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h4 className="fw-bold mb-1">All Users</h4>
-          <p className="mb-0 text-muted">{filteredUsers.length} of {users.length} users</p>
-        </div>
-        <div className="d-flex gap-2">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search users..."
-            style={{maxWidth: '250px'}}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+      <PageHeader
+        title="All Users"
+        subtitle={`${users.length} users across all companies`}
+        actions={[
+          {
+            label: 'Refresh',
+            icon: 'refresh',
+            variant: 'secondary',
+            onClick: loadUsers,
+            disabled: loading,
+          },
+        ]}
+      />
+
+      {/* Stats Cards */}
+      <div className="row g-4 mb-4">
+        <div className="col-sm-6 col-lg-3">
+          <StatsCard
+            title="Total Users"
+            value={stats.total}
+            icon="users"
+            iconColor="primary"
+            loading={loading}
           />
-          <button 
-            onClick={loadUsers} 
-            className="btn btn-label-primary"
-            disabled={loading}
-          >
-            <i className="ti ti-refresh me-1"></i>
-            Refresh
-          </button>
+        </div>
+        <div className="col-sm-6 col-lg-3">
+          <StatsCard
+            title="Active"
+            value={stats.active}
+            icon="user-check"
+            iconColor="success"
+            loading={loading}
+          />
+        </div>
+        <div className="col-sm-6 col-lg-3">
+          <StatsCard
+            title="Admins"
+            value={stats.admins}
+            icon="shield"
+            iconColor="danger"
+            loading={loading}
+          />
+        </div>
+        <div className="col-sm-6 col-lg-3">
+          <StatsCard
+            title="Recent Logins (7d)"
+            value={stats.recentLogins}
+            icon="clock"
+            iconColor="info"
+            loading={loading}
+          />
         </div>
       </div>
 
-      <div className="card">
-        <div className="card-body">
-          {loading ? (
-            <div className="text-center py-4">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-            </div>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-hover">
-                <thead>
-                  <tr>
-                    <th>User</th>
-                    <th>Company</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Last Login</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="text-center py-4">
-                        <i className="ti ti-users fs-1 text-muted d-block mb-2"></i>
-                        <p className="text-muted mb-0">
-                          {searchQuery ? 'No users match your search' : 'No users found'}
-                        </p>
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredUsers.map((user) => (
-                      <tr key={user.id}>
-                        <td>
-                          <div className="fw-semibold">{user.firstName} {user.lastName}</div>
-                          <div className="small text-muted">{user.email}</div>
-                        </td>
-                        <td>{user.companyName}</td>
-                        <td>
-                          <span className={`badge ${getRoleBadgeClass(user.role)}`}>
-                            {user.role}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`badge ${user.isActive ? 'bg-label-success' : 'bg-label-warning'}`}>
-                            {user.isActive ? 'Active' : 'Pending'}
-                          </span>
-                        </td>
-                        <td className="small">
-                          {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never'}
-                        </td>
-                        <td>
-                          <div className="d-flex gap-1">
-                            <button
-                              onClick={() => setRoleModal({
-                                show: true, 
-                                user, 
-                                selectedRole: user.role
-                              })}
-                              className="btn btn-sm btn-icon btn-label-primary"
-                              title="Edit Role"
-                            >
-                              <i className="ti ti-edit"></i>
-                            </button>
-                            <button
-                              onClick={() => setStatusModal({show: true, user})}
-                              className={`btn btn-sm btn-icon ${user.isActive ? 'btn-label-warning' : 'btn-label-success'}`}
-                              title={user.isActive ? 'Deactivate User' : 'Activate User'}
-                            >
-                              <i className={`ti ${user.isActive ? 'ti-user-off' : 'ti-user-check'}`}></i>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Users Table */}
+      <PageContent
+        loading={loading}
+        empty={{
+          show: !loading && users.length === 0,
+          icon: 'users',
+          title: 'No users found',
+          message: 'Users will appear here when companies are created.',
+        }}
+      >
+        <DataTable
+          data={users}
+          columns={columns}
+          loading={loading}
+          searchable
+          searchPlaceholder="Search users..."
+          searchFields={['firstName', 'lastName', 'email', 'companyName']}
+          statusFilter={{
+            field: 'role',
+            options: [
+              { value: 'admin', label: 'Admin', color: 'danger' },
+              { value: 'manager', label: 'Manager', color: 'warning' },
+              { value: 'buyer', label: 'Buyer', color: 'info' },
+              { value: 'viewer', label: 'Viewer', color: 'secondary' },
+            ],
+          }}
+          defaultSortKey="lastName"
+          defaultSortOrder="asc"
+          rowActions={rowActions}
+          emptyIcon="users"
+          emptyTitle="No users found"
+          emptyMessage="Try adjusting your search or filter criteria."
+        />
+      </PageContent>
 
       {/* Edit Role Modal */}
       {roleModal.show && roleModal.user && (
@@ -331,18 +390,6 @@ export default function UsersPage() {
           confirmText={statusModal.user.isActive ? 'Deactivate' : 'Activate'}
           cancelText="Cancel"
           type={statusModal.user.isActive ? 'warning' : 'success'}
-        />
-      )}
-
-      {resultModal.show && (
-        <Modal
-          show={resultModal.show}
-          onClose={() => setResultModal({show: false, message: '', type: 'success'})}
-          onConfirm={() => setResultModal({show: false, message: '', type: 'success'})}
-          title={resultModal.type === 'success' ? 'Success' : 'Error'}
-          message={resultModal.message}
-          confirmText="OK"
-          type={resultModal.type === 'success' ? 'success' : 'danger'}
         />
       )}
     </div>

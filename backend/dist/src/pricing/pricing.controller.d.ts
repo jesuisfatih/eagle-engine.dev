@@ -1,13 +1,10 @@
 import { PricingService } from './pricing.service';
+import { CalculatePricesDto, CreatePricingRuleDto, UpdatePricingRuleDto, ToggleRuleDto, GetRulesQueryDto } from './dto/pricing.dto';
 export declare class PricingController {
     private pricingService;
     constructor(pricingService: PricingService);
-    calculatePrices(merchantId: string, companyId: string, body: {
-        variantIds: string[];
-        quantities?: any;
-        cartTotal?: number;
-    }): Promise<import("./pricing-calculator.service").CalculatedPrice[]>;
-    getRules(merchantId: string, isActive?: string, companyId?: string): Promise<({
+    calculatePrices(merchantId: string, companyId: string, dto: CalculatePricesDto): Promise<import("./pricing-calculator.service").CalculatedPrice[]>;
+    getRules(merchantId: string, query: GetRulesQueryDto): Promise<({
         targetCompany: {
             name: string;
             id: string;
@@ -67,7 +64,7 @@ export declare class PricingController {
         validFrom: Date | null;
         validUntil: Date | null;
     }>;
-    createRule(merchantId: string, body: any): Promise<{
+    createRule(merchantId: string, dto: CreatePricingRuleDto): Promise<{
         name: string;
         id: string;
         createdAt: Date;
@@ -92,7 +89,7 @@ export declare class PricingController {
         validFrom: Date | null;
         validUntil: Date | null;
     }>;
-    updateRule(id: string, merchantId: string, body: any): Promise<{
+    updateRule(id: string, merchantId: string, dto: UpdatePricingRuleDto): Promise<{
         name: string;
         id: string;
         createdAt: Date;
@@ -142,7 +139,7 @@ export declare class PricingController {
         validFrom: Date | null;
         validUntil: Date | null;
     }>;
-    toggleRule(id: string, merchantId: string, isActive: boolean): Promise<{
+    toggleRule(id: string, merchantId: string, dto: ToggleRuleDto): Promise<{
         name: string;
         id: string;
         createdAt: Date;

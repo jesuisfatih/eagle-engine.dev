@@ -4,6 +4,13 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { publicFetch } from '@/lib/api-client';
 
+interface InvitationData {
+  email: string;
+  companyName?: string;
+  role?: string;
+  invitedBy?: string;
+}
+
 export default function RegisterPage() {
   const params = useParams();
   const router = useRouter();
@@ -25,7 +32,7 @@ export default function RegisterPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [invitationData, setInvitationData] = useState<any>(null);
+  const [invitationData, setInvitationData] = useState<InvitationData | null>(null);
 
   useEffect(() => {
     // Load invitation data
@@ -148,7 +155,7 @@ export default function RegisterPage() {
         const errorData = await response.json();
         setError(errorData.message || 'Registration failed. Please try again.');
       }
-    } catch (err: any) {
+    } catch (err) {
       setError('Connection error. Please try again.');
       console.error('Registration error:', err);
     } finally {

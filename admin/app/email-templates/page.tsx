@@ -4,15 +4,21 @@ import { useState } from 'react';
 import EmailTemplateModal from '@/components/EmailTemplateModal';
 import Modal from '@/components/Modal';
 
+interface EmailTemplateData {
+  type: string;
+  subject: string;
+  body: string;
+}
+
 export default function EmailTemplatesPage() {
-  const [templates, setTemplates] = useState([
+  const [templates, setTemplates] = useState<EmailTemplateData[]>([
     { type: 'invitation', subject: 'You\'re invited to join Eagle B2B', body: 'Welcome! Click the link below...' },
     { type: 'confirmation', subject: 'Order Confirmed', body: 'Thank you for your order...' },
   ]);
-  const [editModal, setEditModal] = useState<{show: boolean; template: any}>({show: false, template: null});
+  const [editModal, setEditModal] = useState<{show: boolean; template: EmailTemplateData | null}>({show: false, template: null});
   const [resultModal, setResultModal] = useState<{show: boolean; message: string}>({show: false, message: ''});
 
-  const handleSave = (updatedTemplate: any) => {
+  const handleSave = (updatedTemplate: EmailTemplateData) => {
     const updated = templates.map(t => 
       t.type === updatedTemplate.type ? updatedTemplate : t
     );

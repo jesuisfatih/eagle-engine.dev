@@ -14,6 +14,7 @@ import { CompaniesService } from './companies.service';
 import { CompanyUsersService } from './company-users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CreateCompanyDto, UpdateCompanyDto, RejectCompanyDto, InviteUserDto, GetCompaniesQueryDto } from './dto/company.dto';
 
 @Controller('companies')
 @UseGuards(JwtAuthGuard)
@@ -26,13 +27,12 @@ export class CompaniesController {
   @Get()
   async findAll(
     @CurrentUser('merchantId') merchantId: string,
-    @Query('status') status?: string,
-    @Query('search') search?: string,
+    @Query() query: GetCompaniesQueryDto,
   ) {
     if (!merchantId) {
       throw new BadRequestException('Merchant ID required');
     }
-    return this.companiesService.findAll(merchantId, { status, search });
+    return this.companiesService.findAll(merchantId, { status: query.status, search: query.search });
   }
 
   @Get('stats')
@@ -57,24 +57,24 @@ export class CompaniesController {
   @Post()
   async create(
     @CurrentUser('merchantId') merchantId: string,
-    @Body() body: any,
+    @Body() dto: CreateCompanyDto,
   ) {
     if (!merchantId) {
       throw new BadRequestException('Merchant ID required');
     }
-    return this.companiesService.create(merchantId, body);
+    return this.companiesService.create(merchantId, dto);
   }
 
   @Put(':id')
   async update(
     @Param('id') id: string,
     @CurrentUser('merchantId') merchantId: string,
-    @Body() body: any,
+    @Body() dto: UpdateCompanyDto,
   ) {
     if (!merchantId) {
       throw new BadRequestException('Merchant ID required');
     }
-    return this.companiesService.update(id, merchantId, body);
+    return this.companiesService.update(id, merchantId, dto);
   }
 
   @Post(':id/approve')
@@ -92,12 +92,12 @@ export class CompaniesController {
   async reject(
     @Param('id') id: string,
     @CurrentUser('merchantId') merchantId: string,
-    @Body() body: { reason?: string },
+    @Body() dto: RejectCompanyDto,
   ) {
     if (!merchantId) {
       throw new BadRequestException('Merchant ID required');
     }
-    return this.companiesService.reject(id, merchantId, body.reason);
+    return this.companiesService.reject(id, merchantId, dto.reason);
   }
 
   @Delete(':id')
@@ -118,8 +118,8 @@ export class CompaniesController {
   }
 
   @Post(':id/users')
-  async inviteUser(@Param('id') companyId: string, @Body() body: any) {
-    return this.companyUsersService.invite(companyId, body);
+  async inviteUser(@Param('id') companyId: string, @Body() dto: InviteUserDto) {
+    return this.companyUsersService.invite(companyId, dto);
   }
 
   @Post('users/:userId/verify-email')

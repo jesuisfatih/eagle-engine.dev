@@ -54,7 +54,7 @@ export default function InviteCompanyPage() {
         </div>
       `;
       document.body.appendChild(modal);
-    } catch (err: any) {
+    } catch (err) {
       const modal = document.createElement('div');
       modal.className = 'modal fade show d-block';
       modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
@@ -65,7 +65,7 @@ export default function InviteCompanyPage() {
               <h5 class="modal-title">❌ Error</h5>
               <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
             </div>
-            <div class="modal-body">Failed to send invitation: ${err.message}</div>
+            <div class="modal-body">Failed to send invitation: ${err instanceof Error ? err.message : 'Unknown error'}</div>
             <div class="modal-footer">
               <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove()">OK</button>
             </div>

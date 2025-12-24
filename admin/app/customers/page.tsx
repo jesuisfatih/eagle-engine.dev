@@ -3,15 +3,27 @@
 import { useState, useEffect } from 'react';
 import Modal from '@/components/Modal';
 import { adminFetch } from '@/lib/api-client';
+import {
+  PageHeader,
+  PageContent,
+  StatsCard,
+  DataTable,
+  type DataTableColumn,
+  showToast
+} from '@/components/ui';
+import type { ShopifyCustomerAdmin } from '@/types';
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<ShopifyCustomerAdmin[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
   const [convertModal, setConvertModal] = useState<{show: boolean; customerId: string}>({show: false, customerId: ''});
-  const [resultModal, setResultModal] = useState<{show: boolean; message: string; type: 'success' | 'error'}>({show: false, message: '', type: 'success'});
   const [syncing, setSyncing] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [stats, setStats] = useState({
+    total: 0,
+    withOrders: 0,
+    totalSpent: 0,
+  });
 
   useEffect(() => {
     loadCustomers();
@@ -22,8 +34,21 @@ export default function CustomersPage() {
       setLoading(true);
       const response = await adminFetch('/api/v1/shopify-customers');
       const data = await response.json();
-      setCustomers(Array.isArray(data) ? data : data.customers || []);
+      const customerList = Array.isArray(data) ? data : data.customers || [];
+      setCustomers(customerList);
+      
+      // Calculate stats
+      const withOrders = customerList.filter((c: ShopifyCustomerAdmin) => (c.ordersCount || 0) > 0).length;
+      const totalSpent = customerList.reduce((sum: number, c: ShopifyCustomerAdmin) => 
+        sum + parseFloat(c.totalSpent || '0'), 0);
+      
+      setStats({
+        total: customerList.length,
+        withOrders,
+        totalSpent,
+      });
     } catch (err) {
+      console.error('Load customers error:', err);
       setCustomers([]);
     } finally {
       setLoading(false);
@@ -34,10 +59,10 @@ export default function CustomersPage() {
     try {
       setSyncing(true);
       await adminFetch('/api/v1/sync/customers', { method: 'POST' });
-      setResultModal({show: true, message: '✅ Customers sync started! Data will refresh in a moment.', type: 'success'});
+      showToast('success', 'Customers sync started! Data will refresh in a moment.');
       setTimeout(loadCustomers, 3000);
     } catch (err) {
-      setResultModal({show: true, message: '❌ Failed to start sync', type: 'error'});
+      showToast('error', 'Failed to start sync');
     } finally {
       setSyncing(false);
     }
@@ -53,130 +78,151 @@ export default function CustomersPage() {
       });
       
       if (response.ok) {
-        setResultModal({show: true, message: '✅ Customer converted to B2B company! Invitation email sent.', type: 'success'});
+        showToast('success', 'Customer converted to B2B company! Invitation email sent.');
         loadCustomers();
       } else {
         const error = await response.json().catch(() => ({}));
-        setResultModal({show: true, message: `❌ ${error.message || 'Failed to convert customer'}`, type: 'error'});
+        showToast('error', error.message || 'Failed to convert customer');
       }
-    } catch (err: any) {
-      setResultModal({show: true, message: `❌ ${err.message || 'Failed to convert customer'}`, type: 'error'});
+    } catch (err) {
+      showToast('error', err instanceof Error ? err.message : 'Failed to convert customer');
     } finally {
       setConverting(false);
     }
   };
 
-  const filteredCustomers = customers.filter(c => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      c.firstName?.toLowerCase().includes(query) ||
-      c.lastName?.toLowerCase().includes(query) ||
-      c.email?.toLowerCase().includes(query) ||
-      c.phone?.includes(query)
-    );
-  });
+  // Table columns
+  const columns: DataTableColumn<ShopifyCustomerAdmin>[] = [
+    {
+      key: 'name',
+      label: 'Customer',
+      sortable: true,
+      render: (customer) => (
+        <div>
+          <span className="fw-semibold">{customer.firstName} {customer.lastName}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      sortable: true,
+    },
+    {
+      key: 'phone',
+      label: 'Phone',
+      className: 'small',
+      render: (customer) => customer.phone || '-',
+    },
+    {
+      key: 'ordersCount',
+      label: 'Orders',
+      sortable: true,
+      render: (customer) => customer.ordersCount || 0,
+    },
+    {
+      key: 'totalSpent',
+      label: 'Total Spent',
+      sortable: true,
+      className: 'fw-semibold',
+      render: (customer) => `$${parseFloat(customer.totalSpent || '0').toFixed(2)}`,
+    },
+  ];
+
+  // Row actions
+  const rowActions = (customer: ShopifyCustomerAdmin) => (
+    <div className="d-flex gap-2">
+      <a 
+        href={`mailto:${customer.email}`} 
+        className="btn btn-sm btn-label-primary"
+        title="Send Email"
+      >
+        <i className="ti ti-mail"></i>
+      </a>
+      <button
+        className="btn btn-sm btn-primary"
+        onClick={() => setConvertModal({show: true, customerId: customer.id})}
+        disabled={converting}
+        title="Convert to B2B Company"
+      >
+        <i className="ti ti-building me-1"></i>
+        Convert to B2B
+      </button>
+    </div>
+  );
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h4 className="fw-bold mb-1">All Customers</h4>
-          <p className="mb-0 text-muted">{filteredCustomers.length} of {customers.length} customers</p>
-        </div>
-        <div className="d-flex gap-2">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search customers..."
-            style={{maxWidth: '250px'}}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+      <PageHeader
+        title="All Customers"
+        subtitle={`${customers.length} customers from Shopify`}
+        actions={[
+          {
+            label: syncing ? 'Syncing...' : 'Sync Customers',
+            icon: 'refresh',
+            variant: 'primary',
+            onClick: syncCustomers,
+            disabled: syncing,
+          },
+        ]}
+      />
+
+      {/* Stats Cards */}
+      <div className="row g-4 mb-4">
+        <div className="col-sm-6 col-lg-4">
+          <StatsCard
+            title="Total Customers"
+            value={stats.total}
+            icon="users"
+            iconColor="primary"
+            loading={loading}
           />
-          <button
-            onClick={syncCustomers}
-            className="btn btn-primary"
-            disabled={syncing}
-          >
-            {syncing ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-1"></span>
-                Syncing...
-              </>
-            ) : (
-              <>
-                <i className="ti ti-refresh me-1"></i>Sync
-              </>
-            )}
-          </button>
+        </div>
+        <div className="col-sm-6 col-lg-4">
+          <StatsCard
+            title="With Orders"
+            value={stats.withOrders}
+            icon="shopping-cart"
+            iconColor="success"
+            loading={loading}
+          />
+        </div>
+        <div className="col-sm-6 col-lg-4">
+          <StatsCard
+            title="Total Spent"
+            value={`$${stats.totalSpent.toFixed(2)}`}
+            icon="currency-dollar"
+            iconColor="info"
+            loading={loading}
+          />
         </div>
       </div>
 
-      <div className="card">
-        <div className="card-body">
-          {loading ? (
-            <div className="text-center py-4">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-            </div>
-          ) : filteredCustomers.length === 0 ? (
-            <div className="text-center py-5">
-              <i className="ti ti-users fs-1 text-muted mb-3 d-block"></i>
-              <h5>No customers found</h5>
-              <p className="text-muted">
-                {searchQuery ? 'Try a different search term' : 'Sync customers from Shopify to see them here'}
-              </p>
-            </div>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-hover">
-                <thead>
-                  <tr>
-                    <th>Customer</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Orders</th>
-                    <th>Total Spent</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredCustomers.map((customer) => (
-                    <tr key={customer.id}>
-                      <td className="fw-semibold">{customer.firstName} {customer.lastName}</td>
-                      <td>{customer.email}</td>
-                      <td className="small">{customer.phone || '-'}</td>
-                      <td>{customer.ordersCount || 0}</td>
-                      <td className="fw-semibold">${parseFloat(customer.totalSpent || 0).toFixed(2)}</td>
-                      <td>
-                        <div className="d-flex gap-2">
-                          <a 
-                            href={`mailto:${customer.email}`} 
-                            className="btn btn-sm btn-label-primary"
-                            title="Send Email"
-                          >
-                            <i className="ti ti-mail"></i>
-                          </a>
-                          <button
-                            className="btn btn-sm btn-primary"
-                            onClick={() => setConvertModal({show: true, customerId: customer.id})}
-                            disabled={converting}
-                            title="Convert to B2B Company"
-                          >
-                            <i className="ti ti-building me-1"></i>
-                            Convert to B2B
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Customers Table */}
+      <PageContent
+        loading={loading}
+        empty={{
+          show: !loading && customers.length === 0,
+          icon: 'users',
+          title: 'No customers synced',
+          message: 'Click "Sync Customers" to import from Shopify.',
+        }}
+      >
+        <DataTable
+          data={customers}
+          columns={columns}
+          loading={loading}
+          searchable
+          searchPlaceholder="Search customers..."
+          searchFields={['firstName', 'lastName', 'email', 'phone']}
+          defaultSortKey="totalSpent"
+          defaultSortOrder="desc"
+          rowActions={rowActions}
+          emptyIcon="users"
+          emptyTitle="No customers found"
+          emptyMessage="Try adjusting your search criteria."
+        />
+      </PageContent>
 
       {convertModal.show && (
         <Modal
@@ -188,18 +234,6 @@ export default function CustomersPage() {
           confirmText="Convert"
           cancelText="Cancel"
           type="warning"
-        />
-      )}
-
-      {resultModal.show && (
-        <Modal
-          show={resultModal.show}
-          onClose={() => setResultModal({show: false, message: '', type: 'success'})}
-          onConfirm={() => setResultModal({show: false, message: '', type: 'success'})}
-          title={resultModal.type === 'success' ? 'Success' : 'Error'}
-          message={resultModal.message}
-          confirmText="OK"
-          type={resultModal.type === 'success' ? 'success' : 'danger'}
         />
       )}
     </div>

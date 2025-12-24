@@ -1,34 +1,39 @@
-import type { Response } from 'express';
+import type { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { SessionSyncService } from './session-sync.service';
+import { LoginSecurityService } from './login-security.service';
 import { ShopifySsoService } from '../shopify/shopify-sso.service';
 import { ShopifyCustomerSyncService } from '../shopify/shopify-customer-sync.service';
 import { ShopifyRestService } from '../shopify/shopify-rest.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ShopifyOauthService } from './shopify-oauth.service';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { AdminLoginDto, LoginDto, RegisterDto, AcceptInvitationDto, SendVerificationCodeDto, VerifyEmailCodeDto, ShopifyCustomerSyncDto } from './dto/auth.dto';
 export declare class AuthController {
     private authService;
     private sessionSyncService;
+    private loginSecurity;
     private shopifySso;
     private shopifyCustomerSync;
     private shopifyRest;
     private prisma;
+    private shopifyOauth;
+    private config;
+    private jwtService;
     private readonly logger;
-    constructor(authService: AuthService, sessionSyncService: SessionSyncService, shopifySso: ShopifySsoService, shopifyCustomerSync: ShopifyCustomerSyncService, shopifyRest: ShopifyRestService, prisma: PrismaService);
-    login(body: {
-        email: string;
-        password: string;
-    }, res: Response): Promise<Response<any, Record<string, any>>>;
+    private readonly adminUrl;
+    constructor(authService: AuthService, sessionSyncService: SessionSyncService, loginSecurity: LoginSecurityService, shopifySso: ShopifySsoService, shopifyCustomerSync: ShopifyCustomerSyncService, shopifyRest: ShopifyRestService, prisma: PrismaService, shopifyOauth: ShopifyOauthService, config: ConfigService, jwtService: JwtService);
+    private readonly adminUsername;
+    private readonly adminPassword;
+    adminLogin(dto: AdminLoginDto, res: Response): Promise<Response<any, Record<string, any>>>;
+    login(dto: LoginDto, req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     shopifyCallback(shopifyCustomerId: string, email: string, res: Response): Promise<void>;
     validateInvitation(token: string, res: Response): Promise<Response<any, Record<string, any>>>;
-    sendVerificationCode(body: {
-        email: string;
-    }, res: Response): Promise<Response<any, Record<string, any>>>;
-    verifyEmailCode(body: {
-        email: string;
-        code: string;
-    }, res: Response): Promise<Response<any, Record<string, any>>>;
-    register(body: any, res: Response): Promise<Response<any, Record<string, any>>>;
-    acceptInvitation(body: any): Promise<{
+    sendVerificationCode(dto: SendVerificationCodeDto, res: Response): Promise<Response<any, Record<string, any>>>;
+    verifyEmailCode(dto: VerifyEmailCodeDto, res: Response): Promise<Response<any, Record<string, any>>>;
+    register(dto: RegisterDto, res: Response): Promise<Response<any, Record<string, any>>>;
+    acceptInvitation(dto: AcceptInvitationDto): Promise<{
         accessToken: string;
         refreshToken: string;
         user: {
@@ -40,11 +45,7 @@ export declare class AuthController {
             companyId: string;
         };
     }>;
-    syncShopifyCustomer(body: {
-        shopifyCustomerId: string;
-        email: string;
-        fingerprint?: string;
-    }): Promise<{
+    syncShopifyCustomer(dto: ShopifyCustomerSyncDto): Promise<{
         token: string;
         user: {
             id: string;
@@ -105,4 +106,20 @@ export declare class AuthController {
         returnTo?: string;
     }, res: Response): Promise<Response<any, Record<string, any>>>;
     getCurrentUser(token: string, res: Response): Promise<Response<any, Record<string, any>>>;
+    shopifyInstall(shop: string, res: Response): Promise<void | Response<any, Record<string, any>>>;
+    shopifyOauthCallback(code: string, shop: string, hmac: string, timestamp: string, state: string, res: Response): Promise<void>;
+    getPasswordPolicy(): Promise<{
+        success: boolean;
+        policy: import("./login-security.service").PasswordPolicy;
+    }>;
+    validatePassword(body: {
+        password: string;
+    }): Promise<{
+        success: boolean;
+        valid: boolean;
+        errors: string[];
+        strength: number;
+        strengthLabel: string;
+    }>;
+    private getStrengthLabel;
 }

@@ -1,40 +1,24 @@
 import { CompaniesService } from './companies.service';
 import { CompanyUsersService } from './company-users.service';
+import { CreateCompanyDto, UpdateCompanyDto, RejectCompanyDto, InviteUserDto, GetCompaniesQueryDto } from './dto/company.dto';
 export declare class CompaniesController {
     private companiesService;
     private companyUsersService;
     constructor(companiesService: CompaniesService, companyUsersService: CompanyUsersService);
-    findAll(merchantId: string, status?: string, search?: string): Promise<({
+    findAll(merchantId: string, query: GetCompaniesQueryDto): Promise<import("../common/utils/pagination.util").PaginatedResponse<{
+        name: string;
+        id: string;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        email: string | null;
+        phone: string | null;
         _count: {
             orders: number;
             users: number;
         };
-        users: {
-            id: string;
-            email: string;
-            firstName: string | null;
-            lastName: string | null;
-            isActive: boolean;
-            role: string;
-        }[];
-    } & {
-        name: string;
-        id: string;
-        status: string;
-        settings: import("@prisma/client/runtime/client").JsonValue;
-        createdAt: Date;
-        updatedAt: Date;
-        merchantId: string;
-        email: string | null;
-        phone: string | null;
-        legalName: string | null;
-        taxId: string | null;
-        website: string | null;
-        billingAddress: import("@prisma/client/runtime/client").JsonValue | null;
-        shippingAddress: import("@prisma/client/runtime/client").JsonValue | null;
-        companyGroup: string | null;
-        createdByShopifyCustomerId: bigint | null;
-    })[]>;
+        shopifyCompanyId: never;
+    }>>;
     getStats(merchantId: string): Promise<{
         total: number;
         active: number;
@@ -46,71 +30,26 @@ export declare class CompaniesController {
         orders: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
-            merchantId: string;
-            shopifyCustomerId: bigint | null;
-            email: string | null;
-            rawData: import("@prisma/client/runtime/client").JsonValue | null;
-            syncedAt: Date;
-            billingAddress: import("@prisma/client/runtime/client").JsonValue | null;
-            shippingAddress: import("@prisma/client/runtime/client").JsonValue | null;
-            companyId: string | null;
-            companyUserId: string | null;
-            cartId: string | null;
             shopifyOrderId: bigint;
-            shopifyOrderNumber: string | null;
-            subtotal: import("@prisma/client-runtime-utils").Decimal | null;
-            totalDiscounts: import("@prisma/client-runtime-utils").Decimal | null;
-            totalTax: import("@prisma/client-runtime-utils").Decimal | null;
             totalPrice: import("@prisma/client-runtime-utils").Decimal | null;
-            currency: string | null;
             financialStatus: string | null;
-            fulfillmentStatus: string | null;
-            lineItems: import("@prisma/client/runtime/client").JsonValue | null;
-            discountCodes: import("@prisma/client/runtime/client").JsonValue | null;
+            orderNumber: never;
         }[];
         pricingRules: {
             name: string;
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            merchantId: string;
-            description: string | null;
-            targetType: string;
-            targetCompanyId: string | null;
-            targetCompanyGroup: string | null;
-            scopeType: string;
-            scopeProductIds: bigint[];
-            scopeCollectionIds: bigint[];
-            scopeTags: string | null;
-            scopeVariantIds: bigint[];
             discountType: string;
             discountValue: import("@prisma/client-runtime-utils").Decimal | null;
-            discountPercentage: import("@prisma/client-runtime-utils").Decimal | null;
-            qtyBreaks: import("@prisma/client/runtime/client").JsonValue | null;
-            minCartAmount: import("@prisma/client-runtime-utils").Decimal | null;
             priority: number;
-            isActive: boolean;
-            validFrom: Date | null;
-            validUntil: Date | null;
         }[];
         users: {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            shopifyCustomerId: bigint | null;
             email: string;
             firstName: string | null;
             lastName: string | null;
-            companyId: string;
             isActive: boolean;
-            passwordHash: string | null;
             role: string;
-            permissions: import("@prisma/client/runtime/client").JsonValue;
             lastLoginAt: Date | null;
-            invitationToken: string | null;
-            invitationSentAt: Date | null;
-            invitationAcceptedAt: Date | null;
         }[];
     } & {
         name: string;
@@ -130,7 +69,7 @@ export declare class CompaniesController {
         companyGroup: string | null;
         createdByShopifyCustomerId: bigint | null;
     }>;
-    create(merchantId: string, body: any): Promise<{
+    create(merchantId: string, dto: CreateCompanyDto): Promise<{
         name: string;
         id: string;
         status: string;
@@ -148,7 +87,7 @@ export declare class CompaniesController {
         companyGroup: string | null;
         createdByShopifyCustomerId: bigint | null;
     }>;
-    update(id: string, merchantId: string, body: any): Promise<{
+    update(id: string, merchantId: string, dto: UpdateCompanyDto): Promise<{
         name: string;
         id: string;
         status: string;
@@ -184,9 +123,7 @@ export declare class CompaniesController {
         companyGroup: string | null;
         createdByShopifyCustomerId: bigint | null;
     }>;
-    reject(id: string, merchantId: string, body: {
-        reason?: string;
-    }): Promise<{
+    reject(id: string, merchantId: string, dto: RejectCompanyDto): Promise<{
         name: string;
         id: string;
         status: string;
@@ -240,7 +177,7 @@ export declare class CompaniesController {
         invitationSentAt: Date | null;
         invitationAcceptedAt: Date | null;
     }[]>;
-    inviteUser(companyId: string, body: any): Promise<{
+    inviteUser(companyId: string, dto: InviteUserDto): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;

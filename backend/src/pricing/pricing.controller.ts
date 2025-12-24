@@ -13,6 +13,7 @@ import {
 import { PricingService } from './pricing.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CalculatePricesDto, CreatePricingRuleDto, UpdatePricingRuleDto, ToggleRuleDto, GetRulesQueryDto } from './dto/pricing.dto';
 
 @Controller('pricing')
 @UseGuards(JwtAuthGuard)
@@ -24,7 +25,7 @@ export class PricingController {
   async calculatePrices(
     @CurrentUser('merchantId') merchantId: string,
     @CurrentUser('companyId') companyId: string,
-    @Body() body: { variantIds: string[]; quantities?: any; cartTotal?: number },
+    @Body() dto: CalculatePricesDto,
   ) {
     if (!merchantId) {
       throw new BadRequestException('Merchant ID required');
@@ -32,14 +33,14 @@ export class PricingController {
     if (!companyId) {
       throw new BadRequestException('Company ID required');
     }
-    const variantIds = body.variantIds.map((id) => BigInt(id));
+    const variantIds = dto.variantIds.map((id) => BigInt(id));
 
     return this.pricingService.calculatePrices({
       merchantId,
       companyId,
       variantIds,
-      quantities: body.quantities,
-      cartTotal: body.cartTotal,
+      quantities: dto.quantities,
+      cartTotal: dto.cartTotal,
     });
   }
 
@@ -47,18 +48,17 @@ export class PricingController {
   @Get('rules')
   async getRules(
     @CurrentUser('merchantId') merchantId: string,
-    @Query('isActive') isActive?: string,
-    @Query('companyId') companyId?: string,
+    @Query() query: GetRulesQueryDto,
   ) {
     if (!merchantId) {
       throw new BadRequestException('Merchant ID required');
     }
     const filters: any = {};
-    if (isActive !== undefined) {
-      filters.isActive = isActive === 'true';
+    if (query.isActive !== undefined) {
+      filters.isActive = query.isActive === 'true';
     }
-    if (companyId) {
-      filters.companyId = companyId;
+    if (query.companyId) {
+      filters.companyId = query.companyId;
     }
 
     return this.pricingService.getRules(merchantId, filters);
@@ -78,24 +78,24 @@ export class PricingController {
   @Post('rules')
   async createRule(
     @CurrentUser('merchantId') merchantId: string,
-    @Body() body: any,
+    @Body() dto: CreatePricingRuleDto,
   ) {
     if (!merchantId) {
       throw new BadRequestException('Merchant ID required');
     }
-    return this.pricingService.createRule(merchantId, body);
+    return this.pricingService.createRule(merchantId, dto);
   }
 
   @Put('rules/:id')
   async updateRule(
     @Param('id') id: string,
     @CurrentUser('merchantId') merchantId: string,
-    @Body() body: any,
+    @Body() dto: UpdatePricingRuleDto,
   ) {
     if (!merchantId) {
       throw new BadRequestException('Merchant ID required');
     }
-    return this.pricingService.updateRule(id, merchantId, body);
+    return this.pricingService.updateRule(id, merchantId, dto);
   }
 
   @Delete('rules/:id')
@@ -113,12 +113,12 @@ export class PricingController {
   async toggleRule(
     @Param('id') id: string,
     @CurrentUser('merchantId') merchantId: string,
-    @Body('isActive') isActive: boolean,
+    @Body() dto: ToggleRuleDto,
   ) {
     if (!merchantId) {
       throw new BadRequestException('Merchant ID required');
     }
-    return this.pricingService.toggleRuleActive(id, merchantId, isActive);
+    return this.pricingService.toggleRuleActive(id, merchantId, dto.isActive);
   }
 }
 

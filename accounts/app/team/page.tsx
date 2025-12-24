@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import InviteMemberModal from './components/InviteMemberModal';
 import Modal from '@/components/Modal';
 import { accountsFetch } from '@/lib/api-client';
+import type { User } from '@eagle/types';
 
 export default function TeamPage() {
-  const [members, setMembers] = useState<any[]>([]);
+  const [members, setMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
 

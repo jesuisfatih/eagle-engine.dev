@@ -3,11 +3,44 @@
 import { useState, useEffect } from 'react';
 import Modal from '@/components/Modal';
 import { adminFetch } from '@/lib/api-client';
+import type { AbandonedCart, AbandonedCartItem, ActivityLog } from '@/types';
+
+interface CartWithUser extends AbandonedCart {
+  createdBy?: {
+    firstName?: string;
+    lastName?: string;
+    email: string;
+  };
+  company?: {
+    name: string;
+  };
+  metadata?: Record<string, unknown>;
+}
+
+interface CartActivityLog {
+  id: string;
+  eventType: string;
+  createdAt: string;
+  company?: {
+    name: string;
+  };
+  payload?: {
+    cartId?: string;
+    itemCount?: number;
+    items?: { title?: string; sku?: string }[];
+  };
+}
+
+declare global {
+  interface Window {
+    __cartActivityLogs?: CartActivityLog[];
+  }
+}
 
 export default function AbandonedCartsPage() {
-  const [carts, setCarts] = useState<any[]>([]);
+  const [carts, setCarts] = useState<CartWithUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activityLogs, setActivityLogs] = useState<any[]>([]);
+  const [activityLogs, setActivityLogs] = useState<CartActivityLog[]>([]);
   const [showActivityModal, setShowActivityModal] = useState<{show: boolean; cartId: string | null}>({
     show: false,
     cartId: null,
@@ -68,7 +101,7 @@ export default function AbandonedCartsPage() {
         console.error('❌ Response is not an array:', typeof data, data);
         setCarts([]);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('❌ Failed to load abandoned carts:', err);
       setCarts([]);
     } finally {
@@ -87,10 +120,10 @@ export default function AbandonedCartsPage() {
     }
   };
 
-  const calculateTotal = (cart: any) => {
+  const calculateTotal = (cart: CartWithUser) => {
     if (!cart.items || cart.items.length === 0) return 0;
-    return cart.items.reduce((sum: number, item: any) => {
-      const price = item.unitPrice || item.listPrice || 0;
+    return cart.items.reduce((sum: number, item) => {
+      const price = item.price || 0;
       const quantity = item.quantity || 0;
       return sum + (price * quantity);
     }, 0);
@@ -254,7 +287,7 @@ export default function AbandonedCartsPage() {
                         <td className="small">
                           {payload?.itemCount && <span>{payload.itemCount} items</span>}
                           {payload?.items && payload.items.length > 0 && (
-                            <span>{payload.items.map((i: any) => i.title || i.sku).join(', ')}</span>
+                            <span>{payload.items.map((i) => i.title || i.sku).join(', ')}</span>
                           )}
                         </td>
                       </tr>
@@ -303,8 +336,8 @@ export default function AbandonedCartsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {((window as any).__cartActivityLogs || []).map((log: any) => {
-                        const payload = log.payload as any;
+                      {(window.__cartActivityLogs || []).map((log) => {
+                        const payload = log.payload;
                         return (
                           <tr key={log.id}>
                             <td className="small">{new Date(log.createdAt).toLocaleString()}</td>

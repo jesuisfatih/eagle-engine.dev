@@ -5,15 +5,33 @@ import TopCompanies from './components/TopCompanies';
 import DateRangeFilter from './components/DateRangeFilter';
 import { adminFetch } from '@/lib/api-client';
 
+interface AnalyticsStats {
+  totalEvents: number;
+  productViews: number;
+  addToCarts: number;
+  conversionRate: number;
+}
+
+interface TopProduct {
+  productId: string;
+  title: string;
+  views: number;
+  orders: number;
+}
+
+interface FunnelData {
+  steps?: { name: string; count: number; rate?: number }[];
+}
+
 export default function AnalyticsPage() {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<AnalyticsStats>({
     totalEvents: 0,
     productViews: 0,
     addToCarts: 0,
     conversionRate: 0,
   });
-  const [topProducts, setTopProducts] = useState<any[]>([]);
-  const [funnel, setFunnel] = useState<any>(null);
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [funnel, setFunnel] = useState<FunnelData | null>(null);
 
   useEffect(() => {
     loadAnalytics();
@@ -123,7 +141,7 @@ export default function AnalyticsPage() {
               <h5 className="card-title mb-0">Conversion Funnel</h5>
             </div>
             <div className="card-body">
-              {funnel?.steps?.map((step: any, i: number) => (
+              {funnel?.steps?.map((step, i) => (
                 <div key={i} className="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
                   <div>
                     <h6 className="mb-1">{step.name}</h6>
@@ -152,9 +170,9 @@ export default function AnalyticsPage() {
                   <p className="text-muted mb-0">No product views yet</p>
                 </div>
               ) : (
-                topProducts.map((product: any, i: number) => (
+                topProducts.map((product, i) => (
                   <div key={i} className="d-flex justify-content-between mb-3">
-                    <span>Product ID: {product.shopifyProductId}</span>
+                    <span>Product: {product.title}</span>
                     <span className="badge bg-label-primary">{product._count?.id} views</span>
                   </div>
                 ))

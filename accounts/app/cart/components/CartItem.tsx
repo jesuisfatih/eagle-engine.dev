@@ -1,7 +1,17 @@
 'use client';
 
+interface CartItemData {
+  id: string;
+  title: string;
+  variantTitle?: string;
+  unitPrice: number;
+  listPrice?: number;
+  quantity: number;
+  totalPrice: number;
+}
+
 interface CartItemProps {
-  item: any;
+  item: CartItemData;
   onUpdateQuantity: (id: string, qty: number) => void;
   onRemove: (id: string) => void;
 }

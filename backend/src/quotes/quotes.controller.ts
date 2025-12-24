@@ -2,6 +2,7 @@ import { Controller, Get, Post, Param, Body, UseGuards, BadRequestException } fr
 import { QuotesService } from './quotes.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CreateQuoteDto, UpdateQuoteStatusDto } from './dto/quote.dto';
 
 @Controller('quotes')
 @UseGuards(JwtAuthGuard)
@@ -20,12 +21,12 @@ export class QuotesController {
   async create(
     @CurrentUser('companyId') companyId: string,
     @CurrentUser('sub') userId: string,
-    @Body() body: any,
+    @Body() dto: CreateQuoteDto,
   ) {
     if (!companyId || !userId) {
       throw new BadRequestException('Company ID and User ID required');
     }
-    return this.quotesService.create(companyId, userId, body);
+    return this.quotesService.create(companyId, userId, dto);
   }
 
   @Post(':id/approve')

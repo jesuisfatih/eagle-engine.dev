@@ -16,10 +16,12 @@ export declare class JwtStrategy extends JwtStrategy_base {
         merchantId: string;
         role: string;
         type: string;
+        shopDomain?: undefined;
     } | {
         userId: string;
         email: string;
         merchantId: string;
+        shopDomain: string;
         type: string;
         companyId?: undefined;
         role?: undefined;

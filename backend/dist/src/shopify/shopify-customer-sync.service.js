@@ -55,13 +55,28 @@ let ShopifyCustomerSyncService = ShopifyCustomerSyncService_1 = class ShopifyCus
             }
             const permissions = user.permissions || {};
             const emailVerified = permissions.emailVerified || false;
+            const formatAddress = (address, userData) => {
+                if (!address)
+                    return [];
+                return [{
+                        address1: address.address1 || address.street || '',
+                        address2: address.address2 || '',
+                        city: address.city || '',
+                        province: address.province || address.state || '',
+                        country: address.country || 'Turkey',
+                        zip: address.zip || address.postalCode || '',
+                        phone: userData.company.phone || '',
+                        first_name: userData.firstName || '',
+                        last_name: userData.lastName || '',
+                    }];
+            };
             const customerData = {
                 customer: {
                     email: user.email,
                     first_name: user.firstName || '',
                     last_name: user.lastName || '',
                     phone: user.company.phone || '',
-                    addresses: user.company.billingAddress ? [user.company.billingAddress] : [],
+                    addresses: formatAddress(user.company.billingAddress, user),
                     tags: [`eagle-b2b-user`, `company-${user.companyId}`],
                     accepts_marketing: emailVerified,
                 },

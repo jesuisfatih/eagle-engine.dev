@@ -22,48 +22,56 @@ let OrdersController = class OrdersController {
     constructor(ordersService) {
         this.ordersService = ordersService;
     }
-    async findAll(merchantId, companyId, status) {
+    async findAll(merchantId, userCompanyId, role, queryCompanyId, status) {
         if (!merchantId) {
             throw new common_1.BadRequestException('Merchant ID required');
+        }
+        let companyId = queryCompanyId;
+        if (userCompanyId) {
+            companyId = userCompanyId;
         }
         return this.ordersService.findAll(merchantId, { companyId, status });
     }
-    async getStats(merchantId) {
+    async getStats(merchantId, companyId) {
         if (!merchantId) {
             throw new common_1.BadRequestException('Merchant ID required');
         }
-        return this.ordersService.getStats(merchantId);
+        return this.ordersService.getStats(merchantId, companyId);
     }
-    async findOne(id, merchantId) {
+    async findOne(id, merchantId, companyId) {
         if (!merchantId) {
             throw new common_1.BadRequestException('Merchant ID required');
         }
-        return this.ordersService.findOne(id, merchantId);
+        return this.ordersService.findOne(id, merchantId, companyId);
     }
 };
 exports.OrdersController = OrdersController;
 __decorate([
     (0, common_1.Get)(),
     __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
-    __param(1, (0, common_1.Query)('companyId')),
-    __param(2, (0, common_1.Query)('status')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('companyId')),
+    __param(2, (0, current_user_decorator_1.CurrentUser)('role')),
+    __param(3, (0, common_1.Query)('companyId')),
+    __param(4, (0, common_1.Query)('status')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:paramtypes", [String, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)('stats'),
     __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('companyId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "getStats", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(2, (0, current_user_decorator_1.CurrentUser)('companyId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", Promise)
 ], OrdersController.prototype, "findOne", null);
 exports.OrdersController = OrdersController = __decorate([

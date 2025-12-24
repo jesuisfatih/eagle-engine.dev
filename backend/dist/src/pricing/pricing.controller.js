@@ -17,37 +17,38 @@ const common_1 = require("@nestjs/common");
 const pricing_service_1 = require("./pricing.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
+const pricing_dto_1 = require("./dto/pricing.dto");
 let PricingController = class PricingController {
     pricingService;
     constructor(pricingService) {
         this.pricingService = pricingService;
     }
-    async calculatePrices(merchantId, companyId, body) {
+    async calculatePrices(merchantId, companyId, dto) {
         if (!merchantId) {
             throw new common_1.BadRequestException('Merchant ID required');
         }
         if (!companyId) {
             throw new common_1.BadRequestException('Company ID required');
         }
-        const variantIds = body.variantIds.map((id) => BigInt(id));
+        const variantIds = dto.variantIds.map((id) => BigInt(id));
         return this.pricingService.calculatePrices({
             merchantId,
             companyId,
             variantIds,
-            quantities: body.quantities,
-            cartTotal: body.cartTotal,
+            quantities: dto.quantities,
+            cartTotal: dto.cartTotal,
         });
     }
-    async getRules(merchantId, isActive, companyId) {
+    async getRules(merchantId, query) {
         if (!merchantId) {
             throw new common_1.BadRequestException('Merchant ID required');
         }
         const filters = {};
-        if (isActive !== undefined) {
-            filters.isActive = isActive === 'true';
+        if (query.isActive !== undefined) {
+            filters.isActive = query.isActive === 'true';
         }
-        if (companyId) {
-            filters.companyId = companyId;
+        if (query.companyId) {
+            filters.companyId = query.companyId;
         }
         return this.pricingService.getRules(merchantId, filters);
     }
@@ -57,17 +58,17 @@ let PricingController = class PricingController {
         }
         return this.pricingService.getRule(id, merchantId);
     }
-    async createRule(merchantId, body) {
+    async createRule(merchantId, dto) {
         if (!merchantId) {
             throw new common_1.BadRequestException('Merchant ID required');
         }
-        return this.pricingService.createRule(merchantId, body);
+        return this.pricingService.createRule(merchantId, dto);
     }
-    async updateRule(id, merchantId, body) {
+    async updateRule(id, merchantId, dto) {
         if (!merchantId) {
             throw new common_1.BadRequestException('Merchant ID required');
         }
-        return this.pricingService.updateRule(id, merchantId, body);
+        return this.pricingService.updateRule(id, merchantId, dto);
     }
     async deleteRule(id, merchantId) {
         if (!merchantId) {
@@ -75,11 +76,11 @@ let PricingController = class PricingController {
         }
         return this.pricingService.deleteRule(id, merchantId);
     }
-    async toggleRule(id, merchantId, isActive) {
+    async toggleRule(id, merchantId, dto) {
         if (!merchantId) {
             throw new common_1.BadRequestException('Merchant ID required');
         }
-        return this.pricingService.toggleRuleActive(id, merchantId, isActive);
+        return this.pricingService.toggleRuleActive(id, merchantId, dto.isActive);
     }
 };
 exports.PricingController = PricingController;
@@ -89,16 +90,15 @@ __decorate([
     __param(1, (0, current_user_decorator_1.CurrentUser)('companyId')),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:paramtypes", [String, String, pricing_dto_1.CalculatePricesDto]),
     __metadata("design:returntype", Promise)
 ], PricingController.prototype, "calculatePrices", null);
 __decorate([
     (0, common_1.Get)('rules'),
     __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
-    __param(1, (0, common_1.Query)('isActive')),
-    __param(2, (0, common_1.Query)('companyId')),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:paramtypes", [String, pricing_dto_1.GetRulesQueryDto]),
     __metadata("design:returntype", Promise)
 ], PricingController.prototype, "getRules", null);
 __decorate([
@@ -114,7 +114,7 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [String, pricing_dto_1.CreatePricingRuleDto]),
     __metadata("design:returntype", Promise)
 ], PricingController.prototype, "createRule", null);
 __decorate([
@@ -123,7 +123,7 @@ __decorate([
     __param(1, (0, current_user_decorator_1.CurrentUser)('merchantId')),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:paramtypes", [String, String, pricing_dto_1.UpdatePricingRuleDto]),
     __metadata("design:returntype", Promise)
 ], PricingController.prototype, "updateRule", null);
 __decorate([
@@ -138,9 +138,9 @@ __decorate([
     (0, common_1.Put)('rules/:id/toggle'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.CurrentUser)('merchantId')),
-    __param(2, (0, common_1.Body)('isActive')),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Boolean]),
+    __metadata("design:paramtypes", [String, String, pricing_dto_1.ToggleRuleDto]),
     __metadata("design:returntype", Promise)
 ], PricingController.prototype, "toggleRule", null);
 exports.PricingController = PricingController = __decorate([

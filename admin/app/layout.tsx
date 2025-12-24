@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
+import { ToastContainer } from '@/components/ui';
 
 export const metadata: Metadata = {
   title: 'Eagle B2B Admin - Dashboard',
@@ -50,6 +51,7 @@ export default function RootLayout({
           </div>
         </div>
         <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+        <ToastContainer />
       </body>
     </html>
   );

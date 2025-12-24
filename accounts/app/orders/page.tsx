@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { accountsFetch } from '@/lib/api-client';
+import type { Order } from '@eagle/types';
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [shopDomain, setShopDomain] = useState('');
 
@@ -96,8 +97,14 @@ export default function OrdersPage() {
                                 alert('Shop domain not found');
                                 return;
                               }
+                              
+                              interface LineItem {
+                                variant_id: string;
+                                quantity: number;
+                              }
+                              
                               // Direct Shopify reorder
-                              const variantIds = order.lineItems?.map((item: any) => 
+                              const variantIds = order.lineItems?.map((item: LineItem) => 
                                 `${item.variant_id}:${item.quantity}`
                               ).join(',') || '';
                               
@@ -107,7 +114,8 @@ export default function OrdersPage() {
                               } else {
                                 alert('No items to reorder');
                               }
-                            } catch (err: any) {
+                            } catch (err) {
+                              console.error('Reorder error:', err);
                               alert('❌ Reorder failed');
                             }
                           }}

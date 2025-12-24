@@ -21,13 +21,29 @@ let SettingsService = class SettingsService {
         const merchant = await this.prisma.merchant.findUnique({
             where: { id: merchantId },
             select: {
+                id: true,
+                shopDomain: true,
                 settings: true,
                 snippetEnabled: true,
                 planName: true,
                 lastSyncAt: true,
             },
         });
-        return merchant;
+        const [totalCustomers, syncedCustomers, totalProducts, totalOrders] = await Promise.all([
+            this.prisma.companyUser.count({ where: { company: { merchantId } } }),
+            this.prisma.companyUser.count({ where: { company: { merchantId }, shopifyCustomerId: { not: null } } }),
+            this.prisma.catalogProduct.count({ where: { merchantId } }),
+            this.prisma.orderLocal.count({ where: { merchantId } }),
+        ]);
+        return {
+            ...merchant,
+            stats: {
+                totalCustomers,
+                syncedCustomers,
+                totalProducts,
+                totalOrders,
+            },
+        };
     }
     async updateMerchantSettings(merchantId, settings) {
         return this.prisma.merchant.update({

@@ -3,18 +3,24 @@
 import { useState } from 'react';
 import RoleEditModal from '@/components/RoleEditModal';
 import Modal from '@/components/Modal';
+import type { RolePermission } from '@/types';
+
+interface Role {
+  name: string;
+  permissions: string[];
+}
 
 export default function PermissionsPage() {
-  const [roles, setRoles] = useState([
+  const [roles, setRoles] = useState<Role[]>([
     { name: 'Admin', permissions: ['all'] },
     { name: 'Manager', permissions: ['orders', 'approve', 'team'] },
     { name: 'Buyer', permissions: ['orders', 'cart'] },
     { name: 'Viewer', permissions: ['view'] },
   ]);
-  const [editModal, setEditModal] = useState<{show: boolean; role: any}>({show: false, role: null});
+  const [editModal, setEditModal] = useState<{show: boolean; role: Role | null}>({show: false, role: null});
   const [resultModal, setResultModal] = useState<{show: boolean; message: string}>({show: false, message: ''});
 
-  const handleSave = (role: any, newPermissions: string[]) => {
+  const handleSave = (role: RolePermission, newPermissions: string[]) => {
     const updated = roles.map(r => 
       r.name === role.name ? {...r, permissions: newPermissions} : r
     );

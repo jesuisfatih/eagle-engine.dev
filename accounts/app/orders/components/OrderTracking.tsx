@@ -1,7 +1,13 @@
 'use client';
 
+interface OrderData {
+  createdAt: string;
+  financialStatus: string;
+  fulfillmentStatus: string;
+}
+
 interface OrderTrackingProps {
-  order: any;
+  order: OrderData;
 }
 
 export default function OrderTracking({ order }: OrderTrackingProps) {

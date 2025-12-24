@@ -65,6 +65,24 @@ let CompanyUsersService = CompanyUsersService_1 = class CompanyUsersService {
             orderBy: { createdAt: 'desc' },
         });
     }
+    async findById(userId) {
+        return this.prisma.companyUser.findUnique({
+            where: { id: userId },
+            include: {
+                company: {
+                    select: {
+                        id: true,
+                        name: true,
+                        merchant: {
+                            select: {
+                                shopDomain: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+    }
     async invite(companyId, data) {
         const invitationToken = crypto.randomBytes(32).toString('hex');
         return this.prisma.companyUser.create({

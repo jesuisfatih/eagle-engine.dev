@@ -57,6 +57,9 @@ let ShopifyService = ShopifyService_1 = class ShopifyService {
     buildAdminApiUrl(shop, path) {
         return `https://${shop}/admin/api/${this.apiVersion}${path}`;
     }
+    buildAdminGraphQLUrl(shop) {
+        return `https://${shop}/admin/api/${this.apiVersion}/graphql.json`;
+    }
 };
 exports.ShopifyService = ShopifyService;
 exports.ShopifyService = ShopifyService = ShopifyService_1 = __decorate([

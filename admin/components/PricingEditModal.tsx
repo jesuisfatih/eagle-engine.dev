@@ -1,16 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { PricingRuleFormData, PricingRuleWithCompany } from '@/types';
 
 interface PricingEditModalProps {
   show: boolean;
-  rule: any;
+  rule: PricingRuleWithCompany | null;
   onClose: () => void;
-  onSave: (id: string, data: any) => void;
+  onSave: (id: string, data: PricingRuleFormData) => void;
 }
 
 export default function PricingEditModal({ show, rule, onClose, onSave }: PricingEditModalProps) {
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<Partial<PricingRuleFormData>>({});
 
   useEffect(() => {
     if (rule) {

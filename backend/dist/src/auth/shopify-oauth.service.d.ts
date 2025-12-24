@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 interface ShopifyCallbackParams {
     shop: string;
@@ -10,13 +11,14 @@ interface ShopifyCallbackParams {
 export declare class ShopifyOauthService {
     private config;
     private prisma;
+    private jwtService;
     private readonly logger;
     private readonly apiKey;
     private readonly apiSecret;
     private readonly scopes;
     private readonly apiVersion;
     private readonly redirectUri;
-    constructor(config: ConfigService, prisma: PrismaService);
+    constructor(config: ConfigService, prisma: PrismaService, jwtService: JwtService);
     getInstallUrl(shop: string): string;
     verifyHmac(params: ShopifyCallbackParams): boolean;
     getAccessToken(shop: string, code: string): Promise<string>;

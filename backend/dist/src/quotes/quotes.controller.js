@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const quotes_service_1 = require("./quotes.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
+const quote_dto_1 = require("./dto/quote.dto");
 let QuotesController = class QuotesController {
     quotesService;
     constructor(quotesService) {
@@ -28,11 +29,11 @@ let QuotesController = class QuotesController {
         }
         return this.quotesService.findAll(companyId);
     }
-    async create(companyId, userId, body) {
+    async create(companyId, userId, dto) {
         if (!companyId || !userId) {
             throw new common_1.BadRequestException('Company ID and User ID required');
         }
-        return this.quotesService.create(companyId, userId, body);
+        return this.quotesService.create(companyId, userId, dto);
     }
     async approve(id, userId) {
         if (!userId) {
@@ -58,7 +59,7 @@ __decorate([
     __param(1, (0, current_user_decorator_1.CurrentUser)('sub')),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:paramtypes", [String, String, quote_dto_1.CreateQuoteDto]),
     __metadata("design:returntype", Promise)
 ], QuotesController.prototype, "create", null);
 __decorate([

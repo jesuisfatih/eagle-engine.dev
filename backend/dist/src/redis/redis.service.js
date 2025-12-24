@@ -58,6 +58,19 @@ let RedisService = RedisService_1 = class RedisService {
     async del(key) {
         await this.client.del(key);
     }
+    async incr(key) {
+        return this.client.incr(key);
+    }
+    async expire(key, seconds) {
+        await this.client.expire(key, seconds);
+    }
+    async ttl(key) {
+        return this.client.ttl(key);
+    }
+    async exists(key) {
+        const result = await this.client.exists(key);
+        return result === 1;
+    }
     async keys(pattern) {
         return this.client.keys(pattern);
     }

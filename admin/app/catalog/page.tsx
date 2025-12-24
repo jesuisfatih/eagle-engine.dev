@@ -72,10 +72,10 @@ export default function CatalogPage() {
           type: 'error'
         });
       }
-    } catch (err: any) {
+    } catch (err) {
       setResultModal({
         show: true,
-        message: `❌ ${err.message || 'Failed to start product sync'}`,
+        message: `❌ ${err instanceof Error ? err.message : 'Failed to start product sync'}`,
         type: 'error'
       });
     } finally {

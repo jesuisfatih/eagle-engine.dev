@@ -68,7 +68,7 @@ let SyncScheduler = SyncScheduler_1 = class SyncScheduler {
 };
 exports.SyncScheduler = SyncScheduler;
 __decorate([
-    (0, schedule_1.Cron)('*/20 * * * * *'),
+    (0, schedule_1.Cron)(schedule_1.CronExpression.EVERY_5_MINUTES),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)

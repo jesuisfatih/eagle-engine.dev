@@ -2,9 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { adminFetch } from '@/lib/api-client';
+import type { Order, CompanyWithCounts, PricingRuleWithCompany } from '@/types';
+
+interface ActivityItem {
+  type: 'order' | 'company' | 'pricing';
+  message: string;
+  time: string;
+}
 
 export default function ActivityPage() {
-  const [activities, setActivities] = useState<any[]>([]);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
 
   useEffect(() => {
     loadActivity();
@@ -18,31 +25,31 @@ export default function ActivityPage() {
         adminFetch('/api/v1/pricing/rules').then(r => r.json()).catch(() => []),
       ]);
       
-      const activities: any[] = [];
-      orders.forEach((order: any) => {
-        activities.push({
+      const activityList: ActivityItem[] = [];
+      (orders as Order[]).forEach((order) => {
+        activityList.push({
           type: 'order',
-          message: `Order #${order.shopifyOrderNumber} created`,
+          message: `Order #${order.orderNumber} created`,
           time: order.createdAt,
         });
       });
-      companies.forEach((company: any) => {
-        activities.push({
+      (companies as CompanyWithCounts[]).forEach((company) => {
+        activityList.push({
           type: 'company',
           message: `Company ${company.name} ${company.status}`,
           time: company.createdAt,
         });
       });
-      pricingRules.forEach((rule: any) => {
-        activities.push({
+      (pricingRules as PricingRuleWithCompany[]).forEach((rule) => {
+        activityList.push({
           type: 'pricing',
           message: `Pricing rule "${rule.name}" created`,
           time: rule.createdAt,
         });
       });
       
-      activities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-      setActivities(activities.slice(0, 20));
+      activityList.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+      setActivities(activityList.slice(0, 20));
     } catch (err) {
       setActivities([]);
     }

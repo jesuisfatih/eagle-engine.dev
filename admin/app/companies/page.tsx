@@ -6,11 +6,12 @@ import { apiClient, adminFetch } from '@/lib/api-client';
 import Modal from '@/components/Modal';
 import SearchBar from './components/SearchBar';
 import StatusFilter from './components/StatusFilter';
+import type { CompanyWithCounts, ShopifyCustomerAdmin, ResultModalState } from '@/types';
 
 export default function CompaniesPage() {
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [allCompanies, setAllCompanies] = useState<any[]>([]);
-  const [shopifyCustomers, setShopifyCustomers] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<CompanyWithCounts[]>([]);
+  const [allCompanies, setAllCompanies] = useState<CompanyWithCounts[]>([]);
+  const [shopifyCustomers, setShopifyCustomers] = useState<ShopifyCustomerAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'companies' | 'shopify'>('companies');
 
@@ -35,8 +36,9 @@ export default function CompaniesPage() {
         apiClient.getCompanies().catch(() => []),
         adminFetch('/api/v1/shopify-customers').then(r => r.json()).catch(() => []),
       ]);
-      setCompanies(companiesData);
-      setAllCompanies(companiesData);
+      const companiesList = Array.isArray(companiesData) ? companiesData : (companiesData as { data: CompanyWithCounts[] }).data || [];
+      setCompanies(companiesList as CompanyWithCounts[]);
+      setAllCompanies(companiesList as CompanyWithCounts[]);
       setShopifyCustomers(Array.isArray(customersResponse) ? customersResponse : []);
     } catch (err) {
       console.error('Load error:', err);
@@ -97,12 +99,12 @@ export default function CompaniesPage() {
           message: error.message || 'İşlem başarısız oldu',
         });
       }
-    } catch (err: any) {
+    } catch (err) {
       setConvertModal({ show: false, customerId: null });
       setResultModal({
         show: true,
         type: 'error',
-        message: err.message,
+        message: err instanceof Error ? err.message : 'An error occurred',
       });
     }
   };
@@ -164,7 +166,7 @@ export default function CompaniesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {companies.map((company: any) => (
+                  {companies.map((company) => (
                     <tr key={company.id}>
                       <td>
                         <div className="fw-semibold">{company.name}</div>
@@ -309,7 +311,7 @@ export default function CompaniesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {shopifyCustomers.map((customer: any) => (
+                  {shopifyCustomers.map((customer) => (
                     <tr key={customer.id}>
                       <td>
                         <div className="fw-semibold">

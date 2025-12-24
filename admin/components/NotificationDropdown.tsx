@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { adminFetch } from '@/lib/api-client';
+import type { Notification } from '@/types';
 
 export default function NotificationDropdown() {
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
     loadNotifications();
@@ -32,7 +33,7 @@ export default function NotificationDropdown() {
           No new notifications
         </li>
       ) : (
-        notifications.slice(0, 5).map((notif: any) => (
+        notifications.slice(0, 5).map((notif) => (
           <li key={notif.id}>
             <a className="dropdown-item" href="javascript:void(0);">
               <div className="d-flex">

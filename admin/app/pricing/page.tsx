@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react';
 import { apiClient, adminFetch } from '@/lib/api-client';
 import Modal from '@/components/Modal';
 import PricingEditModal from '@/components/PricingEditModal';
+import type { PricingRuleWithCompany, CompanyWithCounts, CatalogProduct, PricingRuleFormData, QuantityBreak } from '@/types';
 
 export default function PricingPage() {
-  const [rules, setRules] = useState<any[]>([]);
+  const [rules, setRules] = useState<PricingRuleWithCompany[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingRule, setEditingRule] = useState<any>(null);
+  const [editingRule, setEditingRule] = useState<PricingRuleWithCompany | null>(null);
   const [deleteModal, setDeleteModal] = useState<{show: boolean; ruleId: string | null}>({
     show: false,
     ruleId: null,
@@ -23,26 +24,26 @@ export default function PricingPage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    targetType: 'all',
+    targetType: 'all' as const,
     targetCompanyId: '',
     targetCompanyGroup: '',
-    scopeType: 'all',
+    scopeType: 'all' as const,
     scopeProductIds: [] as number[],
     scopeCollectionIds: [] as number[],
     scopeTags: '',
     scopeVariantIds: [] as number[],
-    discountType: 'percentage',
+    discountType: 'percentage' as const,
     discountPercentage: 0,
     discountValue: 0,
-    qtyBreaks: [] as any[],
+    qtyBreaks: [] as QuantityBreak[],
     minCartAmount: 0,
     priority: 0,
     isActive: true,
     validFrom: null as Date | null,
     validUntil: null as Date | null,
   });
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<CompanyWithCounts[]>([]);
+  const [products, setProducts] = useState<CatalogProduct[]>([]);
 
   useEffect(() => {
     loadRules();
@@ -112,17 +113,17 @@ export default function PricingPage() {
         message: `✅ Pricing rule created!\n${result.discountType === 'percentage' ? 'Shopify discount code will be created automatically.' : ''}`,
       });
       setTimeout(() => loadRules(), 1000);
-    } catch (err: any) {
+    } catch (err) {
       setShowCreateModal(false);
       setResultModal({
         show: true,
         type: 'error',
-        message: `❌ Failed to create pricing rule:\n${err.message}`,
+        message: `❌ Failed to create pricing rule:\n${err instanceof Error ? err.message : 'Unknown error'}`,
       });
     }
   };
 
-  const handleEdit = async (id: string, data: any) => {
+  const handleEdit = async (id: string, data: PricingRuleFormData) => {
     try {
       await apiClient.updatePricingRule(id, data);
       setResultModal({
@@ -131,11 +132,11 @@ export default function PricingPage() {
         message: 'Rule updated successfully!',
       });
       setTimeout(() => loadRules(), 1000);
-    } catch (err: any) {
+    } catch (err) {
       setResultModal({
         show: true,
         type: 'error',
-        message: err.message,
+        message: err instanceof Error ? err.message : 'An error occurred',
       });
     }
   };
@@ -151,11 +152,11 @@ export default function PricingPage() {
         message: 'Rule deleted successfully!',
       });
       setTimeout(() => loadRules(), 1000);
-    } catch (err: any) {
+    } catch (err) {
       setResultModal({
         show: true,
         type: 'error',
-        message: err.message,
+        message: err instanceof Error ? err.message : 'An error occurred',
       });
     }
   };

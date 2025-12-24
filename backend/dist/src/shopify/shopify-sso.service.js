@@ -52,9 +52,11 @@ let ShopifySsoService = ShopifySsoService_1 = class ShopifySsoService {
     configService;
     prisma;
     logger = new common_1.Logger(ShopifySsoService_1.name);
+    apiVersion;
     constructor(configService, prisma) {
         this.configService = configService;
         this.prisma = prisma;
+        this.apiVersion = this.configService.get('SHOPIFY_API_VERSION', '2024-10');
     }
     generateMultipassToken(multipassSecret, customerData) {
         if (!multipassSecret) {
@@ -104,7 +106,7 @@ let ShopifySsoService = ShopifySsoService_1 = class ShopifySsoService {
     }
     async verifyShopifySession(shopDomain, accessToken, shopifyCustomerId) {
         try {
-            const response = await fetch(`https://${shopDomain}/admin/api/2024-10/customers/${shopifyCustomerId}.json`, {
+            const response = await fetch(`https://${shopDomain}/admin/api/${this.apiVersion}/customers/${shopifyCustomerId}.json`, {
                 headers: {
                     'X-Shopify-Access-Token': accessToken,
                 },

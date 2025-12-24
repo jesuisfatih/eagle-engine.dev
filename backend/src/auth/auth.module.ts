@@ -7,6 +7,7 @@ import { AuthController } from './auth.controller';
 import { SessionSyncService } from './session-sync.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { ShopifyOauthService } from './shopify-oauth.service';
+import { LoginSecurityService } from './login-security.service';
 import { ShopifyModule } from '../shopify/shopify.module';
 import { MailModule } from '../mail/mail.module';
 
@@ -27,8 +28,8 @@ import { MailModule } from '../mail/mail.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, SessionSyncService, JwtStrategy, ShopifyOauthService],
-  exports: [AuthService, SessionSyncService, JwtModule],
+  providers: [AuthService, SessionSyncService, JwtStrategy, ShopifyOauthService, LoginSecurityService],
+  exports: [AuthService, SessionSyncService, JwtModule, LoginSecurityService],
 })
 export class AuthModule {}
 

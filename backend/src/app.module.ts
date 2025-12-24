@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
-// ThrottlerModule removed - not installed
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD, APP_FILTER } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
+import { CommonModule } from './common/common.module';
 import { AuthModule } from './auth/auth.module';
 import { ShopifyModule } from './shopify/shopify.module';
 import { SyncModule } from './sync/sync.module';
@@ -40,7 +41,24 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    // ThrottlerModule removed
+    // Rate limiting: 100 requests per 60 seconds (global default)
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 1000, // 1 second
+        limit: 10, // 10 requests per second
+      },
+      {
+        name: 'medium',
+        ttl: 10000, // 10 seconds
+        limit: 50, // 50 requests per 10 seconds
+      },
+      {
+        name: 'long',
+        ttl: 60000, // 60 seconds
+        limit: 100, // 100 requests per minute
+      },
+    ]),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
@@ -54,6 +72,7 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
     }),
     PrismaModule,
     RedisModule,
+    CommonModule,
     AuthModule,
     ShopifyModule,
     SyncModule,
@@ -82,6 +101,10 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

@@ -3,9 +3,18 @@
 import { useState, useEffect } from 'react';
 import { accountsFetch } from '@/lib/api-client';
 import ProductCard from './components/ProductCard';
+import type { Product, ProductVariant, B2BPricing } from '@/types';
+
+// Extended product with pricing info
+interface ProductWithPricing extends Product {
+  companyPrice: number;
+  listPrice: number;
+  discount: number;
+  image: string;
+}
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<ProductWithPricing[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,12 +27,12 @@ export default function ProductsPage() {
       const productsData = await productsResponse.json();
       
       // Get variant IDs for pricing calculation
-      const allVariantIds = (Array.isArray(productsData) ? productsData : [])
-        .flatMap(p => p.variants?.map((v: any) => v.shopifyVariantId?.toString()) || [])
+      const allVariantIds = (Array.isArray(productsData) ? productsData as Product[] : [])
+        .flatMap(p => p.variants?.map((v: ProductVariant) => v.shopifyVariantId?.toString()) || [])
         .filter(Boolean);
       
       // Get actual B2B pricing from API
-      let pricingMap: Record<string, any> = {};
+      let pricingMap: Record<string, B2BPricing> = {};
       if (allVariantIds.length > 0) {
         try {
           const pricingResponse = await accountsFetch('/api/v1/pricing/calculate', {
@@ -32,7 +41,7 @@ export default function ProductsPage() {
           });
           if (pricingResponse.ok) {
             const pricingData = await pricingResponse.json();
-            pricingMap = (pricingData.prices || []).reduce((acc: any, p: any) => {
+            pricingMap = (pricingData.prices || []).reduce((acc: Record<string, B2BPricing>, p: B2BPricing) => {
               acc[p.variantId] = p;
               return acc;
             }, {});
@@ -42,12 +51,12 @@ export default function ProductsPage() {
         }
       }
       
-      const productsWithPricing = (Array.isArray(productsData) ? productsData : []).map(product => {
+      const productsWithPricing: ProductWithPricing[] = (Array.isArray(productsData) ? productsData : []).map((product: Product) => {
         const variant = product.variants?.[0];
-        const basePrice = parseFloat(variant?.price) || 0;
-        const pricing = pricingMap[variant?.shopifyVariantId?.toString()] || {};
+        const basePrice = parseFloat(String(variant?.price)) || 0;
+        const pricing = pricingMap[variant?.shopifyVariantId?.toString()] || {} as B2BPricing;
         
-        const companyPrice = pricing.companyPrice || basePrice;
+        const companyPrice = pricing.discountedPrice || basePrice;
         const discount = pricing.discountPercentage || 0;
         
         return {
@@ -137,9 +146,9 @@ export default function ProductsPage() {
       }
 
       return true;
-    } catch (err: any) {
+    } catch (err) {
       console.error('Add to cart error:', err);
-      throw new Error(err.message || 'Failed to add to cart');
+      throw new Error(err instanceof Error ? err.message : 'Failed to add to cart');
     }
   };
 
