@@ -243,6 +243,7 @@ export class CheckoutService {
             merchant.shopDomain,
             storefrontToken,
             lines,
+            undefined, // buyerIdentity
             discountCode ? [discountCode] : undefined,
           );
           checkoutUrl = result.checkoutUrl;
@@ -258,8 +259,8 @@ export class CheckoutService {
           merchant.shopDomain,
           storefrontToken,
           lines,
+          shopifyCustomerAccessToken ? { customerAccessToken: shopifyCustomerAccessToken } : undefined, // buyerIdentity
           discountCode ? [discountCode] : undefined,
-          shopifyCustomerAccessToken,
         );
 
         checkoutUrl = result.checkoutUrl;
