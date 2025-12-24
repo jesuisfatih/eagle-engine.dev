@@ -77,7 +77,7 @@ export default function OrdersPage() {
                 <tbody>
                   {orders.map((order) => (
                     <tr key={order.id}>
-                      <td className="fw-semibold">#{order.shopifyOrderNumber}</td>
+                      <td className="fw-semibold">#{order.orderNumber || order.shopifyOrderNumber}</td>
                       <td className="small">{new Date(order.createdAt).toLocaleDateString()}</td>
                       <td>{order.lineItems?.length || 0} items</td>
                       <td className="fw-semibold">${order.totalPrice}</td>
@@ -99,13 +99,14 @@ export default function OrdersPage() {
                               }
                               
                               interface LineItem {
-                                variant_id: string;
+                                variant_id?: string;
+                                variantId?: string;
                                 quantity: number;
                               }
                               
-                              // Direct Shopify reorder
+                              // Direct Shopify reorder - support both field names
                               const variantIds = order.lineItems?.map((item: LineItem) => 
-                                `${item.variant_id}:${item.quantity}`
+                                `${item.variantId || item.variant_id}:${item.quantity}`
                               ).join(',') || '';
                               
                               if (variantIds) {

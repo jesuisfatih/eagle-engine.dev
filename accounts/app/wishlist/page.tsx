@@ -6,10 +6,14 @@ import { accountsFetch } from '@/lib/api-client';
 interface WishlistItem {
   id: string;
   productId: string;
-  title: string;
-  vendor: string;
+  variantId?: string;
+  title?: string;
+  productTitle?: string;
+  variantTitle?: string;
+  vendor?: string;
   price: number;
   image?: string;
+  productImage?: string;
   addedAt: string;
 }
 
@@ -132,20 +136,24 @@ export default function WishlistPage() {
         </div>
       ) : (
         <div className="row g-4">
-          {wishlist.map((item) => (
+          {wishlist.map((item) => {
+            const itemTitle = item.title || item.productTitle || 'Product';
+            const itemImage = item.image || item.productImage;
+            
+            return (
             <div key={item.id} className="col-md-4 col-lg-3">
               <div className="card h-100">
-                {item.image && (
+                {itemImage && (
                   <div className="card-img-top bg-light d-flex align-items-center justify-content-center" style={{height: '150px'}}>
                     <img 
-                      src={item.image} 
-                      alt={item.title}
+                      src={itemImage} 
+                      alt={itemTitle}
                       style={{maxHeight: '100%', maxWidth: '100%', objectFit: 'contain'}}
                     />
                   </div>
                 )}
                 <div className="card-body d-flex flex-column">
-                  <h6 className="card-title mb-1">{item.title}</h6>
+                  <h6 className="card-title mb-1">{itemTitle}</h6>
                   {item.vendor && (
                     <p className="text-muted small mb-2">{item.vendor}</p>
                   )}
@@ -182,7 +190,7 @@ export default function WishlistPage() {
                 </div>
               </div>
             </div>
-          ))}
+          )})}
         </div>
       )}
     </div>
