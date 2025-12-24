@@ -85,7 +85,7 @@ export default function ProductsPage() {
           companyPrice,
           listPrice: basePrice,
           discount,
-          image: product.images?.[0]?.url || product.images?.[0]?.src || 'https://via.placeholder.com/150',
+          image: product.images?.[0]?.url || product.images?.[0]?.src || '/placeholder.png',
           vendor: product.vendor || 'Eagle DTF',
           inStock: variant?.inventoryQuantity === undefined || variant.inventoryQuantity > 0,
         };

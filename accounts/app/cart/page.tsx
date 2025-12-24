@@ -444,7 +444,7 @@ export default function CartPage() {
                           className="rounded"
                           style={{ width: 80, height: 80, objectFit: 'cover' }}
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/80?text=No+Image';
+                            (e.target as HTMLImageElement).src = '/placeholder.png';
                           }}
                         />
                       </div>
