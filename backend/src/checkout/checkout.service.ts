@@ -179,31 +179,41 @@ export class CheckoutService {
         const shippingAddress = await this.getShippingAddress(user);
 
         // Create checkout with buyer identity (email & address pre-filled)
-        // Use address country or default to US
-        const countryCode = shippingAddress?.countryCode || shippingAddress?.country?.substring(0, 2).toUpperCase() || 'US';
+        // Use address country code or derive from country name or default to US
+        const countryCode = shippingAddress?.countryCode || 
+          (shippingAddress?.country === 'United States' ? 'US' : 
+           shippingAddress?.country === 'Turkey' ? 'TR' : 
+           shippingAddress?.country?.substring(0, 2).toUpperCase()) || 'US';
         
+        // NEW 2025-10 API format: deliveryAddress instead of deliveryAddressPreferences
         const buyerIdentity = {
           email: user.email,
           phone: shippingAddress?.phone || user.company?.phone || undefined,
           countryCode,
-          deliveryAddressPreferences: shippingAddress
-            ? [
-                {
-                  deliveryAddress: {
-                    firstName: shippingAddress.firstName || user.firstName || '',
-                    lastName: shippingAddress.lastName || user.lastName || '',
-                    address1: shippingAddress.address1 || '',
-                    address2: shippingAddress.address2 || '',
-                    city: shippingAddress.city || '',
-                    province: shippingAddress.province || shippingAddress.provinceCode || '',
-                    country: shippingAddress.country || 'United States',
-                    zip: shippingAddress.zip || '',
-                    phone: shippingAddress.phone || user.company?.phone || '',
-                  },
-                },
-              ]
+          deliveryAddress: shippingAddress
+            ? {
+                firstName: shippingAddress.firstName || user.firstName || '',
+                lastName: shippingAddress.lastName || user.lastName || '',
+                company: user.company?.name || '',
+                address1: shippingAddress.address1 || '',
+                address2: shippingAddress.address2 || '',
+                city: shippingAddress.city || '',
+                province: shippingAddress.province || shippingAddress.provinceCode || '',
+                country: countryCode, // Use ISO code for API
+                zip: shippingAddress.zip || '',
+                phone: shippingAddress.phone || user.company?.phone || '',
+              }
             : undefined,
         };
+
+        // B2B attributes to track order source
+        const attributes = [
+          { key: 'company_id', value: user.companyId || '' },
+          { key: 'company_name', value: user.company?.name || '' },
+          { key: 'order_source', value: 'b2b_portal' },
+          { key: 'user_id', value: user.id },
+          { key: 'user_email', value: user.email },
+        ];
 
         const result = await this.shopifyStorefront.createCheckoutWithBuyerIdentity(
           merchant.shopDomain,
@@ -211,10 +221,11 @@ export class CheckoutService {
           lines,
           buyerIdentity,
           discountCode ? [discountCode] : undefined,
+          attributes,
         );
 
         checkoutUrl = result.checkoutUrl;
-        this.logger.log(`Checkout URL created with buyer identity: ${checkoutUrl}`, {
+        this.logger.log(`✅ Checkout URL created with buyer identity: ${checkoutUrl}`, {
           email: user.email,
         });
         

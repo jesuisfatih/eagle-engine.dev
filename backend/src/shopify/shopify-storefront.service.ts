@@ -11,6 +11,7 @@ interface CartLineItem {
 interface DeliveryAddress {
   firstName?: string;
   lastName?: string;
+  company?: string;
   address1: string;
   address2?: string;
   city: string;
@@ -24,33 +25,40 @@ interface BuyerIdentity {
   email: string;
   phone?: string;
   countryCode?: string;
-  deliveryAddressPreferences?: {
-    deliveryAddress: DeliveryAddress;
-  }[];
+  customerAccessToken?: string;
+  deliveryAddress?: DeliveryAddress; // Single address for convenience
+}
+
+interface CartAttribute {
+  key: string;
+  value: string;
 }
 
 @Injectable()
 export class ShopifyStorefrontService {
   private readonly logger = new Logger(ShopifyStorefrontService.name);
-  private readonly apiVersion: string;
+  private readonly apiVersion = '2025-10'; // Latest stable version
 
   constructor(
     private httpService: HttpService,
     private config: ConfigService,
-  ) {
-    this.apiVersion = this.config.get<string>('SHOPIFY_API_VERSION', '2024-10');
-  }
+  ) {}
 
   private buildStorefrontUrl(shop: string): string {
     return `https://${shop}/api/${this.apiVersion}/graphql.json`;
   }
 
+  /**
+   * Step 1: Create cart with lines and buyer identity (email, phone, countryCode)
+   */
   async createCart(
     shop: string,
     storefrontAccessToken: string,
     lines: CartLineItem[],
+    buyerIdentity?: { email?: string; phone?: string; countryCode?: string; customerAccessToken?: string },
     discountCodes?: string[],
-    customerAccessToken?: string, // For authenticated checkout
+    attributes?: CartAttribute[],
+    note?: string,
   ) {
     const url = this.buildStorefrontUrl(shop);
 
@@ -71,6 +79,7 @@ export class ShopifyStorefrontService {
                       title
                       price {
                         amount
+                        currencyCode
                       }
                     }
                   }
@@ -84,48 +93,61 @@ export class ShopifyStorefrontService {
               }
               subtotalAmount {
                 amount
+                currencyCode
               }
             }
             buyerIdentity {
               email
-              customer {
-                id
-                email
-                firstName
-                lastName
-              }
+              phone
+              countryCode
+            }
+            discountCodes {
+              code
+              applicable
             }
           }
           userErrors {
             field
+            message
+            code
+          }
+          warnings {
+            code
             message
           }
         }
       }
     `;
 
-    const variables: any = {
-      input: {
-        lines,
-        discountCodes,
-      },
-    };
-
-    // Add buyer identity if customer token provided
-    if (customerAccessToken) {
-      variables.input.buyerIdentity = {
-        customerAccessToken,
-      };
+    const input: any = { lines };
+    
+    if (buyerIdentity) {
+      input.buyerIdentity = {};
+      if (buyerIdentity.email) input.buyerIdentity.email = buyerIdentity.email;
+      if (buyerIdentity.phone) input.buyerIdentity.phone = buyerIdentity.phone;
+      if (buyerIdentity.countryCode) input.buyerIdentity.countryCode = buyerIdentity.countryCode;
+      if (buyerIdentity.customerAccessToken) input.buyerIdentity.customerAccessToken = buyerIdentity.customerAccessToken;
     }
+    
+    if (discountCodes && discountCodes.length > 0) {
+      input.discountCodes = discountCodes;
+    }
+    
+    if (attributes && attributes.length > 0) {
+      input.attributes = attributes;
+    }
+    
+    if (note) {
+      input.note = note;
+    }
+
+    this.logger.log('Creating Shopify cart', { shop, linesCount: lines.length, email: buyerIdentity?.email });
 
     try {
       const response = await firstValueFrom(
         this.httpService.post(
           url,
-          {
-            query: mutation,
-            variables,
-          },
+          { query: mutation, variables: { input } },
           {
             headers: {
               'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
@@ -137,19 +159,134 @@ export class ShopifyStorefrontService {
 
       if (response.data.errors) {
         this.logger.error('Storefront API errors:', response.data.errors);
-        throw new Error('Failed to create cart');
+        throw new Error(`Storefront API Error: ${JSON.stringify(response.data.errors)}`);
       }
 
-      const cart = response.data.data.cartCreate.cart;
-      this.logger.log(`Created Shopify cart: ${cart.id}`);
+      const result = response.data.data.cartCreate;
+      
+      if (result.userErrors?.length > 0) {
+        this.logger.error('Cart creation userErrors:', result.userErrors);
+        throw new Error(`Cart creation failed: ${result.userErrors[0].message}`);
+      }
+      
+      if (result.warnings?.length > 0) {
+        result.warnings.forEach((w: any) => this.logger.warn(`Cart warning: ${w.code} - ${w.message}`));
+      }
+
+      const cart = result.cart;
+      this.logger.log(`✅ Created Shopify cart: ${cart.id}`, { checkoutUrl: cart.checkoutUrl });
 
       return {
         cartId: cart.id,
         checkoutUrl: cart.checkoutUrl,
         total: cart.cost.totalAmount.amount,
+        currency: cart.cost.totalAmount.currencyCode,
+        discountCodes: cart.discountCodes,
       };
     } catch (error) {
       this.logger.error('Failed to create Shopify cart', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Step 2: Add delivery address to cart (2025-01+ method)
+   * This is the NEW way to add addresses - deliveryAddressPreferences is deprecated
+   */
+  async addDeliveryAddress(
+    shop: string,
+    storefrontAccessToken: string,
+    cartId: string,
+    address: DeliveryAddress,
+  ) {
+    const url = this.buildStorefrontUrl(shop);
+
+    const mutation = `
+      mutation cartDeliveryAddressesAdd($cartId: ID!, $addresses: [CartSelectableAddressInput!]!) {
+        cartDeliveryAddressesAdd(cartId: $cartId, addresses: $addresses) {
+          cart {
+            id
+            checkoutUrl
+            delivery {
+              addresses {
+                address {
+                  firstName
+                  lastName
+                  address1
+                  city
+                  country
+                  zip
+                }
+                selected
+              }
+            }
+          }
+          userErrors {
+            field
+            message
+            code
+          }
+        }
+      }
+    `;
+
+    const variables = {
+      cartId,
+      addresses: [
+        {
+          address: {
+            firstName: address.firstName || '',
+            lastName: address.lastName || '',
+            company: address.company || '',
+            address1: address.address1,
+            address2: address.address2 || '',
+            city: address.city,
+            province: address.province || '',
+            country: address.country, // ISO country code: US, TR, DE, etc.
+            zip: address.zip,
+            phone: address.phone || '',
+          },
+          selected: true,
+        },
+      ],
+    };
+
+    this.logger.log('Adding delivery address to cart', { cartId, city: address.city, country: address.country });
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          url,
+          { query: mutation, variables },
+          {
+            headers: {
+              'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
+              'Content-Type': 'application/json',
+            },
+          },
+        ),
+      );
+
+      if (response.data.errors) {
+        this.logger.error('Delivery address add errors:', response.data.errors);
+        throw new Error(`Storefront API Error: ${JSON.stringify(response.data.errors)}`);
+      }
+
+      const result = response.data.data.cartDeliveryAddressesAdd;
+      
+      if (result.userErrors?.length > 0) {
+        this.logger.error('Delivery address userErrors:', result.userErrors);
+        throw new Error(`Delivery address add failed: ${result.userErrors[0].message}`);
+      }
+
+      this.logger.log(`✅ Added delivery address to cart: ${cartId}`);
+      return {
+        cartId: result.cart.id,
+        checkoutUrl: result.cart.checkoutUrl,
+        addresses: result.cart.delivery?.addresses,
+      };
+    } catch (error) {
+      this.logger.error('Failed to add delivery address', error);
       throw error;
     }
   }
@@ -230,103 +367,11 @@ export class ShopifyStorefrontService {
   }
 
   /**
-   * ⭐ KRİTİK METOD: Sepete alıcı bilgisi ekle
-   * Bu metod email ve adresi checkout'a taşır
-   */
-  async updateCartBuyerIdentity(
-    shop: string,
-    storefrontAccessToken: string,
-    cartId: string,
-    buyerIdentity: BuyerIdentity,
-  ) {
-    const url = this.buildStorefrontUrl(shop);
-
-    const mutation = `
-      mutation cartBuyerIdentityUpdate($cartId: ID!, $buyerIdentity: CartBuyerIdentityInput!) {
-        cartBuyerIdentityUpdate(cartId: $cartId, buyerIdentity: $buyerIdentity) {
-          cart {
-            id
-            checkoutUrl
-            buyerIdentity {
-              email
-              phone
-              deliveryAddressPreferences {
-                ... on MailingAddress {
-                  address1
-                  address2
-                  city
-                  province
-                  country
-                  zip
-                }
-              }
-            }
-          }
-          userErrors {
-            field
-            message
-          }
-        }
-      }
-    `;
-
-    const variables = {
-      cartId,
-      buyerIdentity: {
-        email: buyerIdentity.email,
-        phone: buyerIdentity.phone,
-        countryCode: buyerIdentity.countryCode || 'US', // Changed from TR to US
-        deliveryAddressPreferences: buyerIdentity.deliveryAddressPreferences,
-      },
-    };
-
-    // Log for debugging
-    this.logger.log('Updating buyer identity:', JSON.stringify(variables.buyerIdentity));
-
-    try {
-      const response = await firstValueFrom(
-        this.httpService.post(
-          url,
-          { query: mutation, variables },
-          {
-            headers: {
-              'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
-              'Content-Type': 'application/json',
-            },
-          },
-        ),
-      );
-
-      if (response.data.errors) {
-        this.logger.error('Buyer identity update errors:', response.data.errors);
-        throw new Error(`Storefront API Error: ${JSON.stringify(response.data.errors)}`);
-      }
-
-      const result = response.data.data.cartBuyerIdentityUpdate;
-      
-      if (result.userErrors?.length > 0) {
-        throw new Error(`Buyer identity update failed: ${result.userErrors[0].message}`);
-      }
-
-      const cart = result.cart;
-      this.logger.log(`Updated buyer identity for cart: ${cart.id}`, {
-        email: buyerIdentity.email,
-      });
-
-      return {
-        cartId: cart.id,
-        checkoutUrl: cart.checkoutUrl,
-        buyerIdentity: cart.buyerIdentity,
-      };
-    } catch (error) {
-      this.logger.error('Failed to update cart buyer identity', error);
-      throw error;
-    }
-  }
-
-  /**
-   * ⭐ ANA METOD: Sepet oluştur + Alıcı bilgisi ekle + Checkout URL döndür
-   * Frontend bu metodu çağırmalı
+   * ⭐ ANA METOD: Sepet oluştur + Alıcı bilgisi ekle + Teslimat adresi ekle + Checkout URL döndür
+   * 
+   * 2025-10 API'ye göre yeni akış:
+   * 1. cartCreate ile sepet + buyerIdentity (email, phone, countryCode)
+   * 2. cartDeliveryAddressesAdd ile teslimat adresi (ayrı mutation - yeni yöntem)
    */
   async createCheckoutWithBuyerIdentity(
     shop: string,
@@ -334,36 +379,62 @@ export class ShopifyStorefrontService {
     lines: CartLineItem[],
     buyerIdentity: BuyerIdentity,
     discountCodes?: string[],
+    attributes?: CartAttribute[],
   ): Promise<{
     cartId: string;
     checkoutUrl: string;
     email: string;
   }> {
-    // 1. Sepet oluştur
+    this.logger.log('Creating checkout with buyer identity', {
+      shop,
+      email: buyerIdentity.email,
+      linesCount: lines.length,
+      hasAddress: !!buyerIdentity.deliveryAddress,
+    });
+
+    // Step 1: Create cart with buyer identity (email, phone, countryCode)
     const cart = await this.createCart(
       shop,
       storefrontAccessToken,
       lines,
+      {
+        email: buyerIdentity.email,
+        phone: buyerIdentity.phone,
+        countryCode: buyerIdentity.countryCode || 'US',
+        customerAccessToken: buyerIdentity.customerAccessToken,
+      },
       discountCodes,
+      attributes,
     );
 
-    // 2. Alıcı bilgisi ekle
-    const updatedCart = await this.updateCartBuyerIdentity(
-      shop,
-      storefrontAccessToken,
-      cart.cartId,
-      buyerIdentity,
-    );
+    let finalCheckoutUrl = cart.checkoutUrl;
 
-    this.logger.log(`Checkout ready with buyer identity`, {
-      cartId: updatedCart.cartId,
+    // Step 2: Add delivery address if provided (NEW 2025-01+ method)
+    if (buyerIdentity.deliveryAddress) {
+      try {
+        const addressResult = await this.addDeliveryAddress(
+          shop,
+          storefrontAccessToken,
+          cart.cartId,
+          buyerIdentity.deliveryAddress,
+        );
+        finalCheckoutUrl = addressResult.checkoutUrl;
+        this.logger.log('✅ Delivery address added to cart');
+      } catch (addressError) {
+        // Log but don't fail - checkout can still work without pre-filled address
+        this.logger.warn('Failed to add delivery address, continuing without it', addressError);
+      }
+    }
+
+    this.logger.log(`✅ Checkout ready with buyer identity`, {
+      cartId: cart.cartId,
       email: buyerIdentity.email,
-      checkoutUrl: updatedCart.checkoutUrl,
+      checkoutUrl: finalCheckoutUrl,
     });
 
     return {
-      cartId: updatedCart.cartId,
-      checkoutUrl: updatedCart.checkoutUrl,
+      cartId: cart.cartId,
+      checkoutUrl: finalCheckoutUrl,
       email: buyerIdentity.email,
     };
   }
@@ -379,7 +450,3 @@ export class ShopifyStorefrontService {
     return `gid://shopify/ProductVariant/${id}`;
   }
 }
-
-
-
-
