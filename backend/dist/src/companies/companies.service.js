@@ -59,7 +59,7 @@ const COMPANY_DETAIL_INCLUDE = {
         select: {
             id: true,
             shopifyOrderId: true,
-            orderNumber: true,
+            shopifyOrderNumber: true,
             totalPrice: true,
             financialStatus: true,
             createdAt: true,

@@ -31,9 +31,9 @@ export declare class CompaniesController {
             id: string;
             createdAt: Date;
             shopifyOrderId: bigint;
+            shopifyOrderNumber: string | null;
             totalPrice: import("@prisma/client-runtime-utils").Decimal | null;
             financialStatus: string | null;
-            orderNumber: never;
         }[];
         pricingRules: {
             name: string;
