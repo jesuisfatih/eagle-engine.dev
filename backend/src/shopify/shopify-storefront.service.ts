@@ -275,10 +275,13 @@ export class ShopifyStorefrontService {
       buyerIdentity: {
         email: buyerIdentity.email,
         phone: buyerIdentity.phone,
-        countryCode: buyerIdentity.countryCode || 'TR',
+        countryCode: buyerIdentity.countryCode || 'US', // Changed from TR to US
         deliveryAddressPreferences: buyerIdentity.deliveryAddressPreferences,
       },
     };
+
+    // Log for debugging
+    this.logger.log('Updating buyer identity:', JSON.stringify(variables.buyerIdentity));
 
     try {
       const response = await firstValueFrom(

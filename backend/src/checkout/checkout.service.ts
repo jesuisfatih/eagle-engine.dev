@@ -179,21 +179,24 @@ export class CheckoutService {
         const shippingAddress = await this.getShippingAddress(user);
 
         // Create checkout with buyer identity (email & address pre-filled)
+        // Use address country or default to US
+        const countryCode = shippingAddress?.countryCode || shippingAddress?.country?.substring(0, 2).toUpperCase() || 'US';
+        
         const buyerIdentity = {
           email: user.email,
-          phone: user.company?.phone || undefined,
-          countryCode: 'TR',
+          phone: shippingAddress?.phone || user.company?.phone || undefined,
+          countryCode,
           deliveryAddressPreferences: shippingAddress
             ? [
                 {
                   deliveryAddress: {
-                    firstName: user.firstName || '',
-                    lastName: user.lastName || '',
+                    firstName: shippingAddress.firstName || user.firstName || '',
+                    lastName: shippingAddress.lastName || user.lastName || '',
                     address1: shippingAddress.address1 || '',
                     address2: shippingAddress.address2 || '',
                     city: shippingAddress.city || '',
-                    province: shippingAddress.province || '',
-                    country: shippingAddress.country || 'Turkey',
+                    province: shippingAddress.province || shippingAddress.provinceCode || '',
+                    country: shippingAddress.country || 'United States',
                     zip: shippingAddress.zip || '',
                     phone: shippingAddress.phone || user.company?.phone || '',
                   },
