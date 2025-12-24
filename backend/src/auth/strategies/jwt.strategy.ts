@@ -30,6 +30,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       }
 
       return {
+        sub: user.id,
         userId: user.id,
         email: user.email,
         companyId: user.companyId,
@@ -49,6 +50,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       }
 
       return {
+        sub: merchant.id,
         userId: merchant.id,
         email: payload.email,
         merchantId: merchant.id,
