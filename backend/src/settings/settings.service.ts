@@ -22,8 +22,8 @@ export class SettingsService {
     const [totalCustomers, syncedCustomers, totalProducts, totalOrders] = await Promise.all([
       this.prisma.companyUser.count({ where: { company: { merchantId } } }),
       this.prisma.companyUser.count({ where: { company: { merchantId }, shopifyCustomerId: { not: null } } }),
-      this.prisma.product.count({ where: { merchantId } }),
-      this.prisma.order.count({ where: { merchantId } }),
+      this.prisma.catalogProduct.count({ where: { merchantId } }),
+      this.prisma.orderLocal.count({ where: { merchantId } }),
     ]);
 
     return {
