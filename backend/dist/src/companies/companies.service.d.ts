@@ -21,7 +21,6 @@ export declare class CompaniesService {
             orders: number;
             users: number;
         };
-        shopifyCompanyId: never;
     }>>;
     findOne(id: string, merchantId: string): Promise<{
         orders: {

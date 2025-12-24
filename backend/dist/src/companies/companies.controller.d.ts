@@ -17,7 +17,6 @@ export declare class CompaniesController {
             orders: number;
             users: number;
         };
-        shopifyCompanyId: never;
     }>>;
     getStats(merchantId: string): Promise<{
         total: number;

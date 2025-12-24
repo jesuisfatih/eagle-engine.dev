@@ -18,7 +18,6 @@ const COMPANY_LIST_SELECT = {
   email: true,
   phone: true,
   status: true,
-  shopifyCompanyId: true,
   createdAt: true,
   updatedAt: true,
   _count: {
