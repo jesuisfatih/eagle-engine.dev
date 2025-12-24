@@ -106,7 +106,7 @@ export class ShopifyRestService {
     accessToken: string,
     customerId: string,
   ): Promise<{ customer_invite: { to: string; from: string; subject: string; custom_message: string; invite_url: string } }> {
-    const url = `https://${shop}/admin/api/2024-10/customers/${customerId}/send_invite.json`;
+    const url = this.shopifyService.buildAdminApiUrl(shop, `/customers/${customerId}/send_invite.json`);
     
     try {
       const response = await firstValueFrom(
@@ -187,7 +187,7 @@ export class ShopifyRestService {
     }>,
   ): Promise<any> {
     // First, get existing metafields
-    const getUrl = `https://${shop}/admin/api/2024-10/customers/${customerId}/metafields.json`;
+    const getUrl = this.shopifyService.buildAdminApiUrl(shop, `/customers/${customerId}/metafields.json`);
     
     try {
       // Delete existing metafields in namespace
@@ -207,7 +207,7 @@ export class ShopifyRestService {
         if (metafields.some(m => m.namespace === metafield.namespace && m.key === metafield.key)) {
           await firstValueFrom(
             this.httpService.delete(
-              `https://${shop}/admin/api/2024-10/metafields/${metafield.id}.json`,
+              this.shopifyService.buildAdminApiUrl(shop, `/metafields/${metafield.id}.json`),
               {
                 headers: {
                   'X-Shopify-Access-Token': accessToken,
@@ -220,7 +220,7 @@ export class ShopifyRestService {
       }
 
       // Create new metafields
-      const createUrl = `https://${shop}/admin/api/2024-10/metafields.json`;
+      const createUrl = this.shopifyService.buildAdminApiUrl(shop, '/metafields.json');
       const results: any[] = [];
 
       for (const metafield of metafields) {
@@ -265,7 +265,7 @@ export class ShopifyRestService {
     accessToken: string,
     customerId: string,
   ): Promise<any[]> {
-    const url = `https://${shop}/admin/api/2024-10/customers/${customerId}/metafields.json`;
+    const url = this.shopifyService.buildAdminApiUrl(shop, `/customers/${customerId}/metafields.json`);
     
     try {
       const response = await firstValueFrom(

@@ -54,13 +54,29 @@ export class ShopifyCustomerSyncService {
       const permissions = (user.permissions as any) || {};
       const emailVerified = permissions.emailVerified || false;
 
+      // Format address properly for Shopify API
+      const formatAddress = (address: any, userData: any) => {
+        if (!address) return [];
+        return [{
+          address1: address.address1 || address.street || '',
+          address2: address.address2 || '',
+          city: address.city || '',
+          province: address.province || address.state || '',
+          country: address.country || 'Turkey',
+          zip: address.zip || address.postalCode || '',
+          phone: userData.company.phone || '',
+          first_name: userData.firstName || '',
+          last_name: userData.lastName || '',
+        }];
+      };
+
       const customerData = {
         customer: {
           email: user.email,
           first_name: user.firstName || '',
           last_name: user.lastName || '',
           phone: user.company.phone || '',
-          addresses: user.company.billingAddress ? [user.company.billingAddress] : [],
+          addresses: formatAddress(user.company.billingAddress, user),
           tags: [`eagle-b2b-user`, `company-${user.companyId}`],
           accepts_marketing: emailVerified, // Subscribe if email verified
         },

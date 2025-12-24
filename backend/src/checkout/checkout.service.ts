@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { ShopifyRestService } from '../shopify/shopify-rest.service';
 import { ShopifyAdminDiscountService } from '../shopify/shopify-admin-discount.service';
@@ -11,8 +12,10 @@ import { ShopifyCustomerSyncService } from '../shopify/shopify-customer-sync.ser
 @Injectable()
 export class CheckoutService {
   private readonly logger = new Logger(CheckoutService.name);
+  private readonly storefrontToken: string;
 
   constructor(
+    private config: ConfigService,
     private prisma: PrismaService,
     private shopifyRest: ShopifyRestService,
     private shopifyAdminDiscount: ShopifyAdminDiscountService,
@@ -21,7 +24,9 @@ export class CheckoutService {
     private pricingCalculator: PricingCalculatorService,
     private shopifySso: ShopifySsoService,
     private shopifyCustomerSync: ShopifyCustomerSyncService,
-  ) {}
+  ) {
+    this.storefrontToken = this.config.get<string>('SHOPIFY_STOREFRONT_TOKEN', '');
+  }
 
   async createCheckout(cartId: string, userId?: string) {
     const cart = await this.prisma.cart.findUnique({
@@ -157,29 +162,58 @@ export class CheckoutService {
 
     // Create Shopify cart via Storefront API
     const lines = cart.items.map((item) => ({
-      merchandiseId: `gid://shopify/ProductVariant/${item.shopifyVariantId}`,
+      merchandiseId: this.shopifyStorefront.formatVariantId(item.shopifyVariantId!),
       quantity: item.quantity,
     }));
 
     let checkoutUrl: string;
     
-    // Get storefront token from merchant settings
+    // Get storefront token - prefer .env, fallback to merchant settings
     const settings = (merchant.settings as any) || {};
-    const storefrontToken = settings.storefrontToken || '';
+    const storefrontToken = this.storefrontToken || settings.storefrontToken || '';
     
-    // Try Storefront API if token exists
-    if (storefrontToken) {
+    // Try Storefront API with buyer identity if token exists
+    if (storefrontToken && user) {
       try {
-        const result = await this.shopifyStorefront.createCart(
+        // Get shipping address for buyer identity
+        const shippingAddress = await this.getShippingAddress(user);
+
+        // Create checkout with buyer identity (email & address pre-filled)
+        const buyerIdentity = {
+          email: user.email,
+          phone: user.company?.phone || undefined,
+          countryCode: 'TR',
+          deliveryAddressPreferences: shippingAddress
+            ? [
+                {
+                  deliveryAddress: {
+                    firstName: user.firstName || '',
+                    lastName: user.lastName || '',
+                    address1: shippingAddress.address1 || '',
+                    address2: shippingAddress.address2 || '',
+                    city: shippingAddress.city || '',
+                    province: shippingAddress.province || '',
+                    country: shippingAddress.country || 'Turkey',
+                    zip: shippingAddress.zip || '',
+                    phone: shippingAddress.phone || user.company?.phone || '',
+                  },
+                },
+              ]
+            : undefined,
+        };
+
+        const result = await this.shopifyStorefront.createCheckoutWithBuyerIdentity(
           merchant.shopDomain,
           storefrontToken,
           lines,
+          buyerIdentity,
           discountCode ? [discountCode] : undefined,
-          shopifyCustomerAccessToken, // Pass customer token for authenticated checkout
         );
 
         checkoutUrl = result.checkoutUrl;
-        this.logger.log(`Checkout URL created via Storefront API: ${checkoutUrl}`);
+        this.logger.log(`Checkout URL created with buyer identity: ${checkoutUrl}`, {
+          email: user.email,
+        });
         
         // If SSO URL exists, append it to checkout URL
         if (ssoUrl) {
@@ -188,8 +222,36 @@ export class CheckoutService {
           checkoutUrl = ssoUrl.replace(/return_to=[^&]*/, `return_to=${encodeURIComponent(checkoutUrl)}`);
         }
       } catch (error) {
+        this.logger.warn('Storefront API with buyer identity failed, trying basic cart', error);
+        // Fallback to basic cart
+        try {
+          const result = await this.shopifyStorefront.createCart(
+            merchant.shopDomain,
+            storefrontToken,
+            lines,
+            discountCode ? [discountCode] : undefined,
+          );
+          checkoutUrl = result.checkoutUrl;
+        } catch (fallbackError) {
+          this.logger.warn('Storefront API failed, using fallback cart URL', fallbackError);
+          checkoutUrl = this.buildCartUrl(merchant.shopDomain, cart.items, discountCode);
+        }
+      }
+    } else if (storefrontToken) {
+      // Have token but no user - use basic cart
+      try {
+        const result = await this.shopifyStorefront.createCart(
+          merchant.shopDomain,
+          storefrontToken,
+          lines,
+          discountCode ? [discountCode] : undefined,
+          shopifyCustomerAccessToken,
+        );
+
+        checkoutUrl = result.checkoutUrl;
+        this.logger.log(`Checkout URL created via Storefront API: ${checkoutUrl}`);
+      } catch (error) {
         this.logger.warn('Storefront API failed, using fallback cart URL', error);
-        // Fallback to cart URL
         checkoutUrl = this.buildCartUrl(merchant.shopDomain, cart.items, discountCode);
       }
     } else {
@@ -226,6 +288,36 @@ export class CheckoutService {
     const cartItems = items.map(i => `${i.shopifyVariantId}:${i.quantity}`).join(',');
     const baseUrl = `https://${shopDomain}/cart/${cartItems}`;
     return discountCode ? `${baseUrl}?discount=${discountCode}` : baseUrl;
+  }
+
+  /**
+   * Get shipping address for buyer identity
+   */
+  private async getShippingAddress(user: any): Promise<any | null> {
+    // First try to get default shipping address from Address table
+    const address = await this.prisma.address.findFirst({
+      where: {
+        companyId: user.companyId,
+        isShipping: true,
+        isDefault: true,
+      },
+    });
+
+    if (address) {
+      return address;
+    }
+
+    // Fallback to company's shipping address
+    if (user.company?.shippingAddress) {
+      return user.company.shippingAddress;
+    }
+
+    // Fallback to company's billing address
+    if (user.company?.billingAddress) {
+      return user.company.billingAddress;
+    }
+
+    return null;
   }
 }
 

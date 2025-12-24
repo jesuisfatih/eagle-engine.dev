@@ -12,8 +12,8 @@ export class SyncScheduler {
     private syncService: SyncService,
   ) {}
 
-  // 20 saniyede bir sync (senaryoda belirtildiği gibi)
-  @Cron('*/20 * * * * *')
+  // Her 5 dakikada bir customers sync (Shopify API rate limiting önlemek için)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async handleCustomersSync() {
     this.logger.debug('Running scheduled customers sync...');
 
