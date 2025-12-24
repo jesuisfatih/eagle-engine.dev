@@ -163,23 +163,15 @@ export default function CartPage() {
       
       const shopUrl = `https://${shopDomain}`;
       
-      // Add all items to Shopify cart using /cart/add.js
-      const addPromises = cart.items.map((item: CartItemData) => {
+      // Build Shopify cart URL with all items
+      // Format: /cart/variant_id:quantity,variant_id:quantity
+      const cartItems = cart.items.map((item: CartItemData) => {
         const shopifyVarId = item.shopifyVariantId || item.variantId || item.id || '';
-        return fetch(`${shopUrl}/cart/add.js`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            id: shopifyVarId.toString(),
-            quantity: item.quantity,
-          }),
-        });
-      });
+        return `${shopifyVarId}:${item.quantity}`;
+      }).join(',');
       
-      // Wait for all items to be added
-      await Promise.all(addPromises);
+      // Build the full cart URL that will add items and redirect to checkout
+      let cartUrl = `${shopUrl}/cart/${cartItems}`;
       
       // Step 4: Get checkout URL with SSO and discount from backend
       let checkoutUrl = '';
@@ -215,7 +207,7 @@ export default function CartPage() {
         console.warn('Checkout creation failed:', checkoutErr);
       }
       
-      // Step 5: If no checkout URL from backend, build fallback
+      // Step 5: If no checkout URL from backend, use cart URL that adds items and goes to checkout
       if (!checkoutUrl) {
         // Get discount code from backend if available
         let discountParam = '';
@@ -228,14 +220,16 @@ export default function CartPage() {
           if (discountResponse.ok) {
             const discountData = await discountResponse.json();
             if (discountData.discountCode) {
-              discountParam = `?discount=${discountData.discountCode}`;
+              discountParam = `discount=${discountData.discountCode}`;
             }
           }
         } catch (discountErr) {
           console.warn('Discount code fetch failed:', discountErr);
         }
         
-        checkoutUrl = `${shopUrl}/checkout${discountParam}`;
+        // Use cart URL format: /cart/variant:qty,variant:qty?checkout=true
+        // This adds items to cart and redirects to checkout
+        checkoutUrl = `${cartUrl}?${discountParam ? discountParam + '&' : ''}checkout[email]=${encodeURIComponent(userData?.email || '')}`;
       }
       
       // Step 6: Set cookies for autofill (Shopify reads these)
