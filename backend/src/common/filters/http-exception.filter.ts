@@ -69,14 +69,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     // Handle Prisma validation errors
     if (exception instanceof Prisma.PrismaClientValidationError) {
-      // Log full error for debugging
-      console.error('[PrismaValidationError]', exception.message);
       return {
         success: false,
         statusCode: HttpStatus.BAD_REQUEST,
         error: 'Validation Error',
         message: 'Invalid data provided',
-        details: { prismaError: 'VALIDATION_ERROR', debug: exception.message.slice(0, 500) },
+        details: { prismaError: 'VALIDATION_ERROR' },
         timestamp,
         path,
       };
