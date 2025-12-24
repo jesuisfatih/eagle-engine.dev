@@ -5,6 +5,60 @@ import { PrismaService } from '../prisma/prisma.service';
 export class OrdersService {
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Map OrderLocal to frontend-compatible format
+   */
+  private mapOrder(order: any) {
+    return {
+      id: order.id,
+      orderNumber: order.shopifyOrderNumber || order.shopifyOrderId?.toString() || order.id,
+      shopifyOrderId: order.shopifyOrderId ? Number(order.shopifyOrderId) : null,
+      status: this.mapFinancialToStatus(order.financialStatus),
+      paymentStatus: this.mapPaymentStatus(order.financialStatus),
+      fulfillmentStatus: order.fulfillmentStatus || 'unfulfilled',
+      totalPrice: order.totalPrice,
+      subtotalPrice: order.subtotal,
+      taxTotal: order.totalTax,
+      discountTotal: order.totalDiscounts,
+      currency: order.currency || 'USD',
+      email: order.email,
+      lineItems: order.lineItems,
+      shippingAddress: order.shippingAddress,
+      billingAddress: order.billingAddress,
+      discountCodes: order.discountCodes,
+      company: order.company,
+      companyUser: order.companyUser,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+    };
+  }
+
+  private mapFinancialToStatus(financialStatus: string): string {
+    const statusMap: Record<string, string> = {
+      pending: 'pending',
+      authorized: 'confirmed',
+      partially_paid: 'processing',
+      paid: 'confirmed',
+      partially_refunded: 'confirmed',
+      refunded: 'cancelled',
+      voided: 'cancelled',
+    };
+    return statusMap[financialStatus] || 'pending';
+  }
+
+  private mapPaymentStatus(financialStatus: string): string {
+    const statusMap: Record<string, string> = {
+      pending: 'pending',
+      authorized: 'pending',
+      partially_paid: 'pending',
+      paid: 'paid',
+      partially_refunded: 'refunded',
+      refunded: 'refunded',
+      voided: 'failed',
+    };
+    return statusMap[financialStatus] || 'pending';
+  }
+
   async findAll(merchantId: string, filters?: { companyId?: string; status?: string }) {
     const where: any = { merchantId };
 
@@ -16,7 +70,7 @@ export class OrdersService {
       where.financialStatus = filters.status;
     }
 
-    return this.prisma.orderLocal.findMany({
+    const orders = await this.prisma.orderLocal.findMany({
       where,
       include: {
         company: {
@@ -37,6 +91,8 @@ export class OrdersService {
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
+
+    return orders.map(order => this.mapOrder(order));
   }
 
   async findOne(id: string, merchantId: string, companyId?: string) {
@@ -47,13 +103,15 @@ export class OrdersService {
       where.companyId = companyId;
     }
     
-    return this.prisma.orderLocal.findFirst({
+    const order = await this.prisma.orderLocal.findFirst({
       where,
       include: {
         company: true,
         companyUser: true,
       },
     });
+
+    return order ? this.mapOrder(order) : null;
   }
 
   async getStats(merchantId: string, companyId?: string) {
