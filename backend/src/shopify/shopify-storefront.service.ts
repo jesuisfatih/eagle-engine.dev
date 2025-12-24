@@ -123,15 +123,15 @@ export class ShopifyStorefrontService {
     
     if (buyerIdentity) {
       input.buyerIdentity = {};
-      // NOTE: email can ONLY be set with customerAccessToken in Storefront API
-      // Without customerAccessToken, email field causes "Email is invalid" error
+      // NOTE: email and phone can ONLY be set with customerAccessToken in Storefront API
+      // Without customerAccessToken, these fields cause validation errors
       if (buyerIdentity.customerAccessToken) {
         input.buyerIdentity.customerAccessToken = buyerIdentity.customerAccessToken;
-        // Email can be included when customerAccessToken is present
+        // Email and phone can be included when customerAccessToken is present
         if (buyerIdentity.email) input.buyerIdentity.email = buyerIdentity.email;
+        if (buyerIdentity.phone) input.buyerIdentity.phone = buyerIdentity.phone;
       }
-      // Phone and countryCode can always be set
-      if (buyerIdentity.phone) input.buyerIdentity.phone = buyerIdentity.phone;
+      // Only countryCode can be set without customerAccessToken
       if (buyerIdentity.countryCode) input.buyerIdentity.countryCode = buyerIdentity.countryCode;
     }
     
