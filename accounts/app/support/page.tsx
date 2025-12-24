@@ -9,8 +9,8 @@ interface SupportTicket {
   id: string;
   subject: string;
   message: string;
-  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
   createdAt: string;
   updatedAt: string;
   category?: string;
@@ -23,21 +23,21 @@ interface SupportTicket {
   }>;
 }
 
-type TicketCategory = 'ORDER' | 'QUOTE' | 'BILLING' | 'PRODUCT' | 'TECHNICAL' | 'OTHER';
+type TicketCategory = 'order' | 'quote' | 'billing' | 'product' | 'technical' | 'other';
 
 export default function SupportPage() {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
-  const [filter, setFilter] = useState<'all' | 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'>('all');
+  const [filter, setFilter] = useState<'all' | 'open' | 'in_progress' | 'resolved' | 'closed'>('all');
   const [resultModal, setResultModal] = useState<{show: boolean; message: string; type: 'success' | 'error'}>({show: false, message: '', type: 'success'});
   
   const [formData, setFormData] = useState({
     subject: '',
     message: '',
-    priority: 'MEDIUM' as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT',
-    category: 'OTHER' as TicketCategory,
+    priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent',
+    category: 'other' as TicketCategory,
   });
 
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function SupportPage() {
       
       if (response.ok) {
         setResultModal({show: true, message: '✅ Support request submitted successfully! We will get back to you soon.', type: 'success'});
-        setFormData({subject: '', message: '', priority: 'MEDIUM', category: 'OTHER'});
+        setFormData({subject: '', message: '', priority: 'medium', category: 'other'});
         loadTickets();
       } else {
         const error = await response.json().catch(() => ({}));
@@ -95,34 +95,34 @@ export default function SupportPage() {
 
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { class: string; icon: string; label: string }> = {
-      OPEN: { class: 'bg-primary', icon: 'circle-dot', label: 'Open' },
-      IN_PROGRESS: { class: 'bg-warning', icon: 'loader', label: 'In Progress' },
-      RESOLVED: { class: 'bg-success', icon: 'check', label: 'Resolved' },
-      CLOSED: { class: 'bg-secondary', icon: 'x', label: 'Closed' },
+      open: { class: 'bg-primary', icon: 'circle-dot', label: 'Open' },
+      in_progress: { class: 'bg-warning', icon: 'loader', label: 'In Progress' },
+      resolved: { class: 'bg-success', icon: 'check', label: 'Resolved' },
+      closed: { class: 'bg-secondary', icon: 'x', label: 'Closed' },
     };
     return configs[status] || { class: 'bg-secondary', icon: 'circle', label: status };
   };
 
   const getPriorityConfig = (priority: string) => {
     const configs: Record<string, { class: string; icon: string }> = {
-      LOW: { class: 'bg-info-subtle text-info', icon: 'arrow-down' },
-      MEDIUM: { class: 'bg-primary-subtle text-primary', icon: 'minus' },
-      HIGH: { class: 'bg-warning-subtle text-warning', icon: 'arrow-up' },
-      URGENT: { class: 'bg-danger-subtle text-danger', icon: 'alert-triangle' },
+      low: { class: 'bg-info-subtle text-info', icon: 'arrow-down' },
+      medium: { class: 'bg-primary-subtle text-primary', icon: 'minus' },
+      high: { class: 'bg-warning-subtle text-warning', icon: 'arrow-up' },
+      urgent: { class: 'bg-danger-subtle text-danger', icon: 'alert-triangle' },
     };
     return configs[priority] || { class: 'bg-secondary-subtle', icon: 'minus' };
   };
 
   const getCategoryIcon = (category?: string) => {
     const icons: Record<string, string> = {
-      ORDER: 'shopping-cart',
-      QUOTE: 'file-invoice',
-      BILLING: 'credit-card',
-      PRODUCT: 'package',
-      TECHNICAL: 'settings',
-      OTHER: 'help',
+      order: 'shopping-cart',
+      quote: 'file-invoice',
+      billing: 'credit-card',
+      product: 'package',
+      technical: 'settings',
+      other: 'help',
     };
-    return icons[category || 'OTHER'] || 'help';
+    return icons[category || 'other'] || 'help';
   };
 
   // Filter tickets
@@ -132,18 +132,18 @@ export default function SupportPage() {
 
   // Stats
   const stats = {
-    open: tickets.filter(t => t.status === 'OPEN').length,
-    inProgress: tickets.filter(t => t.status === 'IN_PROGRESS').length,
-    resolved: tickets.filter(t => t.status === 'RESOLVED').length,
+    open: tickets.filter(t => t.status === 'open').length,
+    inProgress: tickets.filter(t => t.status === 'in_progress').length,
+    resolved: tickets.filter(t => t.status === 'resolved').length,
   };
 
   const categories: Array<{ key: TicketCategory; label: string; icon: string }> = [
-    { key: 'ORDER', label: 'Order Issue', icon: 'shopping-cart' },
-    { key: 'QUOTE', label: 'Quote Request', icon: 'file-invoice' },
-    { key: 'BILLING', label: 'Billing/Payment', icon: 'credit-card' },
-    { key: 'PRODUCT', label: 'Product Question', icon: 'package' },
-    { key: 'TECHNICAL', label: 'Technical Issue', icon: 'settings' },
-    { key: 'OTHER', label: 'Other', icon: 'help' },
+    { key: 'order', label: 'Order Issue', icon: 'shopping-cart' },
+    { key: 'quote', label: 'Quote Request', icon: 'file-invoice' },
+    { key: 'billing', label: 'Billing/Payment', icon: 'credit-card' },
+    { key: 'product', label: 'Product Question', icon: 'package' },
+    { key: 'technical', label: 'Technical Issue', icon: 'settings' },
+    { key: 'other', label: 'Other', icon: 'help' },
   ];
 
   return (
@@ -251,10 +251,10 @@ export default function SupportPage() {
                     value={formData.priority}
                     onChange={(e) => setFormData(prev => ({...prev, priority: e.target.value as any}))}
                   >
-                    <option value="LOW">Low - General question</option>
-                    <option value="MEDIUM">Medium - Need help soon</option>
-                    <option value="HIGH">High - Urgent issue</option>
-                    <option value="URGENT">Urgent - Critical problem</option>
+                    <option value="low">Low - General question</option>
+                    <option value="medium">Medium - Need help soon</option>
+                    <option value="high">High - Urgent issue</option>
+                    <option value="urgent">Urgent - Critical problem</option>
                   </select>
                 </div>
 
@@ -309,13 +309,13 @@ export default function SupportPage() {
             {/* Filters */}
             <div className="card-body border-bottom py-2">
               <div className="d-flex flex-wrap gap-2">
-                {(['all', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const).map(status => (
+                {(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).map(status => (
                   <button
                     key={status}
                     className={`btn btn-sm ${filter === status ? 'btn-primary' : 'btn-outline-secondary'}`}
                     onClick={() => setFilter(status)}
                   >
-                    {status === 'all' ? 'All' : status.replace('_', ' ')}
+                    {status === 'all' ? 'All' : status.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
                     {status !== 'all' && (
                       <span className="badge bg-white text-dark ms-1">
                         {tickets.filter(t => t.status === status).length}

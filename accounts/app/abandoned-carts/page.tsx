@@ -93,16 +93,42 @@ export default function AbandonedCartsPage() {
   const restoreCart = async (cart: AbandonedCart) => {
     try {
       setRestoring(cart.id);
+      const merchantId = localStorage.getItem('eagle_merchantId') || '';
       const companyId = localStorage.getItem('eagle_companyId') || '';
+      const userId = localStorage.getItem('eagle_userId') || '';
+      
+      // First get or create active cart
+      let cartResponse = await accountsFetch('/api/v1/carts/active');
+      let activeCart = null;
+      
+      if (cartResponse.ok && cartResponse.status !== 204) {
+        activeCart = await cartResponse.json().catch(() => null);
+      }
+      
+      if (!activeCart || !activeCart.id) {
+        const createResponse = await accountsFetch('/api/v1/carts', {
+          method: 'POST',
+          body: JSON.stringify({ merchantId, companyId, createdByUserId: userId }),
+        });
+        if (createResponse.ok) {
+          activeCart = await createResponse.json();
+        }
+      }
+      
+      if (!activeCart || !activeCart.id) {
+        setResultModal({show: true, message: 'Failed to create cart', type: 'error'});
+        setRestoring(null);
+        return;
+      }
       
       let successCount = 0;
       for (const item of cart.items) {
         try {
-          const response = await accountsFetch(`/api/v1/companies/${companyId}/cart`, {
+          const response = await accountsFetch(`/api/v1/carts/${activeCart.id}/items`, {
             method: 'POST',
             body: JSON.stringify({
-              productId: item.productId,
-              variantId: item.variantId,
+              variantId: item.variantId || item.productId,
+              shopifyVariantId: (item.variantId || item.productId || '').toString(),
               quantity: item.quantity,
             }),
           });

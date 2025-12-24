@@ -38,16 +38,42 @@ export default function OrderDetailPage() {
     
     setReordering(true);
     try {
+      const merchantId = localStorage.getItem('eagle_merchantId') || '';
       const companyId = localStorage.getItem('eagle_companyId') || '';
-      let addedCount = 0;
+      const userId = localStorage.getItem('eagle_userId') || '';
       
+      // First get or create active cart
+      let cartResponse = await accountsFetch('/api/v1/carts/active');
+      let cart = null;
+      
+      if (cartResponse.ok && cartResponse.status !== 204) {
+        cart = await cartResponse.json().catch(() => null);
+      }
+      
+      if (!cart || !cart.id) {
+        const createResponse = await accountsFetch('/api/v1/carts', {
+          method: 'POST',
+          body: JSON.stringify({ merchantId, companyId, createdByUserId: userId }),
+        });
+        if (createResponse.ok) {
+          cart = await createResponse.json();
+        }
+      }
+      
+      if (!cart || !cart.id) {
+        alert('Failed to create cart');
+        setReordering(false);
+        return;
+      }
+      
+      let addedCount = 0;
       for (const item of order.lineItems) {
         try {
-          const response = await accountsFetch(`/api/v1/companies/${companyId}/cart`, {
+          const response = await accountsFetch(`/api/v1/carts/${cart.id}/items`, {
             method: 'POST',
             body: JSON.stringify({
-              productId: item.productId || item.shopifyProductId,
               variantId: item.variantId || item.shopifyVariantId,
+              shopifyVariantId: (item.shopifyVariantId || item.variantId || '').toString(),
               quantity: item.quantity,
             }),
           });
@@ -59,6 +85,8 @@ export default function OrderDetailPage() {
       
       if (addedCount > 0) {
         router.push('/cart');
+      } else {
+        alert('Failed to add items to cart');
       }
     } catch (err) {
       console.error('Reorder error:', err);

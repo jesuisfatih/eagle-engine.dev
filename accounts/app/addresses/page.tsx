@@ -239,7 +239,7 @@ export default function AddressesPage() {
       address.company,
       address.address1,
       address.address2,
-      `${address.city}, ${address.state} ${address.postalCode}`,
+      `${address.city}, ${address.province} ${address.zip}`,
       address.country,
       address.phone,
     ].filter(Boolean).join('\n');

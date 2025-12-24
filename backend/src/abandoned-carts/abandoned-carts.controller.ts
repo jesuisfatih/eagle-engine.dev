@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, Param, UseGuards, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Query, Param, UseGuards, BadRequestException } from '@nestjs/common';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { AbandonedCartsService } from './abandoned-carts.service';
 import { Public } from '../auth/decorators/public.decorator';
@@ -86,6 +86,32 @@ export class AbandonedCartsController {
       throw new BadRequestException('Merchant ID required');
     }
     return this.abandonedCartsService.getAllCartActivityLogs(merchantId, limit ? parseInt(limit) : 100);
+  }
+
+  /**
+   * Mark an abandoned cart as restored
+   */
+  @SkipThrottle()
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/restore')
+  async restoreCart(
+    @Param('id') id: string,
+    @CurrentUser('merchantId') merchantId: string,
+  ) {
+    return this.abandonedCartsService.markAsRestored(id, merchantId);
+  }
+
+  /**
+   * Delete an abandoned cart
+   */
+  @SkipThrottle()
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  async deleteCart(
+    @Param('id') id: string,
+    @CurrentUser('merchantId') merchantId: string,
+  ) {
+    return this.abandonedCartsService.deleteCart(id, merchantId);
   }
 }
 

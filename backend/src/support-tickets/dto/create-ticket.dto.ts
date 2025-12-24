@@ -9,6 +9,7 @@ export enum TicketPriority {
 
 export enum TicketCategory {
   ORDER = 'order',
+  QUOTE = 'quote',
   PRODUCT = 'product',
   BILLING = 'billing',
   TECHNICAL = 'technical',

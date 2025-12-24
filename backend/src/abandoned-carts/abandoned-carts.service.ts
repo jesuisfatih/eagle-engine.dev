@@ -483,5 +483,52 @@ export class AbandonedCartsService {
       throw error;
     }
   }
+
+  /**
+   * Mark an abandoned cart as restored
+   */
+  async markAsRestored(cartId: string, merchantId: string) {
+    const cart = await this.prisma.cart.findFirst({
+      where: { id: cartId, merchantId },
+    });
+
+    if (!cart) {
+      throw new Error('Cart not found');
+    }
+
+    await this.prisma.cart.update({
+      where: { id: cartId },
+      data: { status: 'restored' },
+    });
+
+    this.logger.log(`Cart ${cartId} marked as restored`);
+    return { success: true, message: 'Cart restored' };
+  }
+
+  /**
+   * Delete an abandoned cart
+   */
+  async deleteCart(cartId: string, merchantId: string) {
+    const cart = await this.prisma.cart.findFirst({
+      where: { id: cartId, merchantId },
+    });
+
+    if (!cart) {
+      throw new Error('Cart not found');
+    }
+
+    // Delete cart items first
+    await this.prisma.cartItem.deleteMany({
+      where: { cartId },
+    });
+
+    // Delete the cart
+    await this.prisma.cart.delete({
+      where: { id: cartId },
+    });
+
+    this.logger.log(`Cart ${cartId} deleted`);
+    return { success: true, message: 'Cart deleted' };
+  }
 }
 
