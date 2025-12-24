@@ -32,13 +32,7 @@ const COMPANY_LIST_SELECT = {
  * Optimized include for company detail
  */
 const COMPANY_DETAIL_INCLUDE = {
-  merchant: {
-    select: {
-      id: true,
-      shopDomain: true,
-      shopName: true,
-    },
-  },
+  merchant: true, // Include full merchant (we need shopDomain for checkout)
   users: {
     select: {
       id: true,
