@@ -38,8 +38,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         type: 'company_user',
       };
     } else if (payload.type === 'merchant') {
+      // merchantId can be in payload.merchantId or payload.sub
+      const merchantId = payload.merchantId || payload.sub;
       const merchant = await this.prisma.merchant.findUnique({
-        where: { id: payload.sub },
+        where: { id: merchantId },
       });
 
       if (!merchant || merchant.status !== 'active') {
@@ -50,6 +52,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         userId: merchant.id,
         email: payload.email,
         merchantId: merchant.id,
+        shopDomain: merchant.shopDomain,
         type: 'merchant',
       };
     }
