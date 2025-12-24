@@ -54,9 +54,31 @@ export class ShopifyCustomerSyncService {
       const permissions = (user.permissions as any) || {};
       const emailVerified = permissions.emailVerified || false;
 
+      // Format phone number for Shopify (E.164 format with +)
+      const formatPhone = (phone: string | undefined | null): string => {
+        if (!phone) return '';
+        // Remove all non-digit characters except +
+        let cleaned = phone.replace(/[^\d+]/g, '');
+        // If doesn't start with +, assume US and add +1
+        if (cleaned && !cleaned.startsWith('+')) {
+          // If starts with 1 and is 11 digits, add +
+          if (cleaned.startsWith('1') && cleaned.length === 11) {
+            cleaned = '+' + cleaned;
+          } else if (cleaned.length === 10) {
+            // 10 digits, assume US, add +1
+            cleaned = '+1' + cleaned;
+          } else {
+            // Other formats, try adding +
+            cleaned = '+' + cleaned;
+          }
+        }
+        return cleaned;
+      };
+
       // Format address properly for Shopify API
       const formatAddress = (address: any, userData: any) => {
         if (!address) return [];
+        const formattedPhone = formatPhone(userData.company.phone);
         return [{
           address1: address.address1 || address.street || '',
           address2: address.address2 || '',
@@ -64,18 +86,19 @@ export class ShopifyCustomerSyncService {
           province: address.province || address.state || '',
           country: address.country || 'Turkey',
           zip: address.zip || address.postalCode || '',
-          phone: userData.company.phone || '',
+          phone: formattedPhone,
           first_name: userData.firstName || '',
           last_name: userData.lastName || '',
         }];
       };
 
+      const formattedPhone = formatPhone(user.company.phone);
       const customerData = {
         customer: {
           email: user.email,
           first_name: user.firstName || '',
           last_name: user.lastName || '',
-          phone: user.company.phone || '',
+          phone: formattedPhone,
           addresses: formatAddress(user.company.billingAddress, user),
           tags: [`eagle-b2b-user`, `company-${user.companyId}`],
           accepts_marketing: emailVerified, // Subscribe if email verified

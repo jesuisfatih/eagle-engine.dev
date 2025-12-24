@@ -748,6 +748,83 @@ export class AuthService {
       },
     };
   }
+
+  /**
+   * Request password reset - sends email with reset link
+   */
+  async requestPasswordReset(email: string): Promise<{ success: boolean }> {
+    const user = await this.prisma.companyUser.findUnique({
+      where: { email: email.toLowerCase() },
+      include: { company: true },
+    });
+
+    if (!user) {
+      // Don't reveal if user exists
+      this.logger.log(`[PASSWORD_RESET] No user found for email: ${email}`);
+      return { success: true };
+    }
+
+    // Generate reset token (valid for 1 hour)
+    const resetToken = await this.jwtService.signAsync(
+      { sub: user.id, email: user.email, type: 'password_reset' },
+      { expiresIn: '1h' }
+    );
+
+    // Store token in Redis with 1 hour TTL
+    const redisKey = `password_reset:${user.id}`;
+    await this.redisService.set(redisKey, resetToken, 3600);
+
+    // Send password reset email
+    const resetUrl = `https://accounts.eagledtfsupply.com/reset-password?token=${resetToken}`;
+    
+    try {
+      await this.mailService.sendPasswordReset(user.email, resetUrl);
+      this.logger.log(`✅ [PASSWORD_RESET] Reset email sent to ${email}`);
+    } catch (mailError: any) {
+      this.logger.error(`❌ [PASSWORD_RESET] Failed to send email: ${mailError.message}`);
+      // Still return success to prevent enumeration
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Reset password with token
+   */
+  async resetPassword(token: string, newPassword: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      // Verify token
+      const decoded = await this.jwtService.verifyAsync(token);
+      
+      if (!decoded.sub || decoded.type !== 'password_reset') {
+        return { success: false, message: 'Invalid reset token' };
+      }
+
+      // Check if token is in Redis (one-time use)
+      const redisKey = `password_reset:${decoded.sub}`;
+      const storedToken = await this.redisService.get(redisKey);
+      
+      if (!storedToken || storedToken !== token) {
+        return { success: false, message: 'Reset token has expired or already been used' };
+      }
+
+      // Update password
+      const passwordHash = await this.hashPassword(newPassword);
+      await this.prisma.companyUser.update({
+        where: { id: decoded.sub },
+        data: { passwordHash },
+      });
+
+      // Delete token from Redis (one-time use)
+      await this.redisService.del(redisKey);
+
+      this.logger.log(`✅ [PASSWORD_RESET] Password reset successful for user ${decoded.sub}`);
+      return { success: true };
+    } catch (error: any) {
+      this.logger.error(`❌ [PASSWORD_RESET] Token verification failed: ${error.message}`);
+      return { success: false, message: 'Invalid or expired reset token' };
+    }
+  }
 }
 
 

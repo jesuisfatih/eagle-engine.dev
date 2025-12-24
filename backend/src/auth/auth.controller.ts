@@ -21,7 +21,9 @@ import {
   AcceptInvitationDto, 
   SendVerificationCodeDto, 
   VerifyEmailCodeDto,
-  ShopifyCustomerSyncDto 
+  ShopifyCustomerSyncDto,
+  PasswordResetRequestDto,
+  PasswordResetDto
 } from './dto/auth.dto';
 
 @Controller('auth')
@@ -275,6 +277,133 @@ export class AuthController {
     } catch (error: any) {
       return res.status(HttpStatus.BAD_REQUEST).json({
         error: error.message || 'Failed to verify code',
+      });
+    }
+  }
+
+  /**
+   * Request B2B Invitation - For new businesses to request access
+   */
+  @Public()
+  @Throttle({ short: { limit: 3, ttl: 60000 } })
+  @Post('request-invitation')
+  async requestInvitation(
+    @Body() body: {
+      email: string;
+      companyName: string;
+      contactName: string;
+      phone?: string;
+      website?: string;
+      industry?: string;
+      estimatedMonthlyVolume?: string;
+      message?: string;
+    },
+    @Res() res: Response,
+  ) {
+    try {
+      this.logger.log(`📩 [REQUEST_INVITATION] New invitation request from ${body.email}`);
+      
+      // Store request in database for admin review
+      const merchant = await this.prisma.merchant.findFirst();
+      if (!merchant) {
+        return res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          message: 'System not configured',
+        });
+      }
+
+      // Create a pending company with the request details
+      const company = await this.prisma.company.create({
+        data: {
+          merchantId: merchant.id,
+          name: body.companyName,
+          email: body.email,
+          phone: body.phone,
+          website: body.website,
+          companyGroup: 'b2b-request',
+          status: 'pending',
+          notes: JSON.stringify({
+            contactName: body.contactName,
+            industry: body.industry,
+            estimatedMonthlyVolume: body.estimatedMonthlyVolume,
+            message: body.message,
+            requestedAt: new Date().toISOString(),
+          }),
+        },
+      });
+
+      this.logger.log(`✅ [REQUEST_INVITATION] Request stored for ${body.email} (Company ID: ${company.id})`);
+
+      return res.json({
+        success: true,
+        message: 'Your B2B access request has been submitted. We will review and get back to you within 1-2 business days.',
+        requestId: company.id,
+      });
+    } catch (error: any) {
+      this.logger.error(`❌ [REQUEST_INVITATION] Request failed for ${body.email}: ${error.message}`);
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        success: false,
+        message: error.message || 'Failed to submit request',
+      });
+    }
+  }
+
+  /**
+   * Forgot Password - Request password reset email
+   */
+  @Public()
+  @Throttle({ short: { limit: 3, ttl: 60000 } })
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: PasswordResetRequestDto, @Res() res: Response) {
+    try {
+      this.logger.log(`🔑 [FORGOT_PASSWORD] Password reset requested for ${dto.email}`);
+      
+      const result = await this.authService.requestPasswordReset(dto.email);
+      
+      // Always return success to prevent email enumeration
+      return res.json({
+        success: true,
+        message: 'If an account exists with this email, you will receive a password reset link.',
+      });
+    } catch (error: any) {
+      this.logger.error(`❌ [FORGOT_PASSWORD] Failed for ${dto.email}: ${error.message}`);
+      // Still return success to prevent email enumeration
+      return res.json({
+        success: true,
+        message: 'If an account exists with this email, you will receive a password reset link.',
+      });
+    }
+  }
+
+  /**
+   * Reset Password - Complete password reset with token
+   */
+  @Public()
+  @Throttle({ short: { limit: 5, ttl: 60000 } })
+  @Post('reset-password')
+  async resetPassword(@Body() dto: PasswordResetDto, @Res() res: Response) {
+    try {
+      this.logger.log(`🔑 [RESET_PASSWORD] Password reset attempt with token`);
+      
+      const result = await this.authService.resetPassword(dto.token, dto.newPassword);
+      
+      if (result.success) {
+        this.logger.log(`✅ [RESET_PASSWORD] Password reset successful`);
+        return res.json({
+          success: true,
+          message: 'Password has been reset successfully. You can now log in with your new password.',
+        });
+      } else {
+        return res.status(HttpStatus.BAD_REQUEST).json({
+          success: false,
+          message: result.message || 'Failed to reset password',
+        });
+      }
+    } catch (error: any) {
+      this.logger.error(`❌ [RESET_PASSWORD] Failed: ${error.message}`);
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        success: false,
+        message: error.message || 'Invalid or expired reset token',
       });
     }
   }
