@@ -227,9 +227,54 @@ export default function CartPage() {
           console.warn('Discount code fetch failed:', discountErr);
         }
         
-        // Use cart URL format: /cart/variant:qty,variant:qty?checkout=true
-        // This adds items to cart and redirects to checkout
-        checkoutUrl = `${cartUrl}?${discountParam ? discountParam + '&' : ''}checkout[email]=${encodeURIComponent(userData?.email || '')}`;
+        // Build checkout URL with customer info pre-filled
+        // Shopify supports these query parameters for pre-filling checkout
+        const checkoutParams = new URLSearchParams();
+        
+        // Add discount if available
+        if (discountParam) {
+          checkoutParams.set('discount', discountParam.replace('discount=', ''));
+        }
+        
+        // Pre-fill customer email
+        if (userData?.email) {
+          checkoutParams.set('checkout[email]', userData.email);
+        }
+        
+        // Pre-fill shipping address
+        if (userData?.firstName) {
+          checkoutParams.set('checkout[shipping_address][first_name]', userData.firstName);
+        }
+        if (userData?.lastName) {
+          checkoutParams.set('checkout[shipping_address][last_name]', userData.lastName);
+        }
+        if (userData?.phone) {
+          checkoutParams.set('checkout[shipping_address][phone]', userData.phone);
+        }
+        
+        // Address fields from addressData
+        if (addressData?.address1 || addressData?.street) {
+          checkoutParams.set('checkout[shipping_address][address1]', addressData.address1 || addressData.street || '');
+        }
+        if (addressData?.address2) {
+          checkoutParams.set('checkout[shipping_address][address2]', addressData.address2);
+        }
+        if (addressData?.city) {
+          checkoutParams.set('checkout[shipping_address][city]', addressData.city);
+        }
+        if (addressData?.state || addressData?.province) {
+          checkoutParams.set('checkout[shipping_address][province]', addressData.state || addressData.province || '');
+        }
+        if (addressData?.postalCode || addressData?.zip) {
+          checkoutParams.set('checkout[shipping_address][zip]', addressData.postalCode || addressData.zip || '');
+        }
+        if (addressData?.country) {
+          checkoutParams.set('checkout[shipping_address][country]', addressData.country);
+        }
+        
+        // Use cart URL format: /cart/variant:qty,variant:qty?checkout[email]=...
+        const queryString = checkoutParams.toString();
+        checkoutUrl = `${cartUrl}${queryString ? '?' + queryString : ''}`;
       }
       
       // Step 6: Set cookies for autofill (Shopify reads these)
