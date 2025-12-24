@@ -213,19 +213,6 @@ export class ShopifyStorefrontService {
           cart {
             id
             checkoutUrl
-            delivery {
-              addresses {
-                address {
-                  firstName
-                  lastName
-                  address1
-                  city
-                  country
-                  zip
-                }
-                selected
-              }
-            }
           }
           userErrors {
             field
@@ -289,7 +276,6 @@ export class ShopifyStorefrontService {
       return {
         cartId: result.cart.id,
         checkoutUrl: result.cart.checkoutUrl,
-        addresses: result.cart.delivery?.addresses,
       };
     } catch (error) {
       this.logger.error('Failed to add delivery address', error);
