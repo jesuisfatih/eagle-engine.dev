@@ -322,13 +322,15 @@ export class AuthController {
           website: body.website,
           companyGroup: 'b2b-request',
           status: 'pending',
-          notes: JSON.stringify({
-            contactName: body.contactName,
-            industry: body.industry,
-            estimatedMonthlyVolume: body.estimatedMonthlyVolume,
-            message: body.message,
-            requestedAt: new Date().toISOString(),
-          }),
+          settings: {
+            requestDetails: {
+              contactName: body.contactName,
+              industry: body.industry,
+              estimatedMonthlyVolume: body.estimatedMonthlyVolume,
+              message: body.message,
+              requestedAt: new Date().toISOString(),
+            },
+          },
         },
       });
 
