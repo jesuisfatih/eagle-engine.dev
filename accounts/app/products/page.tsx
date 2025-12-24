@@ -39,8 +39,13 @@ export default function ProductsPage() {
       const productsResponse = await accountsFetch('/api/v1/catalog/products?limit=100');
       const productsData = await productsResponse.json();
       
+      // Handle both array and paginated response formats
+      const productsList: Product[] = Array.isArray(productsData) 
+        ? productsData 
+        : (productsData.data || productsData.products || []);
+      
       // Get variant IDs for pricing calculation
-      const allVariantIds = (Array.isArray(productsData) ? productsData as Product[] : [])
+      const allVariantIds = productsList
         .flatMap(p => p.variants?.map((v: ProductVariant) => v.shopifyVariantId?.toString()) || [])
         .filter(Boolean);
       
@@ -67,7 +72,7 @@ export default function ProductsPage() {
         }
       }
       
-      const productsWithPricing: ProductWithPricing[] = (Array.isArray(productsData) ? productsData : []).map((product: Product) => {
+      const productsWithPricing: ProductWithPricing[] = productsList.map((product: Product) => {
         const variant = product.variants?.[0];
         const basePrice = parseFloat(String(variant?.price)) || 0;
         const pricing = pricingMap[variant?.shopifyVariantId?.toString()] || {} as B2BPricing;
@@ -80,7 +85,7 @@ export default function ProductsPage() {
           companyPrice,
           listPrice: basePrice,
           discount,
-          image: product.images?.[0]?.url || 'https://via.placeholder.com/150',
+          image: product.images?.[0]?.url || product.images?.[0]?.src || 'https://via.placeholder.com/150',
           vendor: product.vendor || 'Eagle DTF',
           inStock: variant?.inventoryQuantity === undefined || variant.inventoryQuantity > 0,
         };
