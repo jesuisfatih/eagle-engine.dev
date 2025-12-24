@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { accountsFetch } from '@/lib/api-client';
+import { formatCurrency, calculateSavings } from '@/lib/utils';
+import { CartSummary, CartItemRow } from '@/components/cart/CartSummary';
+import { CartOptimizer } from '@/components/cart/QuantityBreakAlert';
+import { PageLoading, EmptyState } from '@/components/ui';
 
 // Cart item structure as returned by API
 interface CartItemData {
@@ -9,9 +14,14 @@ interface CartItemData {
   shopifyVariantId: string;
   quantity: number;
   unitPrice: number;
+  listPrice?: number;
   product?: {
     title: string;
+    imageUrl?: string;
   };
+  variantTitle?: string;
+  sku?: string;
+  quantityBreaks?: { qty: number; price: number }[];
 }
 
 interface CartData {
@@ -22,6 +32,7 @@ interface CartData {
 export default function CartPage() {
   const [cart, setCart] = useState<CartData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useEffect(() => {
     loadCart();
@@ -75,6 +86,8 @@ export default function CartPage() {
       alert('Cart is empty');
       return;
     }
+    
+    setCheckoutLoading(true);
     
     try {
       // Step 1: Fetch user profile and address information
@@ -288,6 +301,7 @@ export default function CartPage() {
       if (cartItems && fallbackShopDomain) {
         window.location.href = `https://${fallbackShopDomain}/cart/${cartItems}`;
       } else {
+        setCheckoutLoading(false);
         alert('Failed to proceed to checkout. Please try again.');
       }
     }
@@ -348,103 +362,209 @@ export default function CartPage() {
 
   const subtotal = cart?.items?.reduce((sum: number, item: CartItemData) => 
     sum + (item.unitPrice * item.quantity), 0) || 0;
+  
+  // Calculate list total (original prices before B2B discount)
+  const listTotal = cart?.items?.reduce((sum: number, item: CartItemData) => 
+    sum + ((item.listPrice || item.unitPrice) * item.quantity), 0) || 0;
+  
+  // Calculate savings
+  const totalSavings = listTotal - subtotal;
+
+  if (loading) {
+    return <PageLoading text="Loading your cart..." />;
+  }
 
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h4 className="fw-bold mb-0">Shopping Cart</h4>
-        {!cart && !loading && (
-          <button onClick={createCart} className="btn btn-primary btn-sm">
-            <i className="ti ti-plus me-1"></i>Create Cart
-          </button>
-        )}
+        <div>
+          <h4 className="fw-bold mb-1">Shopping Cart</h4>
+          {cart && cart.items?.length > 0 && (
+            <p className="text-muted mb-0">
+              {cart.items.length} item{cart.items.length !== 1 ? 's' : ''} in your cart
+            </p>
+          )}
+        </div>
+        <div className="d-flex gap-2">
+          {!cart && (
+            <button onClick={createCart} className="btn btn-primary btn-sm">
+              <i className="ti ti-plus me-1"></i>Create Cart
+            </button>
+          )}
+          <Link href="/products" className="btn btn-outline-primary btn-sm">
+            <i className="ti ti-arrow-left me-1"></i>
+            Continue Shopping
+          </Link>
+        </div>
       </div>
 
-      {loading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary"></div>
-        </div>
-      ) : !cart || cart.items?.length === 0 ? (
-        <div className="card">
-          <div className="card-body text-center py-5">
-            <i className="ti ti-shopping-cart-off ti-3x text-muted mb-3"></i>
-            <h5>Your cart is empty</h5>
-            <p className="text-muted">Start adding products to your cart</p>
-            <a href="/products" className="btn btn-primary mt-2">Browse Products</a>
-          </div>
-        </div>
+      {!cart || cart.items?.length === 0 ? (
+        <EmptyState
+          icon="ti-shopping-cart-off"
+          title="Your cart is empty"
+          description="Browse our products and add items to your cart"
+          action={{
+            label: 'Browse Products',
+            onClick: () => window.location.href = '/products',
+          }}
+        />
       ) : (
-        <>
-          <div className="card mb-4">
-            <div className="card-body">
-              <div className="table-responsive">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Product</th>
-                      <th>Price</th>
-                      <th>Quantity</th>
-                      <th>Total</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cart.items?.map((item: CartItemData) => (
-                      <tr key={item.id}>
-                        <td>{item.product?.title || 'Product'}</td>
-                        <td>${item.unitPrice}</td>
-                        <td>
-                          <div className="d-flex align-items-center gap-2" style={{width: '120px'}}>
-                            <button 
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                              disabled={item.quantity <= 1}
-                              className="btn btn-sm btn-icon btn-label-secondary"
-                            >-</button>
-                            <span className="fw-semibold">{item.quantity}</span>
-                            <button 
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                              className="btn btn-sm btn-icon btn-label-secondary"
-                            >+</button>
-                          </div>
-                        </td>
-                        <td className="fw-semibold">${(item.unitPrice * item.quantity).toFixed(2)}</td>
-                        <td>
-                          <button 
-                            onClick={() => removeItem(item.id)}
-                            className="btn btn-sm btn-danger"
+        <div className="row">
+          {/* Cart Items Column */}
+          <div className="col-lg-8">
+            {/* Savings Optimizer */}
+            <CartOptimizer
+              items={cart.items.map(item => ({
+                id: item.id,
+                title: item.product?.title || 'Product',
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                quantityBreaks: item.quantityBreaks,
+              }))}
+              onUpdateQuantity={(itemId, newQty) => updateQuantity(itemId, newQty)}
+            />
+
+            {/* Cart Items */}
+            <div className="card mb-4">
+              <div className="card-header">
+                <h5 className="card-title mb-0">Cart Items</h5>
+              </div>
+              <div className="card-body p-0">
+                {cart.items?.map((item: CartItemData) => (
+                  <div key={item.id} className="border-bottom p-3">
+                    <div className="row align-items-center">
+                      {/* Product Image */}
+                      <div className="col-auto">
+                        <img
+                          src={item.product?.imageUrl || '/placeholder.png'}
+                          alt={item.product?.title || 'Product'}
+                          className="rounded"
+                          style={{ width: 80, height: 80, objectFit: 'cover' }}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/80?text=No+Image';
+                          }}
+                        />
+                      </div>
+
+                      {/* Product Details */}
+                      <div className="col">
+                        <h6 className="mb-1">{item.product?.title || 'Product'}</h6>
+                        {item.variantTitle && (
+                          <small className="text-muted d-block">{item.variantTitle}</small>
+                        )}
+                        {item.sku && (
+                          <small className="text-muted d-block">SKU: {item.sku}</small>
+                        )}
+                        
+                        {/* Price Display */}
+                        <div className="mt-2">
+                          <span className="fw-bold text-success">
+                            {formatCurrency(item.unitPrice)}
+                          </span>
+                          {item.listPrice && item.listPrice > item.unitPrice && (
+                            <>
+                              <span className="text-muted text-decoration-line-through ms-2 small">
+                                {formatCurrency(item.listPrice)}
+                              </span>
+                              <span className="badge bg-success ms-2 small">
+                                B2B Price
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Quantity Controls */}
+                      <div className="col-auto">
+                        <div className="input-group" style={{ width: 130 }}>
+                          <button
+                            className="btn btn-outline-secondary"
+                            type="button"
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            disabled={item.quantity <= 1}
                           >
-                            <i className="ti ti-trash"></i>
+                            <i className="ti ti-minus"></i>
                           </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          <input
+                            type="text"
+                            className="form-control text-center"
+                            value={item.quantity}
+                            readOnly
+                            style={{ maxWidth: 50 }}
+                          />
+                          <button
+                            className="btn btn-outline-secondary"
+                            type="button"
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          >
+                            <i className="ti ti-plus"></i>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Item Total */}
+                      <div className="col-auto text-end" style={{ minWidth: 100 }}>
+                        <div className="fw-bold">
+                          {formatCurrency(item.unitPrice * item.quantity)}
+                        </div>
+                        {item.listPrice && item.listPrice > item.unitPrice && (
+                          <small className="text-success">
+                            Save {formatCurrency((item.listPrice - item.unitPrice) * item.quantity)}
+                          </small>
+                        )}
+                      </div>
+
+                      {/* Remove Button */}
+                      <div className="col-auto">
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="btn btn-outline-danger btn-sm"
+                          title="Remove item"
+                        >
+                          <i className="ti ti-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
-          <div className="row">
-            <div className="col-md-8"></div>
-            <div className="col-md-4">
-              <div className="card">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between mb-3">
-                    <span className="fw-bold">Subtotal</span>
-                    <h4 className="mb-0 text-primary">${subtotal.toFixed(2)}</h4>
-                  </div>
-                  <button onClick={checkout} className="btn btn-success w-100 mb-2">
-                    <i className="ti ti-credit-card me-1"></i>
-                    Proceed to Checkout
-                  </button>
-                  <p className="small text-muted text-center mb-0">
-                    ✅ Your info will be auto-filled at checkout
-                  </p>
-                </div>
+          {/* Cart Summary Column */}
+          <div className="col-lg-4">
+            <CartSummary
+              items={cart.items.map(item => ({
+                id: item.id,
+                title: item.product?.title || 'Product',
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                listPrice: item.listPrice,
+              }))}
+              subtotal={subtotal}
+              listTotal={listTotal > subtotal ? listTotal : undefined}
+              total={subtotal}
+              savings={totalSavings}
+              onCheckout={checkout}
+              checkoutLoading={checkoutLoading}
+              disabled={!cart || cart.items.length === 0}
+            />
+
+            {/* Trust Badges - Extra */}
+            <div className="card mt-3">
+              <div className="card-body text-center">
+                <p className="small text-muted mb-2">
+                  <i className="ti ti-lock me-1"></i>
+                  Secure checkout powered by Shopify
+                </p>
+                <p className="small text-success mb-0">
+                  <i className="ti ti-check me-1"></i>
+                  Your B2B discount will be applied automatically
+                </p>
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

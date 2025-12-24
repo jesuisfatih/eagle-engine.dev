@@ -219,3 +219,318 @@ export interface PaginatedResponse<T> {
   pageSize: number;
   totalPages: number;
 }
+
+// ============================================
+// ENHANCED B2B TYPES
+// ============================================
+
+// Company Types
+export interface Company {
+  id: string;
+  name: string;
+  legalName?: string;
+  email?: string;
+  phone?: string;
+  taxId?: string;
+  status: 'active' | 'inactive' | 'pending' | 'suspended';
+  companyGroup?: string;
+  settings?: CompanySettings;
+  creditLimit?: number;
+  availableCredit?: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CompanySettings {
+  requireApproval: boolean;
+  approvalLimit?: number;
+  allowQuotes: boolean;
+  paymentTerms?: string;
+  defaultDiscountTier?: string;
+}
+
+// User Permissions
+export interface UserPermissions {
+  canOrder: boolean;
+  canApprove: boolean;
+  canManageUsers: boolean;
+  canViewReports: boolean;
+  orderLimit?: number;
+}
+
+// Enhanced Dashboard Stats
+export interface EnhancedDashboardStats {
+  orders: {
+    total: number;
+    pending: number;
+    completed: number;
+    thisMonth: number;
+  };
+  spending: {
+    total: number;
+    thisMonth: number;
+    lastMonth: number;
+    savings: number;
+  };
+  cart: {
+    itemCount: number;
+    total: number;
+  };
+  credit: {
+    limit: number;
+    used: number;
+    available: number;
+  };
+}
+
+// Promotions
+export interface Promotion {
+  id: string;
+  title: string;
+  description: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  minOrderValue?: number;
+  minQuantity?: number;
+  validFrom: string;
+  validUntil: string;
+  isActive: boolean;
+  applicableProducts?: string[];
+  applicableCategories?: string[];
+}
+
+// Enhanced Pricing
+export interface EnhancedPricing {
+  variantId: string;
+  listPrice: number;
+  companyPrice: number;
+  finalPrice: number;
+  discountPercentage: number;
+  appliedRules: AppliedPricingRule[];
+  quantityBreaks: QuantityBreak[];
+}
+
+export interface AppliedPricingRule {
+  id: string;
+  name: string;
+  type: 'company' | 'volume' | 'promotion';
+  discountPercentage?: number;
+  discountValue?: number;
+}
+
+export interface QuantityBreak {
+  qty: number;
+  price: number;
+  discountPercentage?: number;
+}
+
+// Cart with Pricing
+export interface EnhancedCart {
+  id: string;
+  status: CartStatus;
+  items: EnhancedCartItem[];
+  subtotal: number;
+  discount: number;
+  total: number;
+  itemCount: number;
+  currency: string;
+  savings: number;
+  appliedPromotions: Promotion[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CartStatus = 
+  | 'draft' 
+  | 'pending_approval' 
+  | 'approved' 
+  | 'rejected' 
+  | 'abandoned' 
+  | 'converted';
+
+export interface EnhancedCartItem {
+  id: string;
+  variantId: string;
+  productId: string;
+  shopifyVariantId: string;
+  title: string;
+  variantTitle?: string;
+  sku?: string;
+  quantity: number;
+  listPrice: number;
+  unitPrice: number;
+  totalPrice: number;
+  savings: number;
+  imageUrl?: string;
+  quantityBreaks?: QuantityBreak[];
+  nextBreak?: {
+    qty: number;
+    price: number;
+    additionalNeeded: number;
+    potentialSavings: number;
+  };
+}
+
+// Quote Types
+export interface QuoteRequest {
+  id: string;
+  companyId: string;
+  requestedByUserId: string;
+  projectName?: string;
+  deadline?: string;
+  status: QuoteStatus;
+  items: QuoteItem[];
+  totalRequested: number;
+  totalApproved?: number;
+  note?: string;
+  validUntil?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type QuoteStatus = 
+  | 'draft'
+  | 'submitted'
+  | 'under_review'
+  | 'counter_offered'
+  | 'approved'
+  | 'rejected'
+  | 'expired'
+  | 'converted';
+
+export interface QuoteItem {
+  id: string;
+  productId: string;
+  variantId: string;
+  title: string;
+  quantity: number;
+  listPrice: number;
+  requestedPrice: number;
+  approvedPrice?: number;
+}
+
+// Approval Types
+export interface ApprovalRequest {
+  id: string;
+  cartId: string;
+  requestedByUserId: string;
+  requestedByUser?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  approverId?: string;
+  orderTotal: number;
+  status: ApprovalStatus;
+  note?: string;
+  responseNote?: string;
+  createdAt: string;
+  respondedAt?: string;
+}
+
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
+
+// Order Tracking
+export interface OrderTracking {
+  orderId: string;
+  carrier?: string;
+  trackingNumber?: string;
+  trackingUrl?: string;
+  estimatedDelivery?: string;
+  events: TrackingEvent[];
+}
+
+export interface TrackingEvent {
+  status: string;
+  description: string;
+  location?: string;
+  timestamp: string;
+}
+
+// Notification Types
+export interface B2BNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  data?: Record<string, unknown>;
+  read: boolean;
+  actionUrl?: string;
+  actionLabel?: string;
+  createdAt: string;
+}
+
+export type NotificationType = 
+  | 'order_confirmed'
+  | 'order_shipped'
+  | 'order_delivered'
+  | 'quote_response'
+  | 'approval_needed'
+  | 'approval_result'
+  | 'price_drop'
+  | 'stock_alert'
+  | 'promo'
+  | 'system';
+
+// Reorder Types
+export interface ReorderCheck {
+  orderId: string;
+  items: ReorderItem[];
+  available: boolean;
+  totalOriginal: number;
+  totalCurrent: number;
+}
+
+export interface ReorderItem {
+  productId: string;
+  variantId: string;
+  title: string;
+  previousQty: number;
+  currentQty: number;
+  available: boolean;
+  stockQty?: number;
+  previousPrice: number;
+  currentPrice: number;
+  priceChange: number;
+  alternatives?: Product[];
+}
+
+// Favorite/Saved Orders
+export interface FavoriteOrder {
+  id: string;
+  name: string;
+  orderId: string;
+  itemCount: number;
+  lastUsed: string;
+  createdAt: string;
+}
+
+// Analytics Types
+export interface SpendingAnalytics {
+  totalSpent: number;
+  totalSavings: number;
+  orderCount: number;
+  avgOrderValue: number;
+  spendByCategory: CategorySpend[];
+  spendByMonth: MonthlySpend[];
+  topProducts: TopProduct[];
+}
+
+export interface CategorySpend {
+  category: string;
+  amount: number;
+  percentage: number;
+}
+
+export interface MonthlySpend {
+  month: string;
+  amount: number;
+  orderCount: number;
+}
+
+export interface TopProduct {
+  productId: string;
+  title: string;
+  quantity: number;
+  totalSpent: number;
+}

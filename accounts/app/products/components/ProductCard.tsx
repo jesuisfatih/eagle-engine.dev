@@ -1,6 +1,7 @@
 'use client';
 
-import type { ProductVariant } from '@/types';
+import { formatCurrency, calculateDiscount } from '@/lib/utils';
+import type { ProductVariant, QuantityBreak } from '@/types';
 
 // Extended product for display
 interface ProductForDisplay {
@@ -11,6 +12,8 @@ interface ProductForDisplay {
   listPrice?: number;
   discount?: number;
   variants?: ProductVariant[];
+  imageUrl?: string;
+  quantityBreaks?: QuantityBreak[];
 }
 
 interface ProductCardProps {
@@ -19,35 +22,108 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onAddToCart }: ProductCardProps) {
+  const listPrice = product.listPrice || 0;
+  const companyPrice = product.companyPrice || listPrice;
+  const hasDiscount = companyPrice < listPrice;
+  const discountPercent = hasDiscount ? calculateDiscount(listPrice, companyPrice) : 0;
+  const hasQuantityBreaks = product.quantityBreaks && product.quantityBreaks.length > 0;
+  const inStock = (product.variants?.[0]?.inventoryQuantity || 0) > 0;
+
   return (
     <div className="col-md-4">
       <div className="card h-100">
+        {/* Product Image */}
+        {product.imageUrl && (
+          <a href={`/products/${product.id}`}>
+            <img 
+              src={product.imageUrl} 
+              alt={product.title}
+              className="card-img-top"
+              style={{ height: 200, objectFit: 'cover' }}
+            />
+          </a>
+        )}
+        
+        {/* Discount Badge */}
+        {hasDiscount && (
+          <div className="position-absolute top-0 start-0 m-2">
+            <span className="badge bg-success">
+              -{discountPercent}% OFF
+            </span>
+          </div>
+        )}
+
+        {/* Volume Discount Badge */}
+        {hasQuantityBreaks && (
+          <div className="position-absolute top-0 end-0 m-2">
+            <span className="badge bg-info">
+              <i className="ti ti-package me-1"></i>
+              Volume Pricing
+            </span>
+          </div>
+        )}
+
         <div className="card-body">
           <a href={`/products/${product.id}`} className="text-decoration-none">
             <h5 className="card-title text-dark">{product.title}</h5>
           </a>
           <p className="card-text small text-muted">{product.vendor}</p>
           
+          {/* Enhanced Price Display */}
           <div className="mt-3 mb-3">
-            <h4 className="text-primary mb-0">${product.companyPrice || product.listPrice || 0}</h4>
-            {product.discount > 0 && (
-              <div>
-                <span className="text-muted small text-decoration-line-through">${product.listPrice}</span>
-                <span className="badge bg-label-success ms-2">-{product.discount.toFixed(1)}%</span>
+            {/* Your Price */}
+            <div className="d-flex align-items-baseline gap-2">
+              <h4 className="text-success mb-0">
+                {formatCurrency(companyPrice)}
+              </h4>
+              {hasDiscount && (
+                <span className="text-muted text-decoration-line-through small">
+                  {formatCurrency(listPrice)}
+                </span>
+              )}
+            </div>
+            
+            {/* Savings Badge */}
+            {hasDiscount && (
+              <div className="mt-1">
+                <span className="badge bg-success">
+                  <i className="ti ti-tag me-1"></i>
+                  Your B2B Price - Save {discountPercent}%
+                </span>
+              </div>
+            )}
+
+            {/* Quantity Breaks Preview */}
+            {hasQuantityBreaks && (
+              <div className="mt-2 p-2 bg-light rounded small">
+                <div className="d-flex align-items-center text-muted mb-1">
+                  <i className="ti ti-trending-down me-1"></i>
+                  Volume Discounts:
+                </div>
+                <div className="d-flex flex-wrap gap-1">
+                  {product.quantityBreaks!.slice(0, 3).map((breakItem) => (
+                    <span key={breakItem.qty} className="badge bg-label-info">
+                      {breakItem.qty}+ @ {formatCurrency(breakItem.price)}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </div>
 
+          {/* Stock Status */}
           {product.variants?.[0] && (
             <div className="mb-2">
-              <span className={`badge ${product.variants[0].inventoryQuantity > 0 ? 'bg-label-success' : 'bg-label-warning'} small`}>
-                {product.variants[0].inventoryQuantity > 0 
+              <span className={`badge ${inStock ? 'bg-label-success' : 'bg-label-warning'} small`}>
+                {inStock 
                   ? `In Stock (${product.variants[0].inventoryQuantity})`
                   : 'Limited Stock - Contact Sales'
                 }
               </span>
             </div>
           )}
+
+          {/* Action Buttons */}
 
           <div className="d-flex gap-2">
             <button
