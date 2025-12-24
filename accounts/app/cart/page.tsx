@@ -33,6 +33,7 @@ export default function CartPage() {
   const [cart, setCart] = useState<CartData | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   useEffect(() => {
     loadCart();
@@ -83,11 +84,12 @@ export default function CartPage() {
 
   const checkout = async () => {
     if (!cart || !cart.id || !cart.items || cart.items.length === 0) {
-      alert('Cart is empty');
+      setCheckoutError('Cart is empty');
       return;
     }
     
     setCheckoutLoading(true);
+    setCheckoutError(null);
     
     try {
       // Step 1: Fetch user profile and address information
@@ -302,7 +304,7 @@ export default function CartPage() {
         window.location.href = `https://${fallbackShopDomain}/cart/${cartItems}`;
       } else {
         setCheckoutLoading(false);
-        alert('Failed to proceed to checkout. Please try again.');
+        setCheckoutError('Failed to proceed to checkout. Please check your connection and try again.');
       }
     }
   };
@@ -548,8 +550,20 @@ export default function CartPage() {
               onCheckout={checkout}
               checkoutLoading={checkoutLoading}
               disabled={!cart || cart.items.length === 0}
-            />
-
+            />            
+            {/* Checkout Error Alert */}
+            {checkoutError && (
+              <div className="alert alert-danger alert-dismissible mt-3" role="alert">
+                <i className="ti ti-alert-circle me-2"></i>
+                {checkoutError}
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={() => setCheckoutError(null)}
+                  aria-label="Close"
+                ></button>
+              </div>
+            )}
             {/* Trust Badges - Extra */}
             <div className="card mt-3">
               <div className="card-body text-center">

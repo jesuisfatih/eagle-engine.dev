@@ -83,23 +83,49 @@ export default function WishlistPage() {
   const addToCart = async (item: WishlistItem) => {
     try {
       setAddingToCart(item.id);
+      const merchantId = localStorage.getItem('eagle_merchantId') || '';
       const companyId = localStorage.getItem('eagle_companyId') || '';
+      const userId = localStorage.getItem('eagle_userId') || '';
       
-      const response = await accountsFetch(`/api/v1/companies/${companyId}/cart`, {
-        method: 'POST',
-        body: JSON.stringify({
-          productId: item.productId,
-          variantId: item.variantId || item.productId,
-          quantity: 1,
-        }),
-      });
+      // First get or create active cart
+      let cartResponse = await accountsFetch('/api/v1/carts/active');
+      let cart = null;
       
-      if (response.ok) {
-        // Optionally remove from wishlist after adding to cart
-        // await removeFromWishlist(item.id, item.productId);
+      if (cartResponse.ok && cartResponse.status !== 204) {
+        cart = await cartResponse.json().catch(() => null);
+      }
+      
+      if (!cart || !cart.id) {
+        const createResponse = await accountsFetch('/api/v1/carts', {
+          method: 'POST',
+          body: JSON.stringify({ merchantId, companyId, createdByUserId: userId }),
+        });
+        if (createResponse.ok) {
+          cart = await createResponse.json();
+        }
+      }
+      
+      if (cart && cart.id) {
+        const response = await accountsFetch(`/api/v1/carts/${cart.id}/items`, {
+          method: 'POST',
+          body: JSON.stringify({
+            variantId: item.variantId || item.productId,
+            shopifyVariantId: (item.variantId || item.productId || '').toString(),
+            quantity: 1,
+          }),
+        });
+        
+        if (response.ok) {
+          // Show success feedback
+          alert('Added to cart!');
+        } else {
+          const error = await response.json().catch(() => ({}));
+          alert(error.message || 'Failed to add to cart');
+        }
       }
     } catch (err) {
       console.error('Failed to add to cart:', err);
+      alert('Failed to add to cart');
     } finally {
       setAddingToCart(null);
     }
@@ -109,26 +135,55 @@ export default function WishlistPage() {
     if (selectedItems.size === 0) return;
     
     setBulkAdding(true);
+    const merchantId = localStorage.getItem('eagle_merchantId') || '';
     const companyId = localStorage.getItem('eagle_companyId') || '';
+    const userId = localStorage.getItem('eagle_userId') || '';
     
+    // First get or create active cart
+    let cartResponse = await accountsFetch('/api/v1/carts/active');
+    let cart = null;
+    
+    if (cartResponse.ok && cartResponse.status !== 204) {
+      cart = await cartResponse.json().catch(() => null);
+    }
+    
+    if (!cart || !cart.id) {
+      const createResponse = await accountsFetch('/api/v1/carts', {
+        method: 'POST',
+        body: JSON.stringify({ merchantId, companyId, createdByUserId: userId }),
+      });
+      if (createResponse.ok) {
+        cart = await createResponse.json();
+      }
+    }
+    
+    if (!cart || !cart.id) {
+      alert('Failed to create cart');
+      setBulkAdding(false);
+      return;
+    }
+    
+    let successCount = 0;
     for (const itemId of selectedItems) {
       const item = wishlist.find(w => w.id === itemId);
       if (item) {
         try {
-          await accountsFetch(`/api/v1/companies/${companyId}/cart`, {
+          const response = await accountsFetch(`/api/v1/carts/${cart.id}/items`, {
             method: 'POST',
             body: JSON.stringify({
-              productId: item.productId,
               variantId: item.variantId || item.productId,
+              shopifyVariantId: (item.variantId || item.productId || '').toString(),
               quantity: 1,
             }),
           });
+          if (response.ok) successCount++;
         } catch (err) {
           console.error('Failed to add item:', err);
         }
       }
     }
     
+    alert(`Added ${successCount} of ${selectedItems.size} items to cart`);
     setSelectedItems(new Set());
     setBulkAdding(false);
   };

@@ -4,33 +4,49 @@ import { useState, useEffect, useMemo } from 'react';
 import Modal from '@/components/Modal';
 import { accountsFetch } from '@/lib/api-client';
 
+// Backend uses isBilling/isShipping booleans, not type enum
 interface Address {
   id: string;
-  type: 'BILLING' | 'SHIPPING';
+  isBilling: boolean;
+  isShipping: boolean;
   firstName: string;
   lastName: string;
   company?: string;
+  label?: string;
   address1: string;
   address2?: string;
   city: string;
-  state: string;
-  postalCode: string;
+  province?: string;
+  provinceCode?: string;
+  zip: string;
   country: string;
+  countryCode?: string;
   phone?: string;
   isDefault: boolean;
 }
 
+// Computed type from booleans
+type AddressType = 'BILLING' | 'SHIPPING' | 'BOTH';
+
+function getAddressType(addr: Address): AddressType {
+  if (addr.isBilling && addr.isShipping) return 'BOTH';
+  if (addr.isBilling) return 'BILLING';
+  return 'SHIPPING';
+}
+
 interface AddressFormData {
-  type: 'BILLING' | 'SHIPPING';
+  type: AddressType;
   firstName: string;
   lastName: string;
   company: string;
+  label: string;
   address1: string;
   address2: string;
   city: string;
-  state: string;
-  postalCode: string;
+  province: string;
+  zip: string;
   country: string;
+  countryCode: string;
   phone: string;
   isDefault: boolean;
 }
@@ -40,12 +56,14 @@ const emptyFormData: AddressFormData = {
   firstName: '',
   lastName: '',
   company: '',
+  label: '',
   address1: '',
   address2: '',
   city: '',
-  state: '',
-  postalCode: '',
+  province: '',
+  zip: '',
   country: 'United States',
+  countryCode: 'US',
   phone: '',
   isDefault: false,
 };
@@ -85,10 +103,10 @@ export default function AddressesPage() {
 
   // Stats
   const stats = useMemo(() => {
-    const shipping = addresses.filter(a => a.type === 'SHIPPING');
-    const billing = addresses.filter(a => a.type === 'BILLING');
-    const defaultShipping = addresses.find(a => a.type === 'SHIPPING' && a.isDefault);
-    const defaultBilling = addresses.find(a => a.type === 'BILLING' && a.isDefault);
+    const shipping = addresses.filter(a => a.isShipping);
+    const billing = addresses.filter(a => a.isBilling);
+    const defaultShipping = addresses.find(a => a.isShipping && a.isDefault);
+    const defaultBilling = addresses.find(a => a.isBilling && a.isDefault);
     
     return {
       total: addresses.length,
@@ -102,26 +120,30 @@ export default function AddressesPage() {
   // Filtered addresses
   const filteredAddresses = useMemo(() => {
     if (filter === 'all') return addresses;
-    return addresses.filter(a => a.type === filter.toUpperCase());
+    if (filter === 'shipping') return addresses.filter(a => a.isShipping);
+    if (filter === 'billing') return addresses.filter(a => a.isBilling);
+    return addresses;
   }, [addresses, filter]);
 
-  const openAddModal = (type?: 'SHIPPING' | 'BILLING') => {
+  const openAddModal = (type?: AddressType) => {
     setFormData({...emptyFormData, type: type || 'SHIPPING'});
     setFormModal({show: true, editId: null});
   };
 
   const openEditModal = (address: Address) => {
     setFormData({
-      type: address.type,
+      type: getAddressType(address),
       firstName: address.firstName,
       lastName: address.lastName,
       company: address.company || '',
+      label: address.label || '',
       address1: address.address1,
       address2: address.address2 || '',
       city: address.city,
-      state: address.state,
-      postalCode: address.postalCode,
+      province: address.province || '',
+      zip: address.zip,
       country: address.country,
+      countryCode: address.countryCode || 'US',
       phone: address.phone || '',
       isDefault: address.isDefault,
     });
@@ -142,9 +164,17 @@ export default function AddressesPage() {
       
       const method = formModal.editId ? 'PUT' : 'POST';
       
+      // Convert type to isBilling/isShipping for backend
+      const { type, ...restFormData } = formData;
+      const payload = {
+        ...restFormData,
+        isBilling: type === 'BILLING' || type === 'BOTH',
+        isShipping: type === 'SHIPPING' || type === 'BOTH',
+      };
+      
       const response = await accountsFetch(url, {
         method,
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
       
       setFormModal({show: false, editId: null});

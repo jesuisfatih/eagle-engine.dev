@@ -106,13 +106,15 @@ export default function QuotesPage() {
 
   const handleAcceptQuote = async (quoteId: string) => {
     try {
-      const response = await accountsFetch(`/api/v1/quotes/${quoteId}/accept`, { method: 'PUT' });
+      // Backend uses POST /quotes/:id/approve (not PUT /accept)
+      const response = await accountsFetch(`/api/v1/quotes/${quoteId}/approve`, { method: 'POST' });
       if (response.ok) {
         setResultModal({show: true, message: 'Quote accepted!', type: 'success'});
         setDetailModal(null);
         loadQuotes();
       } else {
-        setResultModal({show: true, message: 'Failed to accept quote', type: 'error'});
+        const error = await response.json().catch(() => ({}));
+        setResultModal({show: true, message: error.message || 'Failed to accept quote', type: 'error'});
       }
     } catch (err) {
       setResultModal({show: true, message: 'Failed to accept quote', type: 'error'});
@@ -121,11 +123,15 @@ export default function QuotesPage() {
 
   const handleRejectQuote = async (quoteId: string) => {
     try {
-      const response = await accountsFetch(`/api/v1/quotes/${quoteId}/reject`, { method: 'PUT' });
+      // Backend uses POST (not PUT)
+      const response = await accountsFetch(`/api/v1/quotes/${quoteId}/reject`, { method: 'POST' });
       if (response.ok) {
         setResultModal({show: true, message: 'Quote declined.', type: 'success'});
         setDetailModal(null);
         loadQuotes();
+      } else {
+        const error = await response.json().catch(() => ({}));
+        setResultModal({show: true, message: error.message || 'Failed to decline quote', type: 'error'});
       }
     } catch (err) {
       setResultModal({show: true, message: 'Failed to decline quote', type: 'error'});

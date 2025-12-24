@@ -2,9 +2,12 @@ import {
   Controller,
   Get,
   Put,
+  Post,
   Body,
+  Param,
   UseGuards,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { CompanyUsersService } from './company-users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -38,5 +41,46 @@ export class CompanyUsersController {
     if (body.phone !== undefined) updateData.phone = body.phone;
     
     return this.companyUsersService.update(userId, updateData);
+  }
+
+  /**
+   * YUKSEK-001: Password change endpoint
+   */
+  @Put('me/password')
+  async changePassword(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { currentPassword: string; newPassword: string },
+  ) {
+    if (!body.currentPassword || !body.newPassword) {
+      throw new BadRequestException('Current password and new password are required');
+    }
+    
+    if (body.newPassword.length < 8) {
+      throw new BadRequestException('New password must be at least 8 characters');
+    }
+    
+    return this.companyUsersService.changePassword(userId, body.currentPassword, body.newPassword);
+  }
+
+  /**
+   * YUKSEK-002: Notification preferences endpoint
+   */
+  @Get('me/notifications')
+  async getNotificationPreferences(@CurrentUser('sub') userId: string) {
+    return this.companyUsersService.getNotificationPreferences(userId);
+  }
+
+  @Put('me/notifications')
+  async updateNotificationPreferences(
+    @CurrentUser('sub') userId: string,
+    @Body() preferences: {
+      orderUpdates?: boolean;
+      promotions?: boolean;
+      quoteAlerts?: boolean;
+      teamActivity?: boolean;
+      weeklyDigest?: boolean;
+    },
+  ) {
+    return this.companyUsersService.updateNotificationPreferences(userId, preferences);
   }
 }

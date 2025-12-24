@@ -122,6 +122,28 @@ export class CompaniesController {
     return this.companyUsersService.invite(companyId, dto);
   }
 
+  @Delete(':id/users/:userId')
+  async removeUser(
+    @Param('id') companyId: string,
+    @Param('userId') userId: string,
+  ) {
+    return this.companyUsersService.delete(userId);
+  }
+
+  /**
+   * YUKSEK-004: Resend invitation endpoint
+   */
+  @Post(':id/users/resend-invite')
+  async resendInvite(
+    @Param('id') companyId: string,
+    @Body() body: { email: string },
+  ) {
+    if (!body.email) {
+      throw new BadRequestException('Email is required');
+    }
+    return this.companyUsersService.resendInvitation(companyId, body.email);
+  }
+
   @Post('users/:userId/verify-email')
   async verifyUserEmail(@Param('userId') userId: string) {
     return this.companyUsersService.verifyEmail(userId);

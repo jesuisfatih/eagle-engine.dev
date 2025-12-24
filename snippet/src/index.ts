@@ -145,23 +145,20 @@ class EagleSnippet {
       // Send to abandoned carts tracking endpoint
       const payload = {
         cartToken: this.cartToken,
-        shopifyCartId: this.cartToken,
+        shopDomain: this.config.shop,
         customerEmail: customerEmail,
-        shopifyCustomerId: this.customerId,
-        customerId: this.customerId,
         items: cart.items.map((item: any) => ({
-          variant_id: item.variant_id,
-          variantId: item.variant_id,
-          product_id: item.product_id,
-          productId: item.product_id,
-          sku: item.sku,
+          shopifyVariantId: item.variant_id,
           title: item.title,
+          variantTitle: item.variant_title || undefined,
           quantity: item.quantity,
-          price: item.price,
+          price: item.price / 100, // Shopify returns price in cents
+          imageUrl: item.image || undefined,
         })),
-        totalPrice: cart.total_price,
+        subtotal: cart.total_price / 100,
+        total: cart.total_price / 100,
         currency: cart.currency,
-        shop: this.config.shop, // Include shop domain for merchant lookup
+        checkoutUrl: `/checkout`,
       };
       
       console.log('🦅 Eagle: Sending cart to backend', {

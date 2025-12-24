@@ -21,6 +21,7 @@ type ViewMode = 'grid' | 'list';
 export default function ProductsPage() {
   const [products, setProducts] = useState<ProductWithPricing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pricingError, setPricingError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('name');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -34,6 +35,7 @@ export default function ProductsPage() {
   const loadProducts = async () => {
     try {
       setLoading(true);
+      setPricingError(false);
       const productsResponse = await accountsFetch('/api/v1/catalog/products?limit=100');
       const productsData = await productsResponse.json();
       
@@ -56,9 +58,12 @@ export default function ProductsPage() {
               acc[p.variantId] = p;
               return acc;
             }, {});
+          } else {
+            setPricingError(true);
           }
         } catch (e) {
           console.error('Pricing fetch error:', e);
+          setPricingError(true);
         }
       }
       
@@ -389,6 +394,20 @@ export default function ProductsPage() {
           </div>
         </div>
       </div>
+
+      {/* Pricing Error Alert */}
+      {pricingError && (
+        <div className="alert alert-warning alert-dismissible mb-3" role="alert">
+          <i className="ti ti-alert-triangle me-2"></i>
+          <strong>B2B Pricing Unavailable:</strong> Showing standard prices. Your discounts may not be reflected.
+          <button 
+            type="button" 
+            className="btn-close" 
+            onClick={() => setPricingError(false)}
+            aria-label="Close"
+          ></button>
+        </div>
+      )}
 
       {/* Results Info */}
       {(searchQuery || selectedVendor || showOnlyDiscounted) && (

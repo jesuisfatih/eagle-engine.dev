@@ -68,12 +68,12 @@ export default function ProductDetailPage() {
       }
       
       if (cart && cart.id) {
-        // Add item to cart
-        const addResponse = await accountsFetch(`/api/v1/companies/${companyId}/cart`, {
+        // Add item to cart - use correct endpoint
+        const addResponse = await accountsFetch(`/api/v1/carts/${cart.id}/items`, {
           method: 'POST',
           body: JSON.stringify({
-            productId: product.id,
-            variantId: selectedVariant.id || selectedVariant.shopifyId,
+            variantId: selectedVariant.id,
+            shopifyVariantId: (selectedVariant.shopifyVariantId || selectedVariant.shopifyId || '').toString(),
             quantity: quantity,
           }),
         });
@@ -81,6 +81,10 @@ export default function ProductDetailPage() {
         if (addResponse.ok) {
           setAddedToCart(true);
           setTimeout(() => setAddedToCart(false), 3000);
+        } else {
+          const error = await addResponse.json().catch(() => ({}));
+          console.error('Add to cart failed:', error);
+          alert(error.message || 'Failed to add to cart');
         }
       }
     } catch (err) {

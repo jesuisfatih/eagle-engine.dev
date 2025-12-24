@@ -11,6 +11,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [shopDomain, setShopDomain] = useState('');
+  const [shopDomainLoading, setShopDomainLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'paid' | 'fulfilled'>('all');
   const [sortBy, setSortBy] = useState<'date' | 'total'>('date');
 
@@ -28,6 +29,9 @@ export default function OrdersPage() {
         setShopDomain(company.merchant?.shopDomain || '');
       }
     } catch (err) {}
+    finally {
+      setShopDomainLoading(false);
+    }
   };
 
   const loadOrders = async () => {
@@ -213,7 +217,11 @@ export default function OrdersPage() {
                             <a href={`/orders/${order.id}`} className="btn btn-sm btn-primary">
                               <i className="ti ti-eye me-1"></i>View
                             </a>
-                            {shopDomain && (
+                            {shopDomainLoading ? (
+                              <div className="btn btn-sm btn-outline-secondary disabled placeholder-glow" style={{width: '80px'}}>
+                                <span className="placeholder col-12"></span>
+                              </div>
+                            ) : shopDomain && (
                               <ReorderButton
                                 order={{
                                   id: order.id,
@@ -267,7 +275,16 @@ export default function OrdersPage() {
         {/* Sidebar */}
         <div className="col-lg-4">
           {/* Quick Reorder */}
-          {shopDomain && orders.length > 0 && (
+          {shopDomainLoading ? (
+            <div className="card mb-4">
+              <div className="card-header"><h5 className="mb-0">Quick Reorder</h5></div>
+              <div className="card-body placeholder-glow">
+                <span className="placeholder col-12 mb-2" style={{height: '40px'}}></span>
+                <span className="placeholder col-12 mb-2" style={{height: '40px'}}></span>
+                <span className="placeholder col-12" style={{height: '40px'}}></span>
+              </div>
+            </div>
+          ) : shopDomain && orders.length > 0 && (
             <QuickReorderPanel
               orders={orders.slice(0, 3).map(o => ({
                 id: o.id,
