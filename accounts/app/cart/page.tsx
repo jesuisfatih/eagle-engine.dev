@@ -165,13 +165,14 @@ export default function CartPage() {
       
       // Add all items to Shopify cart using /cart/add.js
       const addPromises = cart.items.map((item: CartItemData) => {
+        const shopifyVarId = item.shopifyVariantId || item.variantId || item.id || '';
         return fetch(`${shopUrl}/cart/add.js`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            id: item.shopifyVariantId.toString(),
+            id: shopifyVarId.toString(),
             quantity: item.quantity,
           }),
         });

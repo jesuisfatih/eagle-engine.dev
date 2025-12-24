@@ -60,12 +60,12 @@ export interface AuthResponse {
 // Product Types
 export interface ProductVariant {
   id: string;
-  shopifyVariantId: string;
-  title: string;
-  sku: string;
-  price: number;
-  compareAtPrice?: number;
-  inventoryQuantity: number;
+  shopifyVariantId?: string; // Optional - API may not include it
+  title?: string;
+  sku?: string;
+  price: number | string;
+  compareAtPrice?: number | string | null;
+  inventoryQuantity?: number;
   option1?: string;
   option2?: string;
   option3?: string;

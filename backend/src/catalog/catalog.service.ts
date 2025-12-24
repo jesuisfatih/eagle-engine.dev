@@ -25,6 +25,7 @@ const PRODUCT_LIST_SELECT = {
     take: 1, // Only first variant for price display
     select: {
       id: true,
+      shopifyVariantId: true, // Required for cart operations
       price: true,
       compareAtPrice: true,
       inventoryQuantity: true,

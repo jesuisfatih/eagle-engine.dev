@@ -213,11 +213,13 @@ export default function ProductsPage() {
       }
 
       // Step 2: Add item to cart
+      // Use shopifyVariantId if available, otherwise use variant.id or product's shopifyProductId
+      const shopifyVarId = variant.shopifyVariantId || variant.id || '';
       const addItemResponse = await accountsFetch(`/api/v1/carts/${cart.id}/items`, {
         method: 'POST',
         body: JSON.stringify({
           variantId: variant.id,
-          shopifyVariantId: variant.shopifyVariantId.toString(),
+          shopifyVariantId: shopifyVarId.toString(),
           quantity: 1,
         }),
       });

@@ -88,9 +88,12 @@ class AccountsApiClient {
 
   async addToCart(variantId: string, shopifyVariantId: string, quantity: number) {
     const cart = await this.getActiveCart();
+    if (!cart || !cart.id) {
+      throw new Error('No active cart found');
+    }
     return this.request(`/api/v1/carts/${cart.id}/items`, {
       method: 'POST',
-      body: JSON.stringify({ variantId, shopifyVariantId, quantity }),
+      body: JSON.stringify({ variantId, shopifyVariantId: shopifyVariantId || variantId, quantity }),
     });
   }
 
