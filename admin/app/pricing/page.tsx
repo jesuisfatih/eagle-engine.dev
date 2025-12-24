@@ -54,7 +54,9 @@ export default function PricingPage() {
   const loadCompanies = async () => {
     try {
       const data = await apiClient.getCompanies();
-      setCompanies(Array.isArray(data) ? data : []);
+      // API returns { data: [], pagination: {} } format
+      const companiesList = Array.isArray(data) ? data : (data as any).data || [];
+      setCompanies(companiesList);
     } catch (err) {
       setCompanies([]);
     }
@@ -65,13 +67,16 @@ export default function PricingPage() {
       const response = await adminFetch('/api/v1/catalog/products?limit=500');
       const data = await response.json();
       
+      // API returns { data: [], pagination: {} } format
+      const productsArray = Array.isArray(data) ? data : data.data || [];
+      
       // Create flat list of products with variants
-      const productsList = Array.isArray(data) ? data.map(p => ({
+      const productsList = productsArray.map((p: any) => ({
         id: p.id,
         shopifyProductId: p.shopifyProductId,
         title: p.title,
         variants: p.variants || []
-      })) : [];
+      }));
       
       setProducts(productsList);
     } catch (err) {

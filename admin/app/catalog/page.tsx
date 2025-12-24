@@ -44,7 +44,7 @@ export default function CatalogPage() {
       setLoading(true);
       const response = await adminFetch('/api/v1/catalog/products?limit=500');
       const data = await response.json();
-      setProducts(Array.isArray(data) ? data : data.products || []);
+      setProducts(Array.isArray(data) ? data : data.data || []);
     } catch (err) {
       setProducts([]);
     } finally {

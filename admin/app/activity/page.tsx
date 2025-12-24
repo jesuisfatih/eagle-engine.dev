@@ -19,11 +19,16 @@ export default function ActivityPage() {
 
   const loadActivity = async () => {
     try {
-      const [orders, companies, pricingRules] = await Promise.all([
+      const [ordersData, companiesData, pricingRulesData] = await Promise.all([
         adminFetch('/api/v1/orders').then(r => r.json()).catch(() => []),
-        adminFetch('/api/v1/companies').then(r => r.json()).catch(() => []),
+        adminFetch('/api/v1/companies').then(r => r.json()).catch(() => ({ data: [] })),
         adminFetch('/api/v1/pricing/rules').then(r => r.json()).catch(() => []),
       ]);
+      
+      // Handle different response formats
+      const orders = Array.isArray(ordersData) ? ordersData : ordersData.data || [];
+      const companies = Array.isArray(companiesData) ? companiesData : companiesData.data || [];
+      const pricingRules = Array.isArray(pricingRulesData) ? pricingRulesData : pricingRulesData.data || [];
       
       const activityList: ActivityItem[] = [];
       (orders as Order[]).forEach((order) => {

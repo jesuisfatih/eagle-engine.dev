@@ -54,10 +54,13 @@ export default function UsersPage() {
     try {
       setLoading(true);
       const response = await adminFetch('/api/v1/companies');
-      const companies = await response.json();
+      const companiesData = await response.json();
+      
+      // API returns { data: [], pagination: {} } format
+      const companies = Array.isArray(companiesData) ? companiesData : companiesData.data || [];
       
       const allUsers: User[] = [];
-      for (const company of (Array.isArray(companies) ? companies : [])) {
+      for (const company of companies) {
         if (company.users) {
           company.users.forEach((user: User) => {
             allUsers.push({
