@@ -11,6 +11,7 @@ import { ShopifyRestService } from '../shopify/shopify-rest.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ShopifyOauthService } from './shopify-oauth.service';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 
 @Controller('auth')
 export class AuthController {
@@ -26,8 +27,68 @@ export class AuthController {
     private prisma: PrismaService,
     private shopifyOauth: ShopifyOauthService,
     private config: ConfigService,
+    private jwtService: JwtService,
   ) {
     this.adminUrl = this.config.get<string>('ADMIN_URL', 'https://admin.eagledtfsupply.com');
+    this.adminUsername = this.config.get<string>('ADMIN_USERNAME', 'admin');
+    this.adminPassword = this.config.get<string>('ADMIN_PASSWORD', 'eagle2025');
+  }
+
+  private readonly adminUsername: string;
+  private readonly adminPassword: string;
+
+  /**
+   * Admin panel login - simple username/password auth
+   * Returns JWT with merchantId for API access
+   */
+  @Public()
+  @Post('admin-login')
+  async adminLogin(
+    @Body() body: { username: string; password: string },
+    @Res() res: Response,
+  ) {
+    try {
+      // Validate credentials
+      if (body.username !== this.adminUsername || body.password !== this.adminPassword) {
+        return res.status(HttpStatus.UNAUTHORIZED).json({
+          message: 'Invalid credentials',
+        });
+      }
+
+      // Get the merchant (single-tenant for now)
+      const merchant = await this.prisma.merchant.findFirst({
+        where: { status: 'active' },
+      });
+
+      if (!merchant) {
+        return res.status(HttpStatus.NOT_FOUND).json({
+          message: 'No merchant configured',
+        });
+      }
+
+      // Generate JWT with merchantId
+      const payload = {
+        sub: 'admin',
+        type: 'merchant' as const,
+        merchantId: merchant.id,
+        shopDomain: merchant.shopDomain,
+      };
+
+      const token = this.jwtService.sign(payload);
+
+      this.logger.log(`✅ [ADMIN_LOGIN] Admin logged in for merchant: ${merchant.shopDomain}`);
+
+      return res.json({
+        token,
+        merchantId: merchant.id,
+        shopDomain: merchant.shopDomain,
+      });
+    } catch (error: any) {
+      this.logger.error(`❌ [ADMIN_LOGIN] Login failed: ${error.message}`);
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Login failed',
+      });
+    }
   }
 
   @Public()
