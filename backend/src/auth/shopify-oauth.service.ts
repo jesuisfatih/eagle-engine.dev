@@ -31,7 +31,7 @@ export class ShopifyOauthService {
     this.apiSecret = this.config.get<string>('SHOPIFY_API_SECRET') || '';
     this.scopes = this.config.get<string>('SHOPIFY_SCOPES') || '';
     this.apiVersion = this.config.get<string>('SHOPIFY_API_VERSION', '2024-10');
-    this.redirectUri = `${this.config.get<string>('API_URL')}/auth/shopify/callback`;
+    this.redirectUri = `${this.config.get<string>('API_URL')}/api/v1/auth/shopify/callback`;
   }
 
   getInstallUrl(shop: string): string {

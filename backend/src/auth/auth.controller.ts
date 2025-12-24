@@ -9,10 +9,13 @@ import { ShopifySsoService } from '../shopify/shopify-sso.service';
 import { ShopifyCustomerSyncService } from '../shopify/shopify-customer-sync.service';
 import { ShopifyRestService } from '../shopify/shopify-rest.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ShopifyOauthService } from './shopify-oauth.service';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
+  private readonly adminUrl: string;
 
   constructor(
     private authService: AuthService,
@@ -21,7 +24,11 @@ export class AuthController {
     private shopifyCustomerSync: ShopifyCustomerSyncService,
     private shopifyRest: ShopifyRestService,
     private prisma: PrismaService,
-  ) {}
+    private shopifyOauth: ShopifyOauthService,
+    private config: ConfigService,
+  ) {
+    this.adminUrl = this.config.get<string>('ADMIN_URL', 'https://admin.eagledtfsupply.com');
+  }
 
   @Public()
   @Post('login')
@@ -426,6 +433,77 @@ export class AuthController {
       return res.status(HttpStatus.UNAUTHORIZED).json({
         message: 'Invalid token',
       });
+    }
+  }
+
+  /**
+   * Shopify OAuth Install - Redirect to Shopify OAuth
+   * Used for admin panel login
+   * GET /api/v1/auth/shopify/install?shop=your-shop.myshopify.com
+   */
+  @Public()
+  @Get('shopify/install')
+  async shopifyInstall(
+    @Query('shop') shop: string,
+    @Res() res: Response,
+  ) {
+    try {
+      if (!shop) {
+        return res.status(HttpStatus.BAD_REQUEST).json({
+          error: 'Shop domain is required',
+          example: '/auth/shopify/install?shop=your-shop.myshopify.com',
+        });
+      }
+
+      // Normalize shop domain
+      const shopDomain = shop.includes('.myshopify.com') 
+        ? shop 
+        : `${shop}.myshopify.com`;
+
+      this.logger.log(`🔐 [OAUTH] Starting OAuth install for shop: ${shopDomain}`);
+      
+      const installUrl = this.shopifyOauth.getInstallUrl(shopDomain);
+      
+      return res.redirect(installUrl);
+    } catch (error: any) {
+      this.logger.error(`❌ [OAUTH] Install failed: ${error.message}`);
+      return res.redirect(`${this.adminUrl}/login?error=oauth_install_failed`);
+    }
+  }
+
+  /**
+   * Shopify OAuth Callback - Handle OAuth response from Shopify
+   * GET /api/v1/auth/shopify/callback
+   */
+  @Public()
+  @Get('shopify/callback')
+  async shopifyOauthCallback(
+    @Query('code') code: string,
+    @Query('shop') shop: string,
+    @Query('hmac') hmac: string,
+    @Query('timestamp') timestamp: string,
+    @Query('state') state: string,
+    @Res() res: Response,
+  ) {
+    try {
+      this.logger.log(`🔐 [OAUTH] Callback received for shop: ${shop}`);
+
+      // Handle OAuth callback
+      const result = await this.shopifyOauth.handleCallback({
+        code,
+        shop,
+        hmac,
+        timestamp,
+        state,
+      });
+
+      this.logger.log(`✅ [OAUTH] OAuth successful for merchant: ${result.merchant.id}`);
+
+      // Redirect to admin panel with JWT token
+      return res.redirect(`${this.adminUrl}/login?token=${result.accessToken}&shop=${shop}`);
+    } catch (error: any) {
+      this.logger.error(`❌ [OAUTH] Callback failed: ${error.message}`);
+      return res.redirect(`${this.adminUrl}/login?error=oauth_failed&message=${encodeURIComponent(error.message)}`);
     }
   }
 }
