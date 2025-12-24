@@ -81,7 +81,7 @@ export interface Product {
   handle: string;
   status: string;
   imageUrl?: string;
-  images: { url: string; alt?: string }[];
+  images: { src: string; alt?: string; url?: string }[];
   variants: ProductVariant[];
   options?: { name: string; values: string[] }[];
   tags?: string[];
@@ -99,12 +99,15 @@ export interface B2BPricing {
 // Order Types
 export interface OrderLineItem {
   id: string;
-  title: string;
+  name: string; // Shopify: "Product Title - Variant Title"
+  title: string; // Product title
   variantTitle?: string;
+  variant_title?: string; // Shopify camelCase alternative
   sku?: string;
   quantity: number;
-  price: number;
-  totalPrice: number;
+  price: number | string;
+  totalPrice?: number;
+  image?: string | { src: string }; // Shopify returns object with src
   imageUrl?: string;
 }
 
@@ -127,18 +130,22 @@ export interface Order {
 
 export interface Address {
   id?: string;
+  label?: string;
   firstName: string;
   lastName: string;
   company?: string;
   address1: string;
   address2?: string;
   city: string;
-  state: string;
-  postalCode: string;
+  province?: string;
+  provinceCode?: string;
   country: string;
   countryCode: string;
+  zip: string;
   phone?: string;
   isDefault?: boolean;
+  isBilling?: boolean;
+  isShipping?: boolean;
 }
 
 // Cart Types
@@ -232,7 +239,7 @@ export interface Company {
   email?: string;
   phone?: string;
   taxId?: string;
-  status: 'active' | 'inactive' | 'pending' | 'suspended';
+  status: 'pending' | 'approved' | 'rejected' | 'suspended' | 'active';
   companyGroup?: string;
   settings?: CompanySettings;
   creditLimit?: number;

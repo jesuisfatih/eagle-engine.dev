@@ -14,6 +14,7 @@ export default function ProductDetailPage() {
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
 
@@ -24,7 +25,11 @@ export default function ProductDetailPage() {
   const loadProduct = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await accountsFetch(`/api/v1/catalog/products/${params.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to load product');
+      }
       const data = await response.json();
       setProduct(data);
       if (data?.variants?.length > 0) {
@@ -32,6 +37,7 @@ export default function ProductDetailPage() {
       }
     } catch (err) {
       console.error(err);
+      setError(err instanceof Error ? err.message : 'Failed to load product');
     } finally {
       setLoading(false);
     }
@@ -106,6 +112,24 @@ export default function ProductDetailPage() {
       <div className="text-center py-5">
         <div className="spinner-border text-primary"></div>
         <p className="mt-3 text-muted">Loading product...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-5">
+        <i className="ti ti-alert-circle ti-3x text-danger mb-3"></i>
+        <h5>Error loading product</h5>
+        <p className="text-muted mb-3">{error}</p>
+        <div className="d-flex gap-2 justify-content-center">
+          <button onClick={loadProduct} className="btn btn-primary">
+            <i className="ti ti-refresh me-1"></i>Try Again
+          </button>
+          <Link href="/products" className="btn btn-outline-secondary">
+            <i className="ti ti-arrow-left me-1"></i>Browse Products
+          </Link>
+        </div>
       </div>
     );
   }

@@ -170,6 +170,12 @@ export default function RegisterPage() {
         setError('Password must be at least 8 characters');
         return;
       }
+      // Password complexity: uppercase, lowercase, number
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+      if (!passwordRegex.test(formData.password)) {
+        setError('Password must contain at least one uppercase letter, one lowercase letter, and one number');
+        return;
+      }
       if (formData.password !== formData.confirmPassword) {
         setError('Passwords do not match');
         return;

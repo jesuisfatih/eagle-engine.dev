@@ -120,6 +120,12 @@ export default function ProfilePage() {
       setMessage({type: 'error', text: 'Password must be at least 8 characters'});
       return;
     }
+    // Password complexity: uppercase, lowercase, number
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    if (!passwordRegex.test(passwords.new)) {
+      setMessage({type: 'error', text: 'Password must contain at least one uppercase letter, one lowercase letter, and one number'});
+      return;
+    }
 
     setChangingPassword(true);
     setMessage(null);

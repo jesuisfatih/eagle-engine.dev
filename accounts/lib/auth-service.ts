@@ -158,7 +158,7 @@ export class AuthService {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ token: currentToken }),
+        body: JSON.stringify({ refreshToken: currentToken }),
       });
 
       if (response.ok) {

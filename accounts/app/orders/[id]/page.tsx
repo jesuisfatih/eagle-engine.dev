@@ -14,6 +14,7 @@ export default function OrderDetailPage() {
   const router = useRouter();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [reordering, setReordering] = useState(false);
 
   useEffect(() => {
@@ -23,11 +24,16 @@ export default function OrderDetailPage() {
   const loadOrder = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await accountsFetch(`/api/v1/orders/${params.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to load order');
+      }
       const data = await response.json();
       setOrder(data);
     } catch (err) {
       console.error(err);
+      setError(err instanceof Error ? err.message : 'Failed to load order');
     } finally {
       setLoading(false);
     }
@@ -122,6 +128,24 @@ export default function OrderDetailPage() {
       <div className="text-center py-5">
         <div className="spinner-border text-primary"></div>
         <p className="mt-3 text-muted">Loading order details...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-5">
+        <i className="ti ti-alert-circle ti-3x text-danger mb-3"></i>
+        <h5>Error loading order</h5>
+        <p className="text-muted mb-3">{error}</p>
+        <div className="d-flex gap-2 justify-content-center">
+          <button onClick={loadOrder} className="btn btn-primary">
+            <i className="ti ti-refresh me-1"></i>Try Again
+          </button>
+          <Link href="/orders" className="btn btn-outline-secondary">
+            <i className="ti ti-arrow-left me-1"></i>Back to Orders
+          </Link>
+        </div>
       </div>
     );
   }

@@ -78,6 +78,13 @@ export default function RegisterPage() {
       return;
     }
 
+    // Password complexity: uppercase, lowercase, number
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    if (!passwordRegex.test(formData.password)) {
+      setError('Password must contain at least one uppercase letter, one lowercase letter, and one number!');
+      return;
+    }
+
     if (!formData.firstName || !formData.lastName) {
       setError('First name and last name are required!');
       return;

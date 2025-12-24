@@ -6,8 +6,9 @@ import { Transform, Type } from 'class-transformer';
  */
 export enum DiscountType {
   PERCENTAGE = 'percentage',
-  FIXED = 'fixed',
-  TIERED = 'tiered',
+  FIXED_AMOUNT = 'fixed_amount',
+  FIXED_PRICE = 'fixed_price',
+  QTY_BREAKS = 'qty_breaks',
 }
 
 /**
