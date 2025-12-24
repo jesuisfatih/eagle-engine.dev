@@ -1,65 +1,112 @@
-import Image from "next/image";
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function Home() {
+  const router = useRouter();
+  
+  useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem('eagle_token');
+    if (token) {
+      router.push('/dashboard');
+    }
+  }, [router]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-vh-100 d-flex align-items-center justify-content-center" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+      <div className="container py-5">
+        <div className="row justify-content-center">
+          <div className="col-12 col-lg-10 col-xl-8 text-center text-white">
+            {/* Logo */}
+            <div className="mb-4">
+              <span className="fs-1">🦅</span>
+            </div>
+            
+            {/* Hero Title */}
+            <h1 className="display-4 fw-bold mb-3">
+              Eagle B2B Portal
+            </h1>
+            <p className="lead mb-5 opacity-75">
+              Your complete B2B wholesale platform for DTF supplies and custom printing solutions.
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="d-flex flex-wrap justify-content-center gap-3 mb-5">
+              <Link href="/login" className="btn btn-light btn-lg px-5">
+                <i className="ti ti-login me-2"></i>
+                Sign In
+              </Link>
+              <Link href="/request-invitation" className="btn btn-outline-light btn-lg px-5">
+                <i className="ti ti-mail-forward me-2"></i>
+                Request Access
+              </Link>
+            </div>
+
+            {/* Features */}
+            <div className="row g-4 mt-5">
+              <div className="col-md-4">
+                <div className="bg-white bg-opacity-10 rounded-3 p-4">
+                  <i className="ti ti-discount-2 fs-1 mb-3"></i>
+                  <h5 className="fw-bold">Wholesale Pricing</h5>
+                  <p className="small opacity-75 mb-0">
+                    Exclusive B2B discounts up to 40% off retail prices.
+                  </p>
+                </div>
+              </div>
+              <div className="col-md-4">
+                <div className="bg-white bg-opacity-10 rounded-3 p-4">
+                  <i className="ti ti-credit-card fs-1 mb-3"></i>
+                  <h5 className="fw-bold">Net 30 Terms</h5>
+                  <p className="small opacity-75 mb-0">
+                    Flexible payment options for qualified businesses.
+                  </p>
+                </div>
+              </div>
+              <div className="col-md-4">
+                <div className="bg-white bg-opacity-10 rounded-3 p-4">
+                  <i className="ti ti-users fs-1 mb-3"></i>
+                  <h5 className="fw-bold">Team Management</h5>
+                  <p className="small opacity-75 mb-0">
+                    Add team members with customizable permissions.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Trust Badges */}
+            <div className="mt-5 pt-4 border-top border-white border-opacity-25">
+              <div className="row justify-content-center g-4">
+                <div className="col-auto">
+                  <div className="d-flex align-items-center gap-2 opacity-75">
+                    <i className="ti ti-lock fs-4"></i>
+                    <span className="small">Secure Checkout</span>
+                  </div>
+                </div>
+                <div className="col-auto">
+                  <div className="d-flex align-items-center gap-2 opacity-75">
+                    <i className="ti ti-truck fs-4"></i>
+                    <span className="small">Fast Shipping</span>
+                  </div>
+                </div>
+                <div className="col-auto">
+                  <div className="d-flex align-items-center gap-2 opacity-75">
+                    <i className="ti ti-headset fs-4"></i>
+                    <span className="small">Priority Support</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+
+        {/* Footer */}
+        <p className="text-center text-white-50 mt-5 small">
+          © 2025 Eagle DTF Supply. All rights reserved.
+        </p>
+      </div>
     </div>
   );
 }
