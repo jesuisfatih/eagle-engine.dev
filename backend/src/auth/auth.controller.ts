@@ -84,7 +84,7 @@ export class AuthController {
 
       // Generate JWT with merchantId
       const payload = {
-        sub: 'admin',
+        sub: merchant.id,
         type: 'merchant' as const,
         merchantId: merchant.id,
         shopDomain: merchant.shopDomain,
