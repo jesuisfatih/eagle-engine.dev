@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { adminFetch } from '@/lib/api-client';
 import { PageHeader, PageContent, Tabs, showToast } from '@/components/ui';
 import ShopifyConnection from './components/ShopifyConnection';
@@ -14,15 +15,29 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<AdminMerchantSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('connection');
+  const router = useRouter();
 
   useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem('eagle_admin_token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
     loadSettings();
-  }, []);
+  }, [router]);
 
   const loadSettings = async () => {
     try {
       setLoading(true);
       const response = await adminFetch('/api/v1/settings/merchant');
+      
+      // Handle 401 - redirect to login
+      if (response.status === 401) {
+        localStorage.removeItem('eagle_admin_token');
+        router.push('/login');
+        return;
+      }
       
       if (response.ok) {
         const data = await response.json();
