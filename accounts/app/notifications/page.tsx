@@ -80,30 +80,30 @@ export default function NotificationsPage() {
   };
 
   const getNotificationConfig = (type: NotificationType) => {
-    const configs: Record<NotificationType, { icon: string; bgClass: string }> = {
-      order: { icon: 'shopping-cart', bgClass: 'bg-primary' },
-      quote: { icon: 'file-invoice', bgClass: 'bg-info' },
-      team: { icon: 'users', bgClass: 'bg-purple' },
-      product: { icon: 'package', bgClass: 'bg-warning' },
-      promo: { icon: 'discount', bgClass: 'bg-success' },
-      system: { icon: 'settings', bgClass: 'bg-secondary' },
-      approval: { icon: 'checklist', bgClass: 'bg-warning' },
-      payment: { icon: 'credit-card', bgClass: 'bg-success' },
-      shipping: { icon: 'truck', bgClass: 'bg-info' },
-      alert: { icon: 'alert-triangle', bgClass: 'bg-danger' },
+    const configs: Record<NotificationType, { icon: string; bgColor: string }> = {
+      order: { icon: 'shopping-cart', bgColor: 'var(--accent)' },
+      quote: { icon: 'file-invoice', bgColor: 'var(--accent)' },
+      team: { icon: 'users', bgColor: '#8B5CF6' },
+      product: { icon: 'package', bgColor: 'var(--orange)' },
+      promo: { icon: 'discount', bgColor: 'var(--green)' },
+      system: { icon: 'settings', bgColor: 'var(--text-secondary)' },
+      approval: { icon: 'checklist', bgColor: 'var(--orange)' },
+      payment: { icon: 'credit-card', bgColor: 'var(--green)' },
+      shipping: { icon: 'truck', bgColor: 'var(--accent)' },
+      alert: { icon: 'alert-triangle', bgColor: 'var(--red)' },
     };
-    return configs[type] || { icon: 'bell', bgClass: 'bg-secondary' };
+    return configs[type] || { icon: 'bell', bgColor: 'var(--text-secondary)' };
   };
 
   const getPriorityBadge = (priority?: string) => {
     if (!priority || priority === 'normal') return null;
-    const configs: Record<string, { label: string; class: string }> = {
-      low: { label: 'Low', class: 'bg-secondary' },
-      high: { label: 'High', class: 'bg-warning' },
-      urgent: { label: 'Urgent', class: 'bg-danger' },
+    const configs: Record<string, { label: string; color: string }> = {
+      low: { label: 'Low', color: 'var(--text-secondary)' },
+      high: { label: 'High', color: 'var(--orange)' },
+      urgent: { label: 'Urgent', color: 'var(--red)' },
     };
     const config = configs[priority];
-    return config ? <span className={`badge ${config.class} ms-2 small`}>{config.label}</span> : null;
+    return config ? <span className="badge" style={{ background: config.color, color: '#fff', marginLeft: 8, fontSize: 11 }}>{config.label}</span> : null;
   };
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -126,10 +126,10 @@ export default function NotificationsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h4 className="fw-bold mb-1">Notifications</h4>
-          <p className="mb-0 text-muted">
+          <h4 style={{ fontWeight: 700, marginBottom: 4 }}>Notifications</h4>
+          <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
             {unreadCount > 0 
               ? `You have ${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`
               : 'All caught up!'
@@ -138,14 +138,14 @@ export default function NotificationsPage() {
         </div>
         {unreadCount > 0 && (
           <button
-            className="btn btn-outline-primary"
+            className="btn-apple btn-apple-secondary"
             onClick={markAllAsRead}
             disabled={markingRead === 'all'}
           >
             {markingRead === 'all' ? (
-              <span className="spinner-border spinner-border-sm me-2"></span>
+              <span className="spinner-apple" style={{ width: 14, height: 14, marginRight: 8 }}></span>
             ) : (
-              <i className="ti ti-checks me-1"></i>
+              <i className="ti ti-checks" style={{ marginRight: 4 }}></i>
             )}
             Mark all as read
           </button>
@@ -153,55 +153,55 @@ export default function NotificationsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="row g-3 mb-4">
-        <div className="col-md-3">
-          <div className="card bg-primary text-white">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+        <div>
+          <div className="card" style={{ background: 'var(--accent)', color: '#fff' }}>
+            <div className="card-body" style={{ padding: '12px 16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <p className="mb-0 opacity-75">Total</p>
-                  <h3 className="mb-0">{notifications.length}</h3>
+                  <p style={{ margin: 0, opacity: 0.75 }}>Total</p>
+                  <h3 style={{ margin: 0 }}>{notifications.length}</h3>
                 </div>
-                <i className="ti ti-bell fs-1 opacity-50"></i>
+                <i className="ti ti-bell" style={{ fontSize: 28, opacity: 0.5 }}></i>
               </div>
             </div>
           </div>
         </div>
-        <div className="col-md-3">
+        <div>
           <div className="card">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
+            <div className="card-body" style={{ padding: '12px 16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <p className="mb-0 text-muted">Unread</p>
-                  <h3 className="mb-0 text-danger">{unreadCount}</h3>
+                  <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Unread</p>
+                  <h3 style={{ margin: 0, color: 'var(--red)' }}>{unreadCount}</h3>
                 </div>
-                <i className="ti ti-bell-ringing fs-1 text-danger opacity-50"></i>
+                <i className="ti ti-bell-ringing" style={{ fontSize: 28, color: 'var(--red)', opacity: 0.5 }}></i>
               </div>
             </div>
           </div>
         </div>
-        <div className="col-md-3">
+        <div>
           <div className="card">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
+            <div className="card-body" style={{ padding: '12px 16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <p className="mb-0 text-muted">Orders</p>
-                  <h3 className="mb-0">{notifications.filter(n => n.type === 'order').length}</h3>
+                  <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Orders</p>
+                  <h3 style={{ margin: 0 }}>{notifications.filter(n => n.type === 'order').length}</h3>
                 </div>
-                <i className="ti ti-shopping-cart fs-1 text-info opacity-50"></i>
+                <i className="ti ti-shopping-cart" style={{ fontSize: 28, color: 'var(--accent)', opacity: 0.5 }}></i>
               </div>
             </div>
           </div>
         </div>
-        <div className="col-md-3">
+        <div>
           <div className="card">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
+            <div className="card-body" style={{ padding: '12px 16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <p className="mb-0 text-muted">Promos</p>
-                  <h3 className="mb-0">{notifications.filter(n => n.type === 'promo').length}</h3>
+                  <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Promos</p>
+                  <h3 style={{ margin: 0 }}>{notifications.filter(n => n.type === 'promo').length}</h3>
                 </div>
-                <i className="ti ti-discount fs-1 text-success opacity-50"></i>
+                <i className="ti ti-discount" style={{ fontSize: 28, color: 'var(--green)', opacity: 0.5 }}></i>
               </div>
             </div>
           </div>
@@ -209,17 +209,18 @@ export default function NotificationsPage() {
       </div>
 
       {/* Filters */}
-      <div className="d-flex flex-wrap gap-2 mb-4">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
         {filters.map(f => (
           <button
             key={f.key}
-            className={`btn btn-sm ${filter === f.key ? 'btn-primary' : 'btn-outline-secondary'}`}
+            className={filter === f.key ? 'btn-apple btn-apple-primary' : 'btn-apple btn-apple-secondary'}
             onClick={() => setFilter(f.key)}
+            style={{ fontSize: 13 }}
           >
-            <i className={`ti ti-${f.icon} me-1`}></i>
+            <i className={`ti ti-${f.icon}`} style={{ marginRight: 4 }}></i>
             {f.label}
             {f.key === 'unread' && unreadCount > 0 && (
-              <span className="badge bg-danger ms-1">{unreadCount}</span>
+              <span className="badge" style={{ background: 'var(--red)', color: '#fff', marginLeft: 4 }}>{unreadCount}</span>
             )}
           </button>
         ))}
@@ -229,15 +230,15 @@ export default function NotificationsPage() {
       <div className="card">
         <div className="card-body">
           {loading ? (
-            <div className="text-center py-5">
-              <div className="spinner-border text-primary"></div>
-              <p className="mt-3 text-muted">Loading notifications...</p>
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <div className="spinner-apple"></div>
+              <p style={{ marginTop: 16, color: 'var(--text-secondary)' }}>Loading notifications...</p>
             </div>
           ) : filteredNotifications.length === 0 ? (
-            <div className="text-center py-5">
-              <i className="ti ti-bell-off ti-3x text-muted mb-3"></i>
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <i className="ti ti-bell-off ti-3x" style={{ color: 'var(--text-secondary)', marginBottom: 12, display: 'block' }}></i>
               <h5>No notifications</h5>
-              <p className="text-muted">
+              <p style={{ color: 'var(--text-secondary)' }}>
                 {filter === 'unread' 
                   ? 'You have no unread notifications' 
                   : 'No notifications in this category'
@@ -252,38 +253,38 @@ export default function NotificationsPage() {
                 return (
                   <div 
                     key={notification.id}
-                    className={`card mb-2 ${!notification.isRead ? 'border-primary border-start border-3' : ''}`}
+                    className="card"
+                    style={{ marginBottom: 8, borderLeft: !notification.isRead ? '3px solid var(--accent)' : undefined }}
                   >
-                    <div className="card-body py-3">
-                      <div className="d-flex gap-3">
+                    <div className="card-body" style={{ padding: '12px 16px' }}>
+                      <div style={{ display: 'flex', gap: 12 }}>
                         {/* Icon */}
                         <div 
-                          className={`rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 ${config.bgClass}`}
-                          style={{ width: 44, height: 44 }}
+                          style={{ width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: config.bgColor }}
                         >
-                          <i className={`ti ti-${config.icon} fs-5 text-white`}></i>
+                          <i className={`ti ti-${config.icon}`} style={{ fontSize: 18, color: '#fff' }}></i>
                         </div>
 
                         {/* Content */}
-                        <div className="flex-grow-1 min-width-0">
-                          <div className="d-flex justify-content-between align-items-start">
-                            <div className="flex-grow-1">
-                              <div className="d-flex align-items-center gap-2 mb-1">
-                                <h6 className={`mb-0 ${!notification.isRead ? 'fw-bold' : ''}`}>
+                        <div style={{ flexGrow: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div style={{ flexGrow: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                                <h6 style={{ margin: 0, fontWeight: !notification.isRead ? 700 : undefined }}>
                                   {notification.title}
                                 </h6>
                                 {!notification.isRead && (
-                                  <span className="badge bg-primary small">NEW</span>
+                                  <span className="badge" style={{ background: 'var(--accent)', color: '#fff', fontSize: 11 }}>NEW</span>
                                 )}
                                 {getPriorityBadge(notification.priority)}
                               </div>
-                              <p className="text-muted mb-1">{notification.message}</p>
-                              <div className="d-flex align-items-center gap-3">
-                                <small className="text-muted">
+                              <p style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>{notification.message}</p>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <small style={{ color: 'var(--text-secondary)' }}>
                                   {formatRelativeTime(notification.createdAt)}
                                 </small>
                                 {notification.actionUrl && (
-                                  <a href={notification.actionUrl} className="small">
+                                  <a href={notification.actionUrl} style={{ fontSize: 13 }}>
                                     {notification.actionLabel || 'View'} →
                                   </a>
                                 )}
@@ -291,25 +292,27 @@ export default function NotificationsPage() {
                             </div>
 
                             {/* Actions */}
-                            <div className="d-flex gap-1 flex-shrink-0">
+                            <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                               {!notification.isRead && (
                                 <button
-                                  className="btn btn-sm btn-text-primary"
+                                  className="btn-apple btn-apple-secondary"
                                   onClick={() => markAsRead(notification.id)}
                                   disabled={markingRead === notification.id}
                                   title="Mark as read"
+                                  style={{ padding: '4px 8px', fontSize: 13 }}
                                 >
                                   {markingRead === notification.id ? (
-                                    <span className="spinner-border spinner-border-sm"></span>
+                                    <span className="spinner-apple" style={{ width: 14, height: 14 }}></span>
                                   ) : (
                                     <i className="ti ti-check"></i>
                                   )}
                                 </button>
                               )}
                               <button
-                                className="btn btn-sm btn-text-secondary"
+                                className="btn-apple btn-apple-secondary"
                                 onClick={() => deleteNotification(notification.id)}
                                 title="Delete"
+                                style={{ padding: '4px 8px', fontSize: 13 }}
                               >
                                 <i className="ti ti-trash"></i>
                               </button>

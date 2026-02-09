@@ -1,129 +1,84 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Modal from '@/components/Modal';
 import { adminFetch } from '@/lib/api-client';
+import { PageHeader, StatusBadge } from '@/components/ui';
+import Modal from '@/components/Modal';
+
+interface Quote {
+  id: string;
+  companyName: string;
+  contactEmail: string;
+  status: string;
+  items: { productTitle: string; quantity: number }[];
+  notes?: string;
+  createdAt: string;
+}
 
 export default function QuotesPage() {
-  const [quotes, setQuotes] = useState<any[]>([]);
+  const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
-  const [approveModal, setApproveModal] = useState<{show: boolean; quoteId: string}>({show: false, quoteId: ''});
-  const [resultModal, setResultModal] = useState<{show: boolean; message: string}>({show: false, message: ''});
+  const [selected, setSelected] = useState<Quote | null>(null);
 
   useEffect(() => {
-    loadQuotes();
+    (async () => {
+      try {
+        const res = await adminFetch('/api/v1/quotes');
+        if (res.ok) { const d = await res.json(); setQuotes(d.quotes || d.data || d || []); }
+      } catch { /* silent */ }
+      finally { setLoading(false); }
+    })();
   }, []);
-
-  const loadQuotes = async () => {
-    setLoading(true);
-    try {
-      const response = await adminFetch('/api/v1/quotes');
-      const data = await response.json();
-      setQuotes(Array.isArray(data) ? data : []);
-    } catch (err) {
-      setQuotes([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const approveQuote = async (quoteId: string) => {
-    try {
-      const response = await adminFetch(`/api/v1/quotes/${quoteId}/approve`, {
-        method: 'POST',
-      });
-      
-      setApproveModal({show: false, quoteId: ''});
-      
-      if (response.ok) {
-        setResultModal({show: true, message: '✅ Quote approved successfully!'});
-        loadQuotes();
-      } else {
-        setResultModal({show: true, message: '❌ Failed to approve quote'});
-      }
-    } catch (err) {
-      setResultModal({show: true, message: '❌ Failed to approve quote'});
-    }
-  };
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h4 className="fw-bold mb-1">Quote Requests</h4>
-          <p className="mb-0 text-muted">Manage B2B quote requests</p>
-        </div>
-      </div>
-
-      <div className="card">
-        <div className="card-header">
-          <h5 className="card-title mb-0">All Quote Requests</h5>
-        </div>
-        <div className="card-body">
-          <div className="table-responsive">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Quote ID</th>
-                  <th>Company</th>
-                  <th>Items</th>
-                  <th>Total</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+      <PageHeader title="Quote Requests" subtitle={`${quotes.length} quotes`} />
+      <div className="apple-card">
+        {loading ? (
+          <div style={{ padding: 48, textAlign: 'center' }}><i className="ti ti-loader-2 spin" style={{ fontSize: 24, color: 'var(--accent-primary)' }} /></div>
+        ) : quotes.length === 0 ? (
+          <div className="empty-state" style={{ padding: 48 }}>
+            <div className="empty-state-icon"><i className="ti ti-file-invoice" /></div>
+            <h4 className="empty-state-title">No quote requests</h4>
+            <p className="empty-state-desc">Quote requests from customers will appear here.</p>
+          </div>
+        ) : (
+          <table className="apple-table">
+            <thead><tr><th>Company</th><th>Email</th><th>Items</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody>
+              {quotes.map(q => (
+                <tr key={q.id}>
+                  <td style={{ fontWeight: 500 }}>{q.companyName}</td>
+                  <td>{q.contactEmail}</td>
+                  <td>{q.items?.length || 0} items</td>
+                  <td><StatusBadge status={q.status} /></td>
+                  <td style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{new Date(q.createdAt).toLocaleDateString()}</td>
+                  <td><button className="btn-apple primary small" onClick={() => setSelected(q)}><i className="ti ti-eye" /> View</button></td>
                 </tr>
-              </thead>
-              <tbody>
-                {quotes.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-4">
-                      <p className="text-muted mb-0">No quote requests yet</p>
-                    </td>
-                  </tr>
-                ) : (
-                  quotes.map((quote) => (
-                    <tr key={quote.id}>
-                      <td>{quote.id}</td>
-                      <td>{quote.company}</td>
-                      <td>{quote.items}</td>
-                      <td>${quote.total}</td>
-                      <td>
-                        <span className="badge bg-label-warning">Pending</span>
-                      </td>
-                      <td>
-                        <button className="btn btn-sm btn-primary">View</button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+      {selected && (
+        <div className="apple-modal-overlay" onClick={() => setSelected(null)}>
+          <div className="apple-modal" onClick={e => e.stopPropagation()}>
+            <div className="apple-modal-header"><h3 className="apple-modal-title">Quote Request</h3></div>
+            <div className="apple-modal-body">
+              <div style={{ marginBottom: 12 }}><strong>{selected.companyName}</strong> · {selected.contactEmail}</div>
+              {selected.items?.map((item, i) => (
+                <div key={i} style={{ padding: 8, background: 'var(--bg-secondary)', borderRadius: 8, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+                  <span>{item.productTitle}</span><span style={{ fontWeight: 500 }}>×{item.quantity}</span>
+                </div>
+              ))}
+              {selected.notes && <div style={{ marginTop: 12, fontSize: 13, color: 'var(--text-secondary)' }}><strong>Notes:</strong> {selected.notes}</div>}
+            </div>
+            <div className="apple-modal-footer">
+              <button className="btn-apple secondary" onClick={() => setSelected(null)}>Close</button>
+              <button className="btn-apple primary">Respond</button>
+            </div>
           </div>
         </div>
-      </div>
-
-      {approveModal.show && (
-        <Modal
-          show={approveModal.show}
-          onClose={() => setApproveModal({show: false, quoteId: ''})}
-          onConfirm={() => approveQuote(approveModal.quoteId)}
-          title="Approve Quote"
-          message="Are you sure you want to approve this quote?"
-          confirmText="Approve"
-          cancelText="Cancel"
-          type="warning"
-        />
-      )}
-
-      {resultModal.show && (
-        <Modal
-          show={resultModal.show}
-          onClose={() => setResultModal({show: false, message: ''})}
-          onConfirm={() => setResultModal({show: false, message: ''})}
-          title={resultModal.message.includes('✅') ? 'Success' : 'Error'}
-          message={resultModal.message}
-          confirmText="OK"
-          type={resultModal.message.includes('✅') ? 'success' : 'danger'}
-        />
       )}
     </div>
   );

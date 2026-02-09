@@ -138,138 +138,132 @@ export default function TeamPage() {
   return (
     <div>
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h4 className="fw-bold mb-1">Team Management</h4>
-          <p className="mb-0 text-muted">Manage your team members and their permissions</p>
+          <h4 style={{ fontWeight: 700, marginBottom: 4 }}>Team Management</h4>
+          <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Manage your team members and their permissions</p>
         </div>
-        <div className="d-flex gap-2">
-          <button onClick={() => setShowInviteModal(true)} className="btn btn-primary">
-            <i className="ti ti-user-plus me-1"></i>Invite Member
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setShowInviteModal(true)} className="btn-apple btn-apple-primary">
+            <i className="ti ti-user-plus" style={{ marginRight: 6 }}></i>Invite Member
           </button>
-          <button onClick={loadMembers} className="btn btn-icon btn-outline-secondary" title="Refresh">
+          <button onClick={loadMembers} className="btn-apple btn-apple-secondary" style={{ height: 36, width: 36, padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} title="Refresh">
             <i className="ti ti-refresh"></i>
           </button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="row g-3 mb-4">
-        <div className="col-md-3 col-6">
-          <div className="card bg-primary text-white">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="mb-0 opacity-75">Total Members</p>
-                  <h3 className="mb-0">{stats.total}</h3>
-                </div>
-                <i className="ti ti-users fs-1 opacity-50"></i>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
+        <div className="card" style={{ background: 'var(--accent)', color: '#fff' }}>
+          <div className="card-body" style={{ padding: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ margin: 0, opacity: 0.75 }}>Total Members</p>
+                <h3 style={{ margin: 0 }}>{stats.total}</h3>
               </div>
+              <i className="ti ti-users" style={{ fontSize: 28, opacity: 0.5 }}></i>
             </div>
           </div>
         </div>
-        <div className="col-md-3 col-6">
-          <div className="card">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="mb-0 text-muted">Active</p>
-                  <h3 className="mb-0 text-success">{stats.active}</h3>
-                </div>
-                <i className="ti ti-user-check fs-1 text-success opacity-50"></i>
+        <div className="card">
+          <div className="card-body" style={{ padding: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Active</p>
+                <h3 style={{ margin: 0, color: 'var(--green)' }}>{stats.active}</h3>
               </div>
+              <i className="ti ti-user-check" style={{ fontSize: 28, color: 'var(--green)', opacity: 0.5 }}></i>
             </div>
           </div>
         </div>
-        <div className="col-md-3 col-6">
-          <div className="card">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="mb-0 text-muted">Pending</p>
-                  <h3 className="mb-0 text-warning">{stats.pending}</h3>
-                </div>
-                <i className="ti ti-user-exclamation fs-1 text-warning opacity-50"></i>
+        <div className="card">
+          <div className="card-body" style={{ padding: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Pending</p>
+                <h3 style={{ margin: 0, color: 'var(--orange)' }}>{stats.pending}</h3>
               </div>
+              <i className="ti ti-user-exclamation" style={{ fontSize: 28, color: 'var(--orange)', opacity: 0.5 }}></i>
             </div>
           </div>
         </div>
-        <div className="col-md-3 col-6">
-          <div className="card">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="mb-0 text-muted">Team Spending</p>
-                  <h3 className="mb-0">{formatCurrency(stats.totalSpent)}</h3>
-                </div>
-                <i className="ti ti-cash fs-1 text-info opacity-50"></i>
+        <div className="card">
+          <div className="card-body" style={{ padding: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Team Spending</p>
+                <h3 style={{ margin: 0 }}>{formatCurrency(stats.totalSpent)}</h3>
               </div>
+              <i className="ti ti-cash" style={{ fontSize: 28, color: 'var(--accent)', opacity: 0.5 }}></i>
             </div>
           </div>
         </div>
       </div>
 
       {/* Filters & Search */}
-      <div className="d-flex flex-wrap gap-3 mb-4">
-        <div className="d-flex flex-wrap gap-2">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {roleFilters.map(f => (
             <button
               key={f.key}
-              className={`btn btn-sm ${roleFilter === f.key ? 'btn-primary' : 'btn-outline-secondary'}`}
+              className={roleFilter === f.key ? 'btn-apple btn-apple-primary' : 'btn-apple btn-apple-secondary'}
+              style={{ height: 34 }}
               onClick={() => setRoleFilter(f.key)}
             >
               {f.label}
               {f.key !== 'all' && (
-                <span className="badge bg-white text-dark ms-1">
+                <span className="badge" style={{ background: 'rgba(255,255,255,0.9)', color: 'var(--text-primary)', marginLeft: 6 }}>
                   {members.filter(m => m.role === f.key).length}
                 </span>
               )}
             </button>
           ))}
         </div>
-        <div className="flex-grow-1">
-          <div className="input-group input-group-sm">
-            <span className="input-group-text"><i className="ti ti-search"></i></span>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <i className="ti ti-search" style={{ color: 'var(--text-tertiary)' }}></i>
             <input 
               type="text" 
-              className="form-control" 
+              className="form-input" 
               placeholder="Search members..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width: '100%' }}
             />
           </div>
         </div>
       </div>
 
-      <div className="row">
+      <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
         {/* Members List */}
-        <div className={selectedMember ? 'col-md-8' : 'col-12'}>
+        <div style={{ flex: selectedMember ? '2 1 0%' : '1 1 100%', minWidth: 0 }}>
           <div className="card">
             <div className="card-body">
               {loading ? (
-                <div className="text-center py-5">
-                  <div className="spinner-border text-primary"></div>
-                  <p className="mt-3 text-muted">Loading team members...</p>
+                <div style={{ textAlign: 'center', padding: '48px 0' }}>
+                  <div className="spinner-apple"></div>
+                  <p style={{ marginTop: 16, color: 'var(--text-secondary)' }}>Loading team members...</p>
                 </div>
               ) : filteredMembers.length === 0 ? (
-                <div className="text-center py-5">
-                  <i className="ti ti-users-group ti-3x text-muted mb-3"></i>
+                <div style={{ textAlign: 'center', padding: '48px 0' }}>
+                  <i className="ti ti-users-group" style={{ fontSize: 48, color: 'var(--text-tertiary)', display: 'block', marginBottom: 16 }}></i>
                   <h5>No team members found</h5>
-                  <p className="text-muted mb-3">
+                  <p style={{ color: 'var(--text-secondary)', marginBottom: 16 }}>
                     {searchQuery || roleFilter !== 'all' 
                       ? 'Try adjusting your filters' 
                       : 'Start by inviting your first team member'
                     }
                   </p>
                   {!searchQuery && roleFilter === 'all' && (
-                    <button className="btn btn-primary" onClick={() => setShowInviteModal(true)}>
-                      <i className="ti ti-user-plus me-1"></i>Invite Member
+                    <button className="btn-apple btn-apple-primary" onClick={() => setShowInviteModal(true)}>
+                      <i className="ti ti-user-plus" style={{ marginRight: 6 }}></i>Invite Member
                     </button>
                   )}
                 </div>
               ) : (
-                <div className="table-responsive">
-                  <table className="table table-hover align-middle">
+                <div className="table-container">
+                  <table className="apple-table">
                     <thead>
                       <tr>
                         <th>Member</th>
@@ -284,20 +278,19 @@ export default function TeamPage() {
                       {filteredMembers.map((member) => (
                         <tr 
                           key={member.id} 
-                          className={`cursor-pointer ${selectedMember?.id === member.id ? 'table-active' : ''}`}
+                          style={{ cursor: 'pointer', background: selectedMember?.id === member.id ? 'var(--bg-secondary)' : undefined }}
                           onClick={() => setSelectedMember(member)}
                         >
                           <td>
-                            <div className="d-flex align-items-center gap-2">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                               <div 
-                                className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold"
-                                style={{ width: 40, height: 40, fontSize: 14 }}
+                                style={{ width: 40, height: 40, fontSize: 14, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 600, flexShrink: 0 }}
                               >
                                 {member.firstName?.[0]}{member.lastName?.[0]}
                               </div>
                               <div>
-                                <div className="fw-semibold">{member.firstName} {member.lastName}</div>
-                                <div className="small text-muted">{member.email}</div>
+                                <div style={{ fontWeight: 600 }}>{member.firstName} {member.lastName}</div>
+                                <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{member.email}</div>
                               </div>
                             </div>
                           </td>
@@ -305,7 +298,7 @@ export default function TeamPage() {
                             <RoleBadge role={member.role as any} />
                           </td>
                           <td>
-                            <span className={`badge ${member.isActive ? 'bg-success' : 'bg-warning'}`}>
+                            <span className="badge" style={member.isActive ? { background: 'rgba(52,199,89,0.12)', color: 'var(--green)' } : { background: 'rgba(255,149,0,0.12)', color: 'var(--orange)' }}>
                               {member.isActive ? 'Active' : 'Pending'}
                             </span>
                           </td>
@@ -317,10 +310,10 @@ export default function TeamPage() {
                                 compact
                               />
                             ) : (
-                              <span className="text-muted small">No limit</span>
+                              <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>No limit</span>
                             )}
                           </td>
-                          <td className="small text-muted">
+                          <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
                             {member.lastLoginAt 
                               ? formatRelativeTime(member.lastLoginAt)
                               : 'Never logged in'
@@ -329,7 +322,8 @@ export default function TeamPage() {
                           <td>
                             <div className="dropdown">
                               <button 
-                                className="btn btn-sm btn-icon btn-text-secondary"
+                                className="btn-apple btn-apple-secondary"
+                                style={{ height: 32, width: 32, padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                 data-bs-toggle="dropdown"
                                 onClick={(e) => e.stopPropagation()}
                               >
@@ -338,23 +332,24 @@ export default function TeamPage() {
                               <ul className="dropdown-menu dropdown-menu-end">
                                 <li>
                                   <button className="dropdown-item" onClick={(e) => { e.stopPropagation(); setSelectedMember(member); }}>
-                                    <i className="ti ti-eye me-2"></i>View Details
+                                    <i className="ti ti-eye" style={{ marginRight: 8 }}></i>View Details
                                   </button>
                                 </li>
                                 {!member.isActive && (
                                   <li>
                                     <button className="dropdown-item" onClick={(e) => { e.stopPropagation(); handleResendInvite(member.email); }}>
-                                      <i className="ti ti-mail-forward me-2"></i>Resend Invite
+                                      <i className="ti ti-mail-forward" style={{ marginRight: 8 }}></i>Resend Invite
                                     </button>
                                   </li>
                                 )}
                                 <li><hr className="dropdown-divider" /></li>
                                 <li>
                                   <button 
-                                    className="dropdown-item text-danger" 
+                                    className="dropdown-item" 
+                                    style={{ color: 'var(--red)' }}
                                     onClick={(e) => { e.stopPropagation(); handleRemoveMember(member.id); }}
                                   >
-                                    <i className="ti ti-user-minus me-2"></i>Remove Member
+                                    <i className="ti ti-user-minus" style={{ marginRight: 8 }}></i>Remove Member
                                   </button>
                                 </li>
                               </ul>
@@ -372,48 +367,43 @@ export default function TeamPage() {
 
         {/* Member Detail Sidebar */}
         {selectedMember && (
-          <div className="col-md-4">
-            <div className="card sticky-top" style={{ top: 80 }}>
-              <div className="card-header d-flex justify-content-between align-items-center">
-                <h6 className="mb-0">Member Details</h6>
-                <button className="btn btn-sm btn-icon btn-text-secondary" onClick={() => setSelectedMember(null)}>
+          <div style={{ flex: '1 1 0%', minWidth: 280 }}>
+            <div className="card" style={{ position: 'sticky', top: 80 }}>
+              <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h6 style={{ margin: 0 }}>Member Details</h6>
+                <button className="btn-apple btn-apple-secondary" style={{ height: 32, width: 32, padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setSelectedMember(null)}>
                   <i className="ti ti-x"></i>
                 </button>
               </div>
               <div className="card-body">
                 {/* Avatar & Basic Info */}
-                <div className="text-center mb-4">
+                <div style={{ textAlign: 'center', marginBottom: 24 }}>
                   <div 
-                    className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold mx-auto mb-3"
-                    style={{ width: 80, height: 80, fontSize: 28 }}
+                    style={{ width: 80, height: 80, fontSize: 28, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 600, margin: '0 auto 16px' }}
                   >
                     {selectedMember.firstName?.[0]}{selectedMember.lastName?.[0]}
                   </div>
-                  <h5 className="mb-1">{selectedMember.firstName} {selectedMember.lastName}</h5>
-                  <p className="text-muted mb-2">{selectedMember.email}</p>
+                  <h5 style={{ marginBottom: 4 }}>{selectedMember.firstName} {selectedMember.lastName}</h5>
+                  <p style={{ color: 'var(--text-secondary)', marginBottom: 8 }}>{selectedMember.email}</p>
                   <RoleBadge role={selectedMember.role as any} />
                 </div>
 
                 {/* Stats */}
-                <div className="row g-2 mb-4">
-                  <div className="col-6">
-                    <div className="bg-light rounded p-3 text-center">
-                      <h4 className="mb-0">{selectedMember.orderCount || 0}</h4>
-                      <small className="text-muted">Orders</small>
-                    </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 24 }}>
+                  <div style={{ background: 'var(--bg-secondary)', borderRadius: 10, padding: 16, textAlign: 'center' }}>
+                    <h4 style={{ margin: 0 }}>{selectedMember.orderCount || 0}</h4>
+                    <small style={{ color: 'var(--text-secondary)' }}>Orders</small>
                   </div>
-                  <div className="col-6">
-                    <div className="bg-light rounded p-3 text-center">
-                      <h4 className="mb-0">{formatCurrency(selectedMember.totalSpent || 0)}</h4>
-                      <small className="text-muted">Total Spent</small>
-                    </div>
+                  <div style={{ background: 'var(--bg-secondary)', borderRadius: 10, padding: 16, textAlign: 'center' }}>
+                    <h4 style={{ margin: 0 }}>{formatCurrency(selectedMember.totalSpent || 0)}</h4>
+                    <small style={{ color: 'var(--text-secondary)' }}>Total Spent</small>
                   </div>
                 </div>
 
                 {/* Spending Limit */}
                 {selectedMember.spendingLimit && (
-                  <div className="mb-4">
-                    <h6 className="mb-2">Spending Limit</h6>
+                  <div style={{ marginBottom: 24 }}>
+                    <h6 style={{ marginBottom: 8 }}>Spending Limit</h6>
                     <SpendingLimitProgress 
                       used={selectedMember.spendingUsed || 0} 
                       limit={selectedMember.spendingLimit} 
@@ -422,44 +412,45 @@ export default function TeamPage() {
                 )}
 
                 {/* Details List */}
-                <ul className="list-unstyled small">
-                  <li className="d-flex justify-content-between py-2 border-bottom">
-                    <span className="text-muted">Status</span>
-                    <span className={`badge ${selectedMember.isActive ? 'bg-success' : 'bg-warning'}`}>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: 13 }}>
+                  <li style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Status</span>
+                    <span className="badge" style={selectedMember.isActive ? { background: 'rgba(52,199,89,0.12)', color: 'var(--green)' } : { background: 'rgba(255,149,0,0.12)', color: 'var(--orange)' }}>
                       {selectedMember.isActive ? 'Active' : 'Pending'}
                     </span>
                   </li>
-                  <li className="d-flex justify-content-between py-2 border-bottom">
-                    <span className="text-muted">Joined</span>
+                  <li style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Joined</span>
                     <span>{selectedMember.createdAt ? formatRelativeTime(selectedMember.createdAt) : 'N/A'}</span>
                   </li>
-                  <li className="d-flex justify-content-between py-2 border-bottom">
-                    <span className="text-muted">Last Login</span>
+                  <li style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Last Login</span>
                     <span>{selectedMember.lastLoginAt ? formatRelativeTime(selectedMember.lastLoginAt) : 'Never'}</span>
                   </li>
                   {selectedMember.invitedBy && (
-                    <li className="d-flex justify-content-between py-2 border-bottom">
-                      <span className="text-muted">Invited by</span>
+                    <li style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Invited by</span>
                       <span>{selectedMember.invitedBy}</span>
                     </li>
                   )}
                 </ul>
 
                 {/* Actions */}
-                <div className="d-grid gap-2 mt-4">
+                <div style={{ display: 'grid', gap: 8, marginTop: 24 }}>
                   {!selectedMember.isActive && (
                     <button 
-                      className="btn btn-outline-primary"
+                      className="btn-apple btn-apple-secondary"
                       onClick={() => handleResendInvite(selectedMember.email)}
                     >
-                      <i className="ti ti-mail-forward me-1"></i>Resend Invitation
+                      <i className="ti ti-mail-forward" style={{ marginRight: 6 }}></i>Resend Invitation
                     </button>
                   )}
                   <button 
-                    className="btn btn-outline-danger"
+                    className="btn-apple btn-apple-secondary"
+                    style={{ color: 'var(--red)', borderColor: 'var(--red)' }}
                     onClick={() => handleRemoveMember(selectedMember.id)}
                   >
-                    <i className="ti ti-user-minus me-1"></i>Remove from Team
+                    <i className="ti ti-user-minus" style={{ marginRight: 6 }}></i>Remove from Team
                   </button>
                 </div>
               </div>

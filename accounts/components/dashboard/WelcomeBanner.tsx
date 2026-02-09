@@ -28,15 +28,15 @@ export function WelcomeBanner({
   const greeting = getGreeting();
 
   return (
-    <div className="card bg-primary text-white mb-4">
+    <div className="card" style={{ background: 'var(--accent)', color: '#fff', marginBottom: '1.5rem' }}>
       <div className="card-body">
         {/* Welcome Message */}
-        <div className="row align-items-center">
-          <div className="col-lg-8">
-            <h4 className="card-title text-white mb-2">
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ flex: '2 1 60%', minWidth: '300px' }}>
+            <h4 className="card-title" style={{ color: '#fff', marginBottom: '0.5rem' }}>
               {greeting}, {firstName}! 👋
             </h4>
-            <p className="card-text mb-3">
+            <p style={{ marginBottom: '0.75rem' }}>
               {isFirstLogin ? (
                 <>Welcome to <strong>{companyName}</strong>! Your B2B account is ready. Explore your personalized pricing below.</>
               ) : (
@@ -45,7 +45,7 @@ export function WelcomeBanner({
             </p>
 
             {/* Quick Actions */}
-            <div className="d-flex flex-wrap gap-2 mb-3">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
               <QuickActionButton
                 href="/products"
                 icon="ti-shopping-cart"
@@ -66,13 +66,13 @@ export function WelcomeBanner({
 
             {/* Active Promotions */}
             {activePromotions.length > 0 && (
-              <div className="d-flex align-items-center gap-2 mt-3">
-                <span className="badge bg-warning text-dark">
-                  <i className="ti ti-tag me-1"></i>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem' }}>
+                <span className="badge" style={{ background: 'var(--orange)', color: '#1d1d1f' }}>
+                  <i className="ti ti-tag" style={{ marginRight: '0.25rem' }}></i>
                   Active Deals
                 </span>
                 {activePromotions.slice(0, 2).map((promo) => (
-                  <span key={promo.id} className="badge bg-light text-dark">
+                  <span key={promo.id} className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
                     {promo.discountType === 'percentage' 
                       ? `${promo.discountValue}% OFF` 
                       : `$${promo.discountValue} OFF`}
@@ -84,8 +84,8 @@ export function WelcomeBanner({
           </div>
 
           {/* Stats Summary */}
-          <div className="col-lg-4 mt-3 mt-lg-0">
-            <div className="row g-3">
+          <div style={{ flex: '1 1 30%', minWidth: '200px', marginTop: '0.75rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
               <StatCard
                 label="This Month"
                 value={formatCurrency(stats?.spending?.thisMonth || 0)}
@@ -128,11 +128,11 @@ interface QuickActionButtonProps {
 
 function QuickActionButton({ href, icon, label, badge }: QuickActionButtonProps) {
   return (
-    <Link href={href} className="btn btn-light btn-sm position-relative">
-      <i className={`ti ${icon} me-1`}></i>
+    <Link href={href} className="btn-apple btn-apple-secondary" style={{ position: 'relative' }}>
+      <i className={`ti ${icon}`} style={{ marginRight: '0.25rem' }}></i>
       {label}
       {badge && badge > 0 && (
-        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+        <span className="badge" style={{ position: 'absolute', top: '-6px', right: '-6px', background: 'var(--red)', color: '#fff', borderRadius: '999px', fontSize: '0.65rem', padding: '0.15rem 0.4rem' }}>
           {badge}
         </span>
       )}
@@ -152,19 +152,19 @@ interface StatCardProps {
 }
 
 function StatCard({ label, value, icon, variant = 'default' }: StatCardProps) {
-  const bgClass = variant === 'success' 
-    ? 'bg-success bg-opacity-25' 
+  const bgColor = variant === 'success' 
+    ? 'rgba(52, 199, 89, 0.25)' 
     : variant === 'warning' 
-      ? 'bg-warning bg-opacity-25' 
-      : 'bg-white bg-opacity-10';
+      ? 'rgba(255, 149, 0, 0.25)' 
+      : 'rgba(255, 255, 255, 0.1)';
 
   return (
-    <div className="col-6">
-      <div className={`rounded p-2 ${bgClass}`}>
-        <div className="d-flex align-items-center">
-          <i className={`ti ${icon} me-2`}></i>
+    <div>
+      <div style={{ borderRadius: '0.75rem', padding: '0.5rem', background: bgColor }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <i className={`ti ${icon}`} style={{ marginRight: '0.5rem' }}></i>
           <div>
-            <small className="d-block opacity-75">{label}</small>
+            <small style={{ display: 'block', opacity: 0.75 }}>{label}</small>
             <strong>{value}</strong>
           </div>
         </div>
@@ -189,8 +189,8 @@ interface DashboardStatsCardsProps {
 
 export function DashboardStatsCards({ stats }: DashboardStatsCardsProps) {
   return (
-    <div className="row g-4 mb-4">
-      <div className="col-sm-6 col-lg-3">
+    <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div>
         <StatsCard
           title="Pending Orders"
           value={stats.pendingOrders}
@@ -198,7 +198,7 @@ export function DashboardStatsCards({ stats }: DashboardStatsCardsProps) {
           variant="warning"
         />
       </div>
-      <div className="col-sm-6 col-lg-3">
+      <div>
         <StatsCard
           title="Completed Orders"
           value={stats.completedOrders}
@@ -206,7 +206,7 @@ export function DashboardStatsCards({ stats }: DashboardStatsCardsProps) {
           variant="success"
         />
       </div>
-      <div className="col-sm-6 col-lg-3">
+      <div>
         <StatsCard
           title="Total Spent"
           value={formatCurrency(stats.totalSpent)}
@@ -214,7 +214,7 @@ export function DashboardStatsCards({ stats }: DashboardStatsCardsProps) {
           variant="info"
         />
       </div>
-      <div className="col-sm-6 col-lg-3">
+      <div>
         <StatsCard
           title="Total Savings"
           value={formatCurrency(stats.savings || 0)}
@@ -236,16 +236,25 @@ interface StatsCardProps {
 }
 
 function StatsCard({ title, value, icon, variant, subtitle }: StatsCardProps) {
+  const variantColors: Record<string, { bg: string; fg: string }> = {
+    primary: { bg: 'rgba(0, 122, 255, 0.12)', fg: 'var(--accent)' },
+    success: { bg: 'rgba(52, 199, 89, 0.12)', fg: 'var(--green)' },
+    warning: { bg: 'rgba(255, 149, 0, 0.12)', fg: 'var(--orange)' },
+    info: { bg: 'rgba(90, 200, 250, 0.12)', fg: 'var(--accent)' },
+    danger: { bg: 'rgba(255, 59, 48, 0.12)', fg: 'var(--red)' },
+  };
+  const colors = variantColors[variant] || variantColors.primary;
+
   return (
-    <div className="card h-100">
+    <div className="stat-card card" style={{ height: '100%' }}>
       <div className="card-body">
-        <div className="d-flex justify-content-between align-items-start">
-          <div>
-            <p className="text-muted mb-1 small">{title}</p>
-            <h4 className="mb-0">{value}</h4>
-            {subtitle && <small className="text-muted">{subtitle}</small>}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div className="stat-info">
+            <p className="stat-label" style={{ color: 'var(--text-secondary)', marginBottom: '0.25rem', fontSize: '0.8125rem' }}>{title}</p>
+            <h4 className="stat-value" style={{ marginBottom: 0 }}>{value}</h4>
+            {subtitle && <small style={{ color: 'var(--text-secondary)' }}>{subtitle}</small>}
           </div>
-          <span className={`badge bg-label-${variant} rounded p-2`}>
+          <span className="stat-icon badge" style={{ background: colors.bg, color: colors.fg, borderRadius: '0.75rem', padding: '0.5rem' }}>
             <i className={`ti ${icon} ti-sm`}></i>
           </span>
         </div>
@@ -265,41 +274,41 @@ interface QuickActionsPanelProps {
 
 export function QuickActionsPanel({ cartItemCount = 0, pendingApprovals = 0 }: QuickActionsPanelProps) {
   return (
-    <div className="card mb-4">
+    <div className="card" style={{ marginBottom: '1.5rem' }}>
       <div className="card-header">
-        <h5 className="card-title mb-0">Quick Actions</h5>
+        <h5 className="card-title" style={{ marginBottom: 0 }}>Quick Actions</h5>
       </div>
       <div className="card-body">
-        <div className="row g-3">
-          <div className="col-6 col-md-3">
-            <Link href="/products" className="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
-              <i className="ti ti-search ti-lg mb-2"></i>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
+          <div>
+            <Link href="/products" className="btn-apple btn-apple-secondary" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1rem 0.5rem' }}>
+              <i className="ti ti-search ti-lg" style={{ marginBottom: '0.5rem' }}></i>
               <span>Browse Products</span>
             </Link>
           </div>
-          <div className="col-6 col-md-3">
-            <Link href="/cart" className="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3 position-relative">
-              <i className="ti ti-shopping-cart ti-lg mb-2"></i>
+          <div>
+            <Link href="/cart" className="btn-apple btn-apple-secondary" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1rem 0.5rem', position: 'relative' }}>
+              <i className="ti ti-shopping-cart ti-lg" style={{ marginBottom: '0.5rem' }}></i>
               <span>View Cart</span>
               {cartItemCount > 0 && (
-                <span className="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger">
+                <span className="badge" style={{ position: 'absolute', top: '-6px', right: '-6px', background: 'var(--red)', color: '#fff', borderRadius: '999px', fontSize: '0.65rem', padding: '0.15rem 0.4rem' }}>
                   {cartItemCount}
                 </span>
               )}
             </Link>
           </div>
-          <div className="col-6 col-md-3">
-            <Link href="/orders" className="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
-              <i className="ti ti-list-check ti-lg mb-2"></i>
+          <div>
+            <Link href="/orders" className="btn-apple btn-apple-secondary" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1rem 0.5rem' }}>
+              <i className="ti ti-list-check ti-lg" style={{ marginBottom: '0.5rem' }}></i>
               <span>Order History</span>
             </Link>
           </div>
-          <div className="col-6 col-md-3">
-            <Link href="/quotes" className="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3 position-relative">
-              <i className="ti ti-file-text ti-lg mb-2"></i>
+          <div>
+            <Link href="/quotes" className="btn-apple btn-apple-secondary" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1rem 0.5rem', position: 'relative' }}>
+              <i className="ti ti-file-text ti-lg" style={{ marginBottom: '0.5rem' }}></i>
               <span>Request Quote</span>
               {pendingApprovals > 0 && (
-                <span className="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-warning">
+                <span className="badge" style={{ position: 'absolute', top: '-6px', right: '-6px', background: 'var(--orange)', color: '#fff', borderRadius: '999px', fontSize: '0.65rem', padding: '0.15rem 0.4rem' }}>
                   {pendingApprovals}
                 </span>
               )}
@@ -325,17 +334,17 @@ export function SavingsHighlight({ totalSavings, savingsThisMonth, discountTier 
   if (totalSavings <= 0) return null;
 
   return (
-    <div className="alert alert-success d-flex align-items-center mb-4" role="alert">
-      <i className="ti ti-discount ti-lg me-3"></i>
-      <div className="flex-grow-1">
+    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem', padding: '1rem', background: 'rgba(52, 199, 89, 0.1)', borderRadius: '0.75rem', border: '1px solid var(--green)' }} role="alert">
+      <i className="ti ti-discount ti-lg" style={{ marginRight: '0.75rem', color: 'var(--green)' }}></i>
+      <div style={{ flexGrow: 1 }}>
         <strong>You&apos;re saving with B2B pricing!</strong>
-        <div className="small">
+        <div style={{ fontSize: '0.8125rem' }}>
           Total savings: <strong>{formatCurrency(totalSavings)}</strong>
           {savingsThisMonth > 0 && (
             <> • This month: <strong>{formatCurrency(savingsThisMonth)}</strong></>
           )}
           {discountTier && (
-            <> • Your tier: <span className="badge bg-success ms-1">{discountTier}</span></>
+            <> • Your tier: <span className="badge" style={{ background: 'var(--green)', color: '#fff', marginLeft: '0.25rem' }}>{discountTier}</span></>
           )}
         </div>
       </div>

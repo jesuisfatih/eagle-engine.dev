@@ -1,367 +1,155 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { apiClient, adminFetch } from '@/lib/api-client';
+import { useState, useEffect, useCallback } from 'react';
+import { adminFetch } from '@/lib/api-client';
+import { PageHeader, StatsCard, StatusBadge, showToast, Tabs } from '@/components/ui';
 import Modal from '@/components/Modal';
-import SearchBar from './components/SearchBar';
-import StatusFilter from './components/StatusFilter';
-import type { CompanyWithCounts, ShopifyCustomerAdmin, ResultModalState } from '@/types';
+
+interface Company {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  shopifyCustomerId?: string;
+  users?: { id: string; firstName: string; lastName: string; email: string; role: string }[];
+  createdAt: string;
+}
+
+interface ShopifyCustomer {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  ordersCount?: number;
+  totalSpent?: string;
+}
 
 export default function CompaniesPage() {
-  const [companies, setCompanies] = useState<CompanyWithCounts[]>([]);
-  const [allCompanies, setAllCompanies] = useState<CompanyWithCounts[]>([]);
-  const [shopifyCustomers, setShopifyCustomers] = useState<ShopifyCustomerAdmin[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [shopifyCustomers, setShopifyCustomers] = useState<ShopifyCustomer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'companies' | 'shopify'>('companies');
+  const [tab, setTab] = useState('companies');
+  const [search, setSearch] = useState('');
+  const [convertModal, setConvertModal] = useState<{show: boolean; customer: ShopifyCustomer | null}>({show: false, customer: null});
 
-  const [stats, setStats] = useState({ total: 0, active: 0, pending: 0 });
-
-  useEffect(() => {
-    loadData();
-    loadStats();
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [compRes, custRes] = await Promise.all([
+        adminFetch('/api/v1/companies'),
+        adminFetch('/api/v1/shopify-customers'),
+      ]);
+      const compData = await compRes.json();
+      setCompanies(Array.isArray(compData) ? compData : compData.data || []);
+      const custData = await custRes.json();
+      setShopifyCustomers(Array.isArray(custData) ? custData : custData.customers || []);
+    } catch { /* silent */ }
+    finally { setLoading(false); }
   }, []);
 
-  const loadStats = async () => {
+  useEffect(() => { load(); }, [load]);
+
+  const convertToB2B = async (customer: ShopifyCustomer) => {
+    setConvertModal({show: false, customer: null});
     try {
-      const response = await adminFetch('/api/v1/companies/stats');
-      const data = await response.json();
-      setStats(data);
-    } catch (err) {}
+      const res = await adminFetch(`/api/v1/shopify-customers/${customer.id}/convert-to-company`, { method: 'POST' });
+      if (res.ok) { showToast('Converted to B2B company!', 'success'); load(); }
+      else { const e = await res.json().catch(() => ({})); showToast(e.message || 'Failed', 'danger'); }
+    } catch { showToast('Failed to convert', 'danger'); }
   };
 
-  const loadData = async () => {
-    try {
-      const [companiesData, customersResponse] = await Promise.all([
-        apiClient.getCompanies().catch(() => []),
-        adminFetch('/api/v1/shopify-customers').then(r => r.json()).catch(() => []),
-      ]);
-      const companiesList = Array.isArray(companiesData) ? companiesData : (companiesData as { data: CompanyWithCounts[] }).data || [];
-      setCompanies(companiesList as CompanyWithCounts[]);
-      setAllCompanies(companiesList as CompanyWithCounts[]);
-      setShopifyCustomers(Array.isArray(customersResponse) ? customersResponse : []);
-    } catch (err) {
-      console.error('Load error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const [convertModal, setConvertModal] = useState<{show: boolean; customerId: string | null}>({
-    show: false,
-    customerId: null,
-  });
-  const [resultModal, setResultModal] = useState<{show: boolean; type: 'success' | 'error'; message: string}>({
-    show: false,
-    type: 'success',
-    message: '',
-  });
-
-  const convertToCompany = async () => {
-    if (!convertModal.customerId) return;
-    
-    const customer = shopifyCustomers.find(c => c.id === convertModal.customerId);
-    const alreadyConverted = companies.find(comp => 
-      comp.createdByShopifyCustomerId?.toString() === customer?.shopifyCustomerId
-    );
-    
-    if (alreadyConverted) {
-      setConvertModal({ show: false, customerId: null });
-      setResultModal({
-        show: true,
-        type: 'error',
-        message: 'Bu customer zaten B2B firmaya dönüştürülmüş!',
-      });
-      return;
-    }
-    
-    setConvertModal({ show: false, customerId: null });
-    
-    try {
-      const response = await adminFetch(`/api/v1/shopify-customers/${convertModal.customerId}/convert-to-company`, {
-        method: 'POST',
-      });
-      
-      if (response.ok) {
-        setConvertModal({ show: false, customerId: null });
-        setResultModal({
-          show: true,
-          type: 'success',
-          message: 'Firma başarıyla oluşturuldu! Davet emaili gönderildi.',
-        });
-        setTimeout(() => loadData(), 1000);
-      } else {
-        const error = await response.json();
-        setConvertModal({ show: false, customerId: null });
-        setResultModal({
-          show: true,
-          type: 'error',
-          message: error.message || 'İşlem başarısız oldu',
-        });
-      }
-    } catch (err) {
-      setConvertModal({ show: false, customerId: null });
-      setResultModal({
-        show: true,
-        type: 'error',
-        message: err instanceof Error ? err.message : 'An error occurred',
-      });
-    }
-  };
-
-  if (loading) {
-    return <div className="p-6">Loading...</div>;
-  }
+  const filteredCompanies = companies.filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.email?.toLowerCase().includes(search.toLowerCase()));
+  const filteredCustomers = shopifyCustomers.filter(c => !search || `${c.firstName} ${c.lastName}`.toLowerCase().includes(search.toLowerCase()) || c.email?.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Companies & Shopify Customers</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            B2B firmalarını yönetin veya Shopify müşterilerini firmaya dönüştürün
-          </p>
-        </div>
+    <div>
+      <PageHeader title="Companies" subtitle={`${companies.length} B2B companies`}
+        actions={[{ label: 'Refresh', icon: 'refresh', variant: 'secondary', onClick: load }]} />
+
+      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+        <StatsCard title="B2B Companies" value={companies.length} icon="building" iconColor="primary" loading={loading} />
+        <StatsCard title="Active" value={companies.filter(c => c.status === 'active' || c.status === 'ACTIVE').length} icon="check" iconColor="success" loading={loading} />
+        <StatsCard title="Shopify Customers" value={shopifyCustomers.length} icon="users" iconColor="info" loading={loading} />
       </div>
 
-      <ul className="nav nav-tabs mb-4">
-        <li className="nav-item">
-          <button
-            className={`nav-link ${activeTab === 'companies' ? 'active' : ''}`}
-            onClick={() => setActiveTab('companies')}
-          >
-            B2B Companies ({companies.length})
-          </button>
-        </li>
-        <li className="nav-item">
-          <button
-            className={`nav-link ${activeTab === 'shopify' ? 'active' : ''}`}
-            onClick={() => setActiveTab('shopify')}
-          >
-            Shopify Customers ({shopifyCustomers.length})
-          </button>
-        </li>
-      </ul>
+      <div style={{ marginTop: 20 }}>
+        <Tabs tabs={[
+          { id: 'companies', label: 'B2B Companies', count: companies.length },
+          { id: 'shopify', label: 'Shopify Customers', count: shopifyCustomers.length },
+        ]} activeTab={tab} onChange={setTab} />
 
-      {/* Companies Tab */}
-      {activeTab === 'companies' && (
-        <div className="card">
-          <div className="card-body">
-          {companies.length === 0 ? (
-            <div className="text-center py-5">
-              <i className="ti ti-building ti-3x text-muted mb-3"></i>
-              <h5>No B2B companies yet</h5>
-              <p className="text-muted">Convert Shopify customers to B2B companies from the Shopify tab.</p>
-            </div>
-          ) : (
-            <div className="table-responsive">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Company</th>
-                    <th>Status</th>
-                    <th>Users</th>
-                    <th>Orders</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+          <div className="input-apple" style={{ flex: 1, maxWidth: 360 }}>
+            <i className="ti ti-search input-icon" />
+            <input placeholder={tab === 'companies' ? 'Search companies...' : 'Search customers...'} value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="apple-card" style={{ padding: 48, textAlign: 'center' }}>
+            <i className="ti ti-loader-2 spin" style={{ fontSize: 24, color: 'var(--accent-primary)' }} />
+          </div>
+        ) : tab === 'companies' ? (
+          <div className="apple-card">
+            {filteredCompanies.length === 0 ? (
+              <div className="empty-state" style={{ padding: 48 }}>
+                <div className="empty-state-icon"><i className="ti ti-building" /></div>
+                <h4 className="empty-state-title">No companies found</h4>
+              </div>
+            ) : (
+              <table className="apple-table">
+                <thead><tr><th>Company</th><th>Email</th><th>Users</th><th>Status</th><th>Created</th></tr></thead>
                 <tbody>
-                  {companies.map((company) => (
-                    <tr key={company.id}>
-                      <td>
-                        <div className="fw-semibold">{company.name}</div>
-                        <div className="text-muted small">{company.email}</div>
-                      </td>
-                      <td>
-                        <span className={`badge ${
-                          company.status === 'active' ? 'bg-label-success' : 'bg-label-warning'
-                        }`}>
-                          {company.status}
-                        </span>
-                      </td>
-                      <td>{company._count?.users || 0}</td>
-                      <td>{company._count?.orders || 0}</td>
-                      <td>
-                        <div className="btn-group">
-                          <Link href={`/companies/${company.id}`} className="btn btn-sm btn-primary">
-                            <i className="ti ti-eye"></i>
-                          </Link>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-primary dropdown-toggle dropdown-toggle-split"
-                            data-bs-toggle="dropdown"
-                          >
-                            <span className="visually-hidden">Actions</span>
-                          </button>
-                          <ul className="dropdown-menu dropdown-menu-end">
-                            {company.status === 'pending' && (
-                              <>
-                                <li>
-                                  <a
-                                    className="dropdown-item text-success"
-                                    href="javascript:void(0);"
-                                    onClick={async () => {
-                                      if (confirm('Approve this company? All users will be activated.')) {
-                                        try {
-                                          const response = await adminFetch(`/api/v1/companies/${company.id}/approve`, {
-                                            method: 'POST',
-                                          });
-                                          if (response.ok) {
-                                            alert('Company approved successfully!');
-                                            loadData();
-                                            loadStats();
-                                          } else {
-                                            const error = await response.json();
-                                            alert(error.error || 'Failed to approve company');
-                                          }
-                                        } catch (err) {
-                                          alert('Error approving company');
-                                        }
-                                      }
-                                    }}
-                                  >
-                                    <i className="ti ti-check me-2"></i>Approve
-                                  </a>
-                                </li>
-                                <li>
-                                  <a
-                                    className="dropdown-item text-danger"
-                                    href="javascript:void(0);"
-                                    onClick={async () => {
-                                      const reason = prompt('Rejection reason (optional):');
-                                      if (reason !== null) {
-                                        try {
-                                          const response = await adminFetch(`/api/v1/companies/${company.id}/reject`, {
-                                            method: 'POST',
-                                            body: JSON.stringify({ reason: reason || undefined }),
-                                          });
-                                          if (response.ok) {
-                                            alert('Company rejected');
-                                            loadData();
-                                            loadStats();
-                                          } else {
-                                            const error = await response.json();
-                                            alert(error.error || 'Failed to reject company');
-                                          }
-                                        } catch (err) {
-                                          alert('Error rejecting company');
-                                        }
-                                      }
-                                    }}
-                                  >
-                                    <i className="ti ti-x me-2"></i>Reject
-                                  </a>
-                                </li>
-                              </>
-                            )}
-                            <li>
-                              <a className="dropdown-item" href={`/pricing?companyId=${company.id}`}>
-                                <i className="ti ti-tag me-2"></i>Set Pricing
-                              </a>
-                            </li>
-                            <li><hr className="dropdown-divider" /></li>
-                            <li>
-                              <a
-                                className="dropdown-item text-danger"
-                                href="javascript:void(0);"
-                                onClick={async () => {
-                                  if (confirm('Delete this company?')) {
-                                    try {
-                                      await adminFetch(`/api/v1/companies/${company.id}`, { method: 'DELETE' });
-                                      loadData();
-                                    } catch (err) {}
-                                  }
-                                }}
-                              >
-                                <i className="ti ti-trash me-2"></i>Delete
-                              </a>
-                            </li>
-                          </ul>
-                        </div>
-                      </td>
+                  {filteredCompanies.map(c => (
+                    <tr key={c.id}>
+                      <td style={{ fontWeight: 500 }}>{c.name}</td>
+                      <td>{c.email}</td>
+                      <td>{c.users?.length || 0}</td>
+                      <td><StatusBadge status={c.status} /></td>
+                      <td style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{new Date(c.createdAt).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
+            )}
           </div>
-        </div>
-      )}
-
-      {/* Shopify Customers Tab */}
-      {activeTab === 'shopify' && (
-        <div className="card">
-          <div className="card-body">
-          {shopifyCustomers.length === 0 ? (
-            <div className="text-center py-5">
-              <i className="ti ti-users ti-3x text-muted mb-3"></i>
-              <h5>No Shopify customers synced</h5>
-              <p className="text-muted">Go to Settings and click "Run Full Sync" to import customers.</p>
-            </div>
-          ) : (
-            <div className="table-responsive">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Customer</th>
-                    <th>Orders</th>
-                    <th>Total Spent</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
+        ) : (
+          <div className="apple-card">
+            {filteredCustomers.length === 0 ? (
+              <div className="empty-state" style={{ padding: 48 }}>
+                <div className="empty-state-icon"><i className="ti ti-users" /></div>
+                <h4 className="empty-state-title">No Shopify customers</h4>
+              </div>
+            ) : (
+              <table className="apple-table">
+                <thead><tr><th>Name</th><th>Email</th><th>Orders</th><th>Total Spent</th><th>Actions</th></tr></thead>
                 <tbody>
-                  {shopifyCustomers.map((customer) => (
-                    <tr key={customer.id}>
+                  {filteredCustomers.map(c => (
+                    <tr key={c.id}>
+                      <td style={{ fontWeight: 500 }}>{c.firstName} {c.lastName}</td>
+                      <td>{c.email}</td>
+                      <td>{c.ordersCount || 0}</td>
+                      <td>${parseFloat(c.totalSpent || '0').toFixed(2)}</td>
                       <td>
-                        <div className="fw-semibold">
-                          {customer.firstName} {customer.lastName}
-                        </div>
-                        <div className="text-muted small">{customer.email}</div>
-                      </td>
-                      <td>{customer.ordersCount || 0}</td>
-                      <td className="fw-semibold">${customer.totalSpent || 0}</td>
-                      <td>
-                        <button
-                          onClick={() => setConvertModal({ show: true, customerId: customer.id })}
-                          className="btn btn-sm btn-primary"
-                        >
-                          <i className="ti ti-building me-1"></i>
-                          Convert to B2B
+                        <button className="btn-apple primary small" onClick={() => setConvertModal({show: true, customer: c})}>
+                          <i className="ti ti-building" /> Convert to B2B
                         </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
+            )}
           </div>
-        </div>
+        )}
+      </div>
+
+      {convertModal.show && convertModal.customer && (
+        <Modal show onClose={() => setConvertModal({show: false, customer: null})}
+          onConfirm={() => convertToB2B(convertModal.customer!)}
+          title="Convert to B2B" message={`Convert ${convertModal.customer.firstName} ${convertModal.customer.lastName} to a B2B company?`}
+          confirmText="Convert" type="warning" />
       )}
-
-      {/* Convert Confirmation Modal */}
-      <Modal
-        show={convertModal.show}
-        onClose={() => setConvertModal({ show: false, customerId: null })}
-        onConfirm={convertToCompany}
-        title="Firmaya Dönüştür"
-        message="Bu Shopify müşterisini B2B firmaya dönüştürmek istiyor musunuz? Davet emaili gönderilecektir."
-        confirmText="Evet, Dönüştür"
-        cancelText="İptal"
-        type="primary"
-      />
-
-      {/* Result Modal */}
-      <Modal
-        show={resultModal.show}
-        onClose={() => setResultModal({ ...resultModal, show: false })}
-        onConfirm={() => setResultModal({ ...resultModal, show: false })}
-        title={resultModal.type === 'success' ? 'Başarılı' : 'Hata'}
-        message={resultModal.message}
-        confirmText="Tamam"
-        type={resultModal.type === 'success' ? 'success' : 'danger'}
-      />
     </div>
   );
 }

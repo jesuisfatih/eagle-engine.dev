@@ -51,11 +51,11 @@ export default function SettingsPage() {
         });
       } else {
         const err = await response.json();
-        showToast('error', err.message || 'Failed to load settings');
+        showToast(err.message || 'Failed to load settings', 'danger');
       }
     } catch (err) {
       console.error('Failed to load settings:', err);
-      showToast('error', 'Failed to connect to server');
+      showToast('Failed to connect to server', 'danger');
     } finally {
       setLoading(false);
     }

@@ -68,85 +68,69 @@ export default function OrdersPage() {
   return (
     <div>
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h4 className="fw-bold mb-1">Order History</h4>
-          <p className="mb-0 text-muted">View and track all your orders</p>
+          <h4 style={{ fontWeight: 600, marginBottom: 4 }}>Order History</h4>
+          <p style={{ margin: 0, color: 'var(--text-secondary)' }}>View and track all your orders</p>
         </div>
-        <a href="/products" className="btn btn-primary">
-          <i className="ti ti-shopping-cart me-1"></i>
+        <a href="/products" className="btn-apple btn-apple-primary">
+          <i className="ti ti-shopping-cart" style={{ marginRight: 6 }}></i>
           New Order
         </a>
       </div>
 
       {/* Stats Cards */}
-      <div className="row g-3 mb-4">
-        <div className="col-md-3">
-          <div className="card bg-primary text-white">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="mb-0 opacity-75">Total Orders</p>
-                  <h3 className="mb-0">{orders.length}</h3>
-                </div>
-                <i className="ti ti-package fs-1 opacity-50"></i>
-              </div>
-            </div>
+      <div className="stats-grid" style={{ marginBottom: 24 }}>
+        <div className="stat-card" style={{ background: 'var(--accent)', color: '#fff' }}>
+          <div className="stat-icon">
+            <i className="ti ti-package" style={{ opacity: 0.7 }}></i>
+          </div>
+          <div className="stat-info">
+            <span className="stat-label" style={{ opacity: 0.85 }}>Total Orders</span>
+            <span className="stat-value">{orders.length}</span>
           </div>
         </div>
-        <div className="col-md-3">
-          <div className="card">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="mb-0 text-muted">Total Spent</p>
-                  <h3 className="mb-0 text-success">{formatCurrency(totalSpent)}</h3>
-                </div>
-                <i className="ti ti-wallet fs-1 text-success opacity-50"></i>
-              </div>
-            </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ color: 'var(--green)' }}>
+            <i className="ti ti-wallet"></i>
+          </div>
+          <div className="stat-info">
+            <span className="stat-label">Total Spent</span>
+            <span className="stat-value" style={{ color: 'var(--green)' }}>{formatCurrency(totalSpent)}</span>
           </div>
         </div>
-        <div className="col-md-3">
-          <div className="card">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="mb-0 text-muted">Avg Order Value</p>
-                  <h3 className="mb-0">{formatCurrency(avgOrderValue)}</h3>
-                </div>
-                <i className="ti ti-chart-line fs-1 text-info opacity-50"></i>
-              </div>
-            </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ color: 'var(--accent)' }}>
+            <i className="ti ti-chart-line"></i>
+          </div>
+          <div className="stat-info">
+            <span className="stat-label">Avg Order Value</span>
+            <span className="stat-value">{formatCurrency(avgOrderValue)}</span>
           </div>
         </div>
-        <div className="col-md-3">
-          <div className="card">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="mb-0 text-muted">Pending</p>
-                  <h3 className="mb-0 text-warning">
-                    {orders.filter(o => (o.fulfillmentStatus || '').toLowerCase() === 'unfulfilled').length}
-                  </h3>
-                </div>
-                <i className="ti ti-clock fs-1 text-warning opacity-50"></i>
-              </div>
-            </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ color: 'var(--orange)' }}>
+            <i className="ti ti-clock"></i>
+          </div>
+          <div className="stat-info">
+            <span className="stat-label">Pending</span>
+            <span className="stat-value" style={{ color: 'var(--orange)' }}>
+              {orders.filter(o => (o.fulfillmentStatus || '').toLowerCase() === 'unfulfilled').length}
+            </span>
           </div>
         </div>
       </div>
 
-      <div className="row g-4">
+      <div style={{ display: 'flex', gap: 24 }}>
         {/* Main Content */}
-        <div className="col-lg-8">
+        <div style={{ flex: '1 1 0%', minWidth: 0 }}>
           {/* Filters */}
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <div className="d-flex gap-2">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
               {(['all', 'pending', 'paid', 'fulfilled'] as const).map(f => (
                 <button
                   key={f}
-                  className={`btn btn-sm ${filter === f ? 'btn-primary' : 'btn-outline-secondary'}`}
+                  className={filter === f ? 'btn-apple btn-apple-primary' : 'btn-apple btn-apple-secondary'}
                   onClick={() => setFilter(f)}
                 >
                   {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -154,7 +138,7 @@ export default function OrdersPage() {
               ))}
             </div>
             <select 
-              className="form-select form-select-sm" 
+              className="form-input" 
               style={{ width: 'auto' }}
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'date' | 'total')}
@@ -168,25 +152,25 @@ export default function OrdersPage() {
           <div className="card">
             <div className="card-body">
               {loading ? (
-                <div className="text-center py-5">
-                  <div className="spinner-border text-primary"></div>
-                  <p className="mt-3 text-muted">Loading orders...</p>
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                  <div className="spinner-apple"></div>
+                  <p style={{ marginTop: 16, color: 'var(--text-secondary)' }}>Loading orders...</p>
                 </div>
               ) : filteredOrders.length === 0 ? (
-                <div className="text-center py-5">
-                  <i className="ti ti-package ti-3x text-muted mb-3"></i>
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                  <i className="ti ti-package ti-3x" style={{ color: 'var(--text-tertiary)', marginBottom: 16, display: 'block' }}></i>
                   <h5>{filter === 'all' ? 'No orders yet' : `No ${filter} orders`}</h5>
-                  <p className="text-muted">Your order history will appear here</p>
-                  <a href="/products" className="btn btn-primary mt-2">Start Shopping</a>
+                  <p style={{ color: 'var(--text-secondary)' }}>Your order history will appear here</p>
+                  <a href="/products" className="btn-apple btn-apple-primary" style={{ marginTop: 8 }}>Start Shopping</a>
                 </div>
               ) : (
-                <div className="list-group list-group-flush">
+                <div>
                   {filteredOrders.map((order) => (
-                    <div key={order.id} className="list-group-item p-3">
-                      <div className="d-flex justify-content-between align-items-start">
-                        <div className="flex-grow-1">
-                          <div className="d-flex align-items-center gap-2 mb-2">
-                            <h6 className="mb-0 fw-bold">
+                    <div key={order.id} style={{ padding: 16, borderBottom: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                            <h6 style={{ margin: 0, fontWeight: 600 }}>
                               #{order.orderNumber || order.shopifyOrderNumber}
                             </h6>
                             <OrderStatusBadge 
@@ -195,31 +179,31 @@ export default function OrdersPage() {
                               size="sm" 
                             />
                           </div>
-                          <div className="d-flex flex-wrap gap-3 text-muted small">
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, color: 'var(--text-secondary)', fontSize: 13 }}>
                             <span>
-                              <i className="ti ti-calendar me-1"></i>
+                              <i className="ti ti-calendar" style={{ marginRight: 4 }}></i>
                               {formatDate(order.createdAt)}
                             </span>
                             <span>
-                              <i className="ti ti-package me-1"></i>
+                              <i className="ti ti-package" style={{ marginRight: 4 }}></i>
                               {order.lineItems?.length || 0} item{(order.lineItems?.length || 0) !== 1 ? 's' : ''}
                             </span>
-                            <span className="text-muted">
+                            <span style={{ color: 'var(--text-tertiary)' }}>
                               {formatRelativeTime(order.createdAt)}
                             </span>
                           </div>
                         </div>
-                        <div className="text-end">
-                          <div className="fw-bold fs-5 mb-2">
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 8 }}>
                             {formatCurrency(parseFloat(String(order.totalPrice)) || 0)}
                           </div>
-                          <div className="d-flex gap-2">
-                            <a href={`/orders/${order.id}`} className="btn btn-sm btn-primary">
-                              <i className="ti ti-eye me-1"></i>View
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <a href={`/orders/${order.id}`} className="btn-apple btn-apple-primary">
+                              <i className="ti ti-eye" style={{ marginRight: 4 }}></i>View
                             </a>
                             {shopDomainLoading ? (
-                              <div className="btn btn-sm btn-outline-secondary disabled placeholder-glow" style={{width: '80px'}}>
-                                <span className="placeholder col-12"></span>
+                              <div className="btn-apple btn-apple-secondary" style={{ width: 80, opacity: 0.5 }}>
+                                <span style={{ display: 'inline-block', width: '100%', height: 14, background: 'var(--bg-secondary)', borderRadius: 4 }}></span>
                               </div>
                             ) : shopDomain && (
                               <ReorderButton
@@ -249,15 +233,15 @@ export default function OrdersPage() {
                       
                       {/* Line Items Preview */}
                       {order.lineItems && order.lineItems.length > 0 && (
-                        <div className="mt-3 pt-3 border-top">
-                          <div className="d-flex flex-wrap gap-2">
+                        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                             {order.lineItems.slice(0, 3).map((item: { variant_id?: string; variantId?: string; title?: string; name?: string; quantity: number; price: number }, idx: number) => (
-                              <span key={idx} className="badge bg-light text-dark">
+                              <span key={idx} className="badge" style={{ background: 'rgba(0,0,0,0.06)', color: 'var(--text-primary)' }}>
                                 {item.title || item.name} × {item.quantity}
                               </span>
                             ))}
                             {order.lineItems.length > 3 && (
-                              <span className="badge bg-secondary">
+                              <span className="badge" style={{ background: 'rgba(0,0,0,0.12)', color: 'var(--text-secondary)' }}>
                                 +{order.lineItems.length - 3} more
                               </span>
                             )}
@@ -273,15 +257,15 @@ export default function OrdersPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="col-lg-4">
+        <div style={{ width: 340, flexShrink: 0 }}>
           {/* Quick Reorder */}
           {shopDomainLoading ? (
-            <div className="card mb-4">
-              <div className="card-header"><h5 className="mb-0">Quick Reorder</h5></div>
-              <div className="card-body placeholder-glow">
-                <span className="placeholder col-12 mb-2" style={{height: '40px'}}></span>
-                <span className="placeholder col-12 mb-2" style={{height: '40px'}}></span>
-                <span className="placeholder col-12" style={{height: '40px'}}></span>
+            <div className="card" style={{ marginBottom: 16 }}>
+              <div className="card-header"><h5 style={{ margin: 0 }}>Quick Reorder</h5></div>
+              <div className="card-body">
+                <span style={{ display: 'block', width: '100%', height: 40, background: 'var(--bg-secondary)', borderRadius: 8, marginBottom: 8 }}></span>
+                <span style={{ display: 'block', width: '100%', height: 40, background: 'var(--bg-secondary)', borderRadius: 8, marginBottom: 8 }}></span>
+                <span style={{ display: 'block', width: '100%', height: 40, background: 'var(--bg-secondary)', borderRadius: 8 }}></span>
               </div>
             </div>
           ) : shopDomain && orders.length > 0 && (
@@ -306,17 +290,17 @@ export default function OrdersPage() {
           )}
 
           {/* Order Summary */}
-          <div className="card mt-4">
+          <div className="card" style={{ marginTop: 16 }}>
             <div className="card-header">
-              <h6 className="mb-0">
-                <i className="ti ti-chart-pie me-2"></i>
+              <h6 style={{ margin: 0 }}>
+                <i className="ti ti-chart-pie" style={{ marginRight: 8 }}></i>
                 Order Summary
               </h6>
             </div>
             <div className="card-body">
-              <div className="d-flex justify-content-between py-2 border-bottom">
-                <span className="text-muted">This Month</span>
-                <span className="fw-semibold">
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>This Month</span>
+                <span style={{ fontWeight: 600 }}>
                   {orders.filter(o => {
                     const orderDate = new Date(o.createdAt);
                     const now = new Date();
@@ -324,9 +308,9 @@ export default function OrdersPage() {
                   }).length} orders
                 </span>
               </div>
-              <div className="d-flex justify-content-between py-2 border-bottom">
-                <span className="text-muted">Last 30 Days</span>
-                <span className="fw-semibold">
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Last 30 Days</span>
+                <span style={{ fontWeight: 600 }}>
                   {formatCurrency(
                     orders
                       .filter(o => new Date(o.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
@@ -334,9 +318,9 @@ export default function OrdersPage() {
                   )}
                 </span>
               </div>
-              <div className="d-flex justify-content-between py-2">
-                <span className="text-muted">Lifetime Orders</span>
-                <span className="fw-semibold">{orders.length}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Lifetime Orders</span>
+                <span style={{ fontWeight: 600 }}>{orders.length}</span>
               </div>
             </div>
           </div>

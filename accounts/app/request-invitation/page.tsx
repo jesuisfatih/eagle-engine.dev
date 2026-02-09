@@ -73,263 +73,176 @@ export default function RequestInvitationPage() {
   ];
 
   return (
-    <div className="min-vh-100 d-flex align-items-center" style={{ background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)' }}>
-      <div className="container py-5">
-        <div className="row justify-content-center">
-          <div className="col-12 col-lg-10 col-xl-8">
-            <div className="card shadow-lg border-0">
-              <div className="row g-0">
-                {/* Left Side - Benefits */}
-                <div className="col-lg-5 d-none d-lg-block">
-                  <div className="h-100 p-4 p-xl-5 text-white d-flex flex-column justify-content-center" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', borderRadius: '0.5rem 0 0 0.5rem' }}>
-                    <div className="mb-4">
-                      <span className="fs-1">🦅</span>
-                      <h3 className="fw-bold mt-3">Eagle B2B Program</h3>
-                      <p className="opacity-75">Join our exclusive B2B partner network and unlock premium benefits.</p>
+    <div className="login-page">
+      <div className="login-container" style={{ maxWidth: 960 }}>
+        <div className="login-card" style={{ maxWidth: '100%', padding: 0, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', minHeight: 600 }}>
+            {/* Left Side - Benefits */}
+            <div style={{
+              flex: '0 0 40%', padding: '40px 32px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              display: 'flex', flexDirection: 'column', justifyContent: 'center', color: '#fff',
+              borderRadius: '16px 0 0 16px',
+            }}>
+              <div style={{ marginBottom: 32 }}>
+                <span style={{ fontSize: 40 }}>🦅</span>
+                <h3 style={{ fontWeight: 700, marginTop: 12 }}>Eagle B2B Program</h3>
+                <p style={{ opacity: 0.75 }}>Join our exclusive B2B partner network and unlock premium benefits.</p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {[
+                  { icon: '💰', title: 'Wholesale Pricing', desc: 'Up to 40% off retail prices' },
+                  { icon: '💳', title: 'Net 30 Terms', desc: 'Flexible payment options' },
+                  { icon: '👥', title: 'Team Management', desc: 'Add unlimited team members' },
+                  { icon: '🎧', title: 'Priority Support', desc: 'Dedicated account manager' },
+                  { icon: '🚚', title: 'Free Shipping', desc: 'On orders over $500' },
+                ].map((item) => (
+                  <div key={item.title} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{
+                      background: 'rgba(255,255,255,0.2)', borderRadius: '50%',
+                      width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 18, flexShrink: 0,
+                    }}>
+                      {item.icon}
                     </div>
-                    
-                    <div className="d-flex flex-column gap-3">
-                      <div className="d-flex align-items-center gap-3">
-                        <div className="bg-white bg-opacity-25 rounded-circle p-2">
-                          <i className="ti ti-discount-2 text-white"></i>
-                        </div>
-                        <div>
-                          <h6 className="mb-0 fw-semibold">Wholesale Pricing</h6>
-                          <small className="opacity-75">Up to 40% off retail prices</small>
-                        </div>
-                      </div>
-                      
-                      <div className="d-flex align-items-center gap-3">
-                        <div className="bg-white bg-opacity-25 rounded-circle p-2">
-                          <i className="ti ti-credit-card text-white"></i>
-                        </div>
-                        <div>
-                          <h6 className="mb-0 fw-semibold">Net 30 Terms</h6>
-                          <small className="opacity-75">Flexible payment options</small>
-                        </div>
-                      </div>
-                      
-                      <div className="d-flex align-items-center gap-3">
-                        <div className="bg-white bg-opacity-25 rounded-circle p-2">
-                          <i className="ti ti-users text-white"></i>
-                        </div>
-                        <div>
-                          <h6 className="mb-0 fw-semibold">Team Management</h6>
-                          <small className="opacity-75">Add unlimited team members</small>
-                        </div>
-                      </div>
-                      
-                      <div className="d-flex align-items-center gap-3">
-                        <div className="bg-white bg-opacity-25 rounded-circle p-2">
-                          <i className="ti ti-headset text-white"></i>
-                        </div>
-                        <div>
-                          <h6 className="mb-0 fw-semibold">Priority Support</h6>
-                          <small className="opacity-75">Dedicated account manager</small>
-                        </div>
-                      </div>
-                      
-                      <div className="d-flex align-items-center gap-3">
-                        <div className="bg-white bg-opacity-25 rounded-circle p-2">
-                          <i className="ti ti-truck text-white"></i>
-                        </div>
-                        <div>
-                          <h6 className="mb-0 fw-semibold">Free Shipping</h6>
-                          <small className="opacity-75">On orders over $500</small>
-                        </div>
-                      </div>
+                    <div>
+                      <div style={{ fontWeight: 600, marginBottom: 2 }}>{item.title}</div>
+                      <div style={{ fontSize: 13, opacity: 0.75 }}>{item.desc}</div>
                     </div>
                   </div>
-                </div>
-
-                {/* Right Side - Form */}
-                <div className="col-lg-7">
-                  <div className="p-4 p-xl-5">
-                    {success ? (
-                      <div className="text-center py-5">
-                        <div className="avatar avatar-xl bg-label-success rounded-circle mx-auto mb-4">
-                          <i className="ti ti-check ti-xl"></i>
-                        </div>
-                        <h4 className="fw-bold mb-2">Request Submitted!</h4>
-                        <p className="text-muted mb-4">
-                          Thank you for your interest in Eagle B2B! Our team will review your application and get back to you within 1-2 business days.
-                        </p>
-                        <div className="alert alert-info-subtle mb-4">
-                          <i className="ti ti-mail me-2"></i>
-                          Check your inbox for a confirmation email at <strong>{formData.email}</strong>
-                        </div>
-                        <Link href="/login" className="btn btn-primary">
-                          <i className="ti ti-arrow-left me-2"></i>
-                          Back to Login
-                        </Link>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="mb-4">
-                          <h4 className="fw-bold mb-1">
-                            <i className="ti ti-mail-forward text-primary me-2"></i>
-                            Request B2B Access
-                          </h4>
-                          <p className="text-muted mb-0">Tell us about your business to get started</p>
-                        </div>
-
-                        {error && (
-                          <div className="alert alert-danger d-flex align-items-center">
-                            <i className="ti ti-alert-circle me-2"></i>
-                            <div>{error}</div>
-                            <button type="button" className="btn-close ms-auto" onClick={() => setError('')}></button>
-                          </div>
-                        )}
-
-                        <form onSubmit={handleSubmit}>
-                          <div className="row g-3">
-                            {/* Contact Info */}
-                            <div className="col-md-6">
-                              <label className="form-label fw-semibold">
-                                Contact Name <span className="text-danger">*</span>
-                              </label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                required
-                                value={formData.contactName}
-                                onChange={(e) => handleChange('contactName', e.target.value)}
-                                placeholder="Your full name"
-                                disabled={loading}
-                              />
-                            </div>
-                            <div className="col-md-6">
-                              <label className="form-label fw-semibold">
-                                Email Address <span className="text-danger">*</span>
-                              </label>
-                              <input
-                                type="email"
-                                className="form-control"
-                                required
-                                value={formData.email}
-                                onChange={(e) => handleChange('email', e.target.value)}
-                                placeholder="you@company.com"
-                                disabled={loading}
-                              />
-                            </div>
-
-                            {/* Company Info */}
-                            <div className="col-md-6">
-                              <label className="form-label fw-semibold">
-                                Company Name <span className="text-danger">*</span>
-                              </label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                required
-                                value={formData.companyName}
-                                onChange={(e) => handleChange('companyName', e.target.value)}
-                                placeholder="Your company name"
-                                disabled={loading}
-                              />
-                            </div>
-                            <div className="col-md-6">
-                              <label className="form-label fw-semibold">Phone Number</label>
-                              <input
-                                type="tel"
-                                className="form-control"
-                                value={formData.phone}
-                                onChange={(e) => handleChange('phone', e.target.value)}
-                                placeholder="(555) 123-4567"
-                                disabled={loading}
-                              />
-                            </div>
-
-                            <div className="col-md-6">
-                              <label className="form-label fw-semibold">Website</label>
-                              <input
-                                type="url"
-                                className="form-control"
-                                value={formData.website}
-                                onChange={(e) => handleChange('website', e.target.value)}
-                                placeholder="https://yourcompany.com"
-                                disabled={loading}
-                              />
-                            </div>
-                            <div className="col-md-6">
-                              <label className="form-label fw-semibold">Industry</label>
-                              <select
-                                className="form-select"
-                                value={formData.industry}
-                                onChange={(e) => handleChange('industry', e.target.value)}
-                                disabled={loading}
-                              >
-                                <option value="">Select your industry</option>
-                                {industries.map(ind => (
-                                  <option key={ind} value={ind}>{ind}</option>
-                                ))}
-                              </select>
-                            </div>
-
-                            <div className="col-12">
-                              <label className="form-label fw-semibold">Estimated Monthly Volume</label>
-                              <select
-                                className="form-select"
-                                value={formData.estimatedMonthlyVolume}
-                                onChange={(e) => handleChange('estimatedMonthlyVolume', e.target.value)}
-                                disabled={loading}
-                              >
-                                <option value="">Select volume range</option>
-                                {volumeOptions.map(vol => (
-                                  <option key={vol} value={vol}>{vol}</option>
-                                ))}
-                              </select>
-                            </div>
-
-                            <div className="col-12">
-                              <label className="form-label fw-semibold">Additional Information</label>
-                              <textarea
-                                className="form-control"
-                                rows={3}
-                                value={formData.message}
-                                onChange={(e) => handleChange('message', e.target.value)}
-                                placeholder="Tell us about your business and how we can help..."
-                                disabled={loading}
-                              />
-                            </div>
-                          </div>
-
-                          <button
-                            type="submit"
-                            disabled={loading}
-                            className="btn btn-primary btn-lg w-100 mt-4"
-                          >
-                            {loading ? (
-                              <>
-                                <span className="spinner-border spinner-border-sm me-2"></span>
-                                Submitting Request...
-                              </>
-                            ) : (
-                              <>
-                                <i className="ti ti-send me-2"></i>
-                                Submit Application
-                              </>
-                            )}
-                          </button>
-
-                          <p className="text-center text-muted mt-3 mb-0">
-                            Already have an account?{' '}
-                            <Link href="/login" className="text-primary fw-semibold">Sign in</Link>
-                          </p>
-                        </form>
-                      </>
-                    )}
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
-            {/* Footer */}
-            <p className="text-center text-white-50 mt-4 small">
-              © 2025 Eagle DTF Supply. All rights reserved.
-            </p>
+            {/* Right Side - Form */}
+            <div style={{ flex: 1, padding: '40px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              {success ? (
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                  <div style={{
+                    width: 64, height: 64, borderRadius: '50%', background: 'rgba(52,199,89,0.12)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    margin: '0 auto 16px', fontSize: 28,
+                  }}>✓</div>
+                  <h4 style={{ fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)' }}>Request Submitted!</h4>
+                  <p style={{ color: 'var(--text-secondary)', marginBottom: 16 }}>
+                    Thank you for your interest in Eagle B2B! Our team will review your application and get back to you within 1-2 business days.
+                  </p>
+                  <div style={{
+                    background: 'rgba(0,122,255,0.08)', borderRadius: 12, padding: '12px 16px',
+                    color: 'var(--accent)', marginBottom: 16, fontSize: 14,
+                  }}>
+                    📧 Check your inbox for a confirmation email at <strong>{formData.email}</strong>
+                  </div>
+                  <Link href="/login" className="btn-apple btn-apple-primary" style={{ display: 'inline-flex', height: 44, padding: '0 24px' }}>
+                    ← Back to Login
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <div style={{ marginBottom: 24 }}>
+                    <h4 style={{ fontWeight: 700, marginBottom: 4, color: 'var(--text-primary)' }}>
+                      ✉️ Request B2B Access
+                    </h4>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: 0 }}>Tell us about your business to get started</p>
+                  </div>
+
+                  {error && (
+                    <div className="alert alert-error" style={{ marginBottom: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span>⚠️</span>
+                        <span style={{ flex: 1 }}>{error}</span>
+                        <button onClick={() => setError('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 18, padding: 0 }}>×</button>
+                      </div>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSubmit}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {/* Contact Info */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        <div>
+                          <label className="form-label">Contact Name <span style={{ color: 'var(--red)' }}>*</span></label>
+                          <input type="text" className="form-input" required value={formData.contactName} onChange={(e) => handleChange('contactName', e.target.value)} placeholder="Your full name" disabled={loading} />
+                        </div>
+                        <div>
+                          <label className="form-label">Email Address <span style={{ color: 'var(--red)' }}>*</span></label>
+                          <input type="email" className="form-input" required value={formData.email} onChange={(e) => handleChange('email', e.target.value)} placeholder="you@company.com" disabled={loading} />
+                        </div>
+                      </div>
+
+                      {/* Company Info */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        <div>
+                          <label className="form-label">Company Name <span style={{ color: 'var(--red)' }}>*</span></label>
+                          <input type="text" className="form-input" required value={formData.companyName} onChange={(e) => handleChange('companyName', e.target.value)} placeholder="Your company name" disabled={loading} />
+                        </div>
+                        <div>
+                          <label className="form-label">Phone Number</label>
+                          <input type="tel" className="form-input" value={formData.phone} onChange={(e) => handleChange('phone', e.target.value)} placeholder="(555) 123-4567" disabled={loading} />
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        <div>
+                          <label className="form-label">Website</label>
+                          <input type="url" className="form-input" value={formData.website} onChange={(e) => handleChange('website', e.target.value)} placeholder="https://yourcompany.com" disabled={loading} />
+                        </div>
+                        <div>
+                          <label className="form-label">Industry</label>
+                          <select className="form-input" value={formData.industry} onChange={(e) => handleChange('industry', e.target.value)} disabled={loading}>
+                            <option value="">Select your industry</option>
+                            {industries.map(ind => (
+                              <option key={ind} value={ind}>{ind}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="form-label">Estimated Monthly Volume</label>
+                        <select className="form-input" value={formData.estimatedMonthlyVolume} onChange={(e) => handleChange('estimatedMonthlyVolume', e.target.value)} disabled={loading}>
+                          <option value="">Select volume range</option>
+                          {volumeOptions.map(vol => (
+                            <option key={vol} value={vol}>{vol}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="form-label">Additional Information</label>
+                        <textarea className="form-input" rows={3} value={formData.message} onChange={(e) => handleChange('message', e.target.value)} placeholder="Tell us about your business and how we can help..." disabled={loading} style={{ minHeight: 80, resize: 'vertical' }} />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="btn-apple btn-apple-primary"
+                      style={{ width: '100%', height: 44, marginTop: 20 }}
+                    >
+                      {loading ? (
+                        <><span className="spinner-apple" style={{ width: 16, height: 16, marginRight: 8 }} />Submitting Request...</>
+                      ) : (
+                        <>📨 Submit Application</>
+                      )}
+                    </button>
+
+                    <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: 16, marginBottom: 0 }}>
+                      Already have an account?{' '}
+                      <Link href="/login" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Sign in</Link>
+                    </p>
+                  </form>
+                </>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Footer */}
+        <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', marginTop: 24, fontSize: 13 }}>
+          © 2025 Eagle DTF Supply. All rights reserved.
+        </p>
       </div>
     </div>
   );

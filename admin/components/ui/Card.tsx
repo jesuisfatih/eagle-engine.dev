@@ -5,49 +5,25 @@ import { ReactNode } from 'react';
 interface CardProps {
   title?: string;
   subtitle?: string;
-  icon?: string;
+  action?: ReactNode;
   children: ReactNode;
-  actions?: ReactNode;
-  noPadding?: boolean;
   className?: string;
+  noPadding?: boolean;
 }
 
-/**
- * Reusable Card Component
- * Consistent card styling across admin panel
- */
-export default function Card({ 
-  title, 
-  subtitle,
-  icon,
-  children, 
-  actions,
-  noPadding = false,
-  className = '',
-}: CardProps) {
+export default function Card({ title, subtitle, action, children, className = '', noPadding = false }: CardProps) {
   return (
-    <div className={`card ${className}`}>
-      {(title || actions) && (
-        <div className="card-header d-flex align-items-center justify-content-between">
+    <div className={`apple-card ${className}`}>
+      {(title || action) && (
+        <div className="apple-card-header">
           <div>
-            {title && (
-              <h5 className="card-title mb-0">
-                {icon && <i className={`ti ${icon} me-2`}></i>}
-                {title}
-              </h5>
-            )}
-            {subtitle && (
-              <small className="text-muted">{subtitle}</small>
-            )}
+            {title && <h3 className="apple-card-title">{title}</h3>}
+            {subtitle && <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: 0, marginTop: 2 }}>{subtitle}</p>}
           </div>
-          {actions && (
-            <div className="card-actions">
-              {actions}
-            </div>
-          )}
+          {action && <div>{action}</div>}
         </div>
       )}
-      <div className={noPadding ? '' : 'card-body'}>
+      <div className={noPadding ? '' : 'apple-card-body'}>
         {children}
       </div>
     </div>

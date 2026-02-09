@@ -50,35 +50,35 @@ export function OrderTimeline({ events, currentStatus, shippingInfo }: OrderTime
     <div className="order-timeline">
       {/* Shipping Info Card */}
       {shippingInfo && (shippingInfo.carrier || shippingInfo.trackingNumber) && (
-        <div className="card border-primary mb-4">
+        <div className="card" style={{ borderColor: 'var(--accent)', marginBottom: 16 }}>
           <div className="card-body">
-            <div className="d-flex justify-content-between align-items-start">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <h6 className="mb-1">
-                  <i className="ti ti-truck me-2 text-primary"></i>
+                <h6 style={{ marginBottom: 4 }}>
+                  <i className="ti ti-truck" style={{ marginRight: 8, color: 'var(--accent)' }}></i>
                   Shipping Information
                 </h6>
                 {shippingInfo.carrier && (
-                  <p className="mb-1">
+                  <p style={{ marginBottom: 4 }}>
                     Carrier: <strong>{shippingInfo.carrier}</strong>
                   </p>
                 )}
                 {shippingInfo.trackingNumber && (
-                  <p className="mb-1">
-                    Tracking: <code className="bg-light px-2 py-1 rounded">{shippingInfo.trackingNumber}</code>
+                  <p style={{ marginBottom: 4 }}>
+                    Tracking: <code style={{ background: 'var(--bg-secondary)', padding: '2px 8px', borderRadius: 6 }}>{shippingInfo.trackingNumber}</code>
                   </p>
                 )}
                 {shippingInfo.shippingMethod && (
-                  <p className="mb-0 text-muted small">
+                  <p style={{ marginBottom: 0, color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
                     Method: {shippingInfo.shippingMethod}
                   </p>
                 )}
               </div>
-              <div className="text-end">
+              <div style={{ textAlign: 'right' }}>
                 {shippingInfo.estimatedDelivery && (
-                  <div className="mb-2">
-                    <small className="text-muted d-block">Estimated Delivery</small>
-                    <strong className="text-success">{formatDate(shippingInfo.estimatedDelivery)}</strong>
+                  <div style={{ marginBottom: 8 }}>
+                    <small style={{ color: 'var(--text-secondary)', display: 'block' }}>Estimated Delivery</small>
+                    <strong style={{ color: 'var(--green)' }}>{formatDate(shippingInfo.estimatedDelivery)}</strong>
                   </div>
                 )}
                 {shippingInfo.trackingUrl && (
@@ -86,9 +86,10 @@ export function OrderTimeline({ events, currentStatus, shippingInfo }: OrderTime
                     href={shippingInfo.trackingUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn btn-sm btn-primary"
+                    className="btn-apple btn-apple-primary"
+                    style={{ fontSize: '0.875rem', padding: '6px 12px' }}
                   >
-                    <i className="ti ti-external-link me-1"></i>
+                    <i className="ti ti-external-link" style={{ marginRight: 4 }}></i>
                     Track Package
                   </a>
                 )}
@@ -100,7 +101,7 @@ export function OrderTimeline({ events, currentStatus, shippingInfo }: OrderTime
 
       {/* Progress Bar */}
       {currentStatus && (
-        <div className="card mb-4">
+        <div className="card" style={{ marginBottom: 16 }}>
           <div className="card-body">
             <OrderProgressBar status={currentStatus} />
           </div>
@@ -110,16 +111,16 @@ export function OrderTimeline({ events, currentStatus, shippingInfo }: OrderTime
       {/* Timeline */}
       <div className="card">
         <div className="card-header">
-          <h6 className="mb-0">
-            <i className="ti ti-history me-2"></i>
+          <h6 style={{ marginBottom: 0 }}>
+            <i className="ti ti-history" style={{ marginRight: 8 }}></i>
             Order Timeline
           </h6>
         </div>
         <div className="card-body">
           {sortedEvents.length === 0 ? (
-            <div className="text-center py-4 text-muted">
-              <i className="ti ti-clock ti-2x mb-2"></i>
-              <p className="mb-0">No tracking events yet</p>
+            <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)' }}>
+              <i className="ti ti-clock ti-2x" style={{ marginBottom: 8, display: 'block' }}></i>
+              <p style={{ marginBottom: 0 }}>No tracking events yet</p>
             </div>
           ) : (
             <div className="timeline">
@@ -128,40 +129,45 @@ export function OrderTimeline({ events, currentStatus, shippingInfo }: OrderTime
                 const isFirst = index === 0;
                 
                 return (
-                  <div key={event.id} className="timeline-item d-flex mb-4">
-                    <div className="timeline-marker me-3">
+                  <div key={event.id} style={{ display: 'flex', marginBottom: 16 }}>
+                    <div style={{ marginRight: 12 }}>
                       <div 
-                        className={`rounded-circle d-flex align-items-center justify-content-center ${
-                          isFirst ? config.bgClass : 'bg-light'
-                        } ${isFirst ? 'text-white' : 'text-muted'}`}
-                        style={{ width: 40, height: 40 }}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: isFirst ? config.bgColor : 'var(--bg-secondary)',
+                          color: isFirst ? '#fff' : 'var(--text-secondary)',
+                        }}
                       >
                         <i className={`ti ti-${config.icon}`}></i>
                       </div>
                       {index < sortedEvents.length - 1 && (
                         <div 
-                          className="mx-auto bg-light"
-                          style={{ width: 2, height: 24, marginTop: 4 }}
+                          style={{ width: 2, height: 24, marginTop: 4, background: 'var(--bg-secondary)', marginLeft: 'auto', marginRight: 'auto' }}
                         ></div>
                       )}
                     </div>
-                    <div className="timeline-content flex-grow-1">
-                      <div className="d-flex justify-content-between align-items-start">
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
-                          <h6 className={`mb-1 ${isFirst ? '' : 'text-muted'}`}>
+                          <h6 style={{ marginBottom: 4, color: isFirst ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
                             {event.title}
                           </h6>
                           {event.description && (
-                            <p className="text-muted small mb-1">{event.description}</p>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: 4 }}>{event.description}</p>
                           )}
                           {event.location && (
-                            <p className="text-muted small mb-0">
-                              <i className="ti ti-map-pin me-1"></i>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: 0 }}>
+                              <i className="ti ti-map-pin" style={{ marginRight: 4 }}></i>
                               {event.location}
                             </p>
                           )}
                         </div>
-                        <div className="text-end text-muted small">
+                        <div style={{ textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
                           <div>{formatDate(event.timestamp)}</div>
                           <div>{formatRelativeTime(event.timestamp)}</div>
                         </div>
@@ -210,21 +216,25 @@ export function OrderProgressBar({ status }: OrderProgressBarProps) {
 
   return (
     <div className="order-progress">
-      <div className="d-flex justify-content-between position-relative">
+      <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative' }}>
         {/* Progress line */}
         <div 
-          className="position-absolute bg-light"
           style={{ 
+            position: 'absolute',
+            background: 'var(--bg-secondary)',
             top: 16, 
             left: '10%', 
             right: '10%', 
             height: 4,
+            borderRadius: 2,
             zIndex: 0
           }}
         >
           <div 
-            className="bg-success h-100 transition-all"
             style={{ 
+              background: 'var(--green)',
+              height: '100%',
+              borderRadius: 2,
               width: `${Math.min((currentStep - 1) / (steps.length - 1) * 100, 100)}%`,
               transition: 'width 0.3s ease'
             }}
@@ -239,19 +249,20 @@ export function OrderProgressBar({ status }: OrderProgressBarProps) {
           return (
             <div 
               key={step.key} 
-              className="text-center position-relative"
-              style={{ zIndex: 1, flex: 1 }}
+              style={{ textAlign: 'center', position: 'relative', zIndex: 1, flex: 1 }}
             >
               <div 
-                className={`rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 ${
-                  isCompleted || isCurrent 
-                    ? 'bg-success text-white' 
-                    : 'bg-light text-muted'
-                }`}
                 style={{ 
                   width: 36, 
                   height: 36,
-                  border: isCurrent ? '3px solid #198754' : 'none'
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 8px',
+                  background: isCompleted || isCurrent ? 'var(--green)' : 'var(--bg-secondary)',
+                  color: isCompleted || isCurrent ? '#fff' : 'var(--text-secondary)',
+                  border: isCurrent ? '3px solid var(--green)' : 'none'
                 }}
               >
                 {isCompleted ? (
@@ -260,7 +271,7 @@ export function OrderProgressBar({ status }: OrderProgressBarProps) {
                   <i className={`ti ti-${step.icon}`}></i>
                 )}
               </div>
-              <small className={isCurrent ? 'fw-semibold' : 'text-muted'}>
+              <small style={isCurrent ? { fontWeight: 600 } : { color: 'var(--text-secondary)' }}>
                 {step.label}
               </small>
             </div>
@@ -281,11 +292,11 @@ interface OrderStatusBadgeProps {
 export function OrderStatusBadge({ status, fulfillmentStatus, size = 'md' }: OrderStatusBadgeProps) {
   const displayStatus = fulfillmentStatus || status;
   const config = getOrderStatusConfig(displayStatus);
-  const sizeClass = size === 'sm' ? 'small' : size === 'lg' ? 'fs-6' : '';
+  const fontSize = size === 'sm' ? '0.75rem' : size === 'lg' ? '1rem' : '0.875rem';
   
   return (
-    <span className={`badge ${config.class} ${sizeClass}`}>
-      <i className={`ti ti-${config.icon} me-1`}></i>
+    <span className="badge" style={{ background: config.bgColor, color: '#fff', fontSize }}>
+      <i className={`ti ti-${config.icon}`} style={{ marginRight: 4 }}></i>
       {config.label}
     </span>
   );
@@ -310,20 +321,20 @@ export function DeliveryEstimate({ estimatedDate, shippedDate, className = '' }:
   return (
     <div className={`delivery-estimate ${className}`}>
       {estimated && daysUntil !== null && (
-        <div className="d-flex align-items-center">
-          <i className="ti ti-calendar-event me-2 text-primary"></i>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <i className="ti ti-calendar-event" style={{ marginRight: 8, color: 'var(--accent)' }}></i>
           <div>
-            <div className="small text-muted">Estimated Delivery</div>
-            <div className="fw-semibold">
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Estimated Delivery</div>
+            <div style={{ fontWeight: 600 }}>
               {formatDate(estimatedDate!)}
               {daysUntil > 0 && (
-                <span className="text-success ms-2">({daysUntil} day{daysUntil !== 1 ? 's' : ''})</span>
+                <span style={{ color: 'var(--green)', marginLeft: 8 }}>({daysUntil} day{daysUntil !== 1 ? 's' : ''})</span>
               )}
               {daysUntil === 0 && (
-                <span className="text-success ms-2">(Today!)</span>
+                <span style={{ color: 'var(--green)', marginLeft: 8 }}>(Today!)</span>
               )}
               {daysUntil < 0 && (
-                <span className="text-muted ms-2">(Delayed)</span>
+                <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>(Delayed)</span>
               )}
             </div>
           </div>
@@ -335,38 +346,38 @@ export function DeliveryEstimate({ estimatedDate, shippedDate, className = '' }:
 
 // Helper functions
 function getEventConfig(type: TrackingEventType) {
-  const configs: Record<TrackingEventType, { icon: string; bgClass: string }> = {
-    order_placed: { icon: 'file-plus', bgClass: 'bg-primary' },
-    order_confirmed: { icon: 'check', bgClass: 'bg-success' },
-    payment_received: { icon: 'credit-card', bgClass: 'bg-success' },
-    processing: { icon: 'settings', bgClass: 'bg-info' },
-    ready_for_pickup: { icon: 'package', bgClass: 'bg-info' },
-    shipped: { icon: 'truck', bgClass: 'bg-primary' },
-    out_for_delivery: { icon: 'truck-delivery', bgClass: 'bg-warning' },
-    delivered: { icon: 'package-check', bgClass: 'bg-success' },
-    cancelled: { icon: 'x', bgClass: 'bg-danger' },
-    refunded: { icon: 'receipt-refund', bgClass: 'bg-secondary' },
-    on_hold: { icon: 'clock-pause', bgClass: 'bg-warning' },
+  const configs: Record<TrackingEventType, { icon: string; bgColor: string }> = {
+    order_placed: { icon: 'file-plus', bgColor: 'var(--accent)' },
+    order_confirmed: { icon: 'check', bgColor: 'var(--green)' },
+    payment_received: { icon: 'credit-card', bgColor: 'var(--green)' },
+    processing: { icon: 'settings', bgColor: 'var(--accent)' },
+    ready_for_pickup: { icon: 'package', bgColor: 'var(--accent)' },
+    shipped: { icon: 'truck', bgColor: 'var(--accent)' },
+    out_for_delivery: { icon: 'truck-delivery', bgColor: 'var(--orange)' },
+    delivered: { icon: 'package-check', bgColor: 'var(--green)' },
+    cancelled: { icon: 'x', bgColor: 'var(--red)' },
+    refunded: { icon: 'receipt-refund', bgColor: 'var(--text-tertiary)' },
+    on_hold: { icon: 'clock-pause', bgColor: 'var(--orange)' },
   };
-  return configs[type] || { icon: 'point', bgClass: 'bg-secondary' };
+  return configs[type] || { icon: 'point', bgColor: 'var(--text-tertiary)' };
 }
 
 function getOrderStatusConfig(status: string) {
   const lowerStatus = status.toLowerCase();
   
-  const configs: Record<string, { label: string; class: string; icon: string }> = {
-    'pending': { label: 'Pending', class: 'bg-warning', icon: 'clock' },
-    'paid': { label: 'Paid', class: 'bg-success', icon: 'credit-card' },
-    'confirmed': { label: 'Confirmed', class: 'bg-success', icon: 'check' },
-    'processing': { label: 'Processing', class: 'bg-info', icon: 'settings' },
-    'shipped': { label: 'Shipped', class: 'bg-primary', icon: 'truck' },
-    'fulfilled': { label: 'Fulfilled', class: 'bg-success', icon: 'package' },
-    'delivered': { label: 'Delivered', class: 'bg-success', icon: 'package-check' },
-    'cancelled': { label: 'Cancelled', class: 'bg-danger', icon: 'x' },
-    'refunded': { label: 'Refunded', class: 'bg-secondary', icon: 'receipt-refund' },
-    'partially_fulfilled': { label: 'Partial', class: 'bg-warning', icon: 'package' },
-    'unfulfilled': { label: 'Unfulfilled', class: 'bg-secondary', icon: 'package-off' },
+  const configs: Record<string, { label: string; bgColor: string; icon: string }> = {
+    'pending': { label: 'Pending', bgColor: 'var(--orange)', icon: 'clock' },
+    'paid': { label: 'Paid', bgColor: 'var(--green)', icon: 'credit-card' },
+    'confirmed': { label: 'Confirmed', bgColor: 'var(--green)', icon: 'check' },
+    'processing': { label: 'Processing', bgColor: 'var(--accent)', icon: 'settings' },
+    'shipped': { label: 'Shipped', bgColor: 'var(--accent)', icon: 'truck' },
+    'fulfilled': { label: 'Fulfilled', bgColor: 'var(--green)', icon: 'package' },
+    'delivered': { label: 'Delivered', bgColor: 'var(--green)', icon: 'package-check' },
+    'cancelled': { label: 'Cancelled', bgColor: 'var(--red)', icon: 'x' },
+    'refunded': { label: 'Refunded', bgColor: 'var(--text-tertiary)', icon: 'receipt-refund' },
+    'partially_fulfilled': { label: 'Partial', bgColor: 'var(--orange)', icon: 'package' },
+    'unfulfilled': { label: 'Unfulfilled', bgColor: 'var(--text-tertiary)', icon: 'package-off' },
   };
 
-  return configs[lowerStatus] || { label: status, class: 'bg-secondary', icon: 'point' };
+  return configs[lowerStatus] || { label: status, bgColor: 'var(--text-tertiary)', icon: 'point' };
 }

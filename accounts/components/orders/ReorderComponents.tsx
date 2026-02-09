@@ -71,27 +71,26 @@ export function ReorderButton({
     }
   };
 
-  const btnClass = variant === 'outline' 
-    ? 'btn-outline-primary' 
-    : variant === 'text' 
-      ? 'btn-text-primary' 
-      : variant === 'secondary'
-        ? 'btn-secondary'
-        : 'btn-primary';
+  const btnClass = variant === 'outline' || variant === 'text'
+    ? 'btn-apple btn-apple-secondary'
+    : variant === 'secondary'
+      ? 'btn-apple btn-apple-secondary'
+      : 'btn-apple btn-apple-primary';
 
-  const sizeClass = size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : '';
+  const sizeStyle = size === 'sm' ? { fontSize: '0.875rem', padding: '6px 12px' } : size === 'lg' ? { fontSize: '1.125rem', padding: '12px 24px' } : {};
 
   return (
     <button
       type="button"
-      className={`btn ${btnClass} ${sizeClass} ${className}`}
+      className={`${btnClass} ${className}`}
+      style={sizeStyle}
       onClick={handleReorder}
       disabled={isProcessing || order.lineItems.length === 0}
     >
       {isProcessing ? (
-        <span className="spinner-border spinner-border-sm me-2"></span>
+        <span className="spinner-apple" style={{ width: 16, height: 16, marginRight: 8 }}></span>
       ) : showIcon ? (
-        <i className="ti ti-refresh me-1"></i>
+        <i className="ti ti-refresh" style={{ marginRight: 4 }}></i>
       ) : null}
       Reorder
     </button>
@@ -111,9 +110,9 @@ export function QuickReorderPanel({ orders, shopDomain, maxItems = 3 }: QuickReo
   if (recentOrders.length === 0) {
     return (
       <div className="card">
-        <div className="card-body text-center py-4">
-          <i className="ti ti-history ti-2x text-muted mb-2"></i>
-          <p className="text-muted mb-0">No recent orders to reorder</p>
+        <div className="card-body" style={{ textAlign: 'center', padding: '24px 16px' }}>
+          <i className="ti ti-history ti-2x" style={{ color: 'var(--text-secondary)', marginBottom: 8, display: 'block' }}></i>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: 0 }}>No recent orders to reorder</p>
         </div>
       </div>
     );
@@ -122,20 +121,20 @@ export function QuickReorderPanel({ orders, shopDomain, maxItems = 3 }: QuickReo
   return (
     <div className="card">
       <div className="card-header">
-        <h6 className="mb-0">
-          <i className="ti ti-refresh me-2"></i>
+        <h6 style={{ marginBottom: 0 }}>
+          <i className="ti ti-refresh" style={{ marginRight: 8 }}></i>
           Quick Reorder
         </h6>
       </div>
-      <div className="card-body p-0">
+      <div className="card-body" style={{ padding: 0 }}>
         {recentOrders.map((order, index) => (
           <div 
             key={order.id} 
-            className={`p-3 d-flex justify-content-between align-items-center ${index > 0 ? 'border-top' : ''}`}
+            style={{ padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: index > 0 ? '1px solid var(--border)' : 'none' }}
           >
             <div>
-              <div className="fw-semibold">Order #{order.orderNumber}</div>
-              <div className="small text-muted">
+              <div style={{ fontWeight: 600 }}>Order #{order.orderNumber}</div>
+              <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                 {order.lineItems.length} item{order.lineItems.length !== 1 ? 's' : ''} • {formatCurrency(order.totalPrice)}
               </div>
             </div>
@@ -215,75 +214,76 @@ export function ReorderModal({ order, shopDomain, show, onClose }: ReorderModalP
     .reduce((sum, item) => sum + item.price * quantities[item.id], 0);
 
   return (
-    <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-      <div className="modal-dialog modal-lg modal-dialog-centered">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title">
-              <i className="ti ti-refresh me-2"></i>
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1050 }}>
+      <div style={{ width: '100%', maxWidth: 800, margin: '0 auto', padding: '0 16px' }}>
+        <div className="card" style={{ borderRadius: 12, overflow: 'hidden' }}>
+          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h5 style={{ marginBottom: 0 }}>
+              <i className="ti ti-refresh" style={{ marginRight: 8 }}></i>
               Reorder from #{order.orderNumber}
             </h5>
-            <button type="button" className="btn-close" onClick={onClose}></button>
+            <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>✕</button>
           </div>
-          <div className="modal-body">
-            <p className="text-muted mb-3">
+          <div className="card-body">
+            <p style={{ color: 'var(--text-secondary)', marginBottom: 12 }}>
               Select items and adjust quantities for your reorder
             </p>
 
-            <div className="border rounded">
+            <div style={{ border: '1px solid var(--border)', borderRadius: 8 }}>
               {order.lineItems.map((item, index) => (
                 <div 
                   key={item.id} 
-                  className={`p-3 d-flex align-items-center ${index > 0 ? 'border-top' : ''}`}
+                  style={{ padding: 12, display: 'flex', alignItems: 'center', borderTop: index > 0 ? '1px solid var(--border)' : 'none' }}
                 >
-                  <div className="form-check me-3">
+                  <div style={{ marginRight: 12 }}>
                     <input
                       type="checkbox"
-                      className="form-check-input"
                       checked={selectedItems.has(item.id)}
                       onChange={() => toggleItem(item.id)}
                       id={`item-${item.id}`}
+                      style={{ width: 18, height: 18, accentColor: 'var(--accent)' }}
                     />
                   </div>
                   {item.image && (
                     <img 
                       src={item.image} 
                       alt={item.title}
-                      className="rounded me-3"
-                      style={{ width: 50, height: 50, objectFit: 'cover' }}
+                      style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 8, marginRight: 12 }}
                     />
                   )}
-                  <div className="flex-grow-1">
-                    <label htmlFor={`item-${item.id}`} className="fw-semibold mb-0 cursor-pointer">
+                  <div style={{ flex: 1 }}>
+                    <label htmlFor={`item-${item.id}`} style={{ fontWeight: 600, marginBottom: 0, cursor: 'pointer' }}>
                       {item.title}
                     </label>
                     {item.variantTitle && (
-                      <div className="small text-muted">{item.variantTitle}</div>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{item.variantTitle}</div>
                     )}
-                    <div className="small text-muted">{formatCurrency(item.price)} each</div>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{formatCurrency(item.price)} each</div>
                   </div>
-                  <div className="d-flex align-items-center gap-2">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <button
                       type="button"
-                      className="btn btn-sm btn-outline-secondary"
+                      className="btn-apple btn-apple-secondary"
+                      style={{ fontSize: '0.875rem', padding: '4px 10px' }}
                       onClick={() => updateQuantity(item.id, quantities[item.id] - 1)}
                       disabled={!selectedItems.has(item.id)}
                     >
                       <i className="ti ti-minus"></i>
                     </button>
-                    <span className="fw-semibold" style={{ minWidth: 30, textAlign: 'center' }}>
+                    <span style={{ fontWeight: 600, minWidth: 30, textAlign: 'center' }}>
                       {quantities[item.id]}
                     </span>
                     <button
                       type="button"
-                      className="btn btn-sm btn-outline-secondary"
+                      className="btn-apple btn-apple-secondary"
+                      style={{ fontSize: '0.875rem', padding: '4px 10px' }}
                       onClick={() => updateQuantity(item.id, quantities[item.id] + 1)}
                       disabled={!selectedItems.has(item.id)}
                     >
                       <i className="ti ti-plus"></i>
                     </button>
                   </div>
-                  <div className="ms-3 text-end" style={{ minWidth: 80 }}>
+                  <div style={{ marginLeft: 12, textAlign: 'right', minWidth: 80 }}>
                     <strong>
                       {formatCurrency(item.price * quantities[item.id])}
                     </strong>
@@ -292,35 +292,35 @@ export function ReorderModal({ order, shopDomain, show, onClose }: ReorderModalP
               ))}
             </div>
 
-            <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
               <div>
-                <span className="text-muted">Selected: </span>
+                <span style={{ color: 'var(--text-secondary)' }}>Selected: </span>
                 <strong>{selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''}</strong>
               </div>
-              <div className="fs-5">
-                <span className="text-muted">Total: </span>
+              <div style={{ fontSize: '1.125rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Total: </span>
                 <strong>{formatCurrency(selectedTotal)}</strong>
               </div>
             </div>
           </div>
-          <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '12px 20px', borderTop: '1px solid var(--border)' }}>
+            <button type="button" className="btn-apple btn-apple-secondary" onClick={onClose}>
               Cancel
             </button>
             <button 
               type="button" 
-              className="btn btn-primary"
+              className="btn-apple btn-apple-primary"
               onClick={handleReorder}
               disabled={selectedItems.size === 0 || isProcessing}
             >
               {isProcessing ? (
                 <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
+                  <span className="spinner-apple" style={{ width: 16, height: 16, marginRight: 8 }}></span>
                   Processing...
                 </>
               ) : (
                 <>
-                  <i className="ti ti-shopping-cart me-1"></i>
+                  <i className="ti ti-shopping-cart" style={{ marginRight: 4 }}></i>
                   Add to Cart
                 </>
               )}
@@ -362,13 +362,14 @@ export function ReorderItemButton({ item, shopDomain, className = '' }: ReorderI
   return (
     <button
       type="button"
-      className={`btn btn-sm btn-outline-primary ${className}`}
+      className={`btn-apple btn-apple-secondary ${className}`}
+      style={{ fontSize: '0.875rem', padding: '6px 12px' }}
       onClick={handleReorder}
       disabled={isProcessing || !item.variantId}
       title="Reorder this item"
     >
       {isProcessing ? (
-        <span className="spinner-border spinner-border-sm"></span>
+        <span className="spinner-apple" style={{ width: 14, height: 14 }}></span>
       ) : (
         <i className="ti ti-refresh"></i>
       )}
@@ -406,34 +407,34 @@ export function FrequentlyOrdered({ items, shopDomain, maxItems = 4 }: Frequentl
   return (
     <div className="card">
       <div className="card-header">
-        <h6 className="mb-0">
-          <i className="ti ti-star me-2"></i>
+        <h6 style={{ marginBottom: 0 }}>
+          <i className="ti ti-star" style={{ marginRight: 8 }}></i>
           Frequently Ordered
         </h6>
       </div>
       <div className="card-body">
-        <div className="row g-3">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
           {topItems.map((item) => (
-            <div key={item.productId} className="col-md-6">
-              <div className="d-flex align-items-center p-2 border rounded hover-shadow">
+            <div key={item.productId}>
+              <div style={{ display: 'flex', alignItems: 'center', padding: 8, border: '1px solid var(--border)', borderRadius: 8 }}>
                 {item.image && (
                   <img 
                     src={item.image} 
                     alt={item.title}
-                    className="rounded me-3"
-                    style={{ width: 48, height: 48, objectFit: 'cover' }}
+                    style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8, marginRight: 12 }}
                   />
                 )}
-                <div className="flex-grow-1 min-width-0">
-                  <div className="fw-semibold text-truncate">{item.title}</div>
-                  <div className="small text-muted">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</div>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                     Ordered {item.orderCount}x • {formatCurrency(item.price)}
                   </div>
                 </div>
                 {item.variantId && (
                   <button
                     type="button"
-                    className="btn btn-sm btn-primary ms-2"
+                    className="btn-apple btn-apple-primary"
+                    style={{ fontSize: '0.875rem', padding: '6px 12px', marginLeft: 8 }}
                     onClick={() => addToCart(item.variantId!)}
                   >
                     <i className="ti ti-plus"></i>

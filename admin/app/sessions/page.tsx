@@ -1,156 +1,81 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Modal from '@/components/Modal';
 import { adminFetch } from '@/lib/api-client';
+import { PageHeader, showToast } from '@/components/ui';
+import Modal from '@/components/Modal';
+
+interface Session {
+  id: string;
+  userId: string;
+  userName: string;
+  email: string;
+  ip: string;
+  userAgent: string;
+  lastActivity: string;
+  createdAt: string;
+}
 
 export default function SessionsPage() {
-  const [sessions, setSessions] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
-  const [forceLogoutModal, setForceLogoutModal] = useState<{show: boolean; sessionId: string}>({show: false, sessionId: ''});
-  const [resultModal, setResultModal] = useState<{show: boolean; message: string}>({show: false, message: ''});
+  const [logoutModal, setLogoutModal] = useState<{show: boolean; session: Session | null}>({show: false, session: null});
 
-  useEffect(() => {
-    loadSessions();
-    const interval = setInterval(loadSessions, 30000); // Refresh every 30s
-    return () => clearInterval(interval);
-  }, []);
+  useEffect(() => { loadSessions(); }, []);
 
   const loadSessions = async () => {
     setLoading(true);
     try {
-      const response = await adminFetch('/api/v1/auth/sessions');
-      
-      if (response.ok) {
-        const data = await response.json();
-        setSessions(Array.isArray(data) ? data : []);
-      }
-    } catch (err) {
-      console.error('Load sessions error:', err);
-      setSessions([]);
-    } finally {
-      setLoading(false);
-    }
+      const res = await adminFetch('/api/v1/sessions');
+      if (res.ok) { const d = await res.json(); setSessions(d.sessions || d.data || d || []); }
+    } catch { /* silent */ }
+    finally { setLoading(false); }
   };
 
-  const forceLogout = async (sessionId: string) => {
+  const forceLogout = async (session: Session) => {
+    setLogoutModal({show: false, session: null});
     try {
-      const response = await adminFetch(`/api/v1/auth/sessions/${sessionId}`, {
-        method: 'DELETE',
-      });
-      
-      setForceLogoutModal({show: false, sessionId: ''});
-      
-      if (response.ok) {
-        setResultModal({show: true, message: '✅ Session terminated successfully!'});
-        loadSessions();
-      } else {
-        setResultModal({show: true, message: '❌ Failed to terminate session'});
-      }
-    } catch (err) {
-      setResultModal({show: true, message: '❌ Error terminating session'});
-    }
+      const res = await adminFetch(`/api/v1/sessions/${session.id}`, { method: 'DELETE' });
+      if (res.ok) { showToast('Session terminated', 'success'); loadSessions(); }
+      else showToast('Failed to terminate session', 'danger');
+    } catch { showToast('Error terminating session', 'danger'); }
   };
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h4 className="fw-bold mb-1">Active Sessions</h4>
-          <p className="mb-0 text-muted">{sessions.length} active sessions</p>
-        </div>
-        <button onClick={loadSessions} className="btn btn-primary">
-          <i className="ti ti-refresh me-1"></i>Refresh
-        </button>
+      <PageHeader title="Active Sessions" subtitle={`${sessions.length} active sessions`}
+        actions={[{ label: 'Refresh', icon: 'refresh', variant: 'secondary', onClick: loadSessions }]} />
+      <div className="apple-card">
+        {loading ? (
+          <div style={{ padding: 48, textAlign: 'center' }}><i className="ti ti-loader-2 spin" style={{ fontSize: 24, color: 'var(--accent-primary)' }} /></div>
+        ) : sessions.length === 0 ? (
+          <div className="empty-state" style={{ padding: 48 }}>
+            <div className="empty-state-icon"><i className="ti ti-device-desktop" /></div>
+            <h4 className="empty-state-title">No active sessions</h4>
+          </div>
+        ) : (
+          <table className="apple-table">
+            <thead><tr><th>User</th><th>IP</th><th>Device</th><th>Last Activity</th><th>Actions</th></tr></thead>
+            <tbody>
+              {sessions.map(s => (
+                <tr key={s.id}>
+                  <td>
+                    <div style={{ fontWeight: 500 }}>{s.userName}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{s.email}</div>
+                  </td>
+                  <td><span className="badge-apple info">{s.ip}</span></td>
+                  <td style={{ fontSize: 13, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.userAgent}</td>
+                  <td style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{new Date(s.lastActivity || s.createdAt).toLocaleString()}</td>
+                  <td><button className="btn-apple danger small" onClick={() => setLogoutModal({show: true, session: s})}><i className="ti ti-logout" /> End</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
-
-      <div className="card">
-        <div className="card-body">
-          {loading ? (
-            <div className="text-center py-5">
-              <div className="spinner-border text-primary"></div>
-            </div>
-          ) : sessions.length === 0 ? (
-            <div className="text-center py-5">
-              <i className="ti ti-users-off ti-3x text-muted mb-3"></i>
-              <h5>No active sessions</h5>
-              <p className="text-muted">User sessions will appear here</p>
-            </div>
-          ) : (
-            <div className="table-responsive">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>User</th>
-                    <th>Email</th>
-                    <th>Company</th>
-                    <th>Device</th>
-                    <th>IP Address</th>
-                    <th>Last Activity</th>
-                    <th>Duration</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sessions.map((session) => (
-                    <tr key={session.sessionId}>
-                      <td className="fw-semibold">
-                        {session.firstName} {session.lastName}
-                      </td>
-                      <td className="small">{session.email}</td>
-                      <td>{session.companyName || '-'}</td>
-                      <td>
-                        <span className="badge bg-label-info small">
-                          {session.device || 'Unknown'}
-                        </span>
-                      </td>
-                      <td className="small">{session.ipAddress || '-'}</td>
-                      <td className="small">
-                        {new Date(session.lastActivity).toLocaleString()}
-                      </td>
-                      <td className="small">
-                        {Math.floor((Date.now() - new Date(session.createdAt).getTime()) / 60000)} min
-                      </td>
-                      <td>
-                        <button
-                          onClick={() => setForceLogoutModal({show: true, sessionId: session.sessionId})}
-                          className="btn btn-sm btn-danger"
-                        >
-                          <i className="ti ti-logout"></i>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {forceLogoutModal.show && (
-        <Modal
-          show={forceLogoutModal.show}
-          onClose={() => setForceLogoutModal({show: false, sessionId: ''})}
-          onConfirm={() => forceLogout(forceLogoutModal.sessionId)}
-          title="Force Logout"
-          message="Are you sure you want to terminate this session?"
-          confirmText="Terminate"
-          cancelText="Cancel"
-          type="danger"
-        />
-      )}
-
-      {resultModal.show && (
-        <Modal
-          show={resultModal.show}
-          onClose={() => setResultModal({show: false, message: ''})}
-          onConfirm={() => setResultModal({show: false, message: ''})}
-          title={resultModal.message.includes('✅') ? 'Success' : 'Error'}
-          message={resultModal.message}
-          confirmText="OK"
-          type={resultModal.message.includes('✅') ? 'success' : 'danger'}
-        />
+      {logoutModal.show && logoutModal.session && (
+        <Modal show onClose={() => setLogoutModal({show: false, session: null})} onConfirm={() => forceLogout(logoutModal.session!)}
+          title="End Session" message={`This will force logout ${logoutModal.session.userName}.`} confirmText="End Session" type="danger" />
       )}
     </div>
   );

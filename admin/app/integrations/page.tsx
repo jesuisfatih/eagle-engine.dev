@@ -1,81 +1,34 @@
 'use client';
 
+import { PageHeader } from '@/components/ui';
+
+const integrations = [
+  { name: 'Shopify', desc: 'E-commerce platform integration', icon: 'ti-brand-shopify', status: 'Connected', color: '#95bf47' },
+  { name: 'Email Service', desc: 'Transactional email delivery', icon: 'ti-mail', status: 'Active', color: '#007aff' },
+  { name: 'Redis Cache', desc: 'In-memory caching layer', icon: 'ti-bolt', status: 'Active', color: '#ff3b30' },
+  { name: 'PostgreSQL', desc: 'Database connection', icon: 'ti-database', status: 'Connected', color: '#336791' },
+];
+
 export default function IntegrationsPage() {
   return (
     <div>
-      <h4 className="fw-bold mb-4">Integrations</h4>
-
-      <div className="row g-4">
-        <div className="col-md-6">
-          <div className="card">
-            <div className="card-body">
-              <div className="d-flex align-items-center mb-3">
-                <div className="avatar avatar-lg me-3">
-                  <span className="avatar-initial rounded bg-label-success" style={{fontSize: '32px'}}>
-                    🛍️
-                  </span>
-                </div>
-                <div>
-                  <h5 className="mb-0">Shopify</h5>
-                  <span className="badge bg-label-success">Connected</span>
-                </div>
+      <PageHeader title="Integrations" subtitle="Connected services and APIs" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+        {integrations.map(i => (
+          <div key={i.name} className="apple-card">
+            <div className="apple-card-body" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: `${i.color}14`, color: i.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <i className={`ti ${i.icon}`} style={{ fontSize: 24 }} />
               </div>
-              <p className="text-muted small mb-3">
-                Store: eagle-dtf-supply0.myshopify.com
-              </p>
-              <div className="d-flex gap-2">
-                <button
-                  onClick={() => window.location.href = '/settings'}
-                  className="btn btn-sm btn-primary"
-                >
-                  Configure
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm('Disconnect Shopify?')) {
-                      alert('Disconnection feature - will stop sync');
-                    }
-                  }}
-                  className="btn btn-sm btn-label-secondary"
-                >
-                  Disconnect
-                </button>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 15 }}>{i.name}</div>
+                <div style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{i.desc}</div>
               </div>
+              <span className="badge-apple success">{i.status}</span>
             </div>
           </div>
-        </div>
-
-        <div className="col-md-6">
-          <div className="card">
-            <div className="card-body">
-              <div className="d-flex align-items-center mb-3">
-                <div className="avatar avatar-lg me-3">
-                  <span className="avatar-initial rounded bg-label-info" style={{fontSize: '32px'}}>
-                    ✉️
-                  </span>
-                </div>
-                <div>
-                  <h5 className="mb-0">Email Service</h5>
-                  <span className="badge bg-label-warning">Not Configured</span>
-                </div>
-              </div>
-              <p className="text-muted small mb-3">
-                Configure email service for invitations
-              </p>
-              <button
-                onClick={() => {
-                  const email = prompt('SMTP Server:');
-                  if (email) alert('Email service setup - backend integration needed');
-                }}
-                className="btn btn-sm btn-primary"
-              >
-                Setup
-              </button>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );
 }
-

@@ -13,7 +13,6 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isPublicPath = PUBLIC_PATHS.includes(pathname);
 
-  // Login page - no sidebar/header
   if (isPublicPath) {
     return (
       <AuthProvider>
@@ -23,23 +22,17 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  // Authenticated pages - with sidebar/header
   return (
     <AuthProvider>
-      <div className="layout-wrapper layout-content-navbar">
-        <div className="layout-container">
-          <Sidebar />
-          <div className="layout-page">
-            <Header />
-            <div className="content-wrapper">
-              <div className="container-xxl flex-grow-1 container-p-y">
-                {children}
-              </div>
-            </div>
+      <div className="app-layout">
+        <Sidebar />
+        <div className="app-main">
+          <Header />
+          <div className="app-content">
+            {children}
           </div>
         </div>
       </div>
-      <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
       <ToastContainer />
     </AuthProvider>
   );

@@ -8,40 +8,36 @@ interface ShopifyConnectionProps {
 
 export default function ShopifyConnection({ settings }: ShopifyConnectionProps) {
   return (
-    <div className="card mb-4">
-      <div className="card-header d-flex justify-content-between align-items-center">
-        <h5 className="card-title mb-0">
-          <i className="ti ti-brand-shopify me-2"></i>
-          Shopify Connection
-        </h5>
-        <span className="badge bg-success">Connected</span>
+    <div className="apple-card" style={{ marginBottom: 20 }}>
+      <div className="apple-card-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <i className="ti ti-brand-shopify" style={{ fontSize: 18 }} />
+          <h3 className="apple-card-title">Shopify Connection</h3>
+        </div>
+        <span className="badge-apple green">Connected</span>
       </div>
-      <div className="card-body">
-        <div className="row">
-          <div className="col-md-6">
-            <p className="mb-1 text-muted small">Store Domain</p>
-            <p className="fw-semibold">{settings?.shopDomain || 'Not configured'}</p>
+      <div className="apple-card-body">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+          <div>
+            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4 }}>Store Domain</p>
+            <p style={{ fontWeight: 600, fontSize: 14 }}>{settings?.shopDomain || 'Not configured'}</p>
           </div>
-          <div className="col-md-6">
-            <p className="mb-1 text-muted small">Last Sync</p>
-            <p className="fw-semibold">
-              {settings?.lastSyncAt 
-                ? new Date(settings.lastSyncAt).toLocaleString() 
-                : 'Never'}
+          <div>
+            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4 }}>Last Sync</p>
+            <p style={{ fontWeight: 600, fontSize: 14 }}>
+              {settings?.lastSyncAt ? new Date(settings.lastSyncAt).toLocaleString() : 'Never'}
             </p>
           </div>
         </div>
-        
-        {/* API Configuration */}
-        <hr className="my-3" />
-        <div className="row">
-          <div className="col-md-6">
-            <p className="mb-1 text-muted small">API Base URL</p>
-            <p className="fw-semibold text-primary">https://api.eagledtfsupply.com</p>
+        <div style={{ height: 1, background: 'var(--border-secondary)', margin: '16px 0' }} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div>
+            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4 }}>API Base URL</p>
+            <p style={{ fontWeight: 600, fontSize: 14, color: 'var(--accent-blue)' }}>https://api.eagledtfsupply.com</p>
           </div>
-          <div className="col-md-6">
-            <p className="mb-1 text-muted small">CDN URL</p>
-            <p className="fw-semibold text-primary">https://cdn.eagledtfsupply.com</p>
+          <div>
+            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4 }}>CDN URL</p>
+            <p style={{ fontWeight: 600, fontSize: 14, color: 'var(--accent-blue)' }}>https://cdn.eagledtfsupply.com</p>
           </div>
         </div>
       </div>

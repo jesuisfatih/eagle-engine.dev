@@ -1,77 +1,39 @@
 'use client';
 
-import { useState } from 'react';
-import EmailTemplateModal from '@/components/EmailTemplateModal';
-import Modal from '@/components/Modal';
+import { PageHeader } from '@/components/ui';
 
-interface EmailTemplateData {
-  type: string;
-  subject: string;
-  body: string;
-}
+const templates = [
+  { name: 'Welcome Email', desc: 'Sent when a new B2B company is created', icon: 'ti-user-plus', status: 'Active' },
+  { name: 'Order Confirmation', desc: 'Sent when an order is placed', icon: 'ti-shopping-cart', status: 'Active' },
+  { name: 'Invitation Email', desc: 'Sent to invite users to a company', icon: 'ti-mail-forward', status: 'Active' },
+  { name: 'Password Reset', desc: 'Sent when password reset is requested', icon: 'ti-lock', status: 'Active' },
+  { name: 'Quote Response', desc: 'Sent when a quote request is responded to', icon: 'ti-file-invoice', status: 'Draft' },
+  { name: 'Cart Recovery', desc: 'Sent for abandoned cart recovery', icon: 'ti-shopping-cart-off', status: 'Draft' },
+];
 
 export default function EmailTemplatesPage() {
-  const [templates, setTemplates] = useState<EmailTemplateData[]>([
-    { type: 'invitation', subject: 'You\'re invited to join Eagle B2B', body: 'Welcome! Click the link below...' },
-    { type: 'confirmation', subject: 'Order Confirmed', body: 'Thank you for your order...' },
-  ]);
-  const [editModal, setEditModal] = useState<{show: boolean; template: EmailTemplateData | null}>({show: false, template: null});
-  const [resultModal, setResultModal] = useState<{show: boolean; message: string}>({show: false, message: ''});
-
-  const handleSave = (updatedTemplate: EmailTemplateData) => {
-    const updated = templates.map(t => 
-      t.type === updatedTemplate.type ? updatedTemplate : t
-    );
-    setTemplates(updated);
-    setResultModal({show: true, message: '✅ Template updated successfully!'});
-  };
-
   return (
     <div>
-      <h4 className="fw-bold mb-4">Email Templates</h4>
-
-      <div className="row g-4">
-        {templates.map((template) => (
-          <div key={template.type} className="col-md-6">
-            <div className="card">
-              <div className="card-header d-flex justify-content-between">
-                <h6 className="card-title mb-0">
-                  {template.type === 'invitation' ? 'Company Invitation' : 'Order Confirmation'}
-                </h6>
-                <button
-                  onClick={() => setEditModal({show: true, template})}
-                  className="btn btn-sm btn-primary"
-                >
-                  <i className="ti ti-edit me-1"></i>Edit
-                </button>
+      <PageHeader title="Email Templates" subtitle="Manage transactional email templates" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+        {templates.map(t => (
+          <div key={t.name} className="apple-card">
+            <div className="apple-card-body" style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 10, background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <i className={`ti ${t.icon}`} style={{ fontSize: 20, color: 'var(--text-secondary)' }} />
               </div>
-              <div className="card-body">
-                <div className="bg-lighter p-3 rounded">
-                  <p className="small mb-1"><strong>Subject:</strong> {template.subject}</p>
-                  <p className="small mb-0"><strong>Body:</strong> {template.body}</p>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>{t.name}</span>
+                  <span className={`badge-apple ${t.status === 'Active' ? 'success' : 'secondary'}`}>{t.status}</span>
                 </div>
+                <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: 0, marginBottom: 12 }}>{t.desc}</p>
+                <button className="btn-apple ghost small"><i className="ti ti-edit" /> Edit Template</button>
               </div>
             </div>
           </div>
         ))}
       </div>
-
-      <EmailTemplateModal
-        show={editModal.show}
-        template={editModal.template}
-        onClose={() => setEditModal({show: false, template: null})}
-        onSave={handleSave}
-      />
-
-      <Modal
-        show={resultModal.show}
-        onClose={() => setResultModal({show: false, message: ''})}
-        onConfirm={() => setResultModal({show: false, message: ''})}
-        title="Success"
-        message={resultModal.message}
-        confirmText="OK"
-        type="success"
-      />
     </div>
   );
 }

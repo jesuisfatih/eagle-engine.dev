@@ -248,81 +248,81 @@ export default function AbandonedCartsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '0.75rem' }}>
         <div>
-          <h4 className="fw-bold mb-1">
-            <i className="ti ti-shopping-cart-x text-primary me-2"></i>
+          <h4 style={{ fontWeight: 700, marginBottom: '0.25rem' }}>
+            <i className="ti ti-shopping-cart-x" style={{ color: 'var(--accent)', marginRight: '0.5rem' }}></i>
             Abandoned Carts
           </h4>
-          <p className="mb-0 text-muted">Recover your incomplete shopping sessions</p>
+          <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Recover your incomplete shopping sessions</p>
         </div>
-        <button onClick={loadCarts} className="btn btn-outline-primary" disabled={loading}>
+        <button onClick={loadCarts} className="btn-apple btn-apple-secondary" disabled={loading}>
           {loading ? (
-            <span className="spinner-border spinner-border-sm me-1"></span>
+            <span className="spinner-apple spinner-apple-sm" style={{ marginRight: '0.25rem' }}></span>
           ) : (
-            <i className="ti ti-refresh me-1"></i>
+            <i className="ti ti-refresh" style={{ marginRight: '0.25rem' }}></i>
           )}
           Refresh
         </button>
       </div>
 
       {/* Stats Cards */}
-      <div className="row g-3 mb-4">
-        <div className="col-6 col-lg-3">
-          <div className="card h-100">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <div>
+          <div className="card" style={{ height: '100%' }}>
             <div className="card-body">
-              <div className="d-flex align-items-center gap-3">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div className="avatar bg-label-warning rounded">
                   <i className="ti ti-shopping-cart ti-md"></i>
                 </div>
                 <div>
-                  <h3 className="mb-0 fw-bold">{stats.totalCarts}</h3>
-                  <small className="text-muted">Total Carts</small>
+                  <h3 style={{ margin: 0, fontWeight: 700 }}>{stats.totalCarts}</h3>
+                  <small style={{ color: 'var(--text-secondary)' }}>Total Carts</small>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div className="col-6 col-lg-3">
-          <div className="card h-100">
+        <div>
+          <div className="card" style={{ height: '100%' }}>
             <div className="card-body">
-              <div className="d-flex align-items-center gap-3">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div className="avatar bg-label-success rounded">
                   <i className="ti ti-currency-dollar ti-md"></i>
                 </div>
                 <div>
-                  <h3 className="mb-0 fw-bold">{formatCurrency(stats.totalValue)}</h3>
-                  <small className="text-muted">Total Value</small>
+                  <h3 style={{ margin: 0, fontWeight: 700 }}>{formatCurrency(stats.totalValue)}</h3>
+                  <small style={{ color: 'var(--text-secondary)' }}>Total Value</small>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div className="col-6 col-lg-3">
-          <div className="card h-100">
+        <div>
+          <div className="card" style={{ height: '100%' }}>
             <div className="card-body">
-              <div className="d-flex align-items-center gap-3">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div className="avatar bg-label-info rounded">
                   <i className="ti ti-package ti-md"></i>
                 </div>
                 <div>
-                  <h3 className="mb-0 fw-bold">{stats.totalItems}</h3>
-                  <small className="text-muted">Total Items</small>
+                  <h3 style={{ margin: 0, fontWeight: 700 }}>{stats.totalItems}</h3>
+                  <small style={{ color: 'var(--text-secondary)' }}>Total Items</small>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div className="col-6 col-lg-3">
-          <div className="card h-100">
+        <div>
+          <div className="card" style={{ height: '100%' }}>
             <div className="card-body">
-              <div className="d-flex align-items-center gap-3">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div className="avatar bg-label-primary rounded">
                   <i className="ti ti-clock ti-md"></i>
                 </div>
                 <div>
-                  <h3 className="mb-0 fw-bold">{stats.thisWeek}</h3>
-                  <small className="text-muted">This Week</small>
+                  <h3 style={{ margin: 0, fontWeight: 700 }}>{stats.thisWeek}</h3>
+                  <small style={{ color: 'var(--text-secondary)' }}>This Week</small>
                 </div>
               </div>
             </div>
@@ -331,11 +331,11 @@ export default function AbandonedCartsPage() {
       </div>
 
       {/* Filters & Actions */}
-      <div className="card mb-4">
-        <div className="card-body py-3">
-          <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
+      <div className="card" style={{ marginBottom: '1.5rem' }}>
+        <div className="card-body" style={{ paddingTop: '0.75rem', paddingBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
             {/* Time Filters */}
-            <div className="btn-group">
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
               {[
                 { key: 'all' as TimeFilter, label: 'All', count: carts.length },
                 { key: 'week' as TimeFilter, label: 'This Week', count: stats.thisWeek },
@@ -345,25 +345,27 @@ export default function AbandonedCartsPage() {
                 <button
                   key={filter.key}
                   onClick={() => setTimeFilter(filter.key)}
-                  className={`btn btn-sm ${timeFilter === filter.key ? 'btn-primary' : 'btn-outline-primary'}`}
+                  className={timeFilter === filter.key ? 'btn-apple btn-apple-primary' : 'btn-apple btn-apple-secondary'}
+                  style={{ fontSize: '0.8125rem' }}
                 >
                   {filter.label}
-                  <span className="badge bg-white text-primary ms-1">{filter.count}</span>
+                  <span className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--accent)', marginLeft: '0.25rem' }}>{filter.count}</span>
                 </button>
               ))}
             </div>
 
             {/* Bulk Actions */}
             {selectedCarts.size > 0 && (
-              <div className="d-flex gap-2">
-                <span className="text-muted align-self-center">
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <span style={{ color: 'var(--text-secondary)', alignSelf: 'center' }}>
                   {selectedCarts.size} selected
                 </span>
                 <button
                   onClick={deleteSelected}
-                  className="btn btn-sm btn-outline-danger"
+                  className="btn-apple btn-apple-secondary"
+                  style={{ fontSize: '0.8125rem', color: 'var(--red)' }}
                 >
-                  <i className="ti ti-trash me-1"></i>
+                  <i className="ti ti-trash" style={{ marginRight: '0.25rem' }}></i>
                   Delete Selected
                 </button>
               </div>
@@ -376,58 +378,59 @@ export default function AbandonedCartsPage() {
       <div className="card">
         <div className="card-body">
           {loading ? (
-            <div className="text-center py-5">
-              <div className="spinner-border text-primary"></div>
-              <p className="mt-3 text-muted">Loading abandoned carts...</p>
+            <div style={{ textAlign: 'center', padding: '3rem 0' }}>
+              <div className="spinner-apple" style={{ color: 'var(--accent)' }}></div>
+              <p style={{ marginTop: '0.75rem', color: 'var(--text-secondary)' }}>Loading abandoned carts...</p>
             </div>
           ) : filteredCarts.length === 0 ? (
-            <div className="text-center py-5">
-              <div className="avatar avatar-xl bg-label-success rounded-circle mx-auto mb-3">
+            <div style={{ textAlign: 'center', padding: '3rem 0' }}>
+              <div className="avatar avatar-xl bg-label-success rounded-circle" style={{ margin: '0 auto 0.75rem' }}>
                 <i className="ti ti-shopping-cart-check ti-xl"></i>
               </div>
               <h5>No abandoned carts</h5>
-              <p className="text-muted mb-4">
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
                 {timeFilter !== 'all' 
                   ? 'No abandoned carts in this time period.' 
                   : 'Great! You don\'t have any incomplete shopping sessions.'}
               </p>
-              <Link href="/products" className="btn btn-primary">
-                <i className="ti ti-shopping-bag me-1"></i>
+              <Link href="/products" className="btn-apple btn-apple-primary">
+                <i className="ti ti-shopping-bag" style={{ marginRight: '0.25rem' }}></i>
                 Browse Products
               </Link>
             </div>
           ) : (
             <>
               {/* Select All */}
-              <div className="d-flex align-items-center gap-3 mb-3 pb-3 border-bottom">
-                <div className="form-check">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <input
                     type="checkbox"
-                    className="form-check-input"
+                    className="form-input"
                     checked={selectedCarts.size === filteredCarts.length && filteredCarts.length > 0}
                     onChange={selectAll}
                   />
-                  <label className="form-check-label text-muted">
+                  <label style={{ color: 'var(--text-secondary)' }}>
                     Select all ({filteredCarts.length})
                   </label>
                 </div>
               </div>
 
               {/* Cart Items */}
-              <div className="d-flex flex-column gap-3">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {filteredCarts.map((cart) => (
                   <div 
                     key={cart.id} 
-                    className={`card border ${selectedCarts.has(cart.id) ? 'border-primary' : ''}`}
+                    className="card"
+                    style={{ border: selectedCarts.has(cart.id) ? '1px solid var(--accent)' : '1px solid var(--border)' }}
                   >
                     <div className="card-body">
-                      <div className="row align-items-center">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         {/* Checkbox */}
-                        <div className="col-auto">
-                          <div className="form-check">
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center' }}>
                             <input
                               type="checkbox"
-                              className="form-check-input"
+                              className="form-input"
                               checked={selectedCarts.has(cart.id)}
                               onChange={() => toggleCartSelection(cart.id)}
                             />
@@ -435,71 +438,74 @@ export default function AbandonedCartsPage() {
                         </div>
 
                         {/* Cart Info */}
-                        <div className="col">
-                          <div className="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
                             <div>
-                              <h6 className="mb-1">
-                                <i className="ti ti-shopping-cart text-muted me-1"></i>
+                              <h6 style={{ marginBottom: '0.25rem' }}>
+                                <i className="ti ti-shopping-cart" style={{ color: 'var(--text-secondary)', marginRight: '0.25rem' }}></i>
                                 {cart.items?.length || 0} item{(cart.items?.length || 0) !== 1 ? 's' : ''}
                               </h6>
-                              <p className="text-muted small mb-2">
+                              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', marginBottom: '0.5rem' }}>
                                 {cart.items?.slice(0, 3).map((item: CartItem) => item.title || item.sku).join(', ')}
                                 {(cart.items?.length || 0) > 3 && ` +${cart.items.length - 3} more`}
                               </p>
-                              <div className="d-flex flex-wrap gap-2">
-                                <span className="badge bg-label-secondary">
-                                  <i className="ti ti-clock me-1"></i>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                <span className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
+                                  <i className="ti ti-clock" style={{ marginRight: '0.25rem' }}></i>
                                   {getAgeLabel(cart.updatedAt)}
                                 </span>
-                                <span className="badge bg-label-info">
+                                <span className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--accent)' }}>
                                   {formatDate(cart.updatedAt)}
                                 </span>
                               </div>
                             </div>
-                            <div className="text-end">
-                              <h5 className="text-primary mb-1">
+                            <div style={{ textAlign: 'right' }}>
+                              <h5 style={{ color: 'var(--accent)', marginBottom: '0.25rem' }}>
                                 {formatCurrency(calculateTotal(cart))}
                               </h5>
-                              <small className="text-muted">Total Value</small>
+                              <small style={{ color: 'var(--text-secondary)' }}>Total Value</small>
                             </div>
                           </div>
                         </div>
 
                         {/* Actions */}
-                        <div className="col-auto">
-                          <div className="d-flex gap-2">
+                        <div>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
                             <button
                               onClick={() => setExpandedCart(expandedCart === cart.id ? null : cart.id)}
-                              className="btn btn-sm btn-outline-secondary"
+                              className="btn-apple btn-apple-secondary"
+                              style={{ fontSize: '0.8125rem' }}
                               title="View items"
                             >
                               <i className={`ti ti-chevron-${expandedCart === cart.id ? 'up' : 'down'}`}></i>
                             </button>
                             <button
                               onClick={() => restoreCart(cart)}
-                              className="btn btn-sm btn-primary"
+                              className="btn-apple btn-apple-primary"
+                              style={{ fontSize: '0.8125rem' }}
                               disabled={restoring === cart.id}
                             >
                               {restoring === cart.id ? (
                                 <>
-                                  <span className="spinner-border spinner-border-sm me-1"></span>
+                                  <span className="spinner-apple spinner-apple-sm" style={{ marginRight: '0.25rem' }}></span>
                                   Restoring...
                                 </>
                               ) : (
                                 <>
-                                  <i className="ti ti-shopping-cart-plus me-1"></i>
+                                  <i className="ti ti-shopping-cart-plus" style={{ marginRight: '0.25rem' }}></i>
                                   Restore
                                 </>
                               )}
                             </button>
                             <button
                               onClick={() => deleteCart(cart.id)}
-                              className="btn btn-sm btn-outline-danger"
+                              className="btn-apple btn-apple-secondary"
+                              style={{ fontSize: '0.8125rem', color: 'var(--red)' }}
                               disabled={deleting === cart.id}
                               title="Remove cart"
                             >
                               {deleting === cart.id ? (
-                                <span className="spinner-border spinner-border-sm"></span>
+                                <span className="spinner-apple spinner-apple-sm"></span>
                               ) : (
                                 <i className="ti ti-trash"></i>
                               )}
@@ -510,23 +516,23 @@ export default function AbandonedCartsPage() {
 
                       {/* Expanded Items */}
                       {expandedCart === cart.id && (
-                        <div className="mt-3 pt-3 border-top">
-                          <h6 className="mb-3">Cart Items</h6>
-                          <div className="table-responsive">
-                            <table className="table table-sm table-hover mb-0">
-                              <thead className="bg-light">
+                        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border)' }}>
+                          <h6 style={{ marginBottom: '0.75rem' }}>Cart Items</h6>
+                          <div className="table-container">
+                            <table className="apple-table">
+                              <thead>
                                 <tr>
                                   <th>Product</th>
-                                  <th className="text-center">Qty</th>
-                                  <th className="text-end">Unit Price</th>
-                                  <th className="text-end">Total</th>
+                                  <th style={{ textAlign: 'center' }}>Qty</th>
+                                  <th style={{ textAlign: 'right' }}>Unit Price</th>
+                                  <th style={{ textAlign: 'right' }}>Total</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {cart.items.map((item, i) => (
                                   <tr key={i}>
                                     <td>
-                                      <div className="d-flex align-items-center gap-2">
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         {item.image && (
                                           <img 
                                             src={item.image} 
@@ -536,27 +542,27 @@ export default function AbandonedCartsPage() {
                                           />
                                         )}
                                         <div>
-                                          <p className="mb-0 fw-medium">{item.title}</p>
+                                          <p style={{ margin: 0, fontWeight: 500 }}>{item.title}</p>
                                           {item.sku && (
-                                            <small className="text-muted">SKU: {item.sku}</small>
+                                            <small style={{ color: 'var(--text-secondary)' }}>SKU: {item.sku}</small>
                                           )}
                                         </div>
                                       </div>
                                     </td>
-                                    <td className="text-center align-middle">{item.quantity}</td>
-                                    <td className="text-end align-middle">
+                                    <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>{item.quantity}</td>
+                                    <td style={{ textAlign: 'right', verticalAlign: 'middle' }}>
                                       {formatCurrency(item.unitPrice || item.listPrice)}
                                     </td>
-                                    <td className="text-end align-middle fw-semibold">
+                                    <td style={{ textAlign: 'right', verticalAlign: 'middle', fontWeight: 600 }}>
                                       {formatCurrency((item.unitPrice || item.listPrice) * item.quantity)}
                                     </td>
                                   </tr>
                                 ))}
                               </tbody>
-                              <tfoot className="border-top">
+                              <tfoot style={{ borderTop: '1px solid var(--border)' }}>
                                 <tr>
-                                  <td colSpan={3} className="text-end fw-bold">Cart Total:</td>
-                                  <td className="text-end fw-bold text-primary">
+                                  <td colSpan={3} style={{ textAlign: 'right', fontWeight: 700 }}>Cart Total:</td>
+                                  <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--accent)' }}>
                                     {formatCurrency(calculateTotal(cart))}
                                   </td>
                                 </tr>
@@ -576,15 +582,15 @@ export default function AbandonedCartsPage() {
 
       {/* Recovery Tips */}
       {carts.length > 0 && (
-        <div className="card mt-4">
+        <div className="card" style={{ marginTop: '1.5rem' }}>
           <div className="card-body">
-            <div className="d-flex gap-3">
-              <div className="avatar bg-label-info rounded flex-shrink-0">
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <div className="avatar bg-label-info rounded" style={{ flexShrink: 0 }}>
                 <i className="ti ti-bulb ti-md"></i>
               </div>
               <div>
-                <h6 className="mb-1">Cart Recovery Tips</h6>
-                <p className="text-muted small mb-0">
+                <h6 style={{ marginBottom: '0.25rem' }}>Cart Recovery Tips</h6>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', margin: 0 }}>
                   Restore your abandoned carts to complete your purchase. Items are saved for 30 days.
                   Click "Restore" to add all items back to your current cart.
                   {stats.totalValue > 0 && (

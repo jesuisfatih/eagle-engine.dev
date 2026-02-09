@@ -235,23 +235,18 @@ export default function RegisterPage() {
         
         // Show success message
         const modal = document.createElement('div');
-        modal.className = 'modal fade show d-block';
-        modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px)';
         modal.innerHTML = `
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header bg-info text-white">
-                <h5 class="modal-title">✅ Registration Successful!</h5>
-                <button type="button" class="btn-close btn-close-white" onclick="this.closest('.modal').remove(); window.location.href='/login';"></button>
-              </div>
-              <div class="modal-body">
-                <p><strong>Your account has been created successfully!</strong></p>
-                <p>Your account is pending admin approval. You will receive an email notification once your account is approved.</p>
-                <p className="mb-0">All your information has been synced to Shopify.</p>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove(); window.location.href='/login';">Go to Login</button>
-              </div>
+          <div style="background:#fff;border-radius:16px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden">
+            <div style="padding:24px 24px 0;text-align:center">
+              <div style="font-size:48px;margin-bottom:12px">✅</div>
+              <h3 style="font-weight:700;margin-bottom:8px">Registration Successful!</h3>
+              <p style="color:#666;margin-bottom:8px"><strong>Your account has been created successfully!</strong></p>
+              <p style="color:#666;margin-bottom:8px">Your account is pending admin approval. You will receive an email notification once your account is approved.</p>
+              <p style="color:#666;margin-bottom:0">All your information has been synced to Shopify.</p>
+            </div>
+            <div style="padding:20px 24px 24px;text-align:center">
+              <button onclick="this.closest('div[style]').parentElement.remove(); window.location.href='/login';" style="background:#007AFF;color:#fff;border:none;border-radius:10px;padding:10px 32px;font-size:15px;font-weight:600;cursor:pointer">Go to Login</button>
             </div>
           </div>
         `;
@@ -272,348 +267,248 @@ export default function RegisterPage() {
   const progress = (currentStep / totalSteps) * 100;
 
   return (
-    <div className="authentication-wrapper authentication-basic container-p-y">
-      <div className="authentication-inner">
-        <div className="card" style={{ maxWidth: '500px', margin: '0 auto' }}>
-          <div className="card-body p-4 p-sm-5">
-            <div className="app-brand justify-content-center mb-4">
-              <span className="app-brand-text demo text-body fw-bold ms-2">
-                <span className="text-primary text-4xl">🦅</span>
-                <span className="ms-2">Eagle B2B</span>
-              </span>
+    <div className="login-page">
+      <div className="login-container">
+        <div className="login-card" style={{ maxWidth: 520 }}>
+          {/* Brand */}
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <span style={{ fontSize: 40 }}>🦅</span>
+            <span style={{ fontSize: 20, fontWeight: 700, marginLeft: 8, color: 'var(--text-primary)' }}>Eagle B2B</span>
+          </div>
+
+          {/* Progress Bar */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Step {currentStep} of {totalSteps}</span>
+              <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{Math.round(progress)}%</span>
             </div>
+            <div style={{ height: 6, background: 'var(--bg-secondary)', borderRadius: 3, overflow: 'hidden' }}>
+              <div style={{ width: `${progress}%`, height: '100%', background: 'var(--accent)', borderRadius: 3, transition: 'width 0.3s ease' }} />
+            </div>
+          </div>
 
-            {/* Progress Bar */}
-            <div className="mb-4">
-              <div className="d-flex justify-content-between mb-2">
-                <span className="small text-muted">Step {currentStep} of {totalSteps}</span>
-                <span className="small text-muted">{Math.round(progress)}%</span>
-              </div>
-              <div className="progress" style={{ height: '8px' }}>
-                <div 
-                  className="progress-bar bg-primary" 
-                  role="progressbar" 
-                  style={{ width: `${progress}%` }}
-                ></div>
+          {error && (
+            <div className="alert alert-error" style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span>⚠️</span>
+                <span style={{ flex: 1 }}>{error}</span>
+                <button onClick={() => setError('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: 18, padding: 0 }}>×</button>
               </div>
             </div>
+          )}
 
-            {error && (
-              <div className="alert alert-danger alert-dismissible" role="alert">
-                <button type="button" className="btn-close" onClick={() => setError('')}></button>
-                <div className="alert-message">
-                  <i className="ti ti-alert-circle me-2"></i>
-                  {error}
-                </div>
-              </div>
-            )}
+          {/* Step 1: Account Type & Email Verification */}
+          {currentStep === 1 && (
+            <div>
+              <h4 style={{ fontWeight: 700, marginBottom: 4, color: 'var(--text-primary)' }}>Account Type & Email</h4>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>Choose your account type and verify your email</p>
 
-            {/* Step 1: Account Type & Email Verification */}
-            {currentStep === 1 && (
-              <div>
-                <h4 className="mb-1 fw-bold">Account Type & Email</h4>
-                <p className="mb-4">Choose your account type and verify your email</p>
-
-                <div className="mb-3">
-                  <label className="form-label">Account Type *</label>
-                  <div className="row g-2">
-                    <div className="col-6">
-                      <div 
-                        className={`card border ${formData.accountType === 'b2b' ? 'border-primary bg-primary bg-opacity-10' : ''}`}
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => setFormData(prev => ({ ...prev, accountType: 'b2b' }))}
-                      >
-                        <div className="card-body text-center p-3">
-                          <i className="ti ti-building-store ti-2x mb-2 text-primary"></i>
-                          <div className="fw-bold">B2B Account</div>
-                          <small className="text-muted">For businesses</small>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-6">
-                      <div 
-                        className={`card border ${formData.accountType === 'normal' ? 'border-primary bg-primary bg-opacity-10' : ''}`}
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => setFormData(prev => ({ ...prev, accountType: 'normal' }))}
-                      >
-                        <div className="card-body text-center p-3">
-                          <i className="ti ti-user ti-2x mb-2 text-primary"></i>
-                          <div className="fw-bold">Normal Account</div>
-                          <small className="text-muted">For individuals</small>
-                        </div>
-                      </div>
-                    </div>
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Account Type *</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div
+                    onClick={() => setFormData(prev => ({ ...prev, accountType: 'b2b' }))}
+                    style={{
+                      padding: 16, borderRadius: 12, textAlign: 'center', cursor: 'pointer',
+                      border: formData.accountType === 'b2b' ? '2px solid var(--accent)' : '1px solid var(--border)',
+                      background: formData.accountType === 'b2b' ? 'rgba(0,122,255,0.06)' : 'var(--bg-primary)',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>🏢</div>
+                    <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>B2B Account</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>For businesses</div>
+                  </div>
+                  <div
+                    onClick={() => setFormData(prev => ({ ...prev, accountType: 'normal' }))}
+                    style={{
+                      padding: 16, borderRadius: 12, textAlign: 'center', cursor: 'pointer',
+                      border: formData.accountType === 'normal' ? '2px solid var(--accent)' : '1px solid var(--border)',
+                      background: formData.accountType === 'normal' ? 'rgba(0,122,255,0.06)' : 'var(--bg-primary)',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>👤</div>
+                    <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Normal Account</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>For individuals</div>
                   </div>
                 </div>
+              </div>
 
-                <div className="mb-3">
-                  <label className="form-label">Email Address *</label>
-                  <div className="input-group">
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Email Address *</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="email"
+                    className="form-input"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value, codeSent: false }))}
+                    placeholder="your@email.com"
+                    disabled={loading || formData.codeSent}
+                    style={{ paddingRight: 110 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSendVerificationCode}
+                    disabled={loading || !formData.email || formData.codeSent}
+                    style={{
+                      position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
+                      background: formData.codeSent ? 'var(--green)' : 'var(--accent)',
+                      color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px',
+                      fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                      opacity: (loading || !formData.email || formData.codeSent) ? 0.5 : 1,
+                    }}
+                  >
+                    {formData.codeSent ? 'Sent ✓' : 'Send Code'}
+                  </button>
+                </div>
+              </div>
+
+              {formData.codeSent && (
+                <div style={{ marginBottom: 16 }}>
+                  <label className="form-label">Verification Code</label>
+                  <div style={{ position: 'relative' }}>
                     <input
-                      type="email"
-                      className="form-control"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value, codeSent: false }))}
-                      placeholder="your@email.com"
-                      disabled={loading || formData.codeSent}
+                      type="text"
+                      className="form-input"
+                      maxLength={6}
+                      value={verificationCodeInput}
+                      onChange={(e) => setVerificationCodeInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="000000"
+                      disabled={loading || formData.emailVerified}
+                      style={{ textAlign: 'center', letterSpacing: 8, paddingRight: 100 }}
                     />
                     <button
                       type="button"
-                      className="btn btn-outline-primary"
-                      onClick={handleSendVerificationCode}
-                      disabled={loading || !formData.email || formData.codeSent}
-                    >
-                      {formData.codeSent ? 'Sent ✓' : 'Send Code'}
-                    </button>
-                  </div>
-                </div>
-
-                {formData.codeSent && (
-                  <div className="mb-3">
-                    <label className="form-label">Verification Code</label>
-                    <div className="input-group">
-                      <input
-                        type="text"
-                        className="form-control text-center"
-                        maxLength={6}
-                        value={verificationCodeInput}
-                        onChange={(e) => setVerificationCodeInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                        placeholder="000000"
-                        disabled={loading || formData.emailVerified}
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={handleVerifyCode}
-                        disabled={loading || verificationCodeInput.length !== 6 || formData.emailVerified}
-                      >
-                        {formData.emailVerified ? 'Verified ✓' : 'Verify'}
-                      </button>
-                    </div>
-                    <small className="text-muted">Enter the 6-digit code sent to your email</small>
-                  </div>
-                )}
-
-                <div className="d-flex gap-2">
-                  {!formData.emailVerified && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFormData(prev => ({ ...prev, skipEmailVerification: true, emailVerified: false }));
-                        setCurrentStep(2);
+                      onClick={handleVerifyCode}
+                      disabled={loading || verificationCodeInput.length !== 6 || formData.emailVerified}
+                      style={{
+                        position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
+                        background: formData.emailVerified ? 'var(--green)' : 'var(--accent)',
+                        color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px',
+                        fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                        opacity: (loading || verificationCodeInput.length !== 6 || formData.emailVerified) ? 0.5 : 1,
                       }}
-                      className="btn btn-label-secondary flex-grow-1"
-                      disabled={loading || !formData.email}
                     >
-                      Skip for now
+                      {formData.emailVerified ? 'Verified ✓' : 'Verify'}
                     </button>
-                  )}
+                  </div>
+                  <span style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4, display: 'block' }}>Enter the 6-digit code sent to your email</span>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                {!formData.emailVerified && (
                   <button
                     type="button"
-                    onClick={handleNext}
-                    disabled={loading || (!formData.emailVerified && !formData.skipEmailVerification && formData.codeSent)}
-                    className="btn btn-primary flex-grow-1"
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, skipEmailVerification: true, emailVerified: false }));
+                      setCurrentStep(2);
+                    }}
+                    className="btn-apple btn-apple-secondary"
+                    disabled={loading || !formData.email}
+                    style={{ flex: 1, height: 44 }}
                   >
-                    Next Step →
+                    Skip for now
                   </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={loading || (!formData.emailVerified && !formData.skipEmailVerification && formData.codeSent)}
+                  className="btn-apple btn-apple-primary"
+                  style={{ flex: 1, height: 44 }}
+                >
+                  Next Step →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Personal Information */}
+          {currentStep === 2 && (
+            <div>
+              <h4 style={{ fontWeight: 700, marginBottom: 4, color: 'var(--text-primary)' }}>Personal Information</h4>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>Tell us about yourself</p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label className="form-label">First Name *</label>
+                  <input type="text" className="form-input" required value={formData.firstName} onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))} placeholder="John" disabled={loading} />
+                </div>
+                <div>
+                  <label className="form-label">Last Name *</label>
+                  <input type="text" className="form-input" required value={formData.lastName} onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))} placeholder="Doe" disabled={loading} />
                 </div>
               </div>
-            )}
-
-            {/* Step 2: Personal Information */}
-            {currentStep === 2 && (
-              <div>
-                <h4 className="mb-1 fw-bold">Personal Information</h4>
-                <p className="mb-4">Tell us about yourself</p>
-
-                <div className="row g-3 mb-3">
-                  <div className="col-md-6">
-                    <label className="form-label">First Name *</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      required
-                      value={formData.firstName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                      placeholder="John"
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Last Name *</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      required
-                      value={formData.lastName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                      placeholder="Doe"
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="col-12">
-                    <label className="form-label">Phone Number *</label>
-                    <input
-                      type="tel"
-                      className="form-control"
-                      required
-                      value={formData.phone}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      placeholder="+1 234 567 8900"
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
-
-                <div className="d-flex gap-2">
-                  <button
-                    type="button"
-                    onClick={handleBack}
-                    className="btn btn-label-secondary"
-                    disabled={loading}
-                  >
-                    ← Back
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleNext}
-                    className="btn btn-primary flex-grow-1"
-                    disabled={loading}
-                  >
-                    Next Step →
-                  </button>
-                </div>
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Phone Number *</label>
+                <input type="tel" className="form-input" required value={formData.phone} onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))} placeholder="+1 234 567 8900" disabled={loading} />
               </div>
-            )}
 
-            {/* Step 3: Company Information (B2B only) */}
-            {currentStep === 3 && formData.accountType === 'b2b' && (
-              <div>
-                <h4 className="mb-1 fw-bold">Company Information</h4>
-                <p className="mb-4">Tell us about your company</p>
-
-                <div className="row g-3 mb-3">
-                  <div className="col-12">
-                    <label className="form-label">Company Name *</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      required
-                      value={formData.companyName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
-                      placeholder="Acme Corporation"
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="col-12">
-                    <label className="form-label">Tax ID / VAT Number</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.taxId}
-                      onChange={(e) => setFormData(prev => ({ ...prev, taxId: e.target.value }))}
-                      placeholder="TAX123456"
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
-
-                <div className="d-flex gap-2">
-                  <button
-                    type="button"
-                    onClick={handleBack}
-                    className="btn btn-label-secondary"
-                    disabled={loading}
-                  >
-                    ← Back
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleNext}
-                    className="btn btn-primary flex-grow-1"
-                    disabled={loading}
-                  >
-                    Next Step →
-                  </button>
-                </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" onClick={handleBack} className="btn-apple btn-apple-secondary" disabled={loading} style={{ height: 44 }}>← Back</button>
+                <button type="button" onClick={handleNext} className="btn-apple btn-apple-primary" disabled={loading} style={{ flex: 1, height: 44 }}>Next Step →</button>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Step 4: Billing Address */}
-            {currentStep === 4 && (
-              <div>
-                <h4 className="mb-1 fw-bold">Billing Address</h4>
-                <p className="mb-4">Where should we send invoices?</p>
+          {/* Step 3: Company Information (B2B only) */}
+          {currentStep === 3 && formData.accountType === 'b2b' && (
+            <div>
+              <h4 style={{ fontWeight: 700, marginBottom: 4, color: 'var(--text-primary)' }}>Company Information</h4>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>Tell us about your company</p>
 
-                <div className="row g-3 mb-3">
-                  <div className="col-12">
-                    <label className="form-label">Address Line 1 *</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      required
-                      value={formData.billingAddress1}
-                      onChange={(e) => setFormData(prev => ({ ...prev, billingAddress1: e.target.value }))}
-                      placeholder="123 Main Street"
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="col-12">
-                    <label className="form-label">Address Line 2</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.billingAddress2}
-                      onChange={(e) => setFormData(prev => ({ ...prev, billingAddress2: e.target.value }))}
-                      placeholder="Suite 100"
-                      disabled={loading}
-                    />
-                  </div>
-                  <div className="col-md-6">
+              <div style={{ marginBottom: 12 }}>
+                <label className="form-label">Company Name *</label>
+                <input type="text" className="form-input" required value={formData.companyName} onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))} placeholder="Acme Corporation" disabled={loading} />
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Tax ID / VAT Number</label>
+                <input type="text" className="form-input" value={formData.taxId} onChange={(e) => setFormData(prev => ({ ...prev, taxId: e.target.value }))} placeholder="TAX123456" disabled={loading} />
+              </div>
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" onClick={handleBack} className="btn-apple btn-apple-secondary" disabled={loading} style={{ height: 44 }}>← Back</button>
+                <button type="button" onClick={handleNext} className="btn-apple btn-apple-primary" disabled={loading} style={{ flex: 1, height: 44 }}>Next Step →</button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Billing Address */}
+          {currentStep === 4 && (
+            <div>
+              <h4 style={{ fontWeight: 700, marginBottom: 4, color: 'var(--text-primary)' }}>Billing Address</h4>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>Where should we send invoices?</p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+                <div>
+                  <label className="form-label">Address Line 1 *</label>
+                  <input type="text" className="form-input" required value={formData.billingAddress1} onChange={(e) => setFormData(prev => ({ ...prev, billingAddress1: e.target.value }))} placeholder="123 Main Street" disabled={loading} />
+                </div>
+                <div>
+                  <label className="form-label">Address Line 2</label>
+                  <input type="text" className="form-input" value={formData.billingAddress2} onChange={(e) => setFormData(prev => ({ ...prev, billingAddress2: e.target.value }))} placeholder="Suite 100" disabled={loading} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
                     <label className="form-label">City *</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      required
-                      value={formData.billingCity}
-                      onChange={(e) => setFormData(prev => ({ ...prev, billingCity: e.target.value }))}
-                      placeholder="New York"
-                      disabled={loading}
-                    />
+                    <input type="text" className="form-input" required value={formData.billingCity} onChange={(e) => setFormData(prev => ({ ...prev, billingCity: e.target.value }))} placeholder="New York" disabled={loading} />
                   </div>
-                  <div className="col-md-6">
+                  <div>
                     <label className="form-label">State / Province</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.billingState}
-                      onChange={(e) => setFormData(prev => ({ ...prev, billingState: e.target.value }))}
-                      placeholder="NY"
-                      disabled={loading}
-                    />
+                    <input type="text" className="form-input" value={formData.billingState} onChange={(e) => setFormData(prev => ({ ...prev, billingState: e.target.value }))} placeholder="NY" disabled={loading} />
                   </div>
-                  <div className="col-md-6">
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
                     <label className="form-label">Postal Code *</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      required
-                      value={formData.billingPostalCode}
-                      onChange={(e) => setFormData(prev => ({ ...prev, billingPostalCode: e.target.value }))}
-                      placeholder="10001"
-                      disabled={loading}
-                    />
+                    <input type="text" className="form-input" required value={formData.billingPostalCode} onChange={(e) => setFormData(prev => ({ ...prev, billingPostalCode: e.target.value }))} placeholder="10001" disabled={loading} />
                   </div>
-                  <div className="col-md-6">
+                  <div>
                     <label className="form-label">Country *</label>
-                    <select
-                      className="form-select"
-                      required
-                      value={formData.billingCountry}
-                      onChange={(e) => setFormData(prev => ({ ...prev, billingCountry: e.target.value }))}
-                      disabled={loading}
-                    >
+                    <select className="form-input" required value={formData.billingCountry} onChange={(e) => setFormData(prev => ({ ...prev, billingCountry: e.target.value }))} disabled={loading}>
                       <option value="US">United States</option>
                       <option value="CA">Canada</option>
                       <option value="GB">United Kingdom</option>
@@ -624,133 +519,76 @@ export default function RegisterPage() {
                     </select>
                   </div>
                 </div>
-
-                <div className="d-flex gap-2">
-                  <button
-                    type="button"
-                    onClick={handleBack}
-                    className="btn btn-label-secondary"
-                    disabled={loading}
-                  >
-                    ← Back
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleNext}
-                    className="btn btn-primary flex-grow-1"
-                    disabled={loading}
-                  >
-                    Next Step →
-                  </button>
-                </div>
               </div>
-            )}
 
-            {/* Step 5: Shipping Address */}
-            {currentStep === 5 && (
-              <div>
-                <h4 className="mb-1 fw-bold">Shipping Address</h4>
-                <p className="mb-4">Where should we ship your orders?</p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" onClick={handleBack} className="btn-apple btn-apple-secondary" disabled={loading} style={{ height: 44 }}>← Back</button>
+                <button type="button" onClick={handleNext} className="btn-apple btn-apple-primary" disabled={loading} style={{ flex: 1, height: 44 }}>Next Step →</button>
+              </div>
+            </div>
+          )}
 
-                <div className="mb-3">
-                  <div className="form-check">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id="sameAsBilling"
-                      checked={formData.shippingSameAsBilling}
-                      onChange={(e) => {
-                        setFormData(prev => ({ ...prev, shippingSameAsBilling: e.target.checked }));
-                        if (e.target.checked) {
-                          // Copy billing to shipping
-                          setFormData(prev => ({
-                            ...prev,
-                            shippingAddress1: prev.billingAddress1,
-                            shippingAddress2: prev.billingAddress2,
-                            shippingCity: prev.billingCity,
-                            shippingState: prev.billingState,
-                            shippingPostalCode: prev.billingPostalCode,
-                            shippingCountry: prev.billingCountry,
-                          }));
-                        }
-                      }}
-                      disabled={loading}
-                    />
-                    <label className="form-check-label" htmlFor="sameAsBilling">
-                      Same as billing address
-                    </label>
+          {/* Step 5: Shipping Address */}
+          {currentStep === 5 && (
+            <div>
+              <h4 style={{ fontWeight: 700, marginBottom: 4, color: 'var(--text-primary)' }}>Shipping Address</h4>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>Where should we ship your orders?</p>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    id="sameAsBilling"
+                    checked={formData.shippingSameAsBilling}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, shippingSameAsBilling: e.target.checked }));
+                      if (e.target.checked) {
+                        setFormData(prev => ({
+                          ...prev,
+                          shippingAddress1: prev.billingAddress1,
+                          shippingAddress2: prev.billingAddress2,
+                          shippingCity: prev.billingCity,
+                          shippingState: prev.billingState,
+                          shippingPostalCode: prev.billingPostalCode,
+                          shippingCountry: prev.billingCountry,
+                        }));
+                      }
+                    }}
+                    disabled={loading}
+                    style={{ accentColor: 'var(--accent)', width: 18, height: 18 }}
+                  />
+                  <span style={{ color: 'var(--text-primary)' }}>Same as billing address</span>
+                </label>
+              </div>
+
+              {!formData.shippingSameAsBilling && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+                  <div>
+                    <label className="form-label">Address Line 1 *</label>
+                    <input type="text" className="form-input" required value={formData.shippingAddress1} onChange={(e) => setFormData(prev => ({ ...prev, shippingAddress1: e.target.value }))} placeholder="123 Main Street" disabled={loading} />
                   </div>
-                </div>
-
-                {!formData.shippingSameAsBilling && (
-                  <div className="row g-3 mb-3">
-                    <div className="col-12">
-                      <label className="form-label">Address Line 1 *</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        required
-                        value={formData.shippingAddress1}
-                        onChange={(e) => setFormData(prev => ({ ...prev, shippingAddress1: e.target.value }))}
-                        placeholder="123 Main Street"
-                        disabled={loading}
-                      />
-                    </div>
-                    <div className="col-12">
-                      <label className="form-label">Address Line 2</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={formData.shippingAddress2}
-                        onChange={(e) => setFormData(prev => ({ ...prev, shippingAddress2: e.target.value }))}
-                        placeholder="Suite 100"
-                        disabled={loading}
-                      />
-                    </div>
-                    <div className="col-md-6">
+                  <div>
+                    <label className="form-label">Address Line 2</label>
+                    <input type="text" className="form-input" value={formData.shippingAddress2} onChange={(e) => setFormData(prev => ({ ...prev, shippingAddress2: e.target.value }))} placeholder="Suite 100" disabled={loading} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
                       <label className="form-label">City *</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        required
-                        value={formData.shippingCity}
-                        onChange={(e) => setFormData(prev => ({ ...prev, shippingCity: e.target.value }))}
-                        placeholder="New York"
-                        disabled={loading}
-                      />
+                      <input type="text" className="form-input" required value={formData.shippingCity} onChange={(e) => setFormData(prev => ({ ...prev, shippingCity: e.target.value }))} placeholder="New York" disabled={loading} />
                     </div>
-                    <div className="col-md-6">
+                    <div>
                       <label className="form-label">State / Province</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={formData.shippingState}
-                        onChange={(e) => setFormData(prev => ({ ...prev, shippingState: e.target.value }))}
-                        placeholder="NY"
-                        disabled={loading}
-                      />
+                      <input type="text" className="form-input" value={formData.shippingState} onChange={(e) => setFormData(prev => ({ ...prev, shippingState: e.target.value }))} placeholder="NY" disabled={loading} />
                     </div>
-                    <div className="col-md-6">
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
                       <label className="form-label">Postal Code *</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        required
-                        value={formData.shippingPostalCode}
-                        onChange={(e) => setFormData(prev => ({ ...prev, shippingPostalCode: e.target.value }))}
-                        placeholder="10001"
-                        disabled={loading}
-                      />
+                      <input type="text" className="form-input" required value={formData.shippingPostalCode} onChange={(e) => setFormData(prev => ({ ...prev, shippingPostalCode: e.target.value }))} placeholder="10001" disabled={loading} />
                     </div>
-                    <div className="col-md-6">
+                    <div>
                       <label className="form-label">Country *</label>
-                      <select
-                        className="form-select"
-                        required
-                        value={formData.shippingCountry}
-                        onChange={(e) => setFormData(prev => ({ ...prev, shippingCountry: e.target.value }))}
-                        disabled={loading}
-                      >
+                      <select className="form-input" required value={formData.shippingCountry} onChange={(e) => setFormData(prev => ({ ...prev, shippingCountry: e.target.value }))} disabled={loading}>
                         <option value="US">United States</option>
                         <option value="CA">Canada</option>
                         <option value="GB">United Kingdom</option>
@@ -761,104 +599,55 @@ export default function RegisterPage() {
                       </select>
                     </div>
                   </div>
-                )}
-
-                <div className="d-flex gap-2">
-                  <button
-                    type="button"
-                    onClick={handleBack}
-                    className="btn btn-label-secondary"
-                    disabled={loading}
-                  >
-                    ← Back
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleNext}
-                    className="btn btn-primary flex-grow-1"
-                    disabled={loading}
-                  >
-                    Next Step →
-                  </button>
                 </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" onClick={handleBack} className="btn-apple btn-apple-secondary" disabled={loading} style={{ height: 44 }}>← Back</button>
+                <button type="button" onClick={handleNext} className="btn-apple btn-apple-primary" disabled={loading} style={{ flex: 1, height: 44 }}>Next Step →</button>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Step 6: Password */}
-            {currentStep === 6 && (
-              <div>
-                <h4 className="mb-1 fw-bold">Account Security</h4>
-                <p className="mb-4">Create a secure password</p>
+          {/* Step 6: Password */}
+          {currentStep === 6 && (
+            <div>
+              <h4 style={{ fontWeight: 700, marginBottom: 4, color: 'var(--text-primary)' }}>Account Security</h4>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>Create a secure password</p>
 
-                <div className="row g-3 mb-3">
-                  <div className="col-12">
-                    <label className="form-label">Password *</label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      required
-                      minLength={8}
-                      value={formData.password}
-                      onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                      placeholder="••••••••"
-                      disabled={loading}
-                      autoComplete="new-password"
-                    />
-                    <small className="text-muted">Minimum 8 characters</small>
-                  </div>
-                  <div className="col-12">
-                    <label className="form-label">Confirm Password *</label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      required
-                      value={formData.confirmPassword}
-                      onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                      placeholder="••••••••"
-                      disabled={loading}
-                      autoComplete="new-password"
-                    />
-                  </div>
-                </div>
-
-                <div className="d-flex gap-2">
-                  <button
-                    type="button"
-                    onClick={handleBack}
-                    className="btn btn-label-secondary"
-                    disabled={loading}
-                  >
-                    ← Back
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleNext}
-                    className="btn btn-success flex-grow-1"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2"></span>
-                        Creating Account...
-                      </>
-                    ) : (
-                      <>
-                        <i className="ti ti-check me-2"></i>
-                        Complete Registration
-                      </>
-                    )}
-                  </button>
-                </div>
+              <div style={{ marginBottom: 12 }}>
+                <label className="form-label">Password *</label>
+                <input type="password" className="form-input" required minLength={8} value={formData.password} onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))} placeholder="••••••••" disabled={loading} autoComplete="new-password" />
+                <span style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4, display: 'block' }}>Minimum 8 characters</span>
               </div>
-            )}
+              <div style={{ marginBottom: 16 }}>
+                <label className="form-label">Confirm Password *</label>
+                <input type="password" className="form-input" required value={formData.confirmPassword} onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))} placeholder="••••••••" disabled={loading} autoComplete="new-password" />
+              </div>
 
-            <p className="text-center mt-4 mb-0">
-              <span>Already have an account? </span>
-              <a href="/login">
-                <span>Sign in</span>
-              </a>
-            </p>
-          </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" onClick={handleBack} className="btn-apple btn-apple-secondary" disabled={loading} style={{ height: 44 }}>← Back</button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="btn-apple btn-apple-primary"
+                  disabled={loading}
+                  style={{ flex: 1, height: 44, background: 'var(--green)' }}
+                >
+                  {loading ? (
+                    <><span className="spinner-apple" style={{ width: 16, height: 16, marginRight: 8 }} />Creating Account...</>
+                  ) : (
+                    <>✓ Complete Registration</>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <p style={{ textAlign: 'center', marginTop: 24, marginBottom: 0, color: 'var(--text-secondary)' }}>
+            Already have an account?{' '}
+            <a href="/login" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Sign in</a>
+          </p>
         </div>
       </div>
     </div>

@@ -418,23 +418,23 @@ export default function CartPage() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h4 className="fw-bold mb-1">Shopping Cart</h4>
+          <h2 style={{ fontWeight: 700, fontSize: 22, margin: '0 0 4px' }}>Shopping Cart</h2>
           {cart && cart.items?.length > 0 && (
-            <p className="text-muted mb-0">
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: 0 }}>
               {cart.items.length} item{cart.items.length !== 1 ? 's' : ''} in your cart
             </p>
           )}
         </div>
-        <div className="d-flex gap-2">
+        <div style={{ display: 'flex', gap: 8 }}>
           {!cart && (
-            <button onClick={createCart} className="btn btn-primary btn-sm">
-              <i className="ti ti-plus me-1"></i>Create Cart
+            <button onClick={createCart} className="btn-apple btn-apple-primary" style={{ height: 36, fontSize: 13 }}>
+              <i className="ti ti-plus" style={{ marginRight: 6 }}></i>Create Cart
             </button>
           )}
-          <Link href="/products" className="btn btn-outline-primary btn-sm">
-            <i className="ti ti-arrow-left me-1"></i>
+          <Link href="/products" className="btn-apple btn-apple-secondary" style={{ height: 36, fontSize: 13, textDecoration: 'none' }}>
+            <i className="ti ti-arrow-left" style={{ marginRight: 6 }}></i>
             Continue Shopping
           </Link>
         </div>
@@ -451,9 +451,9 @@ export default function CartPage() {
           }}
         />
       ) : (
-        <div className="row">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 24, alignItems: 'start' }}>
           {/* Cart Items Column */}
-          <div className="col-lg-8">
+          <div>
             {/* Savings Optimizer */}
             <CartOptimizer
               items={cart.items.map(item => ({
@@ -467,105 +467,74 @@ export default function CartPage() {
             />
 
             {/* Cart Items */}
-            <div className="card mb-4">
+            <div className="card" style={{ marginBottom: 20 }}>
               <div className="card-header">
-                <h5 className="card-title mb-0">Cart Items</h5>
+                <h3 className="card-title">Cart Items</h3>
               </div>
-              <div className="card-body p-0">
-                {cart.items?.map((item: CartItemData) => (
-                  <div key={item.id} className="border-bottom p-3">
-                    <div className="row align-items-center">
+              <div className="card-body" style={{ padding: 0 }}>
+                {cart.items?.map((item: CartItemData, idx: number) => (
+                  <div key={item.id} className="cart-item" style={{ padding: 16, borderBottom: idx < cart.items.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                       {/* Product Image */}
-                      <div className="col-auto">
-                        <img
-                          src={item.product?.imageUrl || '/placeholder.png'}
-                          alt={item.product?.title || 'Product'}
-                          className="rounded"
-                          style={{ width: 80, height: 80, objectFit: 'cover' }}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/placeholder.png';
-                          }}
-                        />
-                      </div>
+                      <img
+                        src={item.product?.imageUrl || '/placeholder.png'}
+                        alt={item.product?.title || 'Product'}
+                        style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 10, flexShrink: 0 }}
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png'; }}
+                      />
 
                       {/* Product Details */}
-                      <div className="col">
-                        <h6 className="mb-1">{item.product?.title || 'Product'}</h6>
-                        {item.variantTitle && (
-                          <small className="text-muted d-block">{item.variantTitle}</small>
-                        )}
-                        {item.sku && (
-                          <small className="text-muted d-block">SKU: {item.sku}</small>
-                        )}
-                        
-                        {/* Price Display */}
-                        <div className="mt-2">
-                          <span className="fw-bold text-success">
-                            {formatCurrency(item.unitPrice)}
-                          </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <h4 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px' }}>{item.product?.title || 'Product'}</h4>
+                        {item.variantTitle && <span style={{ fontSize: 13, color: 'var(--text-tertiary)', display: 'block' }}>{item.variantTitle}</span>}
+                        {item.sku && <span style={{ fontSize: 12, color: 'var(--text-tertiary)', display: 'block' }}>SKU: {item.sku}</span>}
+                        <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontWeight: 600, color: 'var(--green)' }}>{formatCurrency(item.unitPrice)}</span>
                           {item.listPrice && item.listPrice > item.unitPrice && (
                             <>
-                              <span className="text-muted text-decoration-line-through ms-2 small">
-                                {formatCurrency(item.listPrice)}
-                              </span>
-                              <span className="badge bg-success ms-2 small">
-                                B2B Price
-                              </span>
+                              <span style={{ fontSize: 13, color: 'var(--text-tertiary)', textDecoration: 'line-through' }}>{formatCurrency(item.listPrice)}</span>
+                              <span className="badge" style={{ background: 'rgba(52,199,89,0.12)', color: 'var(--green)', fontSize: 11 }}>B2B</span>
                             </>
                           )}
                         </div>
                       </div>
 
                       {/* Quantity Controls */}
-                      <div className="col-auto">
-                        <div className="input-group" style={{ width: 130 }}>
-                          <button
-                            className="btn btn-outline-secondary"
-                            type="button"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            disabled={item.quantity <= 1}
-                          >
-                            <i className="ti ti-minus"></i>
-                          </button>
-                          <input
-                            type="text"
-                            className="form-control text-center"
-                            value={item.quantity}
-                            readOnly
-                            style={{ maxWidth: 50 }}
-                          />
-                          <button
-                            className="btn btn-outline-secondary"
-                            type="button"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          >
-                            <i className="ti ti-plus"></i>
-                          </button>
-                        </div>
+                      <div className="qty-control" style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
+                        <button
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          disabled={item.quantity <= 1}
+                          style={{ width: 36, height: 36, background: 'var(--bg-secondary)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <i className="ti ti-minus" style={{ fontSize: 14 }}></i>
+                        </button>
+                        <span style={{ width: 44, textAlign: 'center', fontWeight: 600, fontSize: 14 }}>{item.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          style={{ width: 36, height: 36, background: 'var(--bg-secondary)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <i className="ti ti-plus" style={{ fontSize: 14 }}></i>
+                        </button>
                       </div>
 
                       {/* Item Total */}
-                      <div className="col-auto text-end" style={{ minWidth: 100 }}>
-                        <div className="fw-bold">
-                          {formatCurrency(item.unitPrice * item.quantity)}
-                        </div>
+                      <div style={{ textAlign: 'right', minWidth: 90, flexShrink: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 15 }}>{formatCurrency(item.unitPrice * item.quantity)}</div>
                         {item.listPrice && item.listPrice > item.unitPrice && (
-                          <small className="text-success">
+                          <span style={{ fontSize: 12, color: 'var(--green)' }}>
                             Save {formatCurrency((item.listPrice - item.unitPrice) * item.quantity)}
-                          </small>
+                          </span>
                         )}
                       </div>
 
-                      {/* Remove Button */}
-                      <div className="col-auto">
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          className="btn btn-outline-danger btn-sm"
-                          title="Remove item"
-                        >
-                          <i className="ti ti-trash"></i>
-                        </button>
-                      </div>
+                      {/* Remove */}
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        title="Remove item"
+                        style={{ width: 34, height: 34, borderRadius: 8, border: '1px solid var(--border)', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--red)', flexShrink: 0 }}
+                      >
+                        <i className="ti ti-trash" style={{ fontSize: 16 }}></i>
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -574,7 +543,7 @@ export default function CartPage() {
           </div>
 
           {/* Cart Summary Column */}
-          <div className="col-lg-4">
+          <div>
             <CartSummary
               items={cart.items.map(item => ({
                 id: item.id,
@@ -591,28 +560,25 @@ export default function CartPage() {
               checkoutLoading={checkoutLoading}
               disabled={!cart || cart.items.length === 0}
             />            
-            {/* Checkout Error Alert */}
+            {/* Checkout Error */}
             {checkoutError && (
-              <div className="alert alert-danger alert-dismissible mt-3" role="alert">
-                <i className="ti ti-alert-circle me-2"></i>
-                {checkoutError}
-                <button 
-                  type="button" 
-                  className="btn-close" 
-                  onClick={() => setCheckoutError(null)}
-                  aria-label="Close"
-                ></button>
+              <div className="alert alert-error" style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <i className="ti ti-alert-circle"></i>
+                <span style={{ flex: 1 }}>{checkoutError}</span>
+                <button onClick={() => setCheckoutError(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                  <i className="ti ti-x"></i>
+                </button>
               </div>
             )}
-            {/* Trust Badges - Extra */}
-            <div className="card mt-3">
-              <div className="card-body text-center">
-                <p className="small text-muted mb-2">
-                  <i className="ti ti-lock me-1"></i>
+            {/* Trust Badges */}
+            <div className="card" style={{ marginTop: 12 }}>
+              <div className="card-body" style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 6px' }}>
+                  <i className="ti ti-lock" style={{ marginRight: 4 }}></i>
                   Secure checkout powered by Shopify
                 </p>
-                <p className="small text-success mb-0">
-                  <i className="ti ti-check me-1"></i>
+                <p style={{ fontSize: 13, color: 'var(--green)', margin: 0 }}>
+                  <i className="ti ti-check" style={{ marginRight: 4 }}></i>
                   Your B2B discount will be applied automatically
                 </p>
               </div>

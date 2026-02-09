@@ -225,9 +225,9 @@ export default function WishlistPage() {
 
   if (loading) {
     return (
-      <div className="text-center py-5">
-        <div className="spinner-border text-primary"></div>
-        <p className="mt-3 text-muted">Loading wishlist...</p>
+      <div style={{ textAlign: 'center', padding: '40px 0' }}>
+        <div className="spinner-apple"></div>
+        <p style={{ marginTop: '12px', color: 'var(--text-secondary)' }}>Loading wishlist...</p>
       </div>
     );
   }
@@ -235,32 +235,33 @@ export default function WishlistPage() {
   return (
     <div>
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h4 className="fw-bold mb-1">Wishlist</h4>
-          <p className="mb-0 text-muted">
+          <h4 style={{ fontWeight: 600, marginBottom: '4px' }}>Wishlist</h4>
+          <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
             {wishlist.length} item{wishlist.length !== 1 ? 's' : ''} • Total value: {formatCurrency(totalValue)}
           </p>
         </div>
-        <div className="d-flex gap-2">
+        <div style={{ display: 'flex', gap: '8px' }}>
           {selectedItems.size > 0 && (
             <button 
-              className="btn btn-primary"
+              className="btn-apple btn-apple-primary"
               onClick={addSelectedToCart}
               disabled={bulkAdding}
             >
               {bulkAdding ? (
-                <span className="spinner-border spinner-border-sm me-1"></span>
+                <span className="spinner-apple" style={{ width: 16, height: 16, marginRight: '4px' }}></span>
               ) : (
-                <i className="ti ti-shopping-cart me-1"></i>
+                <i className="ti ti-shopping-cart" style={{ marginRight: '4px' }}></i>
               )}
               Add {selectedItems.size} to Cart
             </button>
           )}
           <button 
-            className="btn btn-icon btn-outline-secondary" 
+            className="btn-apple btn-apple-secondary"
             onClick={loadWishlist}
             title="Refresh"
+            style={{ padding: '8px' }}
           >
             <i className="ti ti-refresh"></i>
           </button>
@@ -269,35 +270,35 @@ export default function WishlistPage() {
 
       {wishlist.length === 0 ? (
         <div className="card">
-          <div className="card-body text-center py-5">
-            <i className="ti ti-heart ti-3x text-muted mb-3"></i>
+          <div className="card-body" style={{ textAlign: 'center', padding: '40px 0' }}>
+            <i className="ti ti-heart ti-3x" style={{ color: 'var(--text-secondary)', marginBottom: '12px', display: 'block' }}></i>
             <h5>Your wishlist is empty</h5>
-            <p className="text-muted mb-3">Save products you're interested in for later</p>
-            <a href="/products" className="btn btn-primary">
-              <i className="ti ti-package me-1"></i>Browse Products
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '12px' }}>Save products you're interested in for later</p>
+            <a href="/products" className="btn-apple btn-apple-primary">
+              <i className="ti ti-package" style={{ marginRight: '4px' }}></i>Browse Products
             </a>
           </div>
         </div>
       ) : (
         <>
           {/* Toolbar */}
-          <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-            <div className="form-check">
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <input
-                className="form-check-input"
                 type="checkbox"
                 id="selectAll"
                 checked={selectedItems.size === wishlist.length && wishlist.length > 0}
                 onChange={selectAll}
+                style={{ width: 18, height: 18, accentColor: 'var(--accent)' }}
               />
-              <label className="form-check-label" htmlFor="selectAll">
+              <label htmlFor="selectAll">
                 Select All
               </label>
             </div>
-            <div className="d-flex gap-2 align-items-center">
-              <label className="text-muted small me-1">Sort by:</label>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginRight: '4px' }}>Sort by:</label>
               <select 
-                className="form-select form-select-sm" 
+                className="form-input" 
                 style={{ width: 'auto' }}
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
@@ -312,7 +313,7 @@ export default function WishlistPage() {
           </div>
 
           {/* Products Grid */}
-          <div className="row g-4">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
             {sortedWishlist.map((item) => {
               const itemTitle = item.title || item.productTitle || 'Product';
               const itemImage = item.image || item.productImage;
@@ -320,30 +321,29 @@ export default function WishlistPage() {
               const isSelected = selectedItems.has(item.id);
               
               return (
-                <div key={item.id} className="col-md-4 col-lg-3">
-                  <div className={`card h-100 ${isSelected ? 'border-primary border-2' : ''}`}>
+                <div key={item.id}>
+                  <div className="card" style={{ height: '100%', ...(isSelected ? { border: '2px solid var(--accent)' } : {}) }}>
                     {/* Selection Checkbox */}
-                    <div className="position-absolute top-0 start-0 m-2 z-1">
+                    <div style={{ position: 'absolute', top: 0, left: 0, margin: '8px', zIndex: 1 }}>
                       <input
                         type="checkbox"
-                        className="form-check-input"
                         checked={isSelected}
                         onChange={() => toggleSelectItem(item.id)}
-                        style={{ width: 20, height: 20 }}
+                        style={{ width: 20, height: 20, accentColor: 'var(--accent)' }}
                       />
                     </div>
                     
                     {/* Discount Badge */}
                     {hasDiscount && (
-                      <div className="position-absolute top-0 end-0 m-2 z-1">
-                        <span className="badge bg-danger">
+                      <div style={{ position: 'absolute', top: 0, right: 0, margin: '8px', zIndex: 1 }}>
+                        <span className="badge" style={{ background: 'var(--red)', color: '#fff' }}>
                           -{Math.round((1 - item.price / item.compareAtPrice!) * 100)}%
                         </span>
                       </div>
                     )}
                     
                     {/* Image */}
-                    <a href={`/products/${item.productId}`} className="card-img-top bg-light d-flex align-items-center justify-content-center" style={{height: '180px'}}>
+                    <a href={`/products/${item.productId}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '180px', background: 'var(--bg-secondary)', borderRadius: '8px 8px 0 0' }}>
                       {itemImage ? (
                         <img 
                           src={itemImage} 
@@ -351,33 +351,33 @@ export default function WishlistPage() {
                           style={{maxHeight: '100%', maxWidth: '100%', objectFit: 'contain'}}
                         />
                       ) : (
-                        <i className="ti ti-photo ti-2x text-muted"></i>
+                        <i className="ti ti-photo ti-2x" style={{ color: 'var(--text-secondary)' }}></i>
                       )}
                     </a>
                     
-                    <div className="card-body d-flex flex-column">
+                    <div className="card-body" style={{ display: 'flex', flexDirection: 'column' }}>
                       {/* Vendor */}
                       {item.vendor && (
-                        <p className="text-muted small mb-1">{item.vendor}</p>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>{item.vendor}</p>
                       )}
                       
                       {/* Title */}
-                      <h6 className="card-title mb-1 text-truncate-2" title={itemTitle}>
-                        <a href={`/products/${item.productId}`} className="text-body">
+                      <h6 className="card-title" style={{ marginBottom: '4px' }} title={itemTitle}>
+                        <a href={`/products/${item.productId}`} style={{ color: 'var(--text-primary)', textDecoration: 'none' }}>
                           {itemTitle}
                         </a>
                       </h6>
                       
                       {/* SKU */}
                       {item.sku && (
-                        <small className="text-muted mb-2">SKU: {item.sku}</small>
+                        <small style={{ color: 'var(--text-secondary)', marginBottom: '8px' }}>SKU: {item.sku}</small>
                       )}
                       
                       {/* Price */}
-                      <div className="mb-3 mt-auto">
-                        <span className="fw-bold text-primary fs-5">{formatCurrency(item.price)}</span>
+                      <div style={{ marginBottom: '12px', marginTop: 'auto' }}>
+                        <span style={{ fontWeight: 600, color: 'var(--accent)', fontSize: '1.1rem' }}>{formatCurrency(item.price)}</span>
                         {hasDiscount && (
-                          <small className="text-muted text-decoration-line-through ms-2">
+                          <small style={{ color: 'var(--text-secondary)', textDecoration: 'line-through', marginLeft: '8px' }}>
                             {formatCurrency(item.compareAtPrice!)}
                           </small>
                         )}
@@ -385,36 +385,38 @@ export default function WishlistPage() {
                       
                       {/* Stock Status */}
                       {item.inStock !== undefined && (
-                        <div className="mb-2">
-                          <span className={`badge ${item.inStock ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}`}>
+                        <div style={{ marginBottom: '8px' }}>
+                          <span className="badge" style={item.inStock ? { background: 'color-mix(in srgb, var(--green) 15%, transparent)', color: 'var(--green)' } : { background: 'color-mix(in srgb, var(--red) 15%, transparent)', color: 'var(--red)' }}>
                             {item.inStock ? 'In Stock' : 'Out of Stock'}
                           </span>
                         </div>
                       )}
                       
                       {/* Actions */}
-                      <div className="d-flex gap-2">
+                      <div style={{ display: 'flex', gap: '8px' }}>
                         <button
                           onClick={() => addToCart(item)}
-                          className="btn btn-sm btn-primary flex-grow-1"
+                          className="btn-apple btn-apple-primary"
+                          style={{ flex: 1, fontSize: '0.85rem', padding: '6px 12px' }}
                           disabled={addingToCart === item.id || item.inStock === false}
                         >
                           {addingToCart === item.id ? (
-                            <span className="spinner-border spinner-border-sm"></span>
+                            <span className="spinner-apple" style={{ width: 14, height: 14 }}></span>
                           ) : (
                             <>
-                              <i className="ti ti-shopping-cart me-1"></i>Add to Cart
+                              <i className="ti ti-shopping-cart" style={{ marginRight: '4px' }}></i>Add to Cart
                             </>
                           )}
                         </button>
                         <button
                           onClick={() => removeFromWishlist(item.id, item.productId)}
-                          className="btn btn-sm btn-outline-danger"
+                          className="btn-apple btn-apple-secondary"
+                          style={{ fontSize: '0.85rem', padding: '6px 10px', color: 'var(--red)' }}
                           disabled={removing === item.id}
                           title="Remove"
                         >
                           {removing === item.id ? (
-                            <span className="spinner-border spinner-border-sm"></span>
+                            <span className="spinner-apple" style={{ width: 14, height: 14 }}></span>
                           ) : (
                             <i className="ti ti-trash"></i>
                           )}
@@ -422,8 +424,8 @@ export default function WishlistPage() {
                       </div>
                       
                       {/* Added Date */}
-                      <small className="text-muted mt-2">
-                        <i className="ti ti-clock me-1"></i>
+                      <small style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>
+                        <i className="ti ti-clock" style={{ marginRight: '4px' }}></i>
                         Added {formatRelativeTime(item.addedAt)}
                       </small>
                     </div>

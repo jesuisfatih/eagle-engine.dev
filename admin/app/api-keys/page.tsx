@@ -1,180 +1,108 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ApiKeyModal from '@/components/ApiKeyModal';
-import Modal from '@/components/Modal';
 import { adminFetch } from '@/lib/api-client';
+import { PageHeader, showToast } from '@/components/ui';
+import Modal from '@/components/Modal';
+
+interface ApiKey {
+  id: string;
+  name: string;
+  key: string;
+  createdAt: string;
+  lastUsedAt?: string;
+}
 
 export default function ApiKeysPage() {
-  const [keys, setKeys] = useState<any[]>([]);
+  const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [resultModal, setResultModal] = useState<{show: boolean; type: 'success' | 'error'; message: string}>({
-    show: false, type: 'success', message: ''
-  });
+  const [deleteModal, setDeleteModal] = useState<{show: boolean; key: ApiKey | null}>({show: false, key: null});
+  const [generating, setGenerating] = useState(false);
 
-  useEffect(() => {
-    loadKeys();
-  }, []);
+  useEffect(() => { loadKeys(); }, []);
 
   const loadKeys = async () => {
     setLoading(true);
     try {
-      const response = await adminFetch('/api/v1/api-keys');
-      if (response.ok) {
-        const data = await response.json();
-        setKeys(Array.isArray(data) ? data : []);
-      }
-    } catch (err) {
-      setKeys([]);
-    } finally {
-      setLoading(false);
-    }
+      const res = await adminFetch('/api/v1/api-keys');
+      if (res.ok) { const d = await res.json(); setKeys(d.keys || d.data || d || []); }
+    } catch { /* silent */ }
+    finally { setLoading(false); }
   };
 
-  const handleGenerate = async (keyName: string) => {
+  const generateKey = async () => {
+    setGenerating(true);
     try {
-      const response = await adminFetch('/api/v1/api-keys', {
+      const res = await adminFetch('/api/v1/api-keys', {
         method: 'POST',
-        body: JSON.stringify({ name: keyName }),
+        body: JSON.stringify({ name: `API Key ${keys.length + 1}` }),
       });
-
-      if (response.ok) {
-        const newKey = await response.json();
-        setShowGenerateModal(false);
-        setResultModal({
-          show: true,
-          type: 'success',
-          message: `New API Key: ${newKey.key}\n\nSave this key securely!`
-        });
-        loadKeys();
-      } else {
-        setResultModal({show: true, type: 'error', message: 'Failed to generate key'});
-      }
-    } catch (err) {
-      setResultModal({show: true, type: 'error', message: 'Failed to generate key'});
-    }
+      if (res.ok) { showToast('API key generated!', 'success'); loadKeys(); }
+      else showToast('Failed to generate', 'danger');
+    } catch { showToast('Error generating key', 'danger'); }
+    finally { setGenerating(false); }
   };
 
-  const handleDelete = async (id: string) => {
+  const deleteKey = async (key: ApiKey) => {
+    setDeleteModal({show: false, key: null});
     try {
-      const response = await adminFetch(`/api/v1/api-keys/${id}`, {
-        method: 'DELETE',
-      });
+      const res = await adminFetch(`/api/v1/api-keys/${key.id}`, { method: 'DELETE' });
+      if (res.ok) { showToast('API key deleted', 'success'); loadKeys(); }
+      else showToast('Failed to delete', 'danger');
+    } catch { showToast('Error deleting key', 'danger'); }
+  };
 
-      if (response.ok) {
-        setResultModal({show: true, type: 'success', message: 'API Key deleted'});
-        loadKeys();
-      } else {
-        setResultModal({show: true, type: 'error', message: 'Failed to delete key'});
-      }
-    } catch (err) {
-      setResultModal({show: true, type: 'error', message: 'Failed to delete key'});
-    }
+  const copyKey = (key: string) => {
+    navigator.clipboard.writeText(key);
+    showToast('Copied to clipboard', 'success');
   };
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h4 className="fw-bold mb-1">API Keys</h4>
-          <p className="mb-0 text-muted">Manage API access</p>
-        </div>
-        <button
-          onClick={() => setShowGenerateModal(true)}
-          className="btn btn-primary"
-        >
-          <i className="ti ti-plus me-1"></i>
-          Generate Key
-        </button>
+      <PageHeader title="API Keys" subtitle="Manage API access keys"
+        actions={[{ label: generating ? 'Generating...' : 'Generate Key', icon: 'plus', variant: 'primary', onClick: generateKey, disabled: generating }]} />
+
+      <div className="apple-alert warning" style={{ marginBottom: 20 }}>
+        <i className="ti ti-alert-triangle" />
+        <span>API keys grant full access. Keep them secure and never share publicly.</span>
       </div>
 
-      <div className="card">
-        <div className="card-body">
-          <div className="alert alert-warning">
-            <i className="ti ti-alert-triangle me-2"></i>
-            Keep your API keys secure. Never share them publicly.
+      <div className="apple-card">
+        {loading ? (
+          <div style={{ padding: 48, textAlign: 'center' }}><i className="ti ti-loader-2 spin" style={{ fontSize: 24, color: 'var(--accent-primary)' }} /></div>
+        ) : keys.length === 0 ? (
+          <div className="empty-state" style={{ padding: 48 }}>
+            <div className="empty-state-icon"><i className="ti ti-key" /></div>
+            <h4 className="empty-state-title">No API keys</h4>
+            <p className="empty-state-desc">Generate a key to start using the API.</p>
           </div>
-
-          <div className="table-responsive">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Key Name</th>
-                  <th>Key</th>
-                  <th>Created</th>
-                  <th>Last Used</th>
-                  <th>Actions</th>
+        ) : (
+          <table className="apple-table">
+            <thead><tr><th>Name</th><th>Key</th><th>Created</th><th>Last Used</th><th>Actions</th></tr></thead>
+            <tbody>
+              {keys.map(k => (
+                <tr key={k.id}>
+                  <td style={{ fontWeight: 500 }}>{k.name}</td>
+                  <td><code style={{ fontSize: 12, background: 'var(--bg-secondary)', padding: '2px 8px', borderRadius: 4 }}>{k.key.substring(0, 20)}...</code></td>
+                  <td style={{ fontSize: 13 }}>{new Date(k.createdAt).toLocaleDateString()}</td>
+                  <td style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleDateString() : 'Never'}</td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="btn-apple ghost small" onClick={() => copyKey(k.key)}><i className="ti ti-copy" /></button>
+                      <button className="btn-apple danger small" onClick={() => setDeleteModal({show: true, key: k})}><i className="ti ti-trash" /></button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {keys.map((key) => (
-                  <tr key={key.id}>
-                    <td className="fw-semibold">{key.name}</td>
-                    <td><code className="small">{key.key}</code></td>
-                    <td className="small">{key.created}</td>
-                    <td className="small">{key.lastUsed}</td>
-                    <td>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(key.key);
-                          setResultModal({show: true, type: 'success', message: '✅ API Key copied to clipboard!'});
-                        }}
-                        className="btn btn-sm btn-text-secondary me-1"
-                      >
-                        <i className="ti ti-copy"></i>
-                      </button>
-                      <button
-                        onClick={() => {
-                          const confirmModal = document.createElement('div');
-                          confirmModal.className = 'modal fade show d-block';
-                          confirmModal.style.backgroundColor = 'rgba(0,0,0,0.5)';
-                          confirmModal.innerHTML = `
-                            <div class="modal-dialog modal-dialog-centered">
-                              <div class="modal-content">
-                                <div class="modal-header">
-                                  <h5 class="modal-title">Delete API Key</h5>
-                                  <button type="button" class="btn-close" onclick="this.closest('.modal').remove()"></button>
-                                </div>
-                                <div class="modal-body">Are you sure you want to delete this API key? This action cannot be undone.</div>
-                                <div class="modal-footer">
-                                  <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
-                                  <button type="button" class="btn btn-danger" onclick="window.deleteKey('${key.id}'); this.closest('.modal').remove();">Delete</button>
-                                </div>
-                              </div>
-                            </div>
-                          `;
-                          (window as any).deleteKey = () => handleDelete(key.id);
-                          document.body.appendChild(confirmModal);
-                        }}
-                        className="btn btn-sm btn-text-danger"
-                      >
-                        <i className="ti ti-trash"></i>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      <ApiKeyModal
-        show={showGenerateModal}
-        onClose={() => setShowGenerateModal(false)}
-        onGenerate={handleGenerate}
-      />
-
-      <Modal
-        show={resultModal.show}
-        onClose={() => setResultModal({...resultModal, show: false})}
-        onConfirm={() => setResultModal({...resultModal, show: false})}
-        title={resultModal.type === 'success' ? 'Success' : 'Error'}
-        message={resultModal.message}
-        confirmText="OK"
-        type={resultModal.type}
-      />
+      {deleteModal.show && deleteModal.key && (
+        <Modal show onClose={() => setDeleteModal({show: false, key: null})} onConfirm={() => deleteKey(deleteModal.key!)}
+          title="Delete API Key" message={`Delete "${deleteModal.key.name}"? This action cannot be undone.`} confirmText="Delete" type="danger" />
+      )}
     </div>
   );
 }

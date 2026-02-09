@@ -109,25 +109,25 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="text-center py-5">
-        <div className="spinner-border text-primary"></div>
-        <p className="mt-3 text-muted">Loading product...</p>
+      <div style={{ textAlign: 'center', padding: '40px 0' }}>
+        <div className="spinner-apple"></div>
+        <p style={{ marginTop: 12, color: 'var(--text-secondary)' }}>Loading product...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-5">
-        <i className="ti ti-alert-circle ti-3x text-danger mb-3"></i>
+      <div style={{ textAlign: 'center', padding: '40px 0' }}>
+        <i className="ti ti-alert-circle ti-3x" style={{ color: 'var(--red)', marginBottom: 12, display: 'block' }}></i>
         <h5>Error loading product</h5>
-        <p className="text-muted mb-3">{error}</p>
-        <div className="d-flex gap-2 justify-content-center">
-          <button onClick={loadProduct} className="btn btn-primary">
-            <i className="ti ti-refresh me-1"></i>Try Again
+        <p style={{ color: 'var(--text-secondary)', marginBottom: 12 }}>{error}</p>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+          <button onClick={loadProduct} className="btn-apple btn-apple-primary">
+            <i className="ti ti-refresh" style={{ marginRight: 4 }}></i>Try Again
           </button>
-          <Link href="/products" className="btn btn-outline-secondary">
-            <i className="ti ti-arrow-left me-1"></i>Browse Products
+          <Link href="/products" className="btn-apple btn-apple-secondary">
+            <i className="ti ti-arrow-left" style={{ marginRight: 4 }}></i>Browse Products
           </Link>
         </div>
       </div>
@@ -136,12 +136,12 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="text-center py-5">
-        <i className="ti ti-package-off ti-3x text-muted mb-3"></i>
+      <div style={{ textAlign: 'center', padding: '40px 0' }}>
+        <i className="ti ti-package-off ti-3x" style={{ color: 'var(--text-secondary)', marginBottom: 12, display: 'block' }}></i>
         <h5>Product not found</h5>
-        <p className="text-muted mb-3">The product you're looking for doesn't exist or is no longer available.</p>
-        <Link href="/products" className="btn btn-primary">
-          <i className="ti ti-arrow-left me-1"></i>Browse Products
+        <p style={{ color: 'var(--text-secondary)', marginBottom: 12 }}>The product you're looking for doesn't exist or is no longer available.</p>
+        <Link href="/products" className="btn-apple btn-apple-primary">
+          <i className="ti ti-arrow-left" style={{ marginRight: 4 }}></i>Browse Products
         </Link>
       </div>
     );
@@ -156,28 +156,27 @@ export default function ProductDetailPage() {
   return (
     <div>
       {/* Breadcrumb */}
-      <nav className="mb-4">
-        <Link href="/products" className="text-primary text-decoration-none">
-          <i className="ti ti-arrow-left me-1"></i>Back to Products
+      <nav style={{ marginBottom: 16 }}>
+        <Link href="/products" style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+          <i className="ti ti-arrow-left" style={{ marginRight: 4 }}></i>Back to Products
         </Link>
       </nav>
 
-      <div className="row g-4">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
         {/* Product Images */}
-        <div className="col-lg-6">
+        <div>
           <div className="card">
-            <div className="card-body p-0">
+            <div className="card-body" style={{ padding: 0 }}>
               {product.images && product.images.length > 0 ? (
                 <img
                   src={product.images[0]?.src || product.images[0]}
                   alt={product.title}
-                  className="img-fluid rounded"
-                  style={{ width: '100%', maxHeight: 500, objectFit: 'contain' }}
+                  style={{ width: '100%', maxHeight: 500, objectFit: 'contain', borderRadius: 10 }}
                 />
               ) : (
-                <div className="bg-light p-5 text-center rounded" style={{ minHeight: 400 }}>
-                  <i className="ti ti-photo-off ti-5x text-muted"></i>
-                  <p className="text-muted mt-3">No image available</p>
+                <div style={{ background: 'var(--bg-secondary)', padding: 40, textAlign: 'center', borderRadius: 10, minHeight: 400 }}>
+                  <i className="ti ti-photo-off ti-5x" style={{ color: 'var(--text-secondary)' }}></i>
+                  <p style={{ color: 'var(--text-secondary)', marginTop: 12 }}>No image available</p>
                 </div>
               )}
             </div>
@@ -185,14 +184,13 @@ export default function ProductDetailPage() {
           
           {/* Thumbnail Gallery */}
           {product.images && product.images.length > 1 && (
-            <div className="d-flex gap-2 mt-3 flex-wrap">
+            <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
               {product.images.slice(0, 6).map((img: any, i: number) => (
-                <div key={i} className="border rounded overflow-hidden" style={{ width: 60, height: 60 }}>
+                <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', width: 60, height: 60 }}>
                   <img
                     src={img.src || img}
                     alt={`${product.title} ${i + 1}`}
-                    className="w-100 h-100"
-                    style={{ objectFit: 'cover' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 </div>
               ))}
@@ -201,43 +199,43 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Product Info */}
-        <div className="col-lg-6">
+        <div>
           <div className="card">
             <div className="card-body">
               {/* Vendor */}
               {product.vendor && (
-                <span className="badge bg-label-primary mb-2">{product.vendor}</span>
+                <span className="badge" style={{ background: 'color-mix(in srgb, var(--accent) 15%, transparent)', color: 'var(--accent)', marginBottom: 8 }}>{product.vendor}</span>
               )}
               
               {/* Title */}
-              <h3 className="fw-bold mb-3">{product.title}</h3>
+              <h3 style={{ fontWeight: 700, marginBottom: 12 }}>{product.title}</h3>
               
               {/* SKU */}
               {selectedVariant?.sku && (
-                <p className="text-muted small mb-3">
-                  <i className="ti ti-barcode me-1"></i>SKU: {selectedVariant.sku}
+                <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 12 }}>
+                  <i className="ti ti-barcode" style={{ marginRight: 4 }}></i>SKU: {selectedVariant.sku}
                 </p>
               )}
               
               {/* Pricing */}
-              <div className="bg-light rounded p-3 mb-4">
-                <div className="d-flex align-items-center gap-3 mb-2">
-                  <h2 className="text-primary mb-0">{formatCurrency(unitPrice)}</h2>
+              <div style={{ background: 'var(--bg-secondary)', borderRadius: 10, padding: 16, marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                  <h2 style={{ color: 'var(--accent)', marginBottom: 0 }}>{formatCurrency(unitPrice)}</h2>
                   {hasDiscount && (
                     <>
-                      <span className="text-muted text-decoration-line-through fs-5">
+                      <span style={{ color: 'var(--text-secondary)', textDecoration: 'line-through', fontSize: '1.1rem' }}>
                         {formatCurrency(listPrice)}
                       </span>
-                      <span className="badge bg-success fs-6">-{discountPercent}%</span>
+                      <span className="badge" style={{ background: 'var(--green)', color: '#fff', fontSize: '0.9rem' }}>-{discountPercent}%</span>
                     </>
                   )}
                 </div>
-                <div className="d-flex align-items-center gap-2">
-                  <span className="badge bg-success">
-                    <i className="ti ti-building-store me-1"></i>B2B Price
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="badge" style={{ background: 'var(--green)', color: '#fff' }}>
+                    <i className="ti ti-building-store" style={{ marginRight: 4 }}></i>B2B Price
                   </span>
                   {hasDiscount && (
-                    <span className="text-success small">
+                    <span style={{ color: 'var(--green)', fontSize: 13 }}>
                       You save {formatCurrency(listPrice - unitPrice)} per unit
                     </span>
                   )}
@@ -246,10 +244,10 @@ export default function ProductDetailPage() {
 
               {/* Variant Selector */}
               {product.variants && product.variants.length > 1 && (
-                <div className="mb-4">
-                  <label className="form-label fw-semibold">Select Variant</label>
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ fontWeight: 600, display: 'block', marginBottom: 6 }}>Select Variant</label>
                   <select
-                    className="form-select"
+                    className="form-input"
                     value={selectedVariant?.id || ''}
                     onChange={(e) => {
                       const variant = product.variants?.find((v: any) => v.id === e.target.value);
@@ -266,82 +264,86 @@ export default function ProductDetailPage() {
               )}
 
               {/* Quantity */}
-              <div className="mb-4">
-                <label className="form-label fw-semibold">Quantity</label>
-                <div className="d-flex align-items-center gap-3">
-                  <div className="input-group" style={{ maxWidth: 150 }}>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ fontWeight: 600, display: 'block', marginBottom: 6 }}>Quantity</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ display: 'flex', maxWidth: 150 }}>
                     <button
-                      className="btn btn-outline-secondary"
+                      className="btn-apple btn-apple-secondary"
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      style={{ borderRadius: '8px 0 0 8px' }}
                     >
                       <i className="ti ti-minus"></i>
                     </button>
                     <input
                       type="number"
-                      className="form-control text-center"
+                      className="form-input"
                       value={quantity}
                       onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                       min="1"
+                      style={{ textAlign: 'center', borderRadius: 0 }}
                     />
                     <button
-                      className="btn btn-outline-secondary"
+                      className="btn-apple btn-apple-secondary"
                       onClick={() => setQuantity(quantity + 1)}
+                      style={{ borderRadius: '0 8px 8px 0' }}
                     >
                       <i className="ti ti-plus"></i>
                     </button>
                   </div>
-                  <span className="text-muted">
-                    Total: <strong className="text-primary">{formatCurrency(unitPrice * quantity)}</strong>
+                  <span style={{ color: 'var(--text-secondary)' }}>
+                    Total: <strong style={{ color: 'var(--accent)' }}>{formatCurrency(unitPrice * quantity)}</strong>
                   </span>
                 </div>
                 {savings > 0 && (
-                  <p className="text-success small mt-2 mb-0">
-                    <i className="ti ti-pig-money me-1"></i>
+                  <p style={{ color: 'var(--green)', fontSize: 13, marginTop: 8, marginBottom: 0 }}>
+                    <i className="ti ti-pig-money" style={{ marginRight: 4 }}></i>
                     You save {formatCurrency(savings)} with B2B pricing!
                   </p>
                 )}
               </div>
 
               {/* Add to Cart */}
-              <div className="d-grid gap-2">
+              <div style={{ display: 'grid', gap: 8 }}>
                 <button
                   onClick={addToCart}
-                  className={`btn btn-lg ${addedToCart ? 'btn-success' : 'btn-primary'}`}
+                  className="btn-apple btn-apple-primary"
+                  style={addedToCart ? { background: 'var(--green)', fontSize: '1.1rem', padding: '12px 24px' } : { fontSize: '1.1rem', padding: '12px 24px' }}
                   disabled={adding}
                 >
                   {adding ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2"></span>
+                      <span className="spinner-apple" style={{ width: 16, height: 16, marginRight: 8 }}></span>
                       Adding...
                     </>
                   ) : addedToCart ? (
                     <>
-                      <i className="ti ti-check me-2"></i>
+                      <i className="ti ti-check" style={{ marginRight: 8 }}></i>
                       Added to Cart!
                     </>
                   ) : (
                     <>
-                      <i className="ti ti-shopping-cart-plus me-2"></i>
+                      <i className="ti ti-shopping-cart-plus" style={{ marginRight: 8 }}></i>
                       Add to Cart
                     </>
                   )}
                 </button>
                 {addedToCart && (
-                  <Link href="/cart" className="btn btn-outline-primary">
-                    <i className="ti ti-shopping-cart me-2"></i>
+                  <Link href="/cart" className="btn-apple btn-apple-secondary" style={{ textAlign: 'center' }}>
+                    <i className="ti ti-shopping-cart" style={{ marginRight: 8 }}></i>
                     View Cart
                   </Link>
                 )}
               </div>
 
               {/* Stock Status */}
-              <div className="mt-4 pt-4 border-top">
-                <div className="d-flex align-items-center gap-2">
-                  <i className="ti ti-circle-check text-success"></i>
-                  <span className="text-success">In Stock</span>
+              <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <i className="ti ti-circle-check" style={{ color: 'var(--green)' }}></i>
+                  <span style={{ color: 'var(--green)' }}>In Stock</span>
                 </div>
-                <p className="text-muted small mb-0 mt-2">
-                  <i className="ti ti-truck me-1"></i>
+                <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 0, marginTop: 8 }}>
+                  <i className="ti ti-truck" style={{ marginRight: 4 }}></i>
                   Usually ships within 1-2 business days
                 </p>
               </div>
@@ -350,15 +352,15 @@ export default function ProductDetailPage() {
 
           {/* Description Card */}
           {product.description && (
-            <div className="card mt-4">
+            <div className="card" style={{ marginTop: 20 }}>
               <div className="card-header">
-                <h5 className="card-title mb-0">
-                  <i className="ti ti-info-circle me-2"></i>Product Description
+                <h5 className="card-title" style={{ marginBottom: 0 }}>
+                  <i className="ti ti-info-circle" style={{ marginRight: 8 }}></i>Product Description
                 </h5>
               </div>
               <div className="card-body">
                 <div 
-                  className="text-muted"
+                  style={{ color: 'var(--text-secondary)' }}
                   dangerouslySetInnerHTML={{ __html: product.description }}
                 />
               </div>
@@ -367,14 +369,14 @@ export default function ProductDetailPage() {
 
           {/* Tags */}
           {product.tags && product.tags.length > 0 && (
-            <div className="card mt-4">
+            <div className="card" style={{ marginTop: 20 }}>
               <div className="card-body">
-                <h6 className="fw-semibold mb-3">
-                  <i className="ti ti-tags me-2"></i>Tags
+                <h6 style={{ fontWeight: 600, marginBottom: 12 }}>
+                  <i className="ti ti-tags" style={{ marginRight: 8 }}></i>Tags
                 </h6>
-                <div className="d-flex flex-wrap gap-2">
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {(typeof product.tags === 'string' ? product.tags.split(',') : product.tags).map((tag: string, i: number) => (
-                    <span key={i} className="badge bg-label-secondary">{tag.trim()}</span>
+                    <span key={i} className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>{tag.trim()}</span>
                   ))}
                 </div>
               </div>

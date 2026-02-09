@@ -174,16 +174,16 @@ export default function ProfilePage() {
   };
 
   const getRoleBadge = (role: string) => {
-    const configs: Record<string, { label: string; class: string; icon: string }> = {
-      ADMIN: { label: 'Administrator', class: 'bg-danger', icon: 'shield' },
-      MANAGER: { label: 'Manager', class: 'bg-warning', icon: 'user-star' },
-      BUYER: { label: 'Buyer', class: 'bg-primary', icon: 'shopping-cart' },
-      VIEWER: { label: 'Viewer', class: 'bg-secondary', icon: 'eye' },
+    const configs: Record<string, { label: string; color: string; icon: string }> = {
+      ADMIN: { label: 'Administrator', color: 'var(--red)', icon: 'shield' },
+      MANAGER: { label: 'Manager', color: 'var(--orange)', icon: 'user-star' },
+      BUYER: { label: 'Buyer', color: 'var(--accent)', icon: 'shopping-cart' },
+      VIEWER: { label: 'Viewer', color: 'var(--text-secondary)', icon: 'eye' },
     };
-    const config = configs[role] || { label: role, class: 'bg-secondary', icon: 'user' };
+    const config = configs[role] || { label: role, color: 'var(--text-secondary)', icon: 'user' };
     return (
-      <span className={`badge ${config.class}`}>
-        <i className={`ti ti-${config.icon} me-1`}></i>
+      <span className="badge" style={{ background: config.color }}>
+        <i className={`ti ti-${config.icon}`} style={{ marginRight: 4 }}></i>
         {config.label}
       </span>
     );
@@ -191,71 +191,66 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="text-center py-5">
-        <div className="spinner-border text-primary"></div>
-        <p className="mt-2 text-muted">Loading profile...</p>
+      <div style={{ textAlign: 'center', padding: '40px 0' }}>
+        <div className="spinner-apple"></div>
+        <p style={{ marginTop: 8, color: 'var(--text-secondary)' }}>Loading profile...</p>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h4 className="fw-bold mb-1">Account Settings</h4>
-          <p className="mb-0 text-muted">Manage your profile and preferences</p>
+          <h4 style={{ fontWeight: 700, marginBottom: 4 }}>Account Settings</h4>
+          <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Manage your profile and preferences</p>
         </div>
       </div>
 
-      <div className="row">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 24 }}>
         {/* Sidebar - Profile Card */}
-        <div className="col-lg-4 mb-4">
+        <div>
           <div className="card">
-            <div className="card-body text-center">
+            <div className="card-body" style={{ textAlign: 'center' }}>
               <div 
-                className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold mx-auto mb-3"
-                style={{ width: 100, height: 100, fontSize: 36 }}
+                style={{ width: 100, height: 100, fontSize: 36, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, margin: '0 auto 12px' }}
               >
                 {profile.firstName?.[0]}{profile.lastName?.[0]}
               </div>
-              <h5 className="mb-1">{profile.firstName} {profile.lastName}</h5>
-              <p className="text-muted mb-2">{profile.email}</p>
+              <h5 style={{ marginBottom: 4 }}>{profile.firstName} {profile.lastName}</h5>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: 8 }}>{profile.email}</p>
               {getRoleBadge(profile.role)}
               
               {profile.companyName && (
-                <div className="mt-3 pt-3 border-top">
-                  <small className="text-muted d-block mb-1">Company</small>
-                  <span className="fw-semibold">{profile.companyName}</span>
+                <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+                  <small style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Company</small>
+                  <span style={{ fontWeight: 600 }}>{profile.companyName}</span>
                 </div>
               )}
             </div>
           </div>
 
           {/* Stats Card */}
-          <div className="card mt-3">
+          <div className="card" style={{ marginTop: 12 }}>
             <div className="card-body">
-              <h6 className="mb-3">Account Statistics</h6>
-              <div className="row g-3">
-                <div className="col-6">
-                  <div className="bg-light rounded p-3 text-center">
-                    <h4 className="mb-0 text-primary">{profile.orderCount || 0}</h4>
-                    <small className="text-muted">Orders</small>
-                  </div>
+              <h6 style={{ marginBottom: 12 }}>Account Statistics</h6>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ background: 'var(--bg-secondary)', borderRadius: 10, padding: 12, textAlign: 'center' }}>
+                  <h4 style={{ margin: 0, color: 'var(--accent)' }}>{profile.orderCount || 0}</h4>
+                  <small style={{ color: 'var(--text-secondary)' }}>Orders</small>
                 </div>
-                <div className="col-6">
-                  <div className="bg-light rounded p-3 text-center">
-                    <h4 className="mb-0 text-success">{formatCurrency(profile.totalSpent || 0)}</h4>
-                    <small className="text-muted">Total Spent</small>
-                  </div>
+                <div style={{ background: 'var(--bg-secondary)', borderRadius: 10, padding: 12, textAlign: 'center' }}>
+                  <h4 style={{ margin: 0, color: 'var(--green)' }}>{formatCurrency(profile.totalSpent || 0)}</h4>
+                  <small style={{ color: 'var(--text-secondary)' }}>Total Spent</small>
                 </div>
               </div>
-              <ul className="list-unstyled small mt-3 mb-0">
-                <li className="d-flex justify-content-between py-2 border-bottom">
-                  <span className="text-muted">Member Since</span>
+              <ul style={{ listStyle: 'none', padding: 0, fontSize: 13, marginTop: 12, marginBottom: 0 }}>
+                <li style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Member Since</span>
                   <span>{profile.createdAt ? formatRelativeTime(profile.createdAt) : 'N/A'}</span>
                 </li>
-                <li className="d-flex justify-content-between py-2">
-                  <span className="text-muted">Last Login</span>
+                <li style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Last Login</span>
                   <span>{profile.lastLoginAt ? formatRelativeTime(profile.lastLoginAt) : 'N/A'}</span>
                 </li>
               </ul>
@@ -264,41 +259,35 @@ export default function ProfilePage() {
         </div>
 
         {/* Main Content */}
-        <div className="col-lg-8">
+        <div>
           {/* Tabs */}
-          <ul className="nav nav-tabs mb-4">
-            <li className="nav-item">
-              <button 
-                className={`nav-link ${activeTab === 'profile' ? 'active' : ''}`}
-                onClick={() => { setActiveTab('profile'); setMessage(null); }}
-              >
-                <i className="ti ti-user me-1"></i>Profile
-              </button>
-            </li>
-            <li className="nav-item">
-              <button 
-                className={`nav-link ${activeTab === 'security' ? 'active' : ''}`}
-                onClick={() => { setActiveTab('security'); setMessage(null); }}
-              >
-                <i className="ti ti-lock me-1"></i>Security
-              </button>
-            </li>
-            <li className="nav-item">
-              <button 
-                className={`nav-link ${activeTab === 'notifications' ? 'active' : ''}`}
-                onClick={() => { setActiveTab('notifications'); setMessage(null); }}
-              >
-                <i className="ti ti-bell me-1"></i>Notifications
-              </button>
-            </li>
-          </ul>
+          <div className="tab-bar" style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '1px solid var(--border)' }}>
+            <button 
+              className={`tab-button ${activeTab === 'profile' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('profile'); setMessage(null); }}
+            >
+              <i className="ti ti-user" style={{ marginRight: 4 }}></i>Profile
+            </button>
+            <button 
+              className={`tab-button ${activeTab === 'security' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('security'); setMessage(null); }}
+            >
+              <i className="ti ti-lock" style={{ marginRight: 4 }}></i>Security
+            </button>
+            <button 
+              className={`tab-button ${activeTab === 'notifications' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('notifications'); setMessage(null); }}
+            >
+              <i className="ti ti-bell" style={{ marginRight: 4 }}></i>Notifications
+            </button>
+          </div>
 
           {/* Alert Message */}
           {message && (
-            <div className={`alert ${message.type === 'success' ? 'alert-success' : 'alert-danger'} alert-dismissible fade show`}>
-              <i className={`ti ti-${message.type === 'success' ? 'check' : 'alert-circle'} me-2`}></i>
+            <div className={`alert ${message.type === 'success' ? 'alert-success' : 'alert-error'}`}>
+              <i className={`ti ti-${message.type === 'success' ? 'check' : 'alert-circle'}`} style={{ marginRight: 8 }}></i>
               {message.text}
-              <button type="button" className="btn-close" onClick={() => setMessage(null)}></button>
+              <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: 'auto', fontSize: 18, color: 'var(--text-secondary)' }} onClick={() => setMessage(null)}>×</button>
             </div>
           )}
 
@@ -306,59 +295,59 @@ export default function ProfilePage() {
           {activeTab === 'profile' && (
             <div className="card">
               <div className="card-header">
-                <h5 className="card-title mb-0">Personal Information</h5>
+                <h5 className="card-title" style={{ margin: 0 }}>Personal Information</h5>
               </div>
               <div className="card-body">
-                <div className="row g-3">
-                  <div className="col-md-6">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div className="form-group">
                     <label className="form-label">First Name</label>
                     <input
                       type="text"
-                      className="form-control"
+                      className="form-input"
                       value={profile.firstName}
                       onChange={(e) => setProfile({...profile, firstName: e.target.value})}
                     />
                   </div>
-                  <div className="col-md-6">
+                  <div className="form-group">
                     <label className="form-label">Last Name</label>
                     <input
                       type="text"
-                      className="form-control"
+                      className="form-input"
                       value={profile.lastName}
                       onChange={(e) => setProfile({...profile, lastName: e.target.value})}
                     />
                   </div>
-                  <div className="col-md-6">
+                  <div className="form-group">
                     <label className="form-label">Email Address</label>
                     <input
                       type="email"
-                      className="form-control"
+                      className="form-input"
                       value={profile.email}
                       disabled
                     />
-                    <small className="text-muted">Email cannot be changed</small>
+                    <small style={{ color: 'var(--text-secondary)' }}>Email cannot be changed</small>
                   </div>
-                  <div className="col-md-6">
+                  <div className="form-group">
                     <label className="form-label">Phone Number</label>
                     <input
                       type="tel"
-                      className="form-control"
+                      className="form-input"
                       value={profile.phone}
                       onChange={(e) => setProfile({...profile, phone: e.target.value})}
                       placeholder="+1 (555) 123-4567"
                     />
                   </div>
                 </div>
-                <div className="mt-4">
-                  <button onClick={saveProfile} disabled={saving} className="btn btn-primary">
+                <div style={{ marginTop: 20 }}>
+                  <button onClick={saveProfile} disabled={saving} className="btn-apple btn-apple-primary">
                     {saving ? (
                       <>
-                        <span className="spinner-border spinner-border-sm me-2"></span>
+                        <span className="spinner-apple" style={{ width: 16, height: 16, marginRight: 8 }}></span>
                         Saving...
                       </>
                     ) : (
                       <>
-                        <i className="ti ti-check me-1"></i>Save Changes
+                        <i className="ti ti-check" style={{ marginRight: 4 }}></i>Save Changes
                       </>
                     )}
                   </button>
@@ -371,63 +360,63 @@ export default function ProfilePage() {
           {activeTab === 'security' && (
             <div className="card">
               <div className="card-header">
-                <h5 className="card-title mb-0">Change Password</h5>
+                <h5 className="card-title" style={{ margin: 0 }}>Change Password</h5>
               </div>
               <div className="card-body">
-                <div className="row g-3">
-                  <div className="col-12">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                     <label className="form-label">Current Password</label>
                     <input
                       type="password"
-                      className="form-control"
+                      className="form-input"
                       value={passwords.current}
                       onChange={(e) => setPasswords({...passwords, current: e.target.value})}
                     />
                   </div>
-                  <div className="col-md-6">
+                  <div className="form-group">
                     <label className="form-label">New Password</label>
                     <input
                       type="password"
-                      className="form-control"
+                      className="form-input"
                       value={passwords.new}
                       onChange={(e) => setPasswords({...passwords, new: e.target.value})}
                     />
                   </div>
-                  <div className="col-md-6">
+                  <div className="form-group">
                     <label className="form-label">Confirm New Password</label>
                     <input
                       type="password"
-                      className="form-control"
+                      className="form-input"
                       value={passwords.confirm}
                       onChange={(e) => setPasswords({...passwords, confirm: e.target.value})}
                     />
                   </div>
                 </div>
-                <div className="mt-4">
+                <div style={{ marginTop: 20 }}>
                   <button 
                     onClick={changePassword} 
                     disabled={changingPassword || !passwords.current || !passwords.new || !passwords.confirm}
-                    className="btn btn-primary"
+                    className="btn-apple btn-apple-primary"
                   >
                     {changingPassword ? (
                       <>
-                        <span className="spinner-border spinner-border-sm me-2"></span>
+                        <span className="spinner-apple" style={{ width: 16, height: 16, marginRight: 8 }}></span>
                         Updating...
                       </>
                     ) : (
                       <>
-                        <i className="ti ti-lock me-1"></i>Update Password
+                        <i className="ti ti-lock" style={{ marginRight: 4 }}></i>Update Password
                       </>
                     )}
                   </button>
                 </div>
                 
                 {/* Security Tips */}
-                <div className="alert alert-light mt-4 mb-0">
-                  <h6 className="alert-heading mb-2">
-                    <i className="ti ti-shield-check me-1"></i>Password Tips
+                <div className="alert alert-info" style={{ marginTop: 20, marginBottom: 0 }}>
+                  <h6 style={{ marginBottom: 8 }}>
+                    <i className="ti ti-shield-check" style={{ marginRight: 4 }}></i>Password Tips
                   </h6>
-                  <ul className="mb-0 small">
+                  <ul style={{ margin: 0, fontSize: 13 }}>
                     <li>Use at least 8 characters</li>
                     <li>Include uppercase and lowercase letters</li>
                     <li>Add numbers and special characters</li>
@@ -442,11 +431,11 @@ export default function ProfilePage() {
           {activeTab === 'notifications' && (
             <div className="card">
               <div className="card-header">
-                <h5 className="card-title mb-0">Email Notifications</h5>
+                <h5 className="card-title" style={{ margin: 0 }}>Email Notifications</h5>
               </div>
               <div className="card-body">
-                <div className="mb-4">
-                  <div className="form-check form-switch mb-3">
+                <div style={{ marginBottom: 20 }}>
+                  <div className="toggle-row" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 16 }}>
                     <input
                       className="form-check-input"
                       type="checkbox"
@@ -454,12 +443,12 @@ export default function ProfilePage() {
                       checked={notifPrefs.orderUpdates}
                       onChange={(e) => setNotifPrefs({...notifPrefs, orderUpdates: e.target.checked})}
                     />
-                    <label className="form-check-label" htmlFor="orderUpdates">
+                    <label htmlFor="orderUpdates">
                       <strong>Order Updates</strong>
-                      <p className="text-muted small mb-0">Receive notifications about order status changes and shipping updates</p>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>Receive notifications about order status changes and shipping updates</p>
                     </label>
                   </div>
-                  <div className="form-check form-switch mb-3">
+                  <div className="toggle-row" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 16 }}>
                     <input
                       className="form-check-input"
                       type="checkbox"
@@ -467,12 +456,12 @@ export default function ProfilePage() {
                       checked={notifPrefs.quoteAlerts}
                       onChange={(e) => setNotifPrefs({...notifPrefs, quoteAlerts: e.target.checked})}
                     />
-                    <label className="form-check-label" htmlFor="quoteAlerts">
+                    <label htmlFor="quoteAlerts">
                       <strong>Quote Alerts</strong>
-                      <p className="text-muted small mb-0">Get notified when quotes are ready or about to expire</p>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>Get notified when quotes are ready or about to expire</p>
                     </label>
                   </div>
-                  <div className="form-check form-switch mb-3">
+                  <div className="toggle-row" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 16 }}>
                     <input
                       className="form-check-input"
                       type="checkbox"
@@ -480,12 +469,12 @@ export default function ProfilePage() {
                       checked={notifPrefs.teamActivity}
                       onChange={(e) => setNotifPrefs({...notifPrefs, teamActivity: e.target.checked})}
                     />
-                    <label className="form-check-label" htmlFor="teamActivity">
+                    <label htmlFor="teamActivity">
                       <strong>Team Activity</strong>
-                      <p className="text-muted small mb-0">Notifications about team member actions and approvals</p>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>Notifications about team member actions and approvals</p>
                     </label>
                   </div>
-                  <div className="form-check form-switch mb-3">
+                  <div className="toggle-row" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 16 }}>
                     <input
                       className="form-check-input"
                       type="checkbox"
@@ -493,12 +482,12 @@ export default function ProfilePage() {
                       checked={notifPrefs.promotions}
                       onChange={(e) => setNotifPrefs({...notifPrefs, promotions: e.target.checked})}
                     />
-                    <label className="form-check-label" htmlFor="promotions">
+                    <label htmlFor="promotions">
                       <strong>Promotions & Deals</strong>
-                      <p className="text-muted small mb-0">Special offers, discounts, and exclusive B2B deals</p>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>Special offers, discounts, and exclusive B2B deals</p>
                     </label>
                   </div>
-                  <div className="form-check form-switch">
+                  <div className="toggle-row" style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                     <input
                       className="form-check-input"
                       type="checkbox"
@@ -506,21 +495,21 @@ export default function ProfilePage() {
                       checked={notifPrefs.weeklyDigest}
                       onChange={(e) => setNotifPrefs({...notifPrefs, weeklyDigest: e.target.checked})}
                     />
-                    <label className="form-check-label" htmlFor="weeklyDigest">
+                    <label htmlFor="weeklyDigest">
                       <strong>Weekly Digest</strong>
-                      <p className="text-muted small mb-0">Weekly summary of your account activity and spending</p>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0 }}>Weekly summary of your account activity and spending</p>
                     </label>
                   </div>
                 </div>
-                <button onClick={saveNotificationPrefs} disabled={savingNotifs} className="btn btn-primary">
+                <button onClick={saveNotificationPrefs} disabled={savingNotifs} className="btn-apple btn-apple-primary">
                   {savingNotifs ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2"></span>
+                      <span className="spinner-apple" style={{ width: 16, height: 16, marginRight: 8 }}></span>
                       Saving...
                     </>
                   ) : (
                     <>
-                      <i className="ti ti-check me-1"></i>Save Preferences
+                      <i className="ti ti-check" style={{ marginRight: 4 }}></i>Save Preferences
                     </>
                   )}
                 </button>

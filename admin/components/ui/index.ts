@@ -1,25 +1,25 @@
-/**
- * Admin UI Components
- * Barrel export for all shared UI components
- */
-
+// UI Component Library - Apple macOS Design
 export { default as Button } from './Button';
-export { default as Input } from './Input';
 export { default as Card } from './Card';
-export { default as Table, type TableColumn } from './Table';
-export { default as Pagination } from './Pagination';
+export { default as Input } from './Input';
+export { showToast, ToastContainer } from './Toast';
 export { default as StatusBadge } from './StatusBadge';
-export { default as ToastContainer, toast, showToast } from './Toast';
-export { default as DataTable, type DataTableColumn } from './DataTable';
-export { 
-  PageHeader, 
-  PageContent, 
-  StatsCard, 
-  Tabs, 
-  FilterBar, 
-  SearchInput, 
-  SelectFilter 
+export { default as Pagination } from './Pagination';
+export { default as Table } from './Table';
+export { default as DataTable } from './DataTable';
+export type { DataTableColumn } from './DataTable';
+export { default as Modal } from '../Modal';
+
+export {
+  PageHeader,
+  PageContent,
+  StatsCard,
+  Tabs,
+  FilterBar,
+  SearchInput,
+  SelectFilter,
 } from './PageLayout';
+
 export {
   LoadingOverlay,
   ActionResult,

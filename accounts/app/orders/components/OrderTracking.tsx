@@ -21,22 +21,34 @@ export default function OrderTracking({ order }: OrderTrackingProps) {
   return (
     <div className="card">
       <div className="card-header">
-        <h6 className="card-title mb-0">Order Tracking</h6>
+        <h6 className="card-title" style={{ marginBottom: 0 }}>Order Tracking</h6>
       </div>
       <div className="card-body">
-        <div className="timeline">
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {steps.map((step, i) => (
-            <div key={i} className={`timeline-item ${step.completed ? '' : 'timeline-item-transparent'}`}>
-              <span className={`timeline-point ${step.completed ? 'timeline-point-success' : 'timeline-point-secondary'}`}>
+            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', position: 'relative', paddingBottom: i < steps.length - 1 ? 24 : 0 }}>
+              {i < steps.length - 1 && (
+                <div style={{ position: 'absolute', left: 11, top: 24, bottom: 0, width: 2, background: step.completed ? 'var(--green)' : 'var(--border)' }} />
+              )}
+              <div style={{
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: step.completed ? 'var(--green)' : 'var(--bg-secondary)',
+                color: step.completed ? '#fff' : 'var(--text-secondary)',
+                flexShrink: 0,
+                fontSize: '0.75rem',
+              }}>
                 {step.completed && <i className="ti ti-check"></i>}
-              </span>
-              <div className="timeline-event">
-                <div className="timeline-header">
-                  <h6 className="mb-0">{step.name}</h6>
-                  {step.date && (
-                    <small className="text-muted">{new Date(step.date).toLocaleString()}</small>
-                  )}
-                </div>
+              </div>
+              <div style={{ marginLeft: 12, flex: 1 }}>
+                <h6 style={{ marginBottom: 0 }}>{step.name}</h6>
+                {step.date && (
+                  <small style={{ color: 'var(--text-secondary)' }}>{new Date(step.date).toLocaleString()}</small>
+                )}
               </div>
             </div>
           ))}

@@ -66,36 +66,36 @@ export function CartSummary({
   return (
     <div className="card">
       <div className="card-header">
-        <h5 className="card-title mb-0">Order Summary</h5>
+        <h5 style={{ margin: 0, fontWeight: 600 }}>Order Summary</h5>
       </div>
       <div className="card-body">
         {/* Item Count */}
-        <div className="d-flex justify-content-between mb-2">
-          <span className="text-muted">Items ({items.length})</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+          <span style={{ color: 'var(--text-secondary)' }}>Items ({items.length})</span>
           <span>{items.reduce((sum, i) => sum + i.quantity, 0)} units</span>
         </div>
 
         {/* List Price (if different from subtotal) */}
         {listTotal && listTotal > subtotal && (
-          <div className="d-flex justify-content-between mb-2">
-            <span className="text-muted">List Price</span>
-            <span className="text-decoration-line-through text-muted">
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ color: 'var(--text-secondary)' }}>List Price</span>
+            <span style={{ textDecoration: 'line-through', color: 'var(--text-secondary)' }}>
               {formatCurrency(listTotal, currency)}
             </span>
           </div>
         )}
 
         {/* Subtotal (Your Price) */}
-        <div className="d-flex justify-content-between mb-2">
-          <span className="text-muted">Subtotal</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+          <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
           <span>{formatCurrency(subtotal, currency)}</span>
         </div>
 
         {/* B2B Discount */}
         {hasSavings && (
-          <div className="d-flex justify-content-between mb-2 text-success">
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: 'var(--green)' }}>
             <span>
-              <i className="ti ti-tag me-1"></i>
+              <i className="ti ti-tag" style={{ marginRight: 4 }}></i>
               B2B Savings
             </span>
             <span>-{formatCurrency(totalSavings, currency)}</span>
@@ -104,9 +104,9 @@ export function CartSummary({
 
         {/* Applied Promotions */}
         {appliedPromotions.map((promo) => (
-          <div key={promo.id} className="d-flex justify-content-between mb-2 text-success">
+          <div key={promo.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: 'var(--green)' }}>
             <span>
-              <i className="ti ti-ticket me-1"></i>
+              <i className="ti ti-ticket" style={{ marginRight: 4 }}></i>
               {promo.title}
             </span>
             <span>
@@ -119,15 +119,15 @@ export function CartSummary({
 
         {/* Discount line (if separate) */}
         {discount > 0 && !hasSavings && (
-          <div className="d-flex justify-content-between mb-2 text-success">
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: 'var(--green)' }}>
             <span>Discount</span>
             <span>-{formatCurrency(discount, currency)}</span>
           </div>
         )}
 
         {/* Shipping */}
-        <div className="d-flex justify-content-between mb-2">
-          <span className="text-muted">Shipping</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+          <span style={{ color: 'var(--text-secondary)' }}>Shipping</span>
           <span>
             {shipping > 0 ? formatCurrency(shipping, currency) : 'Calculated at checkout'}
           </span>
@@ -135,8 +135,8 @@ export function CartSummary({
 
         {/* Tax */}
         {tax > 0 && (
-          <div className="d-flex justify-content-between mb-2">
-            <span className="text-muted">Tax</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ color: 'var(--text-secondary)' }}>Tax</span>
             <span>{formatCurrency(tax, currency)}</span>
           </div>
         )}
@@ -144,20 +144,20 @@ export function CartSummary({
         <hr />
 
         {/* Total */}
-        <div className="d-flex justify-content-between mb-3">
-          <strong className="fs-5">Total</strong>
-          <strong className="fs-5">{formatCurrency(total, currency)}</strong>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+          <strong style={{ fontSize: '1.15rem' }}>Total</strong>
+          <strong style={{ fontSize: '1.15rem' }}>{formatCurrency(total, currency)}</strong>
         </div>
 
         {/* Savings Highlight */}
         {hasSavings && (
-          <div className="alert alert-success py-2 mb-3">
-            <div className="d-flex align-items-center">
-              <i className="ti ti-discount ti-lg me-2"></i>
+          <div className="alert-apple alert-apple-success" style={{ padding: '8px 12px', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <i className="ti ti-discount ti-lg" style={{ marginRight: 8 }}></i>
               <div>
                 <strong>You&apos;re saving {formatCurrency(totalSavings, currency)}</strong>
                 {savingsPercent > 0 && (
-                  <span className="ms-1">({formatPercent(savingsPercent)})</span>
+                  <span style={{ marginLeft: 4 }}>({formatPercent(savingsPercent)})</span>
                 )}
               </div>
             </div>
@@ -166,9 +166,9 @@ export function CartSummary({
 
         {/* Approval Warning */}
         {needsApproval && approvalLimit && (
-          <div className="alert alert-warning py-2 mb-3">
-            <div className="d-flex align-items-center">
-              <i className="ti ti-alert-circle me-2"></i>
+          <div className="alert-apple alert-apple-warning" style={{ padding: '8px 12px', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <i className="ti ti-alert-circle" style={{ marginRight: 8 }}></i>
               <small>
                 Orders over {formatCurrency(approvalLimit, currency)} require manager approval.
               </small>
@@ -177,7 +177,7 @@ export function CartSummary({
         )}
 
         {/* Actions */}
-        <div className="d-grid gap-2">
+        <div style={{ display: 'grid', gap: 8 }}>
           {onCheckout && (
             <LoadingButton
               variant="primary"
@@ -185,15 +185,17 @@ export function CartSummary({
               loading={checkoutLoading}
               disabled={disabled || !hasItems}
               onClick={onCheckout}
+              style={{ width: '100%', height: 48 }}
+              className="btn-apple btn-apple-primary"
             >
               {needsApproval ? (
                 <>
-                  <i className="ti ti-send me-2"></i>
+                  <i className="ti ti-send" style={{ marginRight: 8 }}></i>
                   Submit for Approval
                 </>
               ) : (
                 <>
-                  <i className="ti ti-shopping-cart me-2"></i>
+                  <i className="ti ti-shopping-cart" style={{ marginRight: 8 }}></i>
                   Proceed to Checkout
                 </>
               )}
@@ -206,26 +208,27 @@ export function CartSummary({
               loading={quoteLoading}
               disabled={disabled || !hasItems}
               onClick={onSaveQuote}
+              className="btn-apple btn-apple-secondary"
             >
-              <i className="ti ti-file-text me-2"></i>
+              <i className="ti ti-file-text" style={{ marginRight: 8 }}></i>
               Save as Quote
             </LoadingButton>
           )}
         </div>
 
         {/* Trust Badges */}
-        <div className="mt-4 pt-3 border-top">
-          <div className="d-flex justify-content-around text-center small text-muted">
+        <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
             <div>
-              <i className="ti ti-shield-check d-block mb-1"></i>
+              <i className="ti ti-shield-check" style={{ display: 'block', marginBottom: 4 }}></i>
               Secure Checkout
             </div>
             <div>
-              <i className="ti ti-truck d-block mb-1"></i>
+              <i className="ti ti-truck" style={{ display: 'block', marginBottom: 4 }}></i>
               Fast Shipping
             </div>
             <div>
-              <i className="ti ti-headset d-block mb-1"></i>
+              <i className="ti ti-headset" style={{ display: 'block', marginBottom: 4 }}></i>
               24/7 Support
             </div>
           </div>
@@ -259,24 +262,24 @@ export function MiniCartSummary({
   return (
     <div className="card">
       <div className="card-body">
-        <div className="d-flex justify-content-between mb-2">
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
           <span>{itemCount} items</span>
           <strong>{formatCurrency(total, currency)}</strong>
         </div>
         {savings > 0 && (
-          <div className="small text-success mb-2">
-            <i className="ti ti-discount me-1"></i>
+          <div style={{ fontSize: '0.85rem', color: 'var(--green)', marginBottom: 8 }}>
+            <i className="ti ti-discount" style={{ marginRight: 4 }}></i>
             Saving {formatCurrency(savings, currency)}
           </div>
         )}
-        <div className="d-grid gap-2">
+        <div style={{ display: 'grid', gap: 8 }}>
           {onViewCart && (
-            <button className="btn btn-outline-primary btn-sm" onClick={onViewCart}>
+            <button className="btn-apple btn-apple-secondary" style={{ fontSize: '0.85rem' }} onClick={onViewCart}>
               View Cart
             </button>
           )}
           {onCheckout && (
-            <button className="btn btn-primary btn-sm" onClick={onCheckout}>
+            <button className="btn-apple btn-apple-primary" style={{ fontSize: '0.85rem' }} onClick={onCheckout}>
               Checkout
             </button>
           )}
@@ -322,36 +325,35 @@ export function CartItemRow({
   const itemSavings = listTotal - itemTotal;
 
   return (
-    <div className={`card mb-3 ${loading ? 'opacity-50' : ''}`}>
+    <div className="card" style={{ marginBottom: 12, opacity: loading ? 0.5 : 1 }}>
       <div className="card-body">
-        <div className="row align-items-center">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           {/* Image */}
-          <div className="col-auto">
+          <div>
             <img
               src={item.imageUrl || '/placeholder.png'}
               alt={item.title}
-              className="rounded"
-              style={{ width: 80, height: 80, objectFit: 'cover' }}
+              style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 10 }}
             />
           </div>
 
           {/* Details */}
-          <div className="col">
-            <h6 className="mb-1">{item.title}</h6>
+          <div style={{ flex: 1 }}>
+            <h6 style={{ margin: '0 0 4px' }}>{item.title}</h6>
             {item.variantTitle && (
-              <small className="text-muted d-block">{item.variantTitle}</small>
+              <small style={{ color: 'var(--text-secondary)', display: 'block' }}>{item.variantTitle}</small>
             )}
             {item.sku && (
-              <small className="text-muted d-block">SKU: {item.sku}</small>
+              <small style={{ color: 'var(--text-secondary)', display: 'block' }}>SKU: {item.sku}</small>
             )}
             
             {/* Price Display */}
-            <div className="mt-2">
-              <span className="fw-bold text-success">
+            <div style={{ marginTop: 8 }}>
+              <span style={{ fontWeight: 700, color: 'var(--green)' }}>
                 {formatCurrency(item.unitPrice, currency)}
               </span>
               {hasDiscount && (
-                <span className="text-muted text-decoration-line-through ms-2 small">
+                <span style={{ color: 'var(--text-secondary)', textDecoration: 'line-through', marginLeft: 8, fontSize: '0.85rem' }}>
                   {formatCurrency(item.listPrice!, currency)}
                 </span>
               )}
@@ -359,10 +361,11 @@ export function CartItemRow({
           </div>
 
           {/* Quantity */}
-          <div className="col-auto">
-            <div className="input-group" style={{ width: 120 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', width: 120 }}>
               <button
-                className="btn btn-outline-secondary"
+                className="btn-apple btn-apple-secondary"
+                style={{ borderRadius: 0, minWidth: 36, height: 36, padding: 0, border: 'none' }}
                 type="button"
                 onClick={() => onUpdateQuantity?.(item.quantity - 1)}
                 disabled={loading || item.quantity <= 1}
@@ -371,12 +374,13 @@ export function CartItemRow({
               </button>
               <input
                 type="text"
-                className="form-control text-center"
+                style={{ width: 48, textAlign: 'center', border: 'none', outline: 'none', background: 'transparent', fontSize: '0.9rem' }}
                 value={item.quantity}
                 readOnly
               />
               <button
-                className="btn btn-outline-secondary"
+                className="btn-apple btn-apple-secondary"
+                style={{ borderRadius: 0, minWidth: 36, height: 36, padding: 0, border: 'none' }}
                 type="button"
                 onClick={() => onUpdateQuantity?.(item.quantity + 1)}
                 disabled={loading}
@@ -396,16 +400,17 @@ export function CartItemRow({
           </div>
 
           {/* Total */}
-          <div className="col-auto text-end">
-            <div className="fw-bold">{formatCurrency(itemTotal, currency)}</div>
+          <div style={{ textAlign: 'right', minWidth: 80 }}>
+            <div style={{ fontWeight: 700 }}>{formatCurrency(itemTotal, currency)}</div>
             {itemSavings > 0 && (
-              <small className="text-success">
+              <small style={{ color: 'var(--green)' }}>
                 Save {formatCurrency(itemSavings, currency)}
               </small>
             )}
             {onRemove && (
               <button
-                className="btn btn-link text-danger p-0 d-block mt-1"
+                className="btn-apple"
+                style={{ color: 'var(--red)', padding: 0, display: 'block', marginTop: 4, background: 'none', border: 'none', cursor: 'pointer' }}
                 onClick={onRemove}
                 disabled={loading}
               >
@@ -438,7 +443,7 @@ function QuantityBreakMiniHint({ currentQty, breaks, currentPrice }: QuantityBre
   const additionalNeeded = nextBreak.qty - currentQty;
 
   return (
-    <small className="text-warning d-block text-center mt-1">
+    <small style={{ color: 'var(--orange)', display: 'block', textAlign: 'center', marginTop: 4 }}>
       +{additionalNeeded} for better price
     </small>
   );

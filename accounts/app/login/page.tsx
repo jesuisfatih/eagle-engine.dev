@@ -75,159 +75,146 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-      <div className="container py-5">
-        <div className="row justify-content-center">
-          <div className="col-12 col-md-8 col-lg-6 col-xl-5">
-            <div className="card shadow-lg border-0">
-              <div className="card-body p-4 p-md-5">
-                {/* Logo & Brand */}
-                <div className="text-center mb-4">
-                  <div className="d-inline-flex align-items-center justify-content-center bg-primary rounded-circle mb-3" style={{ width: 64, height: 64 }}>
-                    <span className="text-white fs-2">🦅</span>
-                  </div>
-                  <h3 className="fw-bold mb-1">Welcome Back!</h3>
-                  <p className="text-muted">Sign in to your B2B account</p>
-                </div>
+    <div className="login-page">
+      <div className="login-container">
+        <div className="login-card" style={{ maxWidth: 440
 
-                {/* Error Alert */}
-                {error && (
-                  <div className="alert alert-danger d-flex align-items-center" role="alert">
-                    <i className="ti ti-alert-circle me-2"></i>
-                    <div>{error}</div>
-                    <button type="button" className="btn-close ms-auto" onClick={() => setError('')}></button>
-                  </div>
-                )}
+ }}>
+          {/* Logo & Brand */}
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
+            <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--accent)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <span style={{ fontSize: 28, color: '#fff' }}>🦅</span>
+            </div>
+            <h2 style={{ fontWeight: 700, fontSize: 22, margin: '0 0 4px' }}>Welcome Back!</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: 0 }}>Sign in to your B2B account</p>
+          </div>
 
-                {/* Login Form */}
-                <form onSubmit={handleSubmit}>
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">
-                      <i className="ti ti-mail me-1"></i>Email Address
-                    </label>
-                    <input
-                      type="email"
-                      className="form-control form-control-lg"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@company.com"
-                      disabled={loading}
-                      autoComplete="email"
-                    />
-                  </div>
-                  
-                  <div className="mb-3">
-                    <div className="d-flex justify-content-between align-items-center">
-                      <label className="form-label fw-semibold mb-0">
-                        <i className="ti ti-lock me-1"></i>Password
-                      </label>
-                      <Link href="/forgot-password" className="small text-primary text-decoration-none">
-                        Forgot password?
-                      </Link>
-                    </div>
-                    <div className="input-group mt-2">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        className="form-control form-control-lg"
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter your password"
-                        disabled={loading}
-                        autoComplete="current-password"
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-outline-secondary"
-                        onClick={() => setShowPassword(!showPassword)}
-                        tabIndex={-1}
-                      >
-                        <i className={`ti ti-eye${showPassword ? '-off' : ''}`}></i>
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <div className="form-check">
-                      <input 
-                        className="form-check-input" 
-                        type="checkbox" 
-                        id="remember-me" 
-                        checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
-                      />
-                      <label className="form-check-label" htmlFor="remember-me">
-                        Remember me on this device
-                      </label>
-                    </div>
-                  </div>
-                  
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="btn btn-primary btn-lg w-100 mb-3"
-                  >
-                    {loading ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2"></span>
-                        Signing in...
-                      </>
-                    ) : (
-                      <>
-                        <i className="ti ti-login me-2"></i>
-                        Sign In
-                      </>
-                    )}
-                  </button>
-                </form>
+          {/* Error Alert */}
+          {error && (
+            <div className="alert alert-error" style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <i className="ti ti-alert-circle"></i>
+              <span style={{ flex: 1 }}>{error}</span>
+              <button onClick={() => setError('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+                <i className="ti ti-x"></i>
+              </button>
+            </div>
+          )}
 
-                {/* Divider */}
-                <div className="d-flex align-items-center my-4">
-                  <hr className="flex-grow-1" />
-                  <span className="px-3 text-muted small">New to Eagle B2B?</span>
-                  <hr className="flex-grow-1" />
-                </div>
+          {/* Login Form */}
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label className="form-label">
+                <i className="ti ti-mail" style={{ marginRight: 4 }}></i>Email Address
+              </label>
+              <input
+                type="email"
+                className="form-input"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                disabled={loading}
+                autoComplete="email"
+              />
+            </div>
 
-                {/* Register Links */}
-                <div className="d-grid gap-2">
-                  <Link href="/register" className="btn btn-outline-primary">
-                    <i className="ti ti-user-plus me-2"></i>
-                    Create an Account
-                  </Link>
-                  <Link href="/request-invitation" className="btn btn-outline-secondary">
-                    <i className="ti ti-mail-forward me-2"></i>
-                    Request B2B Invitation
-                  </Link>
-                </div>
-
-                {/* B2B Benefits */}
-                <div className="mt-4 pt-4 border-top">
-                  <p className="text-muted small text-center mb-3">B2B Account Benefits</p>
-                  <div className="row g-2 text-center">
-                    <div className="col-4">
-                      <i className="ti ti-discount-2 text-success fs-4"></i>
-                      <p className="small text-muted mb-0 mt-1">Bulk Discounts</p>
-                    </div>
-                    <div className="col-4">
-                      <i className="ti ti-credit-card text-info fs-4"></i>
-                      <p className="small text-muted mb-0 mt-1">Net Terms</p>
-                    </div>
-                    <div className="col-4">
-                      <i className="ti ti-users text-primary fs-4"></i>
-                      <p className="small text-muted mb-0 mt-1">Team Access</p>
-                    </div>
-                  </div>
-                </div>
+            <div className="form-group">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label className="form-label" style={{ marginBottom: 0 }}>
+                  <i className="ti ti-lock" style={{ marginRight: 4 }}></i>Password
+                </label>
+                <Link href="/forgot-password" style={{ fontSize: 13, color: 'var(--accent)', textDecoration: 'none' }}>
+                  Forgot password?
+                </Link>
+              </div>
+              <div style={{ position: 'relative', marginTop: 6 }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="form-input"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  disabled={loading}
+                  autoComplete="current-password"
+                  style={{ paddingRight: 44 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                  style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: 'var(--text-tertiary)' }}
+                >
+                  <i className={`ti ti-eye${showPassword ? '-off' : ''}`}></i>
+                </button>
               </div>
             </div>
 
-            {/* Footer */}
-            <p className="text-center text-white-50 mt-4 small">
-              © 2025 Eagle DTF Supply. All rights reserved.
-            </p>
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="checkbox"
+                id="remember-me"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                style={{ accentColor: 'var(--accent)' }}
+              />
+              <label htmlFor="remember-me" style={{ fontSize: 14, color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                Remember me on this device
+              </label>
+            </div>
+
+            <button type="submit" disabled={loading} className="btn-apple btn-apple-primary" style={{ width: '100%', height: 44, fontSize: 15, marginTop: 8 }}>
+              {loading ? (
+                <><span className="spinner-apple" style={{ width: 18, height: 18, marginRight: 8 }} />Signing in...</>
+              ) : (
+                <><i className="ti ti-login" style={{ marginRight: 8 }}></i>Sign In</>
+              )}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', margin: '28px 0', gap: 12 }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>New to Eagle B2B?</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          </div>
+
+          {/* Register Links */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <Link href="/register" className="btn-apple btn-apple-secondary" style={{ width: '100%', textDecoration: 'none', textAlign: 'center', height: 42 }}>
+              <i className="ti ti-user-plus" style={{ marginRight: 8 }}></i>
+              Create an Account
+            </Link>
+            <Link href="/request-invitation" className="btn-apple" style={{ width: '100%', textDecoration: 'none', textAlign: 'center', height: 42, border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+              <i className="ti ti-mail-forward" style={{ marginRight: 8 }}></i>
+              Request B2B Invitation
+            </Link>
+          </div>
+
+          {/* B2B Benefits */}
+          <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center', margin: '0 0 16px' }}>B2B Account Benefits</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, textAlign: 'center' }}>
+              <div>
+                <i className="ti ti-discount-2" style={{ fontSize: 22, color: 'var(--green)' }}></i>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '6px 0 0' }}>Bulk Discounts</p>
+              </div>
+              <div>
+                <i className="ti ti-credit-card" style={{ fontSize: 22, color: 'var(--accent)' }}></i>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '6px 0 0' }}>Net Terms</p>
+              </div>
+              <div>
+                <i className="ti ti-users" style={{ fontSize: 22, color: 'var(--purple)' }}></i>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '6px 0 0' }}>Team Access</p>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Footer */}
+        <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', marginTop: 24, fontSize: 13 }}>
+          © 2025 Eagle DTF Supply. All rights reserved.
+        </p>
       </div>
     </div>
   );

@@ -9,46 +9,18 @@ interface ModalProps {
   type?: 'success' | 'danger' | 'warning' | 'info';
 }
 
-export default function Modal({
-  show,
-  onClose,
-  onConfirm,
-  title,
-  message,
-  confirmText = 'OK',
-  cancelText = 'Cancel',
-  type = 'info',
-}: ModalProps) {
+const BTN_MAP: Record<string, string> = { success: 'success', danger: 'danger', warning: 'warning', info: 'primary' };
+
+export default function Modal({ show, onClose, onConfirm, title, message, confirmText = 'OK', cancelText = 'Cancel', type = 'info' }: ModalProps) {
   if (!show) return null;
-
-  const colorClass = {
-    success: 'btn-success',
-    danger: 'btn-danger',
-    warning: 'btn-warning',
-    info: 'btn-primary',
-  }[type];
-
   return (
-    <div className="modal fade show d-block" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title">{title}</h5>
-            <button type="button" className="btn-close" onClick={onClose}></button>
-          </div>
-          <div className="modal-body">
-            <p className="mb-0">{message}</p>
-          </div>
-          <div className="modal-footer">
-            {cancelText && (
-              <button type="button" className="btn btn-secondary" onClick={onClose}>
-                {cancelText}
-              </button>
-            )}
-            <button type="button" className={`btn ${colorClass}`} onClick={onConfirm}>
-              {confirmText}
-            </button>
-          </div>
+    <div className="apple-modal-overlay" onClick={onClose}>
+      <div className="apple-modal" onClick={e => e.stopPropagation()}>
+        <div className="apple-modal-header"><h3 className="apple-modal-title">{title}</h3></div>
+        <div className="apple-modal-body"><p>{message}</p></div>
+        <div className="apple-modal-footer">
+          {cancelText && <button className="btn-apple secondary" onClick={onClose}>{cancelText}</button>}
+          <button className={`btn-apple ${BTN_MAP[type] || 'primary'}`} onClick={onConfirm}>{confirmText}</button>
         </div>
       </div>
     </div>

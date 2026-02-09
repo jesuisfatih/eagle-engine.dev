@@ -1,78 +1,58 @@
 'use client';
 
-import { useState } from 'react';
-import RoleEditModal from '@/components/RoleEditModal';
-import Modal from '@/components/Modal';
-import type { RolePermission } from '@/types';
+import { PageHeader } from '@/components/ui';
 
-interface Role {
-  name: string;
-  permissions: string[];
-}
+const roles = [
+  {
+    name: 'Admin',
+    desc: 'Full access to all features',
+    color: '#ff3b30',
+    permissions: ['Manage Users', 'Manage Orders', 'Manage Products', 'Manage Settings', 'View Analytics', 'Manage Pricing'],
+  },
+  {
+    name: 'Manager',
+    desc: 'Manage orders and customers',
+    color: '#ff9500',
+    permissions: ['View Users', 'Manage Orders', 'View Products', 'View Analytics'],
+  },
+  {
+    name: 'Buyer',
+    desc: 'Place and manage own orders',
+    color: '#007aff',
+    permissions: ['View Products', 'Place Orders', 'View Own Orders'],
+  },
+  {
+    name: 'Viewer',
+    desc: 'Read-only access',
+    color: '#8e8e93',
+    permissions: ['View Products', 'View Orders'],
+  },
+];
 
 export default function PermissionsPage() {
-  const [roles, setRoles] = useState<Role[]>([
-    { name: 'Admin', permissions: ['all'] },
-    { name: 'Manager', permissions: ['orders', 'approve', 'team'] },
-    { name: 'Buyer', permissions: ['orders', 'cart'] },
-    { name: 'Viewer', permissions: ['view'] },
-  ]);
-  const [editModal, setEditModal] = useState<{show: boolean; role: Role | null}>({show: false, role: null});
-  const [resultModal, setResultModal] = useState<{show: boolean; message: string}>({show: false, message: ''});
-
-  const handleSave = (role: RolePermission, newPermissions: string[]) => {
-    const updated = roles.map(r => 
-      r.name === role.name ? {...r, permissions: newPermissions} : r
-    );
-    setRoles(updated);
-    setResultModal({show: true, message: `✅ ${role.name} permissions updated!`});
-  };
-
   return (
     <div>
-      <h4 className="fw-bold mb-4">Roles & Permissions</h4>
-
-      <div className="row g-4">
-        {roles.map((role) => (
-          <div key={role.name} className="col-md-6">
-            <div className="card">
-              <div className="card-header d-flex justify-content-between">
-                <h6 className="card-title mb-0">{role.name}</h6>
-                <button
-                  onClick={() => setEditModal({show: true, role})}
-                  className="btn btn-sm btn-primary"
-                >
-                  Edit
-                </button>
+      <PageHeader title="Roles & Permissions" subtitle="Manage user access levels" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+        {roles.map(role => (
+          <div key={role.name} className="apple-card">
+            <div className="apple-card-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: role.color }} />
+                <h3 className="apple-card-title">{role.name}</h3>
               </div>
-              <div className="card-body">
-                <div className="d-flex flex-wrap gap-2">
-                  {role.permissions.map((perm) => (
-                    <span key={perm} className="badge bg-label-info">{perm}</span>
-                  ))}
-                </div>
+            </div>
+            <div className="apple-card-body">
+              <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 12 }}>{role.desc}</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {role.permissions.map(p => (
+                  <span key={p} className="badge-apple info">{p}</span>
+                ))}
               </div>
             </div>
           </div>
         ))}
       </div>
-
-      <RoleEditModal
-        show={editModal.show}
-        role={editModal.role}
-        onClose={() => setEditModal({show: false, role: null})}
-        onSave={handleSave}
-      />
-
-      <Modal
-        show={resultModal.show}
-        onClose={() => setResultModal({show: false, message: ''})}
-        onConfirm={() => setResultModal({show: false, message: ''})}
-        title="Success"
-        message={resultModal.message}
-        confirmText="OK"
-        type="success"
-      />
     </div>
   );
 }

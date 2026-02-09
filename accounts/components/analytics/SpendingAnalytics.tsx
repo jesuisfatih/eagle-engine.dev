@@ -56,12 +56,12 @@ export function SpendingAnalyticsDashboard({
     <div className="spending-analytics-dashboard">
       {/* Period Selector */}
       {onPeriodChange && (
-        <div className="d-flex justify-content-end mb-4">
-          <div className="btn-group">
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
+          <div style={{ display: 'flex', gap: 0 }}>
             {(['month', 'quarter', 'year'] as const).map(p => (
               <button
                 key={p}
-                className={`btn btn-sm ${period === p ? 'btn-primary' : 'btn-outline-primary'}`}
+                className={period === p ? 'btn-apple btn-apple-primary' : 'btn-apple btn-apple-secondary'}
                 onClick={() => onPeriodChange(p)}
               >
                 {p === 'month' ? 'This Month' : p === 'quarter' ? 'This Quarter' : 'This Year'}
@@ -72,55 +72,43 @@ export function SpendingAnalyticsDashboard({
       )}
 
       {/* Summary Cards */}
-      <div className="row g-4 mb-4">
-        <div className="col-md-3">
-          <SummaryCard
-            title="Total Spent"
-            value={formatCurrency(summary.totalSpent)}
-            change={summary.periodChange}
-            icon="wallet"
-            color="primary"
-          />
-        </div>
-        <div className="col-md-3">
-          <SummaryCard
-            title="Total Orders"
-            value={formatNumber(summary.totalOrders)}
-            icon="shopping-cart"
-            color="info"
-          />
-        </div>
-        <div className="col-md-3">
-          <SummaryCard
-            title="Average Order"
-            value={formatCurrency(summary.averageOrderValue)}
-            icon="receipt"
-            color="warning"
-          />
-        </div>
-        <div className="col-md-3">
-          <SummaryCard
-            title="Total Savings"
-            value={formatCurrency(summary.totalSavings)}
-            icon="discount"
-            color="success"
-          />
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 24 }}>
+        <SummaryCard
+          title="Total Spent"
+          value={formatCurrency(summary.totalSpent)}
+          change={summary.periodChange}
+          icon="wallet"
+          color="primary"
+        />
+        <SummaryCard
+          title="Total Orders"
+          value={formatNumber(summary.totalOrders)}
+          icon="shopping-cart"
+          color="info"
+        />
+        <SummaryCard
+          title="Average Order"
+          value={formatCurrency(summary.averageOrderValue)}
+          icon="receipt"
+          color="warning"
+        />
+        <SummaryCard
+          title="Total Savings"
+          value={formatCurrency(summary.totalSavings)}
+          icon="discount"
+          color="success"
+        />
       </div>
 
-      <div className="row g-4">
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
         {/* Spending Chart */}
-        <div className="col-lg-8">
-          <SpendingChart data={monthlyData} />
-        </div>
+        <SpendingChart data={monthlyData} />
 
         {/* Category Breakdown */}
-        <div className="col-lg-4">
-          <CategoryBreakdown categories={categoryBreakdown} />
-        </div>
+        <CategoryBreakdown categories={categoryBreakdown} />
 
         {/* Top Products */}
-        <div className="col-12">
+        <div style={{ gridColumn: '1 / -1' }}>
           <TopProductsTable products={topProducts} />
         </div>
       </div>
@@ -138,25 +126,34 @@ interface SummaryCardProps {
 }
 
 export function SummaryCard({ title, value, change, icon, color }: SummaryCardProps) {
+  const colorMap: Record<string, string> = {
+    primary: 'var(--accent)', success: 'var(--green)', warning: 'var(--orange)',
+    info: 'var(--accent)', danger: 'var(--red)',
+  };
+  const c = colorMap[color] || 'var(--accent)';
+
   return (
-    <div className="card h-100">
+    <div className="card" style={{ height: '100%' }}>
       <div className="card-body">
-        <div className="d-flex justify-content-between align-items-start">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <p className="text-muted mb-1">{title}</p>
-            <h3 className="mb-0">{value}</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>{title}</p>
+            <h3 style={{ margin: 0 }}>{value}</h3>
             {change !== undefined && (
-              <small className={change >= 0 ? 'text-success' : 'text-danger'}>
-                <i className={`ti ti-trending-${change >= 0 ? 'up' : 'down'} me-1`}></i>
+              <small style={{ color: change >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                <i className={`ti ti-trending-${change >= 0 ? 'up' : 'down'}`} style={{ marginRight: 4 }}></i>
                 {formatPercent(Math.abs(change))} vs last period
               </small>
             )}
           </div>
           <div 
-            className={`rounded-circle bg-${color} bg-opacity-10 d-flex align-items-center justify-content-center`}
-            style={{ width: 48, height: 48 }}
+            style={{ 
+              width: 48, height: 48, borderRadius: '50%',
+              background: 'var(--bg-secondary)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
           >
-            <i className={`ti ti-${icon} fs-4 text-${color}`}></i>
+            <i className={`ti ti-${icon}`} style={{ fontSize: 20, color: c }}></i>
           </div>
         </div>
       </div>
@@ -173,33 +170,35 @@ export function SpendingChart({ data }: SpendingChartProps) {
   const maxAmount = Math.max(...data.map(d => d.amount), 1);
 
   return (
-    <div className="card h-100">
+    <div className="card" style={{ height: '100%' }}>
       <div className="card-header">
-        <h6 className="mb-0">
-          <i className="ti ti-chart-bar me-2"></i>
+        <h6 style={{ margin: 0 }}>
+          <i className="ti ti-chart-bar" style={{ marginRight: 8 }}></i>
           Spending Over Time
         </h6>
       </div>
       <div className="card-body">
         {data.length === 0 ? (
-          <div className="text-center py-4 text-muted">
-            <i className="ti ti-chart-off ti-2x mb-2"></i>
-            <p className="mb-0">No spending data available</p>
+          <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)' }}>
+            <i className="ti ti-chart-off ti-2x" style={{ marginBottom: 8, display: 'block' }}></i>
+            <p style={{ margin: 0 }}>No spending data available</p>
           </div>
         ) : (
           <div className="spending-chart">
-            <div className="d-flex align-items-end justify-content-between" style={{ height: 200 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: 200 }}>
               {data.map((item, index) => {
                 const height = (item.amount / maxAmount) * 100;
                 return (
                   <div 
                     key={index} 
-                    className="text-center flex-fill px-1"
-                    style={{ maxWidth: `${100 / data.length}%` }}
+                    style={{ textAlign: 'center', flex: 1, padding: '0 4px', maxWidth: `${100 / data.length}%` }}
                   >
                     <div 
-                      className="bg-primary rounded-top mx-auto position-relative"
                       style={{ 
+                        background: 'var(--accent)',
+                        borderRadius: '4px 4px 0 0',
+                        margin: '0 auto',
+                        position: 'relative',
                         height: `${Math.max(height, 5)}%`, 
                         minHeight: 10,
                         maxWidth: 40,
@@ -208,15 +207,14 @@ export function SpendingChart({ data }: SpendingChartProps) {
                       title={`${item.period}: ${formatCurrency(item.amount)}`}
                     >
                       <div 
-                        className="position-absolute w-100 text-center"
-                        style={{ top: -20 }}
+                        style={{ position: 'absolute', width: '100%', textAlign: 'center', top: -20 }}
                       >
-                        <small className="text-muted" style={{ fontSize: 10 }}>
+                        <small style={{ color: 'var(--text-secondary)', fontSize: 10 }}>
                           {formatCurrency(item.amount)}
                         </small>
                       </div>
                     </div>
-                    <small className="text-muted d-block mt-2" style={{ fontSize: 11 }}>
+                    <small style={{ color: 'var(--text-secondary)', display: 'block', marginTop: 8, fontSize: 11 }}>
                       {item.period}
                     </small>
                   </div>
@@ -236,40 +234,43 @@ interface CategoryBreakdownProps {
 }
 
 export function CategoryBreakdown({ categories }: CategoryBreakdownProps) {
-  const colors = ['primary', 'success', 'warning', 'info', 'danger', 'secondary'];
+  const colors = ['var(--accent)', 'var(--green)', 'var(--orange)', 'var(--accent)', 'var(--red)', 'var(--text-tertiary)'];
 
   return (
-    <div className="card h-100">
+    <div className="card" style={{ height: '100%' }}>
       <div className="card-header">
-        <h6 className="mb-0">
-          <i className="ti ti-category me-2"></i>
+        <h6 style={{ margin: 0 }}>
+          <i className="ti ti-category" style={{ marginRight: 8 }}></i>
           Spending by Category
         </h6>
       </div>
       <div className="card-body">
         {categories.length === 0 ? (
-          <div className="text-center py-4 text-muted">
-            <p className="mb-0">No category data</p>
+          <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)' }}>
+            <p style={{ margin: 0 }}>No category data</p>
           </div>
         ) : (
           <div>
             {categories.map((cat, index) => (
-              <div key={cat.category} className="mb-3">
-                <div className="d-flex justify-content-between mb-1">
-                  <span className="text-truncate" style={{ maxWidth: '60%' }}>
+              <div key={cat.category} style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>
                     {cat.category}
                   </span>
-                  <span className="fw-semibold">
+                  <span style={{ fontWeight: 600 }}>
                     {formatCurrency(cat.amount)}
                     {cat.trend !== 'stable' && (
-                      <i className={`ti ti-arrow-${cat.trend === 'up' ? 'up' : 'down'} ms-1 text-${cat.trend === 'up' ? 'success' : 'danger'} small`}></i>
+                      <i className={`ti ti-arrow-${cat.trend === 'up' ? 'up' : 'down'}`} style={{ marginLeft: 4, fontSize: 13, color: cat.trend === 'up' ? 'var(--green)' : 'var(--red)' }}></i>
                     )}
                   </span>
                 </div>
-                <div className="progress" style={{ height: 8 }}>
+                <div style={{ height: 8, borderRadius: 4, background: 'var(--bg-secondary)', overflow: 'hidden' }}>
                   <div 
-                    className={`progress-bar bg-${colors[index % colors.length]}`}
-                    style={{ width: `${cat.percentage}%` }}
+                    style={{ 
+                      height: '100%', borderRadius: 4,
+                      width: `${cat.percentage}%`,
+                      background: colors[index % colors.length],
+                    }}
                   ></div>
                 </div>
               </div>
@@ -292,57 +293,56 @@ export function TopProductsTable({ products, maxItems = 5 }: TopProductsTablePro
 
   return (
     <div className="card">
-      <div className="card-header d-flex justify-content-between align-items-center">
-        <h6 className="mb-0">
-          <i className="ti ti-star me-2"></i>
+      <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h6 style={{ margin: 0 }}>
+          <i className="ti ti-star" style={{ marginRight: 8 }}></i>
           Most Purchased Products
         </h6>
         {products.length > maxItems && (
-          <a href="/products" className="btn btn-sm btn-outline-primary">
+          <a href="/products" className="btn-apple btn-apple-secondary">
             View All
           </a>
         )}
       </div>
-      <div className="card-body p-0">
+      <div className="card-body" style={{ padding: 0 }}>
         {displayProducts.length === 0 ? (
-          <div className="text-center py-4 text-muted">
-            <p className="mb-0">No purchase history</p>
+          <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)' }}>
+            <p style={{ margin: 0 }}>No purchase history</p>
           </div>
         ) : (
-          <div className="table-responsive">
-            <table className="table table-hover mb-0">
+          <div className="table-container">
+            <table className="apple-table">
               <thead>
                 <tr>
                   <th>Product</th>
-                  <th className="text-center">Times Ordered</th>
-                  <th className="text-center">Total Qty</th>
-                  <th className="text-end">Total Spent</th>
+                  <th style={{ textAlign: 'center' }}>Times Ordered</th>
+                  <th style={{ textAlign: 'center' }}>Total Qty</th>
+                  <th style={{ textAlign: 'right' }}>Total Spent</th>
                 </tr>
               </thead>
               <tbody>
                 {displayProducts.map((product, index) => (
                   <tr key={product.productId}>
                     <td>
-                      <div className="d-flex align-items-center">
-                        <span className="badge bg-light text-muted me-2">{index + 1}</span>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', marginRight: 8 }}>{index + 1}</span>
                         {product.image && (
                           <img 
                             src={product.image} 
                             alt={product.title}
-                            className="rounded me-2"
-                            style={{ width: 40, height: 40, objectFit: 'cover' }}
+                            style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 8, marginRight: 8 }}
                           />
                         )}
-                        <span className="fw-semibold">{product.title}</span>
+                        <span style={{ fontWeight: 600 }}>{product.title}</span>
                       </div>
                     </td>
-                    <td className="text-center">
-                      <span className="badge bg-light text-muted">
+                    <td style={{ textAlign: 'center' }}>
+                      <span className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
                         {product.orderCount} order{product.orderCount !== 1 ? 's' : ''}
                       </span>
                     </td>
-                    <td className="text-center">{formatNumber(product.quantity)}</td>
-                    <td className="text-end fw-semibold">{formatCurrency(product.totalSpent)}</td>
+                    <td style={{ textAlign: 'center' }}>{formatNumber(product.quantity)}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(product.totalSpent)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -365,28 +365,31 @@ interface SavingsSummaryProps {
 
 export function SavingsSummary({ totalSavings, savingsBreakdown }: SavingsSummaryProps) {
   return (
-    <div className="card bg-success text-white">
+    <div className="card" style={{ background: 'var(--green)', color: '#fff' }}>
       <div className="card-body">
-        <div className="d-flex justify-content-between align-items-center mb-3">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
-            <p className="mb-1 opacity-75">Total Savings</p>
-            <h3 className="mb-0">{formatCurrency(totalSavings)}</h3>
+            <p style={{ marginBottom: 4, opacity: 0.75 }}>Total Savings</p>
+            <h3 style={{ margin: 0 }}>{formatCurrency(totalSavings)}</h3>
           </div>
           <div 
-            className="rounded-circle bg-white bg-opacity-25 d-flex align-items-center justify-content-center"
-            style={{ width: 56, height: 56 }}
+            style={{ 
+              width: 56, height: 56, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
           >
-            <i className="ti ti-discount-2 fs-3"></i>
+            <i className="ti ti-discount-2" style={{ fontSize: 24 }}></i>
           </div>
         </div>
         
         {savingsBreakdown.length > 0 && (
-          <div className="pt-3 border-top border-white border-opacity-25">
-            <div className="row g-2">
+          <div style={{ paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.25)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {savingsBreakdown.map(item => (
-                <div key={item.type} className="col-6">
-                  <small className="opacity-75">{item.type}</small>
-                  <div className="fw-semibold">{formatCurrency(item.amount)}</div>
+                <div key={item.type}>
+                  <small style={{ opacity: 0.75 }}>{item.type}</small>
+                  <div style={{ fontWeight: 600 }}>{formatCurrency(item.amount)}</div>
                 </div>
               ))}
             </div>
@@ -410,26 +413,38 @@ interface QuickStatsRowProps {
 }
 
 export function QuickStatsRow({ stats }: QuickStatsRowProps) {
+  const colorMap: Record<string, string> = {
+    primary: 'var(--accent)', success: 'var(--green)', warning: 'var(--orange)',
+    info: 'var(--accent)', danger: 'var(--red)',
+  };
+
   return (
-    <div className="row g-3">
-      {stats.map((stat, index) => (
-        <div key={index} className={`col-md-${12 / stats.length}`}>
-          <div className="card h-100">
-            <div className="card-body d-flex align-items-center">
-              <div 
-                className={`rounded bg-${stat.color || 'primary'} bg-opacity-10 d-flex align-items-center justify-content-center me-3`}
-                style={{ width: 44, height: 44 }}
-              >
-                <i className={`ti ti-${stat.icon} fs-4 text-${stat.color || 'primary'}`}></i>
-              </div>
-              <div>
-                <p className="text-muted mb-0 small">{stat.label}</p>
-                <h5 className="mb-0">{stat.value}</h5>
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${stats.length}, 1fr)`, gap: 16 }}>
+      {stats.map((stat, index) => {
+        const c = colorMap[stat.color || 'primary'] || 'var(--accent)';
+        return (
+          <div key={index}>
+            <div className="card" style={{ height: '100%' }}>
+              <div className="card-body" style={{ display: 'flex', alignItems: 'center' }}>
+                <div 
+                  style={{ 
+                    width: 44, height: 44, borderRadius: 10,
+                    background: 'var(--bg-secondary)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    marginRight: 12,
+                  }}
+                >
+                  <i className={`ti ti-${stat.icon}`} style={{ fontSize: 20, color: c }}></i>
+                </div>
+                <div>
+                  <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: 13 }}>{stat.label}</p>
+                  <h5 style={{ margin: 0 }}>{stat.value}</h5>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -448,20 +463,23 @@ export function OrderFrequencyChart({ weeklyOrders, labels }: OrderFrequencyProp
   return (
     <div className="card">
       <div className="card-header">
-        <h6 className="mb-0">
-          <i className="ti ti-calendar-stats me-2"></i>
+        <h6 style={{ margin: 0 }}>
+          <i className="ti ti-calendar-stats" style={{ marginRight: 8 }}></i>
           Order Frequency
         </h6>
       </div>
       <div className="card-body">
-        <div className="d-flex align-items-end justify-content-between" style={{ height: 120 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: 120 }}>
           {weeklyOrders.map((count, index) => {
             const height = (count / maxOrders) * 100;
             return (
-              <div key={index} className="text-center" style={{ flex: 1 }}>
+              <div key={index} style={{ textAlign: 'center', flex: 1 }}>
                 <div 
-                  className="bg-primary bg-opacity-75 rounded-top mx-auto"
                   style={{ 
+                    background: 'var(--accent)',
+                    opacity: 0.75,
+                    borderRadius: '4px 4px 0 0',
+                    margin: '0 auto',
                     height: `${Math.max(height, 5)}%`,
                     minHeight: count > 0 ? 10 : 4,
                     width: 24,
@@ -469,7 +487,7 @@ export function OrderFrequencyChart({ weeklyOrders, labels }: OrderFrequencyProp
                   }}
                   title={`${count} orders`}
                 ></div>
-                <small className="text-muted d-block mt-2">{displayLabels[index]}</small>
+                <small style={{ color: 'var(--text-secondary)', display: 'block', marginTop: 8 }}>{displayLabels[index]}</small>
               </div>
             );
           })}

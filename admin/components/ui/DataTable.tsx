@@ -1,261 +1,252 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Table, Pagination } from '@/components/ui';
-import { SearchInput, SelectFilter, FilterBar } from '@/components/ui/PageLayout';
+import { ReactNode, useState, useMemo } from 'react';
 
+/* Column definition compatible with old API */
 export interface DataTableColumn<T> {
   key: string;
   label: string;
+  title?: string;
   sortable?: boolean;
   className?: string;
-  render?: (row: T, index: number) => React.ReactNode;
+  width?: string;
+  render?: (row: T) => ReactNode;
 }
 
-interface StatusConfig {
+interface StatusFilterOption {
   value: string;
   label: string;
-  color?: 'success' | 'warning' | 'danger' | 'primary' | 'info' | 'secondary';
+  color?: string;
 }
 
-interface DataTableProps<T extends Record<string, unknown>> {
+interface DataTableProps<T> {
   data: T[];
   columns: DataTableColumn<T>[];
   loading?: boolean;
-  
-  // Identification
-  keyField?: string;
-  
-  // Search & Filter
   searchable?: boolean;
   searchPlaceholder?: string;
   searchFields?: string[];
   statusFilter?: {
-    options: StatusConfig[];
     field: string;
+    options: StatusFilterOption[];
   };
-  customFilters?: React.ReactNode;
-  
-  // Pagination
-  paginate?: boolean;
-  defaultPageSize?: number;
-  pageSizeOptions?: number[];
-  
-  // Selection
-  selectable?: boolean;
-  onSelectionChange?: (selectedIds: string[]) => void;
-  
-  // Sorting
   defaultSortKey?: string;
   defaultSortOrder?: 'asc' | 'desc';
-  
-  // Actions
+  rowActions?: (row: T) => ReactNode;
   onRowClick?: (row: T) => void;
-  rowActions?: (row: T) => React.ReactNode;
-  bulkActions?: React.ReactNode;
-  
-  // Empty state
   emptyIcon?: string;
   emptyTitle?: string;
   emptyMessage?: string;
+  pageSize?: number;
 }
 
-/**
- * DataTable - Feature-rich data table with search, filter, pagination, and selection
- */
-export function DataTable<T extends Record<string, unknown>>({
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  return path.split('.').reduce((acc: unknown, key) => {
+    if (acc && typeof acc === 'object') return (acc as Record<string, unknown>)[key];
+    return undefined;
+  }, obj);
+}
+
+export default function DataTable<T extends Record<string, unknown>>({
   data,
   columns,
-  loading = false,
-  keyField = 'id',
-  searchable = false,
+  loading,
+  searchable,
   searchPlaceholder = 'Search...',
   searchFields = [],
   statusFilter,
-  customFilters,
-  paginate = true,
-  defaultPageSize = 10,
-  pageSizeOptions = [10, 25, 50, 100],
-  selectable = false,
-  onSelectionChange,
   defaultSortKey,
   defaultSortOrder = 'asc',
-  onRowClick,
   rowActions,
-  bulkActions,
-  emptyIcon = 'database',
+  onRowClick,
+  emptyIcon = 'database-off',
   emptyTitle = 'No data found',
   emptyMessage = 'Try adjusting your search or filter criteria.',
+  pageSize = 20,
 }: DataTableProps<T>) {
-  // State
-  const [searchQuery, setSearchQuery] = useState('');
+  const [search, setSearch] = useState('');
   const [statusValue, setStatusValue] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(defaultPageSize);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [sortKey, setSortKey] = useState(defaultSortKey || '');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(defaultSortOrder);
+  const [page, setPage] = useState(1);
 
-  // Filter data
-  let filteredData = [...data];
+  // Filter
+  const filtered = useMemo(() => {
+    let result = [...data];
 
-  // Apply search filter
-  if (searchQuery && searchFields.length > 0) {
-    const query = searchQuery.toLowerCase();
-    filteredData = filteredData.filter(row => 
-      searchFields.some(field => {
-        const value = row[field];
-        return value && String(value).toLowerCase().includes(query);
-      })
-    );
-  }
+    // Search
+    if (search && searchFields.length > 0) {
+      const q = search.toLowerCase();
+      result = result.filter((row) =>
+        searchFields.some((field) => {
+          const val = getNestedValue(row, field);
+          return val != null && String(val).toLowerCase().includes(q);
+        })
+      );
+    }
 
-  // Apply status filter
-  if (statusValue && statusFilter) {
-    filteredData = filteredData.filter(row => 
-      row[statusFilter.field] === statusValue
-    );
-  }
+    // Status filter
+    if (statusFilter && statusValue) {
+      result = result.filter((row) => {
+        const val = getNestedValue(row, statusFilter.field);
+        return String(val) === statusValue;
+      });
+    }
 
-  // Apply sorting
-  if (sortKey) {
-    filteredData.sort((a, b) => {
-      const aVal = a[sortKey];
-      const bVal = b[sortKey];
-      
-      if (aVal === bVal) return 0;
-      if (aVal === null || aVal === undefined) return 1;
-      if (bVal === null || bVal === undefined) return -1;
-      
-      const comparison = String(aVal).localeCompare(String(bVal));
-      return sortOrder === 'asc' ? comparison : -comparison;
-    });
-  }
+    // Sort
+    if (sortKey) {
+      result.sort((a, b) => {
+        const aVal = getNestedValue(a, sortKey);
+        const bVal = getNestedValue(b, sortKey);
+        const aStr = aVal != null ? String(aVal) : '';
+        const bStr = bVal != null ? String(bVal) : '';
+        const cmp = aStr.localeCompare(bStr, undefined, { numeric: true });
+        return sortOrder === 'asc' ? cmp : -cmp;
+      });
+    }
 
-  // Apply pagination
-  const totalItems = filteredData.length;
-  const totalPages = Math.ceil(totalItems / pageSize);
-  
-  if (paginate) {
-    const start = (currentPage - 1) * pageSize;
-    filteredData = filteredData.slice(start, start + pageSize);
-  }
+    return result;
+  }, [data, search, searchFields, statusFilter, statusValue, sortKey, sortOrder]);
 
-  // Handle selection
-  const handleSelectionChange = (ids: string[]) => {
-    setSelectedIds(ids);
-    onSelectionChange?.(ids);
-  };
+  // Pagination
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
 
-  // Handle sort
   const handleSort = (key: string) => {
     if (sortKey === key) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortKey(key);
       setSortOrder('asc');
     }
   };
 
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  // Handle page size change
-  const handlePageSizeChange = (size: number) => {
-    setPageSize(size);
-    setCurrentPage(1);
-  };
-
-  // Build columns with actions
-  const tableColumns = [...columns];
-  if (rowActions) {
-    tableColumns.push({
-      key: '_actions',
-      label: 'Actions',
-      className: 'text-end',
-      render: (row) => rowActions(row),
-    });
-  }
-
-  // Has filters
-  const hasFilters = searchable || statusFilter || customFilters;
-
   return (
-    <div className="data-table">
-      {/* Filter Bar */}
-      {hasFilters && (
-        <FilterBar className="mb-3">
+    <div>
+      {/* Search & Filters */}
+      {(searchable || statusFilter) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
           {searchable && (
-            <SearchInput
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder={searchPlaceholder}
-            />
-          )}
-          
-          {statusFilter && (
-            <SelectFilter
-              value={statusValue}
-              onChange={setStatusValue}
-              options={statusFilter.options.map(s => ({ value: s.value, label: s.label }))}
-              placeholder="All Statuses"
-            />
-          )}
-          
-          {customFilters}
-          
-          {/* Bulk actions */}
-          {selectable && selectedIds.length > 0 && bulkActions && (
-            <div className="ms-auto d-flex gap-2 align-items-center">
-              <span className="text-muted small">{selectedIds.length} selected</span>
-              {bulkActions}
+            <div className="input-apple" style={{ minWidth: 240, flex: 1, maxWidth: 360 }}>
+              <i className="ti ti-search input-icon" />
+              <input
+                type="text"
+                placeholder={searchPlaceholder}
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              />
             </div>
           )}
-        </FilterBar>
+          {statusFilter && (
+            <div className="select-apple">
+              <select
+                value={statusValue}
+                onChange={(e) => { setStatusValue(e.target.value); setPage(1); }}
+              >
+                <option value="">All</option>
+                {statusFilter.options.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <i className="ti ti-chevron-down select-icon" />
+            </div>
+          )}
+          <div style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--text-tertiary)' }}>
+            {filtered.length} result{filtered.length !== 1 ? 's' : ''}
+          </div>
+        </div>
       )}
 
       {/* Table */}
-      <div className="card">
-        <div className="card-body p-0">
-          <Table
-            columns={tableColumns}
-            data={filteredData}
-            loading={loading}
-            selectable={selectable}
-            keyField={keyField}
-            selectedIds={selectedIds}
-            onSelectionChange={handleSelectionChange}
-            sortKey={sortKey}
-            sortOrder={sortOrder}
-            onSort={handleSort}
-            onRowClick={onRowClick}
-            emptyIcon={emptyIcon}
-            emptyTitle={emptyTitle}
-            emptyMessage={emptyMessage}
-          />
-        </div>
+      <div className="apple-card" style={{ position: 'relative' }}>
+        {loading && (
+          <div style={{
+            position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.6)',
+            backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', zIndex: 10, borderRadius: 'inherit',
+          }}>
+            <i className="ti ti-loader-2 spin" style={{ fontSize: 24, color: 'var(--accent-primary)' }} />
+          </div>
+        )}
 
-        {/* Pagination */}
-        {paginate && totalPages > 1 && (
-          <div className="card-footer">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-              pageSize={pageSize}
-              pageSizeOptions={pageSizeOptions}
-              onPageSizeChange={handlePageSizeChange}
-              totalItems={totalItems}
-              showPageSizeSelector
-              showItemCount
-            />
+        {paged.length === 0 && !loading ? (
+          <div className="empty-state" style={{ padding: 48 }}>
+            <div className="empty-state-icon">
+              <i className={`ti ti-${emptyIcon}`} />
+            </div>
+            <h4 className="empty-state-title">{emptyTitle}</h4>
+            <p className="empty-state-desc">{emptyMessage}</p>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="apple-table">
+              <thead>
+                <tr>
+                  {columns.map((col) => (
+                    <th
+                      key={col.key}
+                      style={{ width: col.width, cursor: col.sortable ? 'pointer' : undefined }}
+                      onClick={() => col.sortable && handleSort(col.key)}
+                    >
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        {col.label || col.title}
+                        {col.sortable && sortKey === col.key && (
+                          <i className={`ti ti-chevron-${sortOrder === 'asc' ? 'up' : 'down'}`} style={{ fontSize: 14 }} />
+                        )}
+                      </span>
+                    </th>
+                  ))}
+                  {rowActions && <th style={{ width: 120 }}>Actions</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {paged.map((row, idx) => (
+                  <tr
+                    key={String(row.id ?? idx)}
+                    onClick={() => onRowClick?.(row)}
+                    style={{ cursor: onRowClick ? 'pointer' : undefined }}
+                  >
+                    {columns.map((col) => (
+                      <td key={col.key}>
+                        {col.render ? col.render(row) : String(row[col.key] ?? '')}
+                      </td>
+                    ))}
+                    {rowActions && (
+                      <td onClick={(e) => e.stopPropagation()}>
+                        {rowActions(row)}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="apple-pagination" style={{ marginTop: 16 }}>
+          <button className="pagination-btn" disabled={page === 1} onClick={() => setPage(page - 1)}>
+            <i className="ti ti-chevron-left" />
+          </button>
+          {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+            let p: number;
+            if (totalPages <= 7) { p = i + 1; }
+            else if (page <= 4) { p = i + 1; }
+            else if (page >= totalPages - 3) { p = totalPages - 6 + i; }
+            else { p = page - 3 + i; }
+            return (
+              <button key={p} className={`pagination-btn ${p === page ? 'active' : ''}`} onClick={() => setPage(p)}>
+                {p}
+              </button>
+            );
+          })}
+          <button className="pagination-btn" disabled={page === totalPages} onClick={() => setPage(page + 1)}>
+            <i className="ti ti-chevron-right" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
-
-export default DataTable;

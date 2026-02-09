@@ -40,46 +40,48 @@ export function QuantityBreakAlert({
   const savingsPercent = ((currentPrice - nextBreak.price) / currentPrice) * 100;
 
   return (
-    <div className="alert alert-warning border-warning mb-3">
-      <div className="d-flex align-items-start">
-        <div className="me-3">
-          <span className="badge bg-warning text-dark rounded-circle p-2">
+    <div className="alert-apple alert-apple-warning" style={{ marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+        <div style={{ marginRight: 12 }}>
+          <span className="badge" style={{ background: 'var(--orange)', color: '#fff', borderRadius: '50%', padding: 8, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
             <i className="ti ti-bolt ti-lg"></i>
           </span>
         </div>
-        <div className="flex-grow-1">
-          <h6 className="alert-heading mb-1">
+        <div style={{ flex: 1 }}>
+          <h6 style={{ fontWeight: 600, margin: '0 0 4px' }}>
             Add {additionalNeeded} more for extra {formatPercent(savingsPercent)} off!
           </h6>
-          <div className="mb-2">
-            <div className="row small">
-              <div className="col-6">
-                <span className="text-muted">Current:</span>
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: '0.85rem' }}>
+              <div>
+                <span style={{ color: 'var(--text-secondary)' }}>Current:</span>
                 <div>{currentQuantity} × {formatCurrency(currentPrice, currency)} = <strong>{formatCurrency(currentTotal, currency)}</strong></div>
               </div>
-              <div className="col-6">
-                <span className="text-success">With {nextBreak.qty}+ items:</span>
-                <div>{nextBreak.qty} × {formatCurrency(nextBreak.price, currency)} = <strong className="text-success">{formatCurrency(newTotal, currency)}</strong></div>
+              <div>
+                <span style={{ color: 'var(--green)' }}>With {nextBreak.qty}+ items:</span>
+                <div>{nextBreak.qty} × {formatCurrency(nextBreak.price, currency)} = <strong style={{ color: 'var(--green)' }}>{formatCurrency(newTotal, currency)}</strong></div>
               </div>
             </div>
           </div>
-          <div className="d-flex align-items-center gap-2">
-            <span className="badge bg-success">
-              <i className="ti ti-discount me-1"></i>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span className="badge" style={{ background: 'var(--green)', color: '#fff', padding: '2px 8px', borderRadius: 6, fontSize: '0.75rem' }}>
+              <i className="ti ti-discount" style={{ marginRight: 4 }}></i>
               Save {formatCurrency(potentialSavings, currency)}
             </span>
             {onAddMore && (
               <button 
-                className="btn btn-sm btn-warning"
+                className="btn-apple btn-apple-primary"
+                style={{ fontSize: '0.85rem', padding: '4px 12px' }}
                 onClick={onAddMore}
               >
-                <i className="ti ti-plus me-1"></i>
+                <i className="ti ti-plus" style={{ marginRight: 4 }}></i>
                 Add {additionalNeeded} More
               </button>
             )}
             {onDismiss && (
               <button 
-                className="btn btn-sm btn-outline-secondary"
+                className="btn-apple btn-apple-secondary"
+                style={{ fontSize: '0.85rem', padding: '4px 12px' }}
                 onClick={onDismiss}
               >
                 No thanks
@@ -156,36 +158,37 @@ export function CartOptimizer({
   );
 
   return (
-    <div className="card border-warning mb-4">
-      <div className="card-header bg-warning bg-opacity-10 border-warning">
-        <div className="d-flex align-items-center">
-          <i className="ti ti-bulb ti-lg text-warning me-2"></i>
+    <div className="card" style={{ border: '1px solid var(--orange)', marginBottom: 16 }}>
+      <div className="card-header" style={{ background: 'color-mix(in srgb, var(--orange) 10%, transparent)', borderBottom: '1px solid var(--orange)' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <i className="ti ti-bulb ti-lg" style={{ color: 'var(--orange)', marginRight: 8 }}></i>
           <div>
-            <h6 className="mb-0">Savings Opportunities</h6>
-            <small className="text-muted">
-              You could save up to <strong className="text-success">{formatCurrency(totalPotentialSavings, currency)}</strong>
+            <h6 style={{ margin: 0, fontWeight: 600 }}>Savings Opportunities</h6>
+            <small style={{ color: 'var(--text-secondary)' }}>
+              You could save up to <strong style={{ color: 'var(--green)' }}>{formatCurrency(totalPotentialSavings, currency)}</strong>
             </small>
           </div>
         </div>
       </div>
-      <div className="card-body p-0">
-        <ul className="list-group list-group-flush">
+      <div className="card-body" style={{ padding: 0 }}>
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
           {opportunities.map((opp) => opp && (
-            <li key={opp.item.id} className="list-group-item">
-              <div className="d-flex justify-content-between align-items-center">
+            <li key={opp.item.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <strong>{opp.item.title}</strong>
-                  <div className="small text-muted">
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                     Add {opp.additionalNeeded} more to get {formatCurrency(opp.nextBreak.price, currency)}/each
                   </div>
                 </div>
-                <div className="text-end">
-                  <span className="badge bg-success mb-1">
+                <div style={{ textAlign: 'right' }}>
+                  <span className="badge" style={{ background: 'var(--green)', color: '#fff', padding: '2px 8px', borderRadius: 6, fontSize: '0.75rem', marginBottom: 4, display: 'inline-block' }}>
                     Save {formatCurrency(opp.potentialSavings, currency)}
                   </span>
                   {onUpdateQuantity && (
                     <button 
-                      className="btn btn-sm btn-outline-warning d-block"
+                      className="btn-apple btn-apple-secondary"
+                      style={{ display: 'block', fontSize: '0.85rem', padding: '4px 12px', border: '1px solid var(--orange)', color: 'var(--orange)' }}
                       onClick={() => onUpdateQuantity(opp.item.id, opp.nextBreak.qty)}
                     >
                       Add {opp.additionalNeeded}
@@ -229,8 +232,8 @@ export function QuantityBreakHint({
     const currentBreak = sortedBreaks.filter(b => b.qty <= currentQuantity).pop();
     if (currentBreak) {
       return (
-        <small className="text-success d-block mt-1">
-          <i className="ti ti-check me-1"></i>
+        <small style={{ color: 'var(--green)', display: 'block', marginTop: 4 }}>
+          <i className="ti ti-check" style={{ marginRight: 4 }}></i>
           Volume discount applied!
         </small>
       );
@@ -242,8 +245,8 @@ export function QuantityBreakHint({
   const savingsPerItem = currentPrice - nextBreak.price;
 
   return (
-    <small className="text-warning d-block mt-1">
-      <i className="ti ti-trending-down me-1"></i>
+    <small style={{ color: 'var(--orange)', display: 'block', marginTop: 4 }}>
+      <i className="ti ti-trending-down" style={{ marginRight: 4 }}></i>
       Add {additionalNeeded} more for {formatCurrency(savingsPerItem, currency)} off each
     </small>
   );

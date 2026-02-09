@@ -1,309 +1,155 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { adminFetch } from '@/lib/api-client';
-import Modal from '@/components/Modal';
+import { PageHeader, showToast } from '@/components/ui';
 
 interface Product {
   id: string;
-  shopifyProductId: string;
   title: string;
+  handle: string;
   vendor: string;
+  productType: string;
   status: string;
-  variants: {
-    id: string;
-    title: string;
-    price: number;
-    sku: string;
-  }[];
+  images: { src: string }[];
+  variants: { price: string; sku: string; inventoryQuantity: number }[];
+  shopifyProductId?: string;
 }
 
 export default function CatalogPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [syncing, setSyncing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  const [resultModal, setResultModal] = useState<{show: boolean; message: string; type: 'success' | 'error'}>({
-    show: false,
-    message: '',
-    type: 'success'
-  });
-  
-  const [infoModal, setInfoModal] = useState<{show: boolean; product: Product | null}>({
-    show: false,
-    product: null
-  });
+  const [selected, setSelected] = useState<Product | null>(null);
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await adminFetch('/api/v1/catalog/products?limit=500');
-      const data = await response.json();
-      setProducts(Array.isArray(data) ? data : data.data || []);
-    } catch (err) {
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const res = await adminFetch('/api/v1/products');
+      const data = await res.json();
+      setProducts(Array.isArray(data) ? data : data.products || data.data || []);
+    } catch { setProducts([]); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { loadProducts(); }, [loadProducts]);
 
   const syncProducts = async () => {
+    setSyncing(true);
     try {
-      setSyncing(true);
-      const response = await adminFetch('/api/v1/sync/products', { method: 'POST' });
-      
-      if (response.ok) {
-        setResultModal({
-          show: true,
-          message: '✅ Products sync started! Check back in a few minutes.',
-          type: 'success'
-        });
-        setTimeout(loadProducts, 5000);
-      } else {
-        const error = await response.json().catch(() => ({}));
-        setResultModal({
-          show: true,
-          message: `❌ ${error.message || 'Failed to start product sync'}`,
-          type: 'error'
-        });
-      }
-    } catch (err) {
-      setResultModal({
-        show: true,
-        message: `❌ ${err instanceof Error ? err.message : 'Failed to start product sync'}`,
-        type: 'error'
-      });
-    } finally {
-      setSyncing(false);
-    }
+      await adminFetch('/api/v1/sync/products', { method: 'POST' });
+      showToast('Product sync started!', 'success');
+      setTimeout(loadProducts, 3000);
+    } catch { showToast('Sync failed', 'danger'); }
+    finally { setSyncing(false); }
   };
 
-  const filteredProducts = products.filter(p => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      p.title?.toLowerCase().includes(query) ||
-      p.vendor?.toLowerCase().includes(query) ||
-      p.shopifyProductId?.includes(query)
-    );
-  });
+  const filtered = products.filter(p =>
+    !search || p.title.toLowerCase().includes(search.toLowerCase()) ||
+    p.vendor?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h4 className="fw-bold mb-1">Product Catalog</h4>
-          <p className="mb-0 text-muted">{filteredProducts.length} of {products.length} products</p>
+      <PageHeader title="Product Catalog" subtitle={`${products.length} products`}
+        actions={[
+          { label: syncing ? 'Syncing...' : 'Sync Products', icon: 'refresh', variant: 'primary', onClick: syncProducts, disabled: syncing },
+        ]} />
+
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+        <div className="input-apple" style={{ flex: 1, maxWidth: 360 }}>
+          <i className="ti ti-search input-icon" />
+          <input placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <div className="d-flex gap-2">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search products..."
-            style={{maxWidth: '250px'}}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <button
-            onClick={syncProducts}
-            className="btn btn-primary"
-            disabled={syncing}
-          >
-            {syncing ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-1"></span>
-                Syncing...
-              </>
-            ) : (
-              <>
-                <i className="ti ti-refresh me-1"></i>
-                Sync Products
-              </>
-            )}
-          </button>
-        </div>
+        <span style={{ fontSize: 13, color: 'var(--text-tertiary)', alignSelf: 'center' }}>{filtered.length} products</span>
       </div>
 
       {loading ? (
-        <div className="d-flex justify-content-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Loading...</span>
-          </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+          {[1,2,3,4,5,6,7,8].map(i => (
+            <div key={i} className="apple-card" style={{ padding: 16 }}>
+              <div className="skeleton" style={{ height: 160, marginBottom: 12, borderRadius: 8 }} />
+              <div className="skeleton" style={{ height: 16, width: '80%', marginBottom: 8 }} />
+              <div className="skeleton" style={{ height: 14, width: '50%' }} />
+            </div>
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="empty-state" style={{ padding: 64 }}>
+          <div className="empty-state-icon"><i className="ti ti-package" /></div>
+          <h4 className="empty-state-title">No products found</h4>
+          <p className="empty-state-desc">Sync products from Shopify to get started.</p>
         </div>
       ) : (
-        <div className="row g-4">
-          {filteredProducts.length === 0 ? (
-            <div className="col-12">
-              <div className="card">
-                <div className="card-body text-center py-5">
-                  <i className="ti ti-package fs-1 text-muted mb-3 d-block"></i>
-                  <h5>{searchQuery ? 'No products match your search' : 'No products synced'}</h5>
-                  <p className="text-muted">
-                    {searchQuery ? 'Try a different search term' : 'Click "Sync Products" to import from Shopify'}
-                  </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+          {filtered.map(product => (
+            <div key={product.id} className="apple-card" style={{ cursor: 'pointer', overflow: 'hidden' }}
+              onClick={() => setSelected(product)}>
+              <div style={{
+                height: 160, background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderBottom: '1px solid var(--border-light)',
+              }}>
+                {product.images?.[0]?.src ? (
+                  <img src={product.images[0].src} alt={product.title} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
+                ) : (
+                  <i className="ti ti-photo-off" style={{ fontSize: 32, color: 'var(--text-quaternary)' }} />
+                )}
+              </div>
+              <div style={{ padding: 16 }}>
+                <div style={{ fontWeight: 500, fontSize: 14, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {product.title}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>{product.vendor}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--accent-primary)' }}>
+                    ${parseFloat(product.variants?.[0]?.price || '0').toFixed(2)}
+                  </span>
+                  <span className={`badge-apple ${product.status === 'active' ? 'success' : 'secondary'}`}>
+                    {product.status}
+                  </span>
                 </div>
               </div>
             </div>
-          ) : (
-            filteredProducts.map((product) => (
-              <div key={product.id} className="col-md-4 col-lg-3">
-                <div className="card h-100">
-                  <div className="card-body d-flex flex-column">
-                    <h6 className="card-title mb-1">{product.title}</h6>
-                    <p className="text-muted small mb-2">{product.vendor}</p>
-                    <div className="d-flex justify-content-between mb-2">
-                      <span className="small">Variants: {product.variants?.length || 0}</span>
-                      <span className={`badge ${product.status === 'active' ? 'bg-label-success' : 'bg-label-secondary'}`}>
-                        {product.status}
-                      </span>
-                    </div>
-                    <div className="mb-3 mt-auto">
-                      <span className="fw-bold text-primary fs-5">
-                        ${parseFloat(String(product.variants?.[0]?.price || 0)).toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="d-flex gap-2">
-                      <button
-                        onClick={() => {
-                          window.location.href = `/pricing?productId=${product.shopifyProductId}`;
-                        }}
-                        className="btn btn-sm btn-primary flex-fill"
-                      >
-                        <i className="ti ti-tag me-1"></i>
-                        Set Pricing
-                      </button>
-                      <button
-                        onClick={() => setInfoModal({show: true, product})}
-                        className="btn btn-sm btn-label-secondary"
-                        title="View Details"
-                      >
-                        <i className="ti ti-info-circle"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
+          ))}
         </div>
       )}
 
-      {/* Product Info Modal */}
-      {infoModal.show && infoModal.product && (
-        <div className="modal fade show d-block" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Product Details</h5>
-                <button 
-                  type="button" 
-                  className="btn-close" 
-                  onClick={() => setInfoModal({show: false, product: null})}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <table className="table table-sm">
-                  <tbody>
-                    <tr>
-                      <th className="w-50">Title</th>
-                      <td>{infoModal.product.title}</td>
-                    </tr>
-                    <tr>
-                      <th>Vendor</th>
-                      <td>{infoModal.product.vendor || 'N/A'}</td>
-                    </tr>
-                    <tr>
-                      <th>Shopify ID</th>
-                      <td><code>{infoModal.product.shopifyProductId}</code></td>
-                    </tr>
-                    <tr>
-                      <th>Status</th>
-                      <td>
-                        <span className={`badge ${infoModal.product.status === 'active' ? 'bg-label-success' : 'bg-label-secondary'}`}>
-                          {infoModal.product.status}
-                        </span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <th>Variants</th>
-                      <td>{infoModal.product.variants?.length || 0}</td>
-                    </tr>
-                  </tbody>
-                </table>
-                
-                {infoModal.product.variants && infoModal.product.variants.length > 0 && (
-                  <>
-                    <h6 className="mt-3 mb-2">Variants</h6>
-                    <div className="table-responsive" style={{maxHeight: '200px'}}>
-                      <table className="table table-sm table-striped">
-                        <thead>
-                          <tr>
-                            <th>Title</th>
-                            <th>SKU</th>
-                            <th>Price</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {infoModal.product.variants.slice(0, 10).map((v) => (
-                            <tr key={v.id}>
-                              <td>{v.title}</td>
-                              <td><code>{v.sku || 'N/A'}</code></td>
-                              <td>${parseFloat(String(v.price || 0)).toFixed(2)}</td>
-                            </tr>
-                          ))}
-                          {infoModal.product.variants.length > 10 && (
-                            <tr>
-                              <td colSpan={3} className="text-muted text-center">
-                                +{infoModal.product.variants.length - 10} more variants
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button 
-                  type="button" 
-                  className="btn btn-primary" 
-                  onClick={() => {
-                    setInfoModal({show: false, product: null});
-                    window.location.href = `/pricing?productId=${infoModal.product?.shopifyProductId}`;
-                  }}
-                >
-                  <i className="ti ti-tag me-1"></i>
-                  Set Pricing
-                </button>
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  onClick={() => setInfoModal({show: false, product: null})}
-                >
-                  Close
-                </button>
-              </div>
+      {/* Product Detail Modal */}
+      {selected && (
+        <div className="apple-modal-overlay" onClick={() => setSelected(null)}>
+          <div className="apple-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>
+            <div className="apple-modal-header">
+              <h3 className="apple-modal-title">{selected.title}</h3>
+            </div>
+            <div className="apple-modal-body">
+              {selected.images?.[0]?.src && (
+                <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                  <img src={selected.images[0].src} alt={selected.title} style={{ maxHeight: 200, borderRadius: 8 }} />
+                </div>
+              )}
+              <table className="apple-table" style={{ fontSize: 13 }}>
+                <tbody>
+                  <tr><td style={{ fontWeight: 500 }}>Vendor</td><td>{selected.vendor || '-'}</td></tr>
+                  <tr><td style={{ fontWeight: 500 }}>Type</td><td>{selected.productType || '-'}</td></tr>
+                  <tr><td style={{ fontWeight: 500 }}>Status</td><td><span className={`badge-apple ${selected.status === 'active' ? 'success' : 'secondary'}`}>{selected.status}</span></td></tr>
+                  <tr><td style={{ fontWeight: 500 }}>SKU</td><td>{selected.variants?.[0]?.sku || '-'}</td></tr>
+                  <tr><td style={{ fontWeight: 500 }}>Price</td><td>${parseFloat(selected.variants?.[0]?.price || '0').toFixed(2)}</td></tr>
+                  <tr><td style={{ fontWeight: 500 }}>Inventory</td><td>{selected.variants?.[0]?.inventoryQuantity ?? '-'}</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="apple-modal-footer">
+              {selected.shopifyProductId && (
+                <a href={`https://admin.shopify.com/store/eagledtfsupply/products/${selected.shopifyProductId}`}
+                  target="_blank" rel="noopener noreferrer" className="btn-apple secondary" style={{ textDecoration: 'none' }}>
+                  <i className="ti ti-external-link" /> View in Shopify
+                </a>
+              )}
+              <button className="btn-apple primary" onClick={() => setSelected(null)}>Close</button>
             </div>
           </div>
         </div>
-      )}
-
-      {resultModal.show && (
-        <Modal
-          show={resultModal.show}
-          onClose={() => setResultModal({show: false, message: '', type: 'success'})}
-          onConfirm={() => setResultModal({show: false, message: '', type: 'success'})}
-          title={resultModal.type === 'success' ? 'Success' : 'Error'}
-          message={resultModal.message}
-          confirmText="OK"
-          type={resultModal.type === 'success' ? 'success' : 'danger'}
-        />
       )}
     </div>
   );

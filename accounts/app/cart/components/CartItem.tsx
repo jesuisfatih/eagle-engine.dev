@@ -18,26 +18,27 @@ interface CartItemProps {
 
 export default function CartItem({ item, onUpdateQuantity, onRemove }: CartItemProps) {
   return (
-    <div className="row mb-3 pb-3 border-bottom">
-      <div className="col-md-7">
-        <h6 className="fw-semibold mb-1">{item.title}</h6>
-        <p className="text-muted small mb-2">{item.variantTitle}</p>
+    <div style={{ display: 'flex', gap: 16, marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+      <div style={{ flex: 1 }}>
+        <h6 style={{ fontWeight: 600, margin: '0 0 4px' }}>{item.title}</h6>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 8px' }}>{item.variantTitle}</p>
         <div>
-          <span className="text-primary fw-bold">${item.unitPrice}</span>
+          <span style={{ color: 'var(--accent)', fontWeight: 700 }}>${item.unitPrice}</span>
           {item.listPrice > item.unitPrice && (
             <>
-              <span className="text-muted small text-decoration-line-through ms-2">${item.listPrice}</span>
-              <span className="badge bg-label-success ms-2">
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textDecoration: 'line-through', marginLeft: 8 }}>${item.listPrice}</span>
+              <span className="badge" style={{ background: 'var(--green)', color: '#fff', marginLeft: 8, padding: '2px 8px', borderRadius: 6, fontSize: '0.75rem' }}>
                 Save ${(item.listPrice - item.unitPrice).toFixed(2)}
               </span>
             </>
           )}
         </div>
       </div>
-      <div className="col-md-3">
-        <div className="input-group input-group-sm">
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden' }}>
           <button
-            className="btn btn-outline-secondary"
+            className="btn-apple btn-apple-secondary"
+            style={{ borderRadius: 0, minWidth: 36, height: 36, padding: 0 }}
             onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
             disabled={item.quantity <= 1}
           >
@@ -45,23 +46,25 @@ export default function CartItem({ item, onUpdateQuantity, onRemove }: CartItemP
           </button>
           <input
             type="text"
-            className="form-control text-center"
+            style={{ width: 48, textAlign: 'center', border: 'none', outline: 'none', background: 'transparent', fontSize: '0.9rem' }}
             value={item.quantity}
             readOnly
           />
           <button
-            className="btn btn-outline-secondary"
+            className="btn-apple btn-apple-secondary"
+            style={{ borderRadius: 0, minWidth: 36, height: 36, padding: 0 }}
             onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
           >
             +
           </button>
         </div>
       </div>
-      <div className="col-md-2 text-end">
-        <p className="fw-bold mb-2">${(item.unitPrice * item.quantity).toFixed(2)}</p>
+      <div style={{ textAlign: 'right', minWidth: 80 }}>
+        <p style={{ fontWeight: 700, margin: '0 0 8px' }}>${(item.unitPrice * item.quantity).toFixed(2)}</p>
         <button
           onClick={() => onRemove(item.id)}
-          className="btn btn-sm btn-text-danger"
+          className="btn-apple btn-apple-secondary"
+          style={{ color: 'var(--red)', padding: '4px 8px', fontSize: '0.85rem' }}
         >
           <i className="ti ti-trash"></i>
         </button>

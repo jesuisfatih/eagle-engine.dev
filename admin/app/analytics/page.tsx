@@ -1,188 +1,91 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import TopCompanies from './components/TopCompanies';
-import DateRangeFilter from './components/DateRangeFilter';
 import { adminFetch } from '@/lib/api-client';
-
-interface AnalyticsStats {
-  totalEvents: number;
-  productViews: number;
-  addToCarts: number;
-  conversionRate: number;
-}
-
-interface TopProduct {
-  productId: string;
-  title: string;
-  views: number;
-  orders: number;
-}
-
-interface FunnelData {
-  steps?: { name: string; count: number; rate?: number }[];
-}
+import { PageHeader, StatsCard } from '@/components/ui';
 
 export default function AnalyticsPage() {
-  const [stats, setStats] = useState<AnalyticsStats>({
-    totalEvents: 0,
-    productViews: 0,
-    addToCarts: 0,
-    conversionRate: 0,
-  });
-  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
-  const [funnel, setFunnel] = useState<FunnelData | null>(null);
+  const [stats, setStats] = useState({ companies: 0, users: 0, orders: 0, revenue: 0, products: 0, avgOrderValue: 0 });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadAnalytics();
+    (async () => {
+      try {
+        const res = await adminFetch('/api/v1/merchants/stats');
+        if (res.ok) {
+          const d = await res.json();
+          setStats({
+            companies: d.companies || d.totalCompanies || 0,
+            users: d.users || d.totalUsers || 0,
+            orders: d.orders || d.totalOrders || 0,
+            revenue: d.revenue || d.totalRevenue || 0,
+            products: d.products || d.totalProducts || 0,
+            avgOrderValue: d.avgOrderValue || 0,
+          });
+        }
+      } catch { /* silent */ }
+      finally { setLoading(false); }
+    })();
   }, []);
 
-  const loadAnalytics = async () => {
-    try {
-      const [dashboardData, funnelData, productsData] = await Promise.all([
-        adminFetch('/api/v1/analytics/dashboard').then(r => r.json()).catch(() => ({})),
-        adminFetch('/api/v1/analytics/funnel').then(r => r.json()).catch(() => null),
-        adminFetch('/api/v1/analytics/top-products').then(r => r.json()).catch(() => []),
-      ]);
-      setStats(dashboardData);
-      setFunnel(funnelData);
-      setTopProducts(Array.isArray(productsData) ? productsData : []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const funnel = [
+    { label: 'Visitors', value: '-', icon: 'ti-eye', pct: 100, color: '#007aff' },
+    { label: 'Registered', value: stats.users, icon: 'ti-user-plus', pct: 60, color: '#5856d6' },
+    { label: 'Active Buyers', value: stats.companies, icon: 'ti-shopping-cart', pct: 40, color: '#ff9500' },
+    { label: 'Converted', value: stats.orders, icon: 'ti-check', pct: 25, color: '#34c759' },
+  ];
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h4 className="fw-bold mb-1">Analytics & Reports</h4>
-          <p className="mb-0 text-muted">Track performance and behavior</p>
-        </div>
-      </div>
+      <PageHeader title="Analytics" subtitle="Platform performance overview" />
 
-      <DateRangeFilter onDateChange={(from, to) => {
-        console.log('Date range:', from, to);
-        loadAnalytics();
-      }} />
-
-      {/* Key Metrics */}
-      <div className="row g-4 mb-4">
-        <div className="col-sm-6 col-lg-3">
-          <div className="card">
-            <div className="card-body">
-              <div className="d-flex justify-content-between">
-                <div>
-                  <p className="card-text mb-0">Total Events</p>
-                  <h4 className="mb-0">{stats.totalEvents}</h4>
-                </div>
-                <span className="badge bg-label-primary rounded p-2">
-                  <i className="ti ti-chart-line ti-sm"></i>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-sm-6 col-lg-3">
-          <div className="card">
-            <div className="card-body">
-              <div className="d-flex justify-content-between">
-                <div>
-                  <p className="card-text mb-0">Product Views</p>
-                  <h4 className="mb-0">{stats.productViews}</h4>
-                </div>
-                <span className="badge bg-label-info rounded p-2">
-                  <i className="ti ti-eye ti-sm"></i>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-sm-6 col-lg-3">
-          <div className="card">
-            <div className="card-body">
-              <div className="d-flex justify-content-between">
-                <div>
-                  <p className="card-text mb-0">Add to Cart</p>
-                  <h4 className="mb-0">{stats.addToCarts}</h4>
-                </div>
-                <span className="badge bg-label-success rounded p-2">
-                  <i className="ti ti-shopping-cart-plus ti-sm"></i>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-sm-6 col-lg-3">
-          <div className="card">
-            <div className="card-body">
-              <div className="d-flex justify-content-between">
-                <div>
-                  <p className="card-text mb-0">Conversion Rate</p>
-                  <h4 className="mb-0">{stats.conversionRate}%</h4>
-                </div>
-                <span className="badge bg-label-warning rounded p-2">
-                  <i className="ti ti-trending-up ti-sm"></i>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+        <StatsCard title="Total Revenue" value={typeof stats.revenue === 'number' ? `$${stats.revenue.toFixed(2)}` : stats.revenue} icon="currency-dollar" iconColor="success" loading={loading} />
+        <StatsCard title="Total Orders" value={stats.orders} icon="shopping-cart" iconColor="primary" loading={loading} />
+        <StatsCard title="Avg Order Value" value={typeof stats.avgOrderValue === 'number' ? `$${stats.avgOrderValue.toFixed(2)}` : '$0'} icon="chart-line" iconColor="info" loading={loading} />
       </div>
 
       {/* Funnel */}
-      <div className="row g-4">
-        <div className="col-md-6">
-          <div className="card">
-            <div className="card-header">
-              <h5 className="card-title mb-0">Conversion Funnel</h5>
+      <div className="apple-card" style={{ marginTop: 20 }}>
+        <div className="apple-card-header"><h3 className="apple-card-title">Conversion Funnel</h3></div>
+        <div className="apple-card-body">
+          {funnel.map((step, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: `${step.color}14`, color: step.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <i className={`ti ${step.icon}`} style={{ fontSize: 20 }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontWeight: 500, fontSize: 14 }}>{step.label}</span>
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>{step.value}</span>
+                </div>
+                <div style={{ height: 6, borderRadius: 3, background: 'var(--bg-tertiary)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${step.pct}%`, background: step.color, borderRadius: 3, transition: 'width 0.5s' }} />
+                </div>
+              </div>
             </div>
-            <div className="card-body">
-              {funnel?.steps?.map((step, i) => (
-                <div key={i} className="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
-                  <div>
-                    <h6 className="mb-1">{step.name}</h6>
-                    <p className="text-muted small mb-0">{step.count} events</p>
-                  </div>
-                  <h4 className="mb-0 text-primary">{step.count}</h4>
-                </div>
-              ))}
-              {funnel?.conversionRate && (
-                <div className="alert alert-success mt-3">
-                  <strong>Conversion Rate:</strong> {funnel.conversionRate}%
-                </div>
-              )}
+          ))}
+        </div>
+      </div>
+
+      {/* Top Products */}
+      <div className="apple-card" style={{ marginTop: 20 }}>
+        <div className="apple-card-header"><h3 className="apple-card-title">Overview</h3></div>
+        <div className="apple-card-body">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+            <div style={{ padding: 16, background: 'var(--bg-secondary)', borderRadius: 10 }}>
+              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4 }}>Products</div>
+              <div style={{ fontSize: 22, fontWeight: 600 }}>{stats.products}</div>
+            </div>
+            <div style={{ padding: 16, background: 'var(--bg-secondary)', borderRadius: 10 }}>
+              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4 }}>Companies</div>
+              <div style={{ fontSize: 22, fontWeight: 600 }}>{stats.companies}</div>
+            </div>
+            <div style={{ padding: 16, background: 'var(--bg-secondary)', borderRadius: 10 }}>
+              <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 4 }}>Active Users</div>
+              <div style={{ fontSize: 22, fontWeight: 600 }}>{stats.users}</div>
             </div>
           </div>
-        </div>
-
-        <div className="col-md-6">
-          <div className="card">
-            <div className="card-header">
-              <h5 className="card-title mb-0">Top Products</h5>
-            </div>
-            <div className="card-body">
-              {topProducts.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-muted mb-0">No product views yet</p>
-                </div>
-              ) : (
-                topProducts.map((product, i) => (
-                  <div key={i} className="d-flex justify-content-between mb-3">
-                    <span>Product: {product.title}</span>
-                    <span className="badge bg-label-primary">{product._count?.id} views</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="col-md-6">
-          <TopCompanies />
         </div>
       </div>
     </div>

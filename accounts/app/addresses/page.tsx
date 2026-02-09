@@ -250,9 +250,9 @@ export default function AddressesPage() {
 
   if (loading) {
     return (
-      <div className="text-center py-5">
-        <div className="spinner-border text-primary" role="status"></div>
-        <p className="mt-3 text-muted">Loading addresses...</p>
+      <div style={{ textAlign: 'center', padding: '40px 0' }}>
+        <div className="spinner-apple" role="status"></div>
+        <p style={{ marginTop: '16px', color: 'var(--text-secondary)' }}>Loading addresses...</p>
       </div>
     );
   }
@@ -260,28 +260,28 @@ export default function AddressesPage() {
   return (
     <div>
       {/* Header */}
-      <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '12px' }}>
         <div>
-          <h4 className="fw-bold mb-1">
-            <i className="ti ti-map-pin text-primary me-2"></i>
+          <h4 style={{ fontWeight: 600, marginBottom: '4px' }}>
+            <i className="ti ti-map-pin" style={{ color: 'var(--accent)', marginRight: '8px' }}></i>
             Saved Addresses
           </h4>
-          <p className="text-muted mb-0">Manage your shipping and billing addresses</p>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: 0 }}>Manage your shipping and billing addresses</p>
         </div>
         <div className="dropdown">
-          <button className="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
-            <i className="ti ti-plus me-1"></i>
+          <button className="btn-apple btn-apple-primary dropdown-toggle" data-bs-toggle="dropdown">
+            <i className="ti ti-plus" style={{ marginRight: '4px' }}></i>
             Add Address
           </button>
           <ul className="dropdown-menu dropdown-menu-end">
             <li>
               <button className="dropdown-item" onClick={() => openAddModal('SHIPPING')}>
-                <i className="ti ti-truck me-2"></i>Shipping Address
+                <i className="ti ti-truck" style={{ marginRight: '8px' }}></i>Shipping Address
               </button>
             </li>
             <li>
               <button className="dropdown-item" onClick={() => openAddModal('BILLING')}>
-                <i className="ti ti-file-invoice me-2"></i>Billing Address
+                <i className="ti ti-file-invoice" style={{ marginRight: '8px' }}></i>Billing Address
               </button>
             </li>
           </ul>
@@ -289,65 +289,57 @@ export default function AddressesPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="row g-3 mb-4">
-        <div className="col-6 col-lg-3">
-          <div className="card h-100">
-            <div className="card-body">
-              <div className="d-flex align-items-center gap-3">
-                <div className="avatar bg-label-primary rounded">
-                  <i className="ti ti-map-pin ti-md"></i>
-                </div>
-                <div>
-                  <h3 className="mb-0 fw-bold">{stats.total}</h3>
-                  <small className="text-muted">Total Addresses</small>
-                </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+        <div className="card" style={{ height: '100%' }}>
+          <div className="card-body">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div className="avatar" style={{ background: 'color-mix(in srgb, var(--accent) 15%, transparent)', borderRadius: '10px' }}>
+                <i className="ti ti-map-pin ti-md"></i>
+              </div>
+              <div>
+                <h3 style={{ marginBottom: 0, fontWeight: 600 }}>{stats.total}</h3>
+                <small style={{ color: 'var(--text-secondary)' }}>Total Addresses</small>
               </div>
             </div>
           </div>
         </div>
-        <div className="col-6 col-lg-3">
-          <div className="card h-100">
-            <div className="card-body">
-              <div className="d-flex align-items-center gap-3">
-                <div className="avatar bg-label-info rounded">
-                  <i className="ti ti-truck ti-md"></i>
-                </div>
-                <div>
-                  <h3 className="mb-0 fw-bold">{stats.shipping}</h3>
-                  <small className="text-muted">Shipping</small>
-                </div>
+        <div className="card" style={{ height: '100%' }}>
+          <div className="card-body">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div className="avatar" style={{ background: 'color-mix(in srgb, var(--accent) 15%, transparent)', borderRadius: '10px' }}>
+                <i className="ti ti-truck ti-md"></i>
+              </div>
+              <div>
+                <h3 style={{ marginBottom: 0, fontWeight: 600 }}>{stats.shipping}</h3>
+                <small style={{ color: 'var(--text-secondary)' }}>Shipping</small>
               </div>
             </div>
           </div>
         </div>
-        <div className="col-6 col-lg-3">
-          <div className="card h-100">
-            <div className="card-body">
-              <div className="d-flex align-items-center gap-3">
-                <div className="avatar bg-label-warning rounded">
-                  <i className="ti ti-file-invoice ti-md"></i>
-                </div>
-                <div>
-                  <h3 className="mb-0 fw-bold">{stats.billing}</h3>
-                  <small className="text-muted">Billing</small>
-                </div>
+        <div className="card" style={{ height: '100%' }}>
+          <div className="card-body">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div className="avatar" style={{ background: 'color-mix(in srgb, var(--orange) 15%, transparent)', borderRadius: '10px' }}>
+                <i className="ti ti-file-invoice ti-md"></i>
+              </div>
+              <div>
+                <h3 style={{ marginBottom: 0, fontWeight: 600 }}>{stats.billing}</h3>
+                <small style={{ color: 'var(--text-secondary)' }}>Billing</small>
               </div>
             </div>
           </div>
         </div>
-        <div className="col-6 col-lg-3">
-          <div className="card h-100">
-            <div className="card-body">
-              <div className="d-flex align-items-center gap-3">
-                <div className={`avatar ${stats.hasDefaultShipping && stats.hasDefaultBilling ? 'bg-label-success' : 'bg-label-danger'} rounded`}>
-                  <i className="ti ti-star ti-md"></i>
-                </div>
-                <div>
-                  <h6 className="mb-0 fw-bold">
-                    {stats.hasDefaultShipping && stats.hasDefaultBilling ? 'Complete' : 'Incomplete'}
-                  </h6>
-                  <small className="text-muted">Default Setup</small>
-                </div>
+        <div className="card" style={{ height: '100%' }}>
+          <div className="card-body">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div className="avatar" style={{ background: stats.hasDefaultShipping && stats.hasDefaultBilling ? 'color-mix(in srgb, var(--green) 15%, transparent)' : 'color-mix(in srgb, var(--red) 15%, transparent)', borderRadius: '10px' }}>
+                <i className="ti ti-star ti-md"></i>
+              </div>
+              <div>
+                <h6 style={{ marginBottom: 0, fontWeight: 600 }}>
+                  {stats.hasDefaultShipping && stats.hasDefaultBilling ? 'Complete' : 'Incomplete'}
+                </h6>
+                <small style={{ color: 'var(--text-secondary)' }}>Default Setup</small>
               </div>
             </div>
           </div>
@@ -356,11 +348,11 @@ export default function AddressesPage() {
 
       {/* Missing Defaults Warning */}
       {(!stats.hasDefaultShipping || !stats.hasDefaultBilling) && addresses.length > 0 && (
-        <div className="alert alert-warning d-flex align-items-center gap-3 mb-4">
+        <div className="alert alert-warning" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
           <i className="ti ti-alert-triangle ti-lg"></i>
           <div>
             <strong>Default addresses not set</strong>
-            <p className="mb-0 small">
+            <p style={{ marginBottom: 0, fontSize: '0.85rem' }}>
               {!stats.hasDefaultShipping && 'Set a default shipping address for faster checkout. '}
               {!stats.hasDefaultBilling && 'Set a default billing address for invoicing.'}
             </p>
@@ -370,9 +362,9 @@ export default function AddressesPage() {
 
       {/* Filter Tabs */}
       {addresses.length > 0 && (
-        <div className="card mb-4">
-          <div className="card-body py-3">
-            <div className="btn-group">
+        <div className="card" style={{ marginBottom: '24px' }}>
+          <div className="card-body" style={{ padding: '12px 16px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
               {[
                 { key: 'all' as AddressFilter, label: 'All', icon: 'list', count: addresses.length },
                 { key: 'shipping' as AddressFilter, label: 'Shipping', icon: 'truck', count: stats.shipping },
@@ -381,11 +373,12 @@ export default function AddressesPage() {
                 <button
                   key={tab.key}
                   onClick={() => setFilter(tab.key)}
-                  className={`btn btn-sm ${filter === tab.key ? 'btn-primary' : 'btn-outline-primary'}`}
+                  className={filter === tab.key ? 'btn-apple btn-apple-primary' : 'btn-apple btn-apple-secondary'}
+                  style={{ fontSize: '0.85rem' }}
                 >
-                  <i className={`ti ti-${tab.icon} me-1`}></i>
+                  <i className={`ti ti-${tab.icon}`} style={{ marginRight: '4px' }}></i>
                   {tab.label}
-                  <span className="badge bg-white text-primary ms-1">{tab.count}</span>
+                  <span className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', marginLeft: '4px' }}>{tab.count}</span>
                 </button>
               ))}
             </div>
@@ -396,78 +389,80 @@ export default function AddressesPage() {
       {/* Addresses Grid */}
       {addresses.length === 0 ? (
         <div className="card">
-          <div className="card-body text-center py-5">
-            <div className="avatar avatar-xl bg-label-primary rounded-circle mx-auto mb-3">
+          <div className="card-body" style={{ textAlign: 'center', padding: '40px 0' }}>
+            <div className="avatar avatar-xl" style={{ background: 'color-mix(in srgb, var(--accent) 15%, transparent)', borderRadius: '50%', margin: '0 auto 16px' }}>
               <i className="ti ti-map-pin ti-xl"></i>
             </div>
             <h5>No addresses saved</h5>
-            <p className="text-muted mb-4">Add shipping and billing addresses for faster checkout</p>
-            <div className="d-flex justify-content-center gap-2">
-              <button onClick={() => openAddModal('SHIPPING')} className="btn btn-primary">
-                <i className="ti ti-truck me-1"></i>Add Shipping Address
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Add shipping and billing addresses for faster checkout</p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+              <button onClick={() => openAddModal('SHIPPING')} className="btn-apple btn-apple-primary">
+                <i className="ti ti-truck" style={{ marginRight: '4px' }}></i>Add Shipping Address
               </button>
-              <button onClick={() => openAddModal('BILLING')} className="btn btn-outline-primary">
-                <i className="ti ti-file-invoice me-1"></i>Add Billing Address
+              <button onClick={() => openAddModal('BILLING')} className="btn-apple btn-apple-secondary">
+                <i className="ti ti-file-invoice" style={{ marginRight: '4px' }}></i>Add Billing Address
               </button>
             </div>
           </div>
         </div>
       ) : (
-        <div className="row g-4">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
           {filteredAddresses.map((address) => (
-            <div key={address.id} className="col-md-6 col-xl-4">
-              <div className={`card h-100 ${address.isDefault ? 'border-primary' : ''}`}>
-                <div className="card-header d-flex justify-content-between align-items-center py-3">
-                  <div className="d-flex align-items-center gap-2">
-                    <div className={`avatar avatar-sm ${address.type === 'SHIPPING' ? 'bg-label-info' : 'bg-label-warning'} rounded`}>
+            <div key={address.id}>
+              <div className="card" style={{ height: '100%', borderColor: address.isDefault ? 'var(--accent)' : undefined }}>
+                <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="avatar avatar-sm" style={{ background: address.type === 'SHIPPING' ? 'color-mix(in srgb, var(--accent) 15%, transparent)' : 'color-mix(in srgb, var(--orange) 15%, transparent)', borderRadius: '8px' }}>
                       <i className={`ti ti-${address.type === 'SHIPPING' ? 'truck' : 'file-invoice'}`}></i>
                     </div>
-                    <span className="fw-semibold">
+                    <span style={{ fontWeight: 500 }}>
                       {address.type === 'SHIPPING' ? 'Shipping' : 'Billing'}
                     </span>
                   </div>
-                  <div className="d-flex gap-1">
+                  <div style={{ display: 'flex', gap: '4px' }}>
                     {address.isDefault && (
-                      <span className="badge bg-primary">
-                        <i className="ti ti-star-filled me-1"></i>Default
+                      <span className="badge" style={{ background: 'var(--accent)', color: '#fff' }}>
+                        <i className="ti ti-star-filled" style={{ marginRight: '4px' }}></i>Default
                       </span>
                     )}
                   </div>
                 </div>
                 <div className="card-body">
-                  <h6 className="mb-2">{address.firstName} {address.lastName}</h6>
+                  <h6 style={{ marginBottom: '8px' }}>{address.firstName} {address.lastName}</h6>
                   {address.company && (
-                    <p className="mb-1 small text-primary">
-                      <i className="ti ti-building me-1"></i>{address.company}
+                    <p style={{ marginBottom: '4px', fontSize: '0.85rem', color: 'var(--accent)' }}>
+                      <i className="ti ti-building" style={{ marginRight: '4px' }}></i>{address.company}
                     </p>
                   )}
-                  <p className="mb-1 small text-muted">
-                    <i className="ti ti-map-pin me-1"></i>{address.address1}
+                  <p style={{ marginBottom: '4px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    <i className="ti ti-map-pin" style={{ marginRight: '4px' }}></i>{address.address1}
                   </p>
                   {address.address2 && (
-                    <p className="mb-1 small text-muted ps-4">{address.address2}</p>
+                    <p style={{ marginBottom: '4px', fontSize: '0.85rem', color: 'var(--text-secondary)', paddingLeft: '20px' }}>{address.address2}</p>
                   )}
-                  <p className="mb-1 small text-muted ps-4">
+                  <p style={{ marginBottom: '4px', fontSize: '0.85rem', color: 'var(--text-secondary)', paddingLeft: '20px' }}>
                     {address.city}, {address.state} {address.postalCode}
                   </p>
-                  <p className="mb-1 small text-muted ps-4">{address.country}</p>
+                  <p style={{ marginBottom: '4px', fontSize: '0.85rem', color: 'var(--text-secondary)', paddingLeft: '20px' }}>{address.country}</p>
                   {address.phone && (
-                    <p className="mb-0 small text-muted">
-                      <i className="ti ti-phone me-1"></i>{address.phone}
+                    <p style={{ marginBottom: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                      <i className="ti ti-phone" style={{ marginRight: '4px' }}></i>{address.phone}
                     </p>
                   )}
                 </div>
-                <div className="card-footer bg-transparent">
-                  <div className="d-flex flex-wrap gap-2">
+                <div className="card-footer" style={{ background: 'transparent' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                     <button
                       onClick={() => openEditModal(address)}
-                      className="btn btn-sm btn-outline-primary"
+                      className="btn-apple btn-apple-secondary"
+                      style={{ fontSize: '0.85rem' }}
                     >
-                      <i className="ti ti-edit me-1"></i>Edit
+                      <i className="ti ti-edit" style={{ marginRight: '4px' }}></i>Edit
                     </button>
                     <button
                       onClick={() => copyToClipboard(address)}
-                      className="btn btn-sm btn-outline-secondary"
+                      className="btn-apple btn-apple-secondary"
+                      style={{ fontSize: '0.85rem' }}
                       title="Copy to clipboard"
                     >
                       <i className="ti ti-copy"></i>
@@ -475,15 +470,17 @@ export default function AddressesPage() {
                     {!address.isDefault && (
                       <button
                         onClick={() => setAsDefault(address.id)}
-                        className="btn btn-sm btn-outline-success"
+                        className="btn-apple btn-apple-secondary"
+                        style={{ fontSize: '0.85rem', color: 'var(--green)' }}
                         title="Set as default"
                       >
-                        <i className="ti ti-star me-1"></i>Default
+                        <i className="ti ti-star" style={{ marginRight: '4px' }}></i>Default
                       </button>
                     )}
                     <button
                       onClick={() => setDeleteModal({show: true, id: address.id})}
-                      className="btn btn-sm btn-outline-danger ms-auto"
+                      className="btn-apple btn-apple-secondary"
+                      style={{ fontSize: '0.85rem', color: 'var(--red)', marginLeft: 'auto' }}
                       title="Delete"
                     >
                       <i className="ti ti-trash"></i>
@@ -495,18 +492,18 @@ export default function AddressesPage() {
           ))}
 
           {/* Add New Card */}
-          <div className="col-md-6 col-xl-4">
+          <div>
             <div 
-              className="card h-100 border-dashed bg-light cursor-pointer" 
+              className="card" 
               onClick={() => openAddModal()}
-              style={{ cursor: 'pointer', minHeight: 200 }}
+              style={{ cursor: 'pointer', minHeight: 200, height: '100%', border: '2px dashed var(--border)', background: 'var(--bg-secondary)' }}
             >
-              <div className="card-body d-flex flex-column align-items-center justify-content-center text-center">
-                <div className="avatar avatar-lg bg-label-primary rounded-circle mb-3">
+              <div className="card-body" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                <div className="avatar avatar-lg" style={{ background: 'color-mix(in srgb, var(--accent) 15%, transparent)', borderRadius: '50%', marginBottom: '12px' }}>
                   <i className="ti ti-plus ti-lg"></i>
                 </div>
-                <h6 className="mb-1">Add New Address</h6>
-                <p className="text-muted small mb-0">Shipping or billing</p>
+                <h6 style={{ marginBottom: '4px' }}>Add New Address</h6>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: 0 }}>Shipping or billing</p>
               </div>
             </div>
           </div>
@@ -515,195 +512,195 @@ export default function AddressesPage() {
 
       {/* Add/Edit Address Modal */}
       {formModal.show && (
-        <div className="modal fade show d-block" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
-          <div className="modal-dialog modal-dialog-centered modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  <i className={`ti ti-${formModal.editId ? 'edit' : 'plus'} me-2`}></i>
-                  {formModal.editId ? 'Edit Address' : 'Add New Address'}
-                </h5>
-                <button 
-                  type="button" 
-                  className="btn-close" 
-                  onClick={() => setFormModal({show: false, editId: null})}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <div className="row g-3">
-                  {/* Address Type Selection */}
-                  <div className="col-12">
-                    <label className="form-label">Address Type</label>
-                    <div className="btn-group w-100">
-                      <button
-                        type="button"
-                        className={`btn ${formData.type === 'SHIPPING' ? 'btn-primary' : 'btn-outline-primary'}`}
-                        onClick={() => handleFormChange('type', 'SHIPPING')}
-                      >
-                        <i className="ti ti-truck me-1"></i>Shipping
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn ${formData.type === 'BILLING' ? 'btn-primary' : 'btn-outline-primary'}`}
-                        onClick={() => handleFormChange('type', 'BILLING')}
-                      >
-                        <i className="ti ti-file-invoice me-1"></i>Billing
-                      </button>
-                    </div>
-                  </div>
-                  <div className="col-12">
-                    <div className="form-check">
-                      <input 
-                        type="checkbox" 
-                        className="form-check-input" 
-                        id="isDefault"
-                        checked={formData.isDefault}
-                        onChange={(e) => handleFormChange('isDefault', e.target.checked)}
-                      />
-                      <label className="form-check-label" htmlFor="isDefault">
-                        <i className="ti ti-star me-1 text-warning"></i>
-                        Set as default {formData.type.toLowerCase()} address
-                      </label>
-                    </div>
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">First Name <span className="text-danger">*</span></label>
-                    <input 
-                      type="text" 
-                      className="form-control"
-                      value={formData.firstName}
-                      onChange={(e) => handleFormChange('firstName', e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Last Name <span className="text-danger">*</span></label>
-                    <input 
-                      type="text" 
-                      className="form-control"
-                      value={formData.lastName}
-                      onChange={(e) => handleFormChange('lastName', e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="col-12">
-                    <label className="form-label">
-                      <i className="ti ti-building me-1"></i>Company (Optional)
-                    </label>
-                    <input 
-                      type="text" 
-                      className="form-control"
-                      value={formData.company}
-                      onChange={(e) => handleFormChange('company', e.target.value)}
-                    />
-                  </div>
-                  <div className="col-12">
-                    <label className="form-label">Address Line 1 <span className="text-danger">*</span></label>
-                    <input 
-                      type="text" 
-                      className="form-control"
-                      value={formData.address1}
-                      onChange={(e) => handleFormChange('address1', e.target.value)}
-                      placeholder="Street address"
-                      required
-                    />
-                  </div>
-                  <div className="col-12">
-                    <label className="form-label">Address Line 2</label>
-                    <input 
-                      type="text" 
-                      className="form-control"
-                      value={formData.address2}
-                      onChange={(e) => handleFormChange('address2', e.target.value)}
-                      placeholder="Apt, suite, unit, building, floor, etc."
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">City <span className="text-danger">*</span></label>
-                    <input 
-                      type="text" 
-                      className="form-control"
-                      value={formData.city}
-                      onChange={(e) => handleFormChange('city', e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="col-md-3">
-                    <label className="form-label">State <span className="text-danger">*</span></label>
-                    <input 
-                      type="text" 
-                      className="form-control"
-                      value={formData.state}
-                      onChange={(e) => handleFormChange('state', e.target.value)}
-                      placeholder="TX"
-                      required
-                    />
-                  </div>
-                  <div className="col-md-3">
-                    <label className="form-label">ZIP Code <span className="text-danger">*</span></label>
-                    <input 
-                      type="text" 
-                      className="form-control"
-                      value={formData.postalCode}
-                      onChange={(e) => handleFormChange('postalCode', e.target.value)}
-                      placeholder="75001"
-                      required
-                    />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Country <span className="text-danger">*</span></label>
-                    <select
-                      className="form-select"
-                      value={formData.country}
-                      onChange={(e) => handleFormChange('country', e.target.value)}
+        <div className="modal-overlay" onClick={() => setFormModal({show: false, editId: null})}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '720px', width: '100%' }}>
+            <div className="modal-header">
+              <h5 className="modal-title">
+                <i className={`ti ti-${formModal.editId ? 'edit' : 'plus'}`} style={{ marginRight: '8px' }}></i>
+                {formModal.editId ? 'Edit Address' : 'Add New Address'}
+              </h5>
+              <button 
+                type="button" 
+                className="btn-close" 
+                onClick={() => setFormModal({show: false, editId: null})}
+              ></button>
+            </div>
+            <div className="modal-body">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '12px' }}>
+                {/* Address Type Selection */}
+                <div className="form-group" style={{ gridColumn: 'span 12' }}>
+                  <label className="form-label">Address Type</label>
+                  <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                    <button
+                      type="button"
+                      className={formData.type === 'SHIPPING' ? 'btn-apple btn-apple-primary' : 'btn-apple btn-apple-secondary'}
+                      onClick={() => handleFormChange('type', 'SHIPPING')}
+                      style={{ flex: 1 }}
                     >
-                      <option value="United States">United States</option>
-                      <option value="Canada">Canada</option>
-                      <option value="Mexico">Mexico</option>
-                    </select>
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">
-                      <i className="ti ti-phone me-1"></i>Phone (Optional)
-                    </label>
-                    <input 
-                      type="tel" 
-                      className="form-control"
-                      value={formData.phone}
-                      onChange={(e) => handleFormChange('phone', e.target.value)}
-                      placeholder="(555) 123-4567"
-                    />
+                      <i className="ti ti-truck" style={{ marginRight: '4px' }}></i>Shipping
+                    </button>
+                    <button
+                      type="button"
+                      className={formData.type === 'BILLING' ? 'btn-apple btn-apple-primary' : 'btn-apple btn-apple-secondary'}
+                      onClick={() => handleFormChange('type', 'BILLING')}
+                      style={{ flex: 1 }}
+                    >
+                      <i className="ti ti-file-invoice" style={{ marginRight: '4px' }}></i>Billing
+                    </button>
                   </div>
                 </div>
+                <div className="form-group" style={{ gridColumn: 'span 12' }}>
+                  <div className="form-check">
+                    <input 
+                      type="checkbox" 
+                      className="form-check-input" 
+                      id="isDefault"
+                      checked={formData.isDefault}
+                      onChange={(e) => handleFormChange('isDefault', e.target.checked)}
+                    />
+                    <label className="form-check-label" htmlFor="isDefault">
+                      <i className="ti ti-star" style={{ marginRight: '4px', color: 'var(--orange)' }}></i>
+                      Set as default {formData.type.toLowerCase()} address
+                    </label>
+                  </div>
+                </div>
+                <div className="form-group" style={{ gridColumn: 'span 6' }}>
+                  <label className="form-label">First Name <span style={{ color: 'var(--red)' }}>*</span></label>
+                  <input 
+                    type="text" 
+                    className="form-input"
+                    value={formData.firstName}
+                    onChange={(e) => handleFormChange('firstName', e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group" style={{ gridColumn: 'span 6' }}>
+                  <label className="form-label">Last Name <span style={{ color: 'var(--red)' }}>*</span></label>
+                  <input 
+                    type="text" 
+                    className="form-input"
+                    value={formData.lastName}
+                    onChange={(e) => handleFormChange('lastName', e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group" style={{ gridColumn: 'span 12' }}>
+                  <label className="form-label">
+                    <i className="ti ti-building" style={{ marginRight: '4px' }}></i>Company (Optional)
+                  </label>
+                  <input 
+                    type="text" 
+                    className="form-input"
+                    value={formData.company}
+                    onChange={(e) => handleFormChange('company', e.target.value)}
+                  />
+                </div>
+                <div className="form-group" style={{ gridColumn: 'span 12' }}>
+                  <label className="form-label">Address Line 1 <span style={{ color: 'var(--red)' }}>*</span></label>
+                  <input 
+                    type="text" 
+                    className="form-input"
+                    value={formData.address1}
+                    onChange={(e) => handleFormChange('address1', e.target.value)}
+                    placeholder="Street address"
+                    required
+                  />
+                </div>
+                <div className="form-group" style={{ gridColumn: 'span 12' }}>
+                  <label className="form-label">Address Line 2</label>
+                  <input 
+                    type="text" 
+                    className="form-input"
+                    value={formData.address2}
+                    onChange={(e) => handleFormChange('address2', e.target.value)}
+                    placeholder="Apt, suite, unit, building, floor, etc."
+                  />
+                </div>
+                <div className="form-group" style={{ gridColumn: 'span 6' }}>
+                  <label className="form-label">City <span style={{ color: 'var(--red)' }}>*</span></label>
+                  <input 
+                    type="text" 
+                    className="form-input"
+                    value={formData.city}
+                    onChange={(e) => handleFormChange('city', e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group" style={{ gridColumn: 'span 3' }}>
+                  <label className="form-label">State <span style={{ color: 'var(--red)' }}>*</span></label>
+                  <input 
+                    type="text" 
+                    className="form-input"
+                    value={formData.state}
+                    onChange={(e) => handleFormChange('state', e.target.value)}
+                    placeholder="TX"
+                    required
+                  />
+                </div>
+                <div className="form-group" style={{ gridColumn: 'span 3' }}>
+                  <label className="form-label">ZIP Code <span style={{ color: 'var(--red)' }}>*</span></label>
+                  <input 
+                    type="text" 
+                    className="form-input"
+                    value={formData.postalCode}
+                    onChange={(e) => handleFormChange('postalCode', e.target.value)}
+                    placeholder="75001"
+                    required
+                  />
+                </div>
+                <div className="form-group" style={{ gridColumn: 'span 6' }}>
+                  <label className="form-label">Country <span style={{ color: 'var(--red)' }}>*</span></label>
+                  <select
+                    className="form-input"
+                    value={formData.country}
+                    onChange={(e) => handleFormChange('country', e.target.value)}
+                  >
+                    <option value="United States">United States</option>
+                    <option value="Canada">Canada</option>
+                    <option value="Mexico">Mexico</option>
+                  </select>
+                </div>
+                <div className="form-group" style={{ gridColumn: 'span 6' }}>
+                  <label className="form-label">
+                    <i className="ti ti-phone" style={{ marginRight: '4px' }}></i>Phone (Optional)
+                  </label>
+                  <input 
+                    type="tel" 
+                    className="form-input"
+                    value={formData.phone}
+                    onChange={(e) => handleFormChange('phone', e.target.value)}
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
               </div>
-              <div className="modal-footer">
-                <button 
-                  type="button" 
-                  className="btn btn-outline-secondary" 
-                  onClick={() => setFormModal({show: false, editId: null})}
-                  disabled={saving}
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="button" 
-                  className="btn btn-primary"
-                  onClick={handleSave}
-                  disabled={saving || !formData.firstName || !formData.lastName || !formData.address1 || !formData.city || !formData.state || !formData.postalCode || !formData.country}
-                >
-                  {saving ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2"></span>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <i className={`ti ti-${formModal.editId ? 'device-floppy' : 'plus'} me-1`}></i>
-                      {formModal.editId ? 'Update Address' : 'Save Address'}
-                    </>
-                  )}
-                </button>
-              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                type="button" 
+                className="btn-apple btn-apple-secondary" 
+                onClick={() => setFormModal({show: false, editId: null})}
+                disabled={saving}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="btn-apple btn-apple-primary"
+                onClick={handleSave}
+                disabled={saving || !formData.firstName || !formData.lastName || !formData.address1 || !formData.city || !formData.state || !formData.postalCode || !formData.country}
+              >
+                {saving ? (
+                  <>
+                    <span className="spinner-apple" style={{ width: '14px', height: '14px', marginRight: '8px' }}></span>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <i className={`ti ti-${formModal.editId ? 'device-floppy' : 'plus'}`} style={{ marginRight: '4px' }}></i>
+                    {formModal.editId ? 'Update Address' : 'Save Address'}
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

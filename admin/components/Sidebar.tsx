@@ -2,28 +2,18 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
 
-/**
- * Menu Item Interface
- */
 interface MenuItem {
   title: string;
   icon: string;
   href: string;
 }
 
-/**
- * Menu Group Interface
- */
 interface MenuGroup {
   label: string;
   items: MenuItem[];
 }
 
-/**
- * Organized menu structure with groups
- */
 const menuGroups: MenuGroup[] = [
   {
     label: '',
@@ -32,7 +22,7 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
-    label: 'BUSINESS',
+    label: 'Business',
     items: [
       { title: 'Companies', icon: 'ti-building', href: '/companies' },
       { title: 'Users', icon: 'ti-users', href: '/users' },
@@ -42,14 +32,14 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
-    label: 'CATALOG',
+    label: 'Catalog',
     items: [
       { title: 'Products', icon: 'ti-package', href: '/catalog' },
       { title: 'Pricing Rules', icon: 'ti-discount', href: '/pricing' },
     ],
   },
   {
-    label: 'ANALYTICS',
+    label: 'Analytics',
     items: [
       { title: 'Analytics', icon: 'ti-chart-line', href: '/analytics' },
       { title: 'Reports', icon: 'ti-file-analytics', href: '/reports' },
@@ -58,7 +48,7 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
-    label: 'SYSTEM',
+    label: 'System',
     items: [
       { title: 'Settings', icon: 'ti-settings', href: '/settings' },
       { title: 'Webhooks', icon: 'ti-webhook', href: '/webhooks' },
@@ -67,7 +57,7 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
-    label: 'SUPPORT',
+    label: 'Support',
     items: [
       { title: 'Support Tickets', icon: 'ti-help', href: '/support' },
       { title: 'Customers', icon: 'ti-user-check', href: '/customers' },
@@ -75,13 +65,9 @@ const menuGroups: MenuGroup[] = [
   },
 ];
 
-/**
- * Check if a menu item is active
- */
-function isMenuItemActive(pathname: string | null, href: string): boolean {
+function isActive(pathname: string | null, href: string): boolean {
   if (!pathname) return false;
   if (pathname === href) return true;
-  // Child route match (e.g., /companies/123 matches /companies)
   if (pathname.startsWith(href + '/')) return true;
   return false;
 }
@@ -90,49 +76,34 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside id="layout-menu" className="layout-menu menu-vertical menu bg-menu-theme">
-      {/* Logo */}
-      <div className="app-brand demo">
-        <Link href="/dashboard" className="app-brand-link">
-          <span className="app-brand-logo demo">
-            <span className="text-primary text-4xl">🦅</span>
-          </span>
-          <span className="app-brand-text demo menu-text fw-bold ms-2">Eagle B2B</span>
-        </Link>
-        <a href="javascript:void(0);" className="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
-          <i className="icon-base ti tabler-x"></i>
-        </a>
-      </div>
+    <aside className="apple-sidebar">
+      <Link href="/dashboard" className="sidebar-brand" style={{ textDecoration: 'none' }}>
+        <div className="sidebar-brand-logo">🦅</div>
+        <span className="sidebar-brand-text">Eagle B2B</span>
+      </Link>
 
-      <div className="menu-inner-shadow"></div>
-
-      {/* Navigation */}
-      <ul className="menu-inner py-1 ps ps--active-y">
-        {menuGroups.map((group, groupIndex) => (
-          <div key={groupIndex}>
-            {/* Group Label */}
+      <nav className="sidebar-nav">
+        {menuGroups.map((group, gi) => (
+          <div key={gi}>
             {group.label && (
-              <li className="menu-header small text-uppercase">
-                <span className="menu-header-text">{group.label}</span>
-              </li>
+              <div className="sidebar-group-label">{group.label}</div>
             )}
-            
-            {/* Group Items */}
-            {group.items.map((item) => {
-              const isActive = isMenuItemActive(pathname, item.href);
-              
-              return (
-                <li key={item.href} className={`menu-item ${isActive ? 'active' : ''}`}>
-                  <Link href={item.href} className="menu-link">
-                    <i className={`menu-icon tf-icons ti ${item.icon}`}></i>
-                    <div>{item.title}</div>
+            <ul style={{ listStyle: 'none', padding: 0 }}>
+              {group.items.map((item) => (
+                <li key={item.href} className="sidebar-item">
+                  <Link
+                    href={item.href}
+                    className={`sidebar-link ${isActive(pathname, item.href) ? 'active' : ''}`}
+                  >
+                    <i className={`ti ${item.icon} sidebar-icon`} />
+                    <span>{item.title}</span>
                   </Link>
                 </li>
-              );
-            })}
+              ))}
+            </ul>
           </div>
         ))}
-      </ul>
+      </nav>
     </aside>
   );
 }

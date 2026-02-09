@@ -1,611 +1,174 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { apiClient, adminFetch } from '@/lib/api-client';
+import { useState, useEffect, useCallback } from 'react';
+import { adminFetch } from '@/lib/api-client';
+import { PageHeader, showToast } from '@/components/ui';
 import Modal from '@/components/Modal';
-import PricingEditModal from '@/components/PricingEditModal';
-import type { PricingRuleWithCompany, CompanyWithCounts, CatalogProduct, PricingRuleFormData, QuantityBreak } from '@/types';
+
+interface PricingRule {
+  id: string;
+  name: string;
+  type: string;
+  value: number;
+  companyId?: string;
+  companyName?: string;
+  productId?: string;
+  productTitle?: string;
+  minQuantity?: number;
+  maxQuantity?: number;
+  isActive: boolean;
+  createdAt: string;
+}
 
 export default function PricingPage() {
-  const [rules, setRules] = useState<PricingRuleWithCompany[]>([]);
+  const [rules, setRules] = useState<PricingRule[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingRule, setEditingRule] = useState<PricingRuleWithCompany | null>(null);
-  const [deleteModal, setDeleteModal] = useState<{show: boolean; ruleId: string | null}>({
-    show: false,
-    ruleId: null,
-  });
-  const [resultModal, setResultModal] = useState<{show: boolean; type: 'success' | 'error'; message: string}>({
-    show: false,
-    type: 'success',
-    message: '',
-  });
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    targetType: 'all' as const,
-    targetCompanyId: '',
-    targetCompanyGroup: '',
-    scopeType: 'all' as const,
-    scopeProductIds: [] as number[],
-    scopeCollectionIds: [] as number[],
-    scopeTags: '',
-    scopeVariantIds: [] as number[],
-    discountType: 'percentage' as const,
-    discountPercentage: 0,
-    discountValue: 0,
-    qtyBreaks: [] as QuantityBreak[],
-    minCartAmount: 0,
-    priority: 0,
-    isActive: true,
-    validFrom: null as Date | null,
-    validUntil: null as Date | null,
-  });
-  const [companies, setCompanies] = useState<CompanyWithCounts[]>([]);
-  const [products, setProducts] = useState<CatalogProduct[]>([]);
+  const [search, setSearch] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<{show: boolean; rule: PricingRule | null}>({show: false, rule: null});
+  const [form, setForm] = useState({ name: '', type: 'percentage', value: 0, companyId: '', productId: '', minQuantity: 1, maxQuantity: 0 });
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    loadRules();
-    loadCompanies();
-    loadProducts();
-  }, []);
-
-  const loadCompanies = async () => {
-    try {
-      const data = await apiClient.getCompanies();
-      // API returns { data: [], pagination: {} } format
-      const companiesList = Array.isArray(data) ? data : (data as any).data || [];
-      setCompanies(companiesList);
-    } catch (err) {
-      setCompanies([]);
-    }
-  };
-
-  const loadProducts = async () => {
-    try {
-      const response = await adminFetch('/api/v1/catalog/products?limit=500');
-      const data = await response.json();
-      
-      // API returns { data: [], pagination: {} } format
-      const productsArray = Array.isArray(data) ? data : data.data || [];
-      
-      // Create flat list of products with variants
-      const productsList = productsArray.map((p: any) => ({
-        id: p.id,
-        shopifyProductId: p.shopifyProductId,
-        title: p.title,
-        variants: p.variants || []
-      }));
-      
-      setProducts(productsList);
-    } catch (err) {
-      setProducts([]);
-    }
-  };
-
-  const loadRules = async () => {
+  const loadRules = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await adminFetch('/api/v1/pricing/rules');
-      const data = await response.json();
-      setRules(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Load pricing rules error:', err);
-      setRules([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const res = await adminFetch('/api/v1/pricing-rules');
+      if (res.ok) { const d = await res.json(); setRules(d.rules || d.data || d || []); }
+    } catch { /* silent */ }
+    finally { setLoading(false); }
+  }, []);
 
-  const handleCreate = async () => {
+  useEffect(() => { loadRules(); }, [loadRules]);
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
     try {
-      const response = await adminFetch('/api/v1/pricing/rules', {
-        method: 'POST',
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || `Server error: ${response.status}`);
-      }
-
-      const result = await response.json();
-      setShowCreateModal(false);
-      setResultModal({
-        show: true,
-        type: 'success',
-        message: `✅ Pricing rule created!\n${result.discountType === 'percentage' ? 'Shopify discount code will be created automatically.' : ''}`,
-      });
-      setTimeout(() => loadRules(), 1000);
-    } catch (err) {
-      setShowCreateModal(false);
-      setResultModal({
-        show: true,
-        type: 'error',
-        message: `❌ Failed to create pricing rule:\n${err instanceof Error ? err.message : 'Unknown error'}`,
-      });
-    }
+      const res = await adminFetch('/api/v1/pricing-rules', { method: 'POST', body: JSON.stringify(form) });
+      if (res.ok) { showToast('Rule created!', 'success'); setShowCreate(false); setForm({ name: '', type: 'percentage', value: 0, companyId: '', productId: '', minQuantity: 1, maxQuantity: 0 }); loadRules(); }
+      else showToast('Failed to create rule', 'danger');
+    } catch { showToast('Error', 'danger'); }
+    finally { setSaving(false); }
   };
 
-  const handleEdit = async (id: string, data: PricingRuleFormData) => {
+  const deleteRule = async (rule: PricingRule) => {
+    setDeleteModal({show: false, rule: null});
     try {
-      await apiClient.updatePricingRule(id, data);
-      setResultModal({
-        show: true,
-        type: 'success',
-        message: 'Rule updated successfully!',
-      });
-      setTimeout(() => loadRules(), 1000);
-    } catch (err) {
-      setResultModal({
-        show: true,
-        type: 'error',
-        message: err instanceof Error ? err.message : 'An error occurred',
-      });
-    }
+      const res = await adminFetch(`/api/v1/pricing-rules/${rule.id}`, { method: 'DELETE' });
+      if (res.ok) { showToast('Rule deleted', 'success'); loadRules(); }
+      else showToast('Failed', 'danger');
+    } catch { showToast('Error', 'danger'); }
   };
 
-  const handleDelete = async () => {
-    if (!deleteModal.ruleId) return;
+  const toggleActive = async (rule: PricingRule) => {
     try {
-      await apiClient.deletePricingRule(deleteModal.ruleId);
-      setDeleteModal({ show: false, ruleId: null });
-      setResultModal({
-        show: true,
-        type: 'success',
-        message: 'Rule deleted successfully!',
-      });
-      setTimeout(() => loadRules(), 1000);
-    } catch (err) {
-      setResultModal({
-        show: true,
-        type: 'error',
-        message: err instanceof Error ? err.message : 'An error occurred',
-      });
-    }
+      const res = await adminFetch(`/api/v1/pricing-rules/${rule.id}`, { method: 'PATCH', body: JSON.stringify({ isActive: !rule.isActive }) });
+      if (res.ok) loadRules();
+    } catch { /* silent */ }
   };
+
+  const filtered = rules.filter(r => !search || r.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h4 className="fw-bold mb-1">Pricing Rules</h4>
-          <p className="mb-0 text-muted">Configure custom B2B pricing</p>
-        </div>
-        <div className="d-flex gap-2">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search rules..."
-            style={{maxWidth: '200px'}}
-            onChange={(e) => {
-              const search = e.target.value.toLowerCase();
-              if (search) {
-                const filtered = rules.filter(r => r.name.toLowerCase().includes(search));
-                setRules(filtered);
-              } else {
-                loadRules();
-              }
-            }}
-          />
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="btn btn-primary"
-          >
-            <i className="ti ti-plus me-1"></i>
-            Create Rule
-          </button>
+      <PageHeader title="Pricing Rules" subtitle={`${rules.length} pricing rules`}
+        actions={[{ label: 'Add Rule', icon: 'plus', variant: 'primary', onClick: () => setShowCreate(true) }]} />
+
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+        <div className="input-apple" style={{ flex: 1, maxWidth: 360 }}>
+          <i className="ti ti-search input-icon" />
+          <input placeholder="Search rules..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="row g-3 mb-4">
-        <div className="col-md-3">
-          <div className="card">
-            <div className="card-body">
-              <h6 className="card-title text-muted mb-1">Active Rules</h6>
-              <h3 className="mb-0">{rules.filter(r => r.isActive).length}</h3>
-            </div>
+      <div className="apple-card">
+        {loading ? (
+          <div style={{ padding: 48, textAlign: 'center' }}><i className="ti ti-loader-2 spin" style={{ fontSize: 24, color: 'var(--accent-primary)' }} /></div>
+        ) : filtered.length === 0 ? (
+          <div className="empty-state" style={{ padding: 48 }}>
+            <div className="empty-state-icon"><i className="ti ti-discount" /></div>
+            <h4 className="empty-state-title">No pricing rules</h4>
+            <p className="empty-state-desc">Create rules to offer custom pricing to companies.</p>
           </div>
-        </div>
-        <div className="col-md-3">
-          <div className="card">
-            <div className="card-body">
-              <h6 className="card-title text-muted mb-1">Total Rules</h6>
-              <h3 className="mb-0">{rules.length}</h3>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Rules List */}
-      <div className="card">
-        <div className="card-body">
-          {rules.length === 0 ? (
-            <div className="text-center py-5">
-              <i className="ti ti-discount ti-3x text-muted mb-3"></i>
-              <h5>No pricing rules yet</h5>
-              <p className="text-muted">Create your first rule to offer custom B2B pricing</p>
-              <button onClick={() => setShowCreateModal(true)} className="btn btn-primary mt-2">
-                Create First Rule
-              </button>
-            </div>
-          ) : (
-            <div className="table-responsive">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Rule Name</th>
-                    <th>Target</th>
-                    <th>Discount</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rules.map((rule) => (
-                    <tr key={rule.id}>
-                      <td className="fw-semibold">{rule.name}</td>
-                      <td>{rule.targetType}</td>
-                      <td className="text-success fw-semibold">
-                        {rule.discountPercentage ? `${rule.discountPercentage}%` : `$${rule.discountValue}`}
-                      </td>
-                      <td>
-                        <span className="badge bg-label-primary">{rule.priority}</span>
-                      </td>
-                      <td>
-                        <span className={`badge ${rule.isActive ? 'bg-label-success' : 'bg-label-secondary'}`}>
-                          {rule.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="d-flex gap-1">
-                          <button
-                            onClick={async () => {
-                              try {
-                                await apiClient.updatePricingRule(rule.id, { isActive: !rule.isActive });
-                                loadRules();
-                              } catch (err) {
-                                console.error(err);
-                              }
-                            }}
-                            className={`btn btn-sm btn-icon ${rule.isActive ? 'btn-text-warning' : 'btn-text-success'}`}
-                            title={rule.isActive ? 'Deactivate' : 'Activate'}
-                          >
-                            <i className={`ti ${rule.isActive ? 'ti-toggle-right' : 'ti-toggle-left'}`}></i>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditingRule(rule);
-                              setShowEditModal(true);
-                            }}
-                            className="btn btn-sm btn-icon btn-text-secondary"
-                          >
-                            <i className="ti ti-edit"></i>
-                          </button>
-                          <button
-                            onClick={() => setDeleteModal({ show: true, ruleId: rule.id })}
-                            className="btn btn-sm btn-icon btn-text-danger"
-                          >
-                            <i className="ti ti-trash"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        ) : (
+          <table className="apple-table">
+            <thead><tr><th>Name</th><th>Type</th><th>Value</th><th>Company</th><th>Product</th><th>Active</th><th>Actions</th></tr></thead>
+            <tbody>
+              {filtered.map(r => (
+                <tr key={r.id}>
+                  <td style={{ fontWeight: 500 }}>{r.name}</td>
+                  <td><span className="badge-apple info">{r.type}</span></td>
+                  <td>{r.type === 'percentage' ? `${r.value}%` : `$${r.value}`}</td>
+                  <td>{r.companyName || 'All'}</td>
+                  <td style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.productTitle || 'All'}</td>
+                  <td>
+                    <label className="apple-toggle">
+                      <input type="checkbox" checked={r.isActive} onChange={() => toggleActive(r)} />
+                      <span className="toggle-slider" />
+                    </label>
+                  </td>
+                  <td>
+                    <button className="btn-apple danger small" onClick={() => setDeleteModal({show: true, rule: r})}><i className="ti ti-trash" /></button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Create Modal */}
-      {showCreateModal && (
-        <div className="modal show d-block" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Create Pricing Rule</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowCreateModal(false)}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label">Rule Name</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    placeholder="e.g., VIP Companies 25% Off"
-                  />
+      {showCreate && (
+        <div className="apple-modal-overlay" onClick={() => setShowCreate(false)}>
+          <div className="apple-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
+            <div className="apple-modal-header"><h3 className="apple-modal-title">New Pricing Rule</h3></div>
+            <form onSubmit={handleCreate}>
+              <div className="apple-modal-body">
+                <div style={{ marginBottom: 16 }}>
+                  <label className="input-label">Rule Name</label>
+                  <div className="input-apple"><input placeholder="e.g. VIP 10% discount" value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required /></div>
                 </div>
-
-                <div className="row g-3 mb-3">
-                  <div className="col-md-6">
-                    <label className="form-label">🎯 Target (Kime?)</label>
-                    <select
-                      className="form-select"
-                      value={formData.targetType}
-                      onChange={(e) => setFormData({...formData, targetType: e.target.value})}
-                    >
-                      <option value="all">All Companies</option>
-                      <option value="company">Specific Company</option>
-                      <option value="company_group">Company Group (VIP, Wholesale)</option>
-                    </select>
-                  </div>
-
-                  {formData.targetType === 'company' && (
-                    <div className="col-md-6">
-                      <label className="form-label">Select Company</label>
-                      <select
-                        className="form-select"
-                        value={formData.targetCompanyId}
-                        onChange={(e) => setFormData({...formData, targetCompanyId: e.target.value})}
-                      >
-                        <option value="">Choose company...</option>
-                        {companies.map(c => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                  <div>
+                    <label className="input-label">Type</label>
+                    <div className="select-apple">
+                      <select value={form.type} onChange={e => setForm(p => ({...p, type: e.target.value}))}>
+                        <option value="percentage">Percentage</option>
+                        <option value="fixed">Fixed Amount</option>
+                        <option value="override">Price Override</option>
                       </select>
+                      <i className="ti ti-chevron-down select-icon" />
                     </div>
-                  )}
-
-                  {formData.targetType === 'company_group' && (
-                    <div className="col-md-6">
-                      <label className="form-label">Group Name</label>
-                      <input
-                        className="form-control"
-                        value={formData.targetCompanyGroup}
-                        onChange={(e) => setFormData({...formData, targetCompanyGroup: e.target.value})}
-                        placeholder="e.g., VIP, Wholesale, Retail"
-                      />
-                    </div>
-                  )}
+                  </div>
+                  <div>
+                    <label className="input-label">Value</label>
+                    <div className="input-apple"><input type="number" min={0} value={form.value} onChange={e => setForm(p => ({...p, value: +e.target.value}))} required /></div>
+                  </div>
                 </div>
-
-                <div className="mb-3">
-                  <label className="form-label">📦 Scope (Neye?)</label>
-                  <select
-                    className="form-select"
-                    value={formData.scopeType}
-                    onChange={(e) => setFormData({...formData, scopeType: e.target.value})}
-                  >
-                    <option value="all">All Products</option>
-                    <option value="products">Specific Products (Birden fazla seçilebilir)</option>
-                    <option value="collections">Collections/Categories</option>
-                    <option value="tags">Product Tags</option>
-                    <option value="variants">Specific Variants</option>
-                  </select>
-                </div>
-
-                {formData.scopeType === 'products' && (
-                  <div className="mb-3">
-                    <label className="form-label">Select Products (Multiple)</label>
-                    {products.length === 0 ? (
-                      <div className="alert alert-info small">
-                        <i className="ti ti-info-circle me-2"></i>
-                        No products synced yet. Go to Settings → Run Full Sync to import products.
-                      </div>
-                    ) : (
-                      <>
-                        <select
-                          multiple
-                          className="form-select"
-                          style={{ height: '150px' }}
-                          onChange={(e) => {
-                            const selected = Array.from(e.target.selectedOptions).map(o => parseInt(o.value));
-                            setFormData({...formData, scopeProductIds: selected});
-                          }}
-                        >
-                          {products.map(p => (
-                            <option key={p.shopifyProductId} value={p.shopifyProductId}>
-                              {p.title} ({p.variants?.length || 0} variants)
-                            </option>
-                          ))}
-                        </select>
-                        <small className="text-muted">Hold Ctrl/Cmd to select multiple products. {products.length} products available.</small>
-                      </>
-                    )}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label className="input-label">Min Quantity</label>
+                    <div className="input-apple"><input type="number" min={1} value={form.minQuantity} onChange={e => setForm(p => ({...p, minQuantity: +e.target.value}))} /></div>
                   </div>
-                )}
-
-                {formData.scopeType === 'collections' && (
-                  <div className="mb-3">
-                    <label className="form-label">Collection IDs (comma-separated)</label>
-                    <input
-                      className="form-control"
-                      placeholder="e.g., 12345, 67890"
-                      onChange={(e) => {
-                        const ids = e.target.value.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-                        setFormData({...formData, scopeCollectionIds: ids});
-                      }}
-                    />
-                    <small className="text-muted">Enter Shopify collection IDs separated by commas</small>
+                  <div>
+                    <label className="input-label">Max Quantity</label>
+                    <div className="input-apple"><input type="number" min={0} placeholder="0 = unlimited" value={form.maxQuantity} onChange={e => setForm(p => ({...p, maxQuantity: +e.target.value}))} /></div>
                   </div>
-                )}
-
-                {formData.scopeType === 'tags' && (
-                  <div className="mb-3">
-                    <label className="form-label">Product Tags (comma-separated)</label>
-                    <input
-                      className="form-control"
-                      value={formData.scopeTags}
-                      onChange={(e) => setFormData({...formData, scopeTags: e.target.value})}
-                      placeholder="e.g., electronics, wholesale, featured"
-                    />
-                  </div>
-                )}
-
-                <div className="row g-3 mb-3">
-                  <div className="col-md-6">
-                    <label className="form-label">💰 Discount Type</label>
-                    <select
-                      className="form-select"
-                      value={formData.discountType}
-                      onChange={(e) => setFormData({...formData, discountType: e.target.value})}
-                    >
-                      <option value="percentage">Percentage Discount (%)</option>
-                      <option value="fixed_amount">Fixed Amount Off ($)</option>
-                      <option value="fixed_price">Fixed Price</option>
-                      <option value="qty_break">Quantity Breaks</option>
-                      <option value="cart_total">Cart Total Based</option>
-                    </select>
-                  </div>
-
-                  {formData.discountType === 'percentage' && (
-                    <div className="col-md-6">
-                      <label className="form-label">Discount Percentage</label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        value={formData.discountPercentage}
-                        onChange={(e) => setFormData({...formData, discountPercentage: parseFloat(e.target.value)})}
-                        placeholder="e.g., 25"
-                      />
-                    </div>
-                  )}
-
-                  {(formData.discountType === 'fixed_amount' || formData.discountType === 'fixed_price') && (
-                    <div className="col-md-6">
-                      <label className="form-label">Amount ($)</label>
-                      <input
-                        type="number"
-                        className="form-control"
-                        value={formData.discountValue}
-                        onChange={(e) => setFormData({...formData, discountValue: parseFloat(e.target.value)})}
-                        placeholder="e.g., 50"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {formData.discountType === 'qty_break' && (
-                  <div className="mb-3">
-                    <label className="form-label">Quantity Breaks</label>
-                    <div className="alert alert-info small">
-                      Example: 10+ qty = 5% off, 50+ qty = 10% off
-                    </div>
-                    <textarea
-                      className="form-control"
-                      rows={3}
-                      placeholder='[{"min_qty": 10, "discount": 5, "discount_type": "percentage"}, {"min_qty": 50, "discount": 10, "discount_type": "percentage"}]'
-                      onChange={(e) => {
-                        try {
-                          const breaks = JSON.parse(e.target.value);
-                          setFormData({...formData, qtyBreaks: breaks});
-                        } catch {}
-                      }}
-                    />
-                  </div>
-                )}
-
-                {formData.discountType === 'cart_total' && (
-                  <div className="mb-3">
-                    <label className="form-label">Minimum Cart Amount ($)</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={formData.minCartAmount}
-                      onChange={(e) => setFormData({...formData, minCartAmount: parseFloat(e.target.value)})}
-                      placeholder="e.g., 1000"
-                    />
-                  </div>
-                )}
-
-                <div className="mb-3">
-                  <label className="form-label">Priority (higher = first)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={formData.priority}
-                    onChange={(e) => setFormData({...formData, priority: parseInt(e.target.value)})}
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">Valid Date Range</label>
-                  <div className="row g-2">
-                    <div className="col-md-6">
-                      <input
-                        type="date"
-                        className="form-control"
-                        onChange={(e) => setFormData({...formData, validFrom: e.target.value ? new Date(e.target.value) : null})}
-                        placeholder="Valid From"
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <input
-                        type="date"
-                        className="form-control"
-                        onChange={(e) => setFormData({...formData, validUntil: e.target.value ? new Date(e.target.value) : null})}
-                        placeholder="Valid Until"
-                      />
-                    </div>
-                  </div>
-                  <small className="text-muted">Leave empty for no date restriction</small>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-label-secondary"
-                  onClick={() => setShowCreateModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleCreate}
-                >
-                  Create Rule
-                </button>
+              <div className="apple-modal-footer">
+                <button type="button" className="btn-apple secondary" onClick={() => setShowCreate(false)}>Cancel</button>
+                <button type="submit" className="btn-apple primary" disabled={saving}>{saving ? 'Creating...' : 'Create Rule'}</button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* Edit Modal */}
-      <PricingEditModal
-        show={showEditModal}
-        rule={editingRule}
-        onClose={() => {
-          setShowEditModal(false);
-          setEditingRule(null);
-        }}
-        onSave={handleEdit}
-      />
-
-      {/* Delete Confirmation Modal */}
-      <Modal
-        show={deleteModal.show}
-        onClose={() => setDeleteModal({ show: false, ruleId: null })}
-        onConfirm={handleDelete}
-        title="Pricing Rule Sil"
-        message="Bu pricing rule'ı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
-        confirmText="Evet, Sil"
-        cancelText="İptal"
-        type="danger"
-      />
-
-      {/* Result Modal */}
-      <Modal
-        show={resultModal.show}
-        onClose={() => setResultModal({ ...resultModal, show: false })}
-        onConfirm={() => setResultModal({ ...resultModal, show: false })}
-        title={resultModal.type === 'success' ? 'Başarılı' : 'Hata'}
-        message={resultModal.message}
-        confirmText="Tamam"
-        type={resultModal.type === 'success' ? 'success' : 'danger'}
-      />
+      {deleteModal.show && deleteModal.rule && (
+        <Modal show onClose={() => setDeleteModal({show: false, rule: null})} onConfirm={() => deleteRule(deleteModal.rule!)}
+          title="Delete Rule" message={`Delete "${deleteModal.rule.name}"?`} confirmText="Delete" type="danger" />
+      )}
     </div>
   );
 }

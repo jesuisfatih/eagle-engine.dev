@@ -47,17 +47,17 @@ export function PriceDisplay({
 
   if (layout === 'compact') {
     return (
-      <div className="d-flex align-items-center gap-2">
-        <span className={`fw-bold text-success ${sizes.main}`}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <span className={sizes.main} style={{ fontWeight: 700, color: 'var(--green)' }}>
           {formatCurrency(finalPrice, currency)}
         </span>
         {hasDiscount && (
-          <span className={`text-muted text-decoration-line-through ${sizes.strike}`}>
+          <span className={sizes.strike} style={{ color: 'var(--text-secondary)', textDecoration: 'line-through' }}>
             {formatCurrency(listPrice, currency)}
           </span>
         )}
         {finalDiscount > 0 && (
-          <span className={`badge bg-success ${sizes.badge}`}>
+          <span className={`badge ${sizes.badge}`} style={{ background: 'var(--green)', color: '#fff' }}>
             -{formatPercent(finalDiscount)}
           </span>
         )}
@@ -66,23 +66,23 @@ export function PriceDisplay({
   }
 
   return (
-    <div className={layout === 'horizontal' ? 'd-flex align-items-center gap-3' : ''}>
+    <div style={layout === 'horizontal' ? { display: 'flex', alignItems: 'center', gap: '0.75rem' } : undefined}>
       {/* List Price (Strikethrough) */}
       {hasDiscount && (
-        <div className={layout === 'horizontal' ? '' : 'mb-1'}>
-          <span className={`text-muted text-decoration-line-through ${sizes.strike}`}>
+        <div style={layout === 'horizontal' ? undefined : { marginBottom: '0.25rem' }}>
+          <span className={sizes.strike} style={{ color: 'var(--text-secondary)', textDecoration: 'line-through' }}>
             List: {formatCurrency(listPrice, currency)}
           </span>
         </div>
       )}
 
       {/* Company Price */}
-      <div className="d-flex align-items-center gap-2">
-        <span className={`fw-bold text-success ${sizes.main}`}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <span className={sizes.main} style={{ fontWeight: 700, color: 'var(--green)' }}>
           {formatCurrency(finalPrice, currency)}
         </span>
         {finalDiscount > 0 && (
-          <span className={`badge bg-success ${sizes.badge}`}>
+          <span className={`badge ${sizes.badge}`} style={{ background: 'var(--green)', color: '#fff' }}>
             -{formatPercent(finalDiscount)}
           </span>
         )}
@@ -90,16 +90,16 @@ export function PriceDisplay({
 
       {/* Discount Label */}
       {hasDiscount && !applicableBreak && (
-        <small className="text-success">
-          <i className="ti ti-tag me-1"></i>
+        <small style={{ color: 'var(--green)' }}>
+          <i className="ti ti-tag" style={{ marginRight: '0.25rem' }}></i>
           Your B2B Price
         </small>
       )}
 
       {/* Volume Discount Applied */}
       {applicableBreak && (
-        <small className="text-success">
-          <i className="ti ti-package me-1"></i>
+        <small style={{ color: 'var(--green)' }}>
+          <i className="ti ti-package" style={{ marginRight: '0.25rem' }}></i>
           Volume Discount ({currentQuantity}+ items)
         </small>
       )}
@@ -142,12 +142,12 @@ export function QuantityBreaksDisplay({
   const sortedBreaks = [...breaks].sort((a, b) => a.qty - b.qty);
 
   return (
-    <div className="mt-2 pt-2 border-top">
-      <small className="text-muted d-block mb-2">
-        <i className="ti ti-trending-down me-1"></i>
+    <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border)' }}>
+      <small style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: '0.5rem' }}>
+        <i className="ti ti-trending-down" style={{ marginRight: '0.25rem' }}></i>
         Volume Pricing:
       </small>
-      <div className="d-flex flex-wrap gap-2">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
         {sortedBreaks.map((breakItem, index) => {
           const isActive = currentQuantity >= breakItem.qty;
           const isNext = !isActive && 
@@ -195,28 +195,35 @@ function QuantityBreakBadge({
   currency = 'USD',
   size = 'md',
 }: QuantityBreakBadgeProps) {
-  const baseClass = 'd-inline-flex align-items-center gap-1 rounded px-2 py-1';
-  const activeClass = isActive 
-    ? 'bg-success text-white' 
-    : isNext 
-      ? 'bg-warning bg-opacity-25 border border-warning' 
-      : 'bg-light text-muted';
+  const baseStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.25rem',
+    borderRadius: '0.375rem',
+    padding: '0.25rem 0.5rem',
+  };
 
-  const sizeClass = size === 'sm' ? 'small' : size === 'lg' ? '' : 'small';
+  const activeStyle: React.CSSProperties = isActive
+    ? { background: 'var(--green)', color: '#fff' }
+    : isNext
+      ? { background: 'color-mix(in srgb, var(--orange) 25%, transparent)', border: '1px solid var(--orange)' }
+      : { background: 'var(--bg-secondary)', color: 'var(--text-secondary)' };
+
+  const sizeStyle: React.CSSProperties = size === 'sm' || size === 'md' ? { fontSize: '0.85rem' } : {};
 
   return (
-    <div className={`${baseClass} ${activeClass} ${sizeClass}`}>
+    <div style={{ ...baseStyle, ...activeStyle, ...sizeStyle }}>
       <i className="ti ti-package"></i>
       <span>{qty}+</span>
-      <span className="fw-bold">{formatCurrency(price, currency)}</span>
+      <span style={{ fontWeight: 700 }}>{formatCurrency(price, currency)}</span>
       {discount > 0 && (
-        <span className={isActive ? '' : 'text-success'}>
+        <span style={isActive ? undefined : { color: 'var(--green)' }}>
           (-{formatPercent(discount)})
         </span>
       )}
       {isActive && <i className="ti ti-check"></i>}
       {isNext && !isActive && (
-        <span className="badge bg-warning text-dark ms-1">Best Value</span>
+        <span className="badge" style={{ background: 'var(--orange)', color: '#000', marginLeft: '0.25rem' }}>Best Value</span>
       )}
     </div>
   );
@@ -239,20 +246,20 @@ export function DiscountBadge({
 }: DiscountBadgeProps) {
   if (percentage <= 0) return null;
 
-  const sizeClasses = {
-    sm: 'small px-1 py-0',
-    md: 'px-2 py-1',
-    lg: 'px-3 py-2 fs-6',
+  const sizeStyles: Record<string, React.CSSProperties> = {
+    sm: { fontSize: '0.75rem', padding: '0 0.25rem' },
+    md: { padding: '0.25rem 0.5rem' },
+    lg: { padding: '0.5rem 0.75rem', fontSize: '1rem' },
   };
 
-  const variantClasses = {
-    default: 'bg-primary',
-    success: 'bg-success',
-    warning: 'bg-warning text-dark',
+  const variantStyles: Record<string, React.CSSProperties> = {
+    default: { background: 'var(--accent)', color: '#fff' },
+    success: { background: 'var(--green)', color: '#fff' },
+    warning: { background: 'var(--orange)', color: '#000' },
   };
 
   return (
-    <span className={`badge ${variantClasses[variant]} ${sizeClasses[size]}`}>
+    <span className="badge" style={{ ...variantStyles[variant], ...sizeStyles[size] }}>
       -{formatPercent(percentage)}
     </span>
   );
@@ -284,15 +291,15 @@ export function SavingsDisplay({
   if (savings <= 0) return null;
 
   return (
-    <div className="alert alert-success py-2 mb-0 d-flex align-items-center justify-content-between">
+    <div style={{ background: 'color-mix(in srgb, var(--green) 10%, transparent)', border: '1px solid var(--green)', borderRadius: '0.5rem', padding: '0.5rem 1rem', marginBottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--green)' }}>
       <div>
-        <i className="ti ti-discount me-2"></i>
+        <i className="ti ti-discount" style={{ marginRight: '0.5rem' }}></i>
         <span>You&apos;re saving </span>
         <strong>{formatCurrency(savings, currency)}</strong>
-        <span className="ms-1">({formatPercent(savingsPercent)})</span>
+        <span style={{ marginLeft: '0.25rem' }}>({formatPercent(savingsPercent)})</span>
       </div>
       {showPerItem && quantity > 1 && (
-        <small className="text-muted">
+        <small style={{ color: 'var(--text-secondary)' }}>
           {formatCurrency(savingsPerItem, currency)}/item
         </small>
       )}
@@ -344,27 +351,27 @@ export function ProductPriceTag({
   return (
     <div>
       {/* Your Price */}
-      <div className="d-flex align-items-baseline gap-2">
-        <span className="fs-5 fw-bold text-success">
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+        <span className="fs-5" style={{ fontWeight: 700, color: 'var(--green)' }}>
           {formatCurrency(companyPrice, currency)}
         </span>
         {hasDiscount && (
-          <span className="text-muted text-decoration-line-through small">
+          <span style={{ color: 'var(--text-secondary)', textDecoration: 'line-through', fontSize: '0.85rem' }}>
             {formatCurrency(listPrice, currency)}
           </span>
         )}
       </div>
 
       {/* Badges */}
-      <div className="d-flex flex-wrap gap-1 mt-1">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.25rem' }}>
         {hasDiscount && (
-          <span className="badge bg-success">
+          <span className="badge" style={{ background: 'var(--green)', color: '#fff' }}>
             Save {formatPercent(discountPercent)}
           </span>
         )}
         {hasQuantityBreaks && (
-          <span className="badge bg-info">
-            <i className="ti ti-package me-1"></i>
+          <span className="badge" style={{ background: 'var(--blue, #007aff)', color: '#fff' }}>
+            <i className="ti ti-package" style={{ marginRight: '0.25rem' }}></i>
             Volume Discounts
           </span>
         )}

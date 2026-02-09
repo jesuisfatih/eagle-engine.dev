@@ -57,23 +57,23 @@ export function QuoteDetailView({
   return (
     <div className="quote-detail">
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-start mb-4">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
-          <h4 className="mb-1">
+          <h4 style={{ marginBottom: 4 }}>
             Quote #{quote.quoteNumber || quote.id.substring(0, 8)}
           </h4>
-          <p className="text-muted mb-0">
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
             Requested {formatRelativeTime(quote.createdAt)}
           </p>
         </div>
-        <div className="text-end">
-          <span className={`badge ${statusConfig.class} fs-6`}>
-            <i className={`ti ti-${statusConfig.icon} me-1`}></i>
+        <div style={{ textAlign: 'right' }}>
+          <span className="badge" style={statusConfig.style}>
+            <i className={`ti ti-${statusConfig.icon}`} style={{ marginRight: 4 }}></i>
             {statusConfig.label}
           </span>
           {quote.priority === 'urgent' && (
-            <span className="badge bg-danger ms-2">
-              <i className="ti ti-urgent me-1"></i>
+            <span className="badge" style={{ background: 'var(--red)', color: '#fff', marginLeft: 8 }}>
+              <i className="ti ti-urgent" style={{ marginRight: 4 }}></i>
               Urgent
             </span>
           )}
@@ -82,8 +82,8 @@ export function QuoteDetailView({
 
       {/* Expiry Warning */}
       {isQuoted && quote.validUntil && (
-        <div className={`alert ${isExpired ? 'alert-danger' : 'alert-warning'} d-flex align-items-center`}>
-          <i className={`ti ti-${isExpired ? 'alert-circle' : 'clock'} me-2`}></i>
+        <div className={`apple-alert ${isExpired ? 'apple-alert-error' : 'apple-alert-warning'}`} style={{ display: 'flex', alignItems: 'center' }}>
+          <i className={`ti ti-${isExpired ? 'alert-circle' : 'clock'}`} style={{ marginRight: 8 }}></i>
           {isExpired ? (
             <span>This quote has expired on {formatDate(quote.validUntil)}</span>
           ) : (
@@ -94,15 +94,15 @@ export function QuoteDetailView({
 
       {/* Response from Seller */}
       {quote.responseNotes && (
-        <div className="card border-primary mb-4">
-          <div className="card-header bg-primary text-white">
-            <i className="ti ti-message me-2"></i>
+        <div className="card" style={{ borderColor: 'var(--accent)', marginBottom: 24 }}>
+          <div className="card-header" style={{ background: 'var(--accent)', color: '#fff' }}>
+            <i className="ti ti-message" style={{ marginRight: 8 }}></i>
             Response from Sales Team
           </div>
           <div className="card-body">
-            <p className="mb-0">{quote.responseNotes}</p>
+            <p style={{ margin: 0 }}>{quote.responseNotes}</p>
             {quote.quotedAt && (
-              <small className="text-muted d-block mt-2">
+              <small style={{ color: 'var(--text-secondary)', display: 'block', marginTop: 8 }}>
                 Responded {formatRelativeTime(quote.quotedAt)}
                 {quote.respondedBy && ` by ${quote.respondedBy}`}
               </small>
@@ -112,56 +112,56 @@ export function QuoteDetailView({
       )}
 
       {/* Items Table */}
-      <div className="card mb-4">
+      <div className="card" style={{ marginBottom: 24 }}>
         <div className="card-header">
-          <h6 className="mb-0">
-            <i className="ti ti-package me-2"></i>
+          <h6 style={{ margin: 0 }}>
+            <i className="ti ti-package" style={{ marginRight: 8 }}></i>
             Quote Items ({quote.items.length})
           </h6>
         </div>
-        <div className="card-body p-0">
-          <div className="table-responsive">
-            <table className="table table-hover mb-0">
-              <thead className="table-light">
+        <div className="card-body" style={{ padding: 0 }}>
+          <div className="table-container">
+            <table className="apple-table">
+              <thead>
                 <tr>
                   <th>Product</th>
-                  <th className="text-center">Quantity</th>
-                  <th className="text-end">Your Price</th>
-                  <th className="text-end">Quoted Price</th>
-                  <th className="text-end">Total</th>
+                  <th style={{ textAlign: 'center' }}>Quantity</th>
+                  <th style={{ textAlign: 'right' }}>Your Price</th>
+                  <th style={{ textAlign: 'right' }}>Quoted Price</th>
+                  <th style={{ textAlign: 'right' }}>Total</th>
                 </tr>
               </thead>
               <tbody>
                 {quote.items.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      <div className="fw-semibold">{item.title}</div>
+                      <div style={{ fontWeight: 600 }}>{item.title}</div>
                       {item.variantTitle && (
-                        <small className="text-muted">{item.variantTitle}</small>
+                        <small style={{ color: 'var(--text-secondary)' }}>{item.variantTitle}</small>
                       )}
                       {item.notes && (
-                        <div className="mt-1">
-                          <small className="text-muted fst-italic">Note: {item.notes}</small>
+                        <div style={{ marginTop: 4 }}>
+                          <small style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>Note: {item.notes}</small>
                         </div>
                       )}
                     </td>
-                    <td className="text-center">{item.quantity}</td>
-                    <td className="text-end">
+                    <td style={{ textAlign: 'center' }}>{item.quantity}</td>
+                    <td style={{ textAlign: 'right' }}>
                       {item.requestedPrice 
                         ? formatCurrency(item.requestedPrice)
-                        : <span className="text-muted">-</span>
+                        : <span style={{ color: 'var(--text-secondary)' }}>-</span>
                       }
                     </td>
-                    <td className="text-end">
+                    <td style={{ textAlign: 'right' }}>
                       {item.quotedPrice ? (
-                        <span className="text-success fw-semibold">
+                        <span style={{ color: 'var(--green)', fontWeight: 600 }}>
                           {formatCurrency(item.quotedPrice)}
                         </span>
                       ) : (
-                        <span className="text-muted">Pending</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>Pending</span>
                       )}
                     </td>
-                    <td className="text-end fw-semibold">
+                    <td style={{ textAlign: 'right', fontWeight: 600 }}>
                       {item.quotedPrice 
                         ? formatCurrency(item.quotedPrice * item.quantity)
                         : '-'
@@ -177,21 +177,21 @@ export function QuoteDetailView({
 
       {/* Quote Summary */}
       {(quote.subtotal || quote.total) && (
-        <div className="card mb-4">
+        <div className="card" style={{ marginBottom: 24 }}>
           <div className="card-body">
-            <div className="row">
-              <div className="col-md-6 offset-md-6">
-                <div className="d-flex justify-content-between py-2">
-                  <span className="text-muted">Subtotal</span>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <div style={{ width: '50%', minWidth: 260 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
                   <span>{formatCurrency(quote.subtotal || 0)}</span>
                 </div>
                 {quote.discount && quote.discount > 0 && (
-                  <div className="d-flex justify-content-between py-2 text-success">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', color: 'var(--green)' }}>
                     <span>Discount</span>
                     <span>-{formatCurrency(quote.discount)}</span>
                   </div>
                 )}
-                <div className="d-flex justify-content-between py-2 border-top fw-bold fs-5">
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid var(--border)', fontWeight: 700, fontSize: '1.15rem' }}>
                   <span>Total</span>
                   <span>{formatCurrency(quote.total || 0)}</span>
                 </div>
@@ -202,36 +202,36 @@ export function QuoteDetailView({
       )}
 
       {/* Request Details */}
-      <div className="card mb-4">
+      <div className="card" style={{ marginBottom: 24 }}>
         <div className="card-header">
-          <h6 className="mb-0">
-            <i className="ti ti-info-circle me-2"></i>
+          <h6 style={{ margin: 0 }}>
+            <i className="ti ti-info-circle" style={{ marginRight: 8 }}></i>
             Request Details
           </h6>
         </div>
         <div className="card-body">
-          <div className="row g-3">
-            <div className="col-md-6">
-              <label className="form-label text-muted small">Requested Delivery</label>
-              <p className="mb-0">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+            <div>
+              <label className="form-label" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Requested Delivery</label>
+              <p style={{ margin: 0 }}>
                 {quote.requestedDeliveryDate 
                   ? formatDate(quote.requestedDeliveryDate)
                   : 'No specific date'
                 }
               </p>
             </div>
-            <div className="col-md-6">
-              <label className="form-label text-muted small">Priority</label>
-              <p className="mb-0">
-                <span className={`badge ${quote.priority === 'urgent' ? 'bg-danger' : 'bg-secondary'}`}>
+            <div>
+              <label className="form-label" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Priority</label>
+              <p style={{ margin: 0 }}>
+                <span className="badge" style={quote.priority === 'urgent' ? { background: 'var(--red)', color: '#fff' } : { background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}>
                   {quote.priority}
                 </span>
               </p>
             </div>
             {quote.notes && (
-              <div className="col-12">
-                <label className="form-label text-muted small">Your Notes</label>
-                <p className="mb-0">{quote.notes}</p>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label className="form-label" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Your Notes</label>
+                <p style={{ margin: 0 }}>{quote.notes}</p>
               </div>
             )}
           </div>
@@ -240,48 +240,50 @@ export function QuoteDetailView({
 
       {/* Action Buttons */}
       {isQuoted && !isExpired && (
-        <div className="card bg-light">
+        <div className="card" style={{ background: 'var(--bg-secondary)' }}>
           <div className="card-body">
-            <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
-              <p className="mb-0 text-muted">
-                <i className="ti ti-info-circle me-1"></i>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+              <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+                <i className="ti ti-info-circle" style={{ marginRight: 4 }}></i>
                 Accept this quote to proceed with your order
               </p>
-              <div className="d-flex gap-2">
+              <div style={{ display: 'flex', gap: 8 }}>
                 {onReject && (
                   <button
-                    className="btn btn-outline-danger"
+                    className="btn-apple btn-apple-secondary"
                     onClick={onReject}
                     disabled={isProcessing}
+                    style={{ color: 'var(--red)' }}
                   >
-                    <i className="ti ti-x me-1"></i>
+                    <i className="ti ti-x" style={{ marginRight: 4 }}></i>
                     Decline
                   </button>
                 )}
                 {onAccept && (
                   <button
-                    className="btn btn-success"
+                    className="btn-apple btn-apple-primary"
                     onClick={onAccept}
                     disabled={isProcessing}
+                    style={{ background: 'var(--green)' }}
                   >
                     {isProcessing ? (
-                      <span className="spinner-border spinner-border-sm me-2"></span>
+                      <span className="spinner-apple" style={{ marginRight: 8 }}></span>
                     ) : (
-                      <i className="ti ti-check me-1"></i>
+                      <i className="ti ti-check" style={{ marginRight: 4 }}></i>
                     )}
                     Accept Quote
                   </button>
                 )}
                 {onConvertToOrder && (
                   <button
-                    className="btn btn-primary"
+                    className="btn-apple btn-apple-primary"
                     onClick={onConvertToOrder}
                     disabled={isProcessing}
                   >
                     {isProcessing ? (
-                      <span className="spinner-border spinner-border-sm me-2"></span>
+                      <span className="spinner-apple" style={{ marginRight: 8 }}></span>
                     ) : (
-                      <i className="ti ti-shopping-cart me-1"></i>
+                      <i className="ti ti-shopping-cart" style={{ marginRight: 4 }}></i>
                     )}
                     Convert to Order
                   </button>
@@ -308,38 +310,38 @@ export function QuoteListItem({ quote, onClick }: QuoteListItemProps) {
 
   return (
     <div 
-      className="card mb-2 cursor-pointer hover-shadow"
+      className="card hover-shadow"
       onClick={onClick}
-      style={{ cursor: 'pointer' }}
+      style={{ cursor: 'pointer', marginBottom: 8 }}
     >
       <div className="card-body">
-        <div className="d-flex justify-content-between align-items-start">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <h6 className="mb-1">
+            <h6 style={{ marginBottom: 4 }}>
               Quote #{quote.quoteNumber || quote.id.substring(0, 8)}
               {quote.priority === 'urgent' && (
-                <span className="badge bg-danger ms-2 small">Urgent</span>
+                <span className="badge" style={{ background: 'var(--red)', color: '#fff', marginLeft: 8, fontSize: '0.75rem' }}>Urgent</span>
               )}
             </h6>
-            <p className="text-muted small mb-0">
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
               {itemCount} product{itemCount !== 1 ? 's' : ''} • {totalQuantity} unit{totalQuantity !== 1 ? 's' : ''}
             </p>
           </div>
-          <div className="text-end">
-            <span className={`badge ${statusConfig.class}`}>
-              <i className={`ti ti-${statusConfig.icon} me-1`}></i>
+          <div style={{ textAlign: 'right' }}>
+            <span className="badge" style={statusConfig.style}>
+              <i className={`ti ti-${statusConfig.icon}`} style={{ marginRight: 4 }}></i>
               {statusConfig.label}
             </span>
-            <p className="text-muted small mb-0 mt-1">
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0, marginTop: 4 }}>
               {formatRelativeTime(quote.updatedAt || quote.createdAt)}
             </p>
           </div>
         </div>
         {quote.total && (
-          <div className="mt-2 pt-2 border-top">
-            <div className="d-flex justify-content-between">
-              <span className="text-muted">Quoted Total</span>
-              <span className="fw-bold">{formatCurrency(quote.total)}</span>
+          <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>Quoted Total</span>
+              <span style={{ fontWeight: 700 }}>{formatCurrency(quote.total)}</span>
             </div>
           </div>
         )}
@@ -356,11 +358,11 @@ interface QuoteStatusBadgeProps {
 
 export function QuoteStatusBadge({ status, size = 'md' }: QuoteStatusBadgeProps) {
   const config = getStatusConfig(status);
-  const sizeClass = size === 'sm' ? 'small' : size === 'lg' ? 'fs-6' : '';
+  const fontSize = size === 'sm' ? '0.75rem' : size === 'lg' ? '1rem' : '0.85rem';
   
   return (
-    <span className={`badge ${config.class} ${sizeClass}`}>
-      <i className={`ti ti-${config.icon} me-1`}></i>
+    <span className="badge" style={{ ...config.style, fontSize }}>
+      <i className={`ti ti-${config.icon}`} style={{ marginRight: 4 }}></i>
       {config.label}
     </span>
   );
@@ -368,14 +370,14 @@ export function QuoteStatusBadge({ status, size = 'md' }: QuoteStatusBadgeProps)
 
 // Helper function for status configuration
 function getStatusConfig(status: QuoteStatus) {
-  const configs: Record<QuoteStatus, { label: string; class: string; icon: string }> = {
-    draft: { label: 'Draft', class: 'bg-secondary', icon: 'edit' },
-    pending: { label: 'Pending', class: 'bg-warning', icon: 'clock' },
-    reviewing: { label: 'Under Review', class: 'bg-info', icon: 'eye' },
-    quoted: { label: 'Quoted', class: 'bg-primary', icon: 'check' },
-    approved: { label: 'Approved', class: 'bg-success', icon: 'check-circle' },
-    rejected: { label: 'Declined', class: 'bg-danger', icon: 'x-circle' },
-    expired: { label: 'Expired', class: 'bg-secondary', icon: 'clock-off' },
+  const configs: Record<QuoteStatus, { label: string; style: { background: string; color: string }; icon: string }> = {
+    draft: { label: 'Draft', style: { background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }, icon: 'edit' },
+    pending: { label: 'Pending', style: { background: 'var(--orange)', color: '#fff' }, icon: 'clock' },
+    reviewing: { label: 'Under Review', style: { background: 'var(--accent)', color: '#fff' }, icon: 'eye' },
+    quoted: { label: 'Quoted', style: { background: 'var(--accent)', color: '#fff' }, icon: 'check' },
+    approved: { label: 'Approved', style: { background: 'var(--green)', color: '#fff' }, icon: 'check-circle' },
+    rejected: { label: 'Declined', style: { background: 'var(--red)', color: '#fff' }, icon: 'x-circle' },
+    expired: { label: 'Expired', style: { background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }, icon: 'clock-off' },
   };
   return configs[status] || configs.pending;
 }
@@ -416,29 +418,41 @@ export function QuoteTimeline({ quote }: QuoteTimelineProps) {
   return (
     <div className="quote-timeline">
       {events.map((event, index) => (
-        <div key={index} className="d-flex mb-3">
-          <div className="me-3">
+        <div key={index} style={{ display: 'flex', marginBottom: 16 }}>
+          <div style={{ marginRight: 16 }}>
             <div 
-              className={`rounded-circle d-flex align-items-center justify-content-center ${
-                event.completed ? 'bg-success text-white' : 'bg-light text-muted'
-              }`}
-              style={{ width: 32, height: 32 }}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: event.completed ? 'var(--green)' : 'var(--bg-secondary)',
+                color: event.completed ? '#fff' : 'var(--text-secondary)',
+              }}
             >
               <i className={`ti ti-${event.icon}`}></i>
             </div>
             {index < events.length - 1 && (
               <div 
-                className={`mx-auto ${event.completed ? 'bg-success' : 'bg-light'}`}
-                style={{ width: 2, height: 24, marginTop: 4 }}
+                style={{
+                  width: 2,
+                  height: 24,
+                  marginTop: 4,
+                  marginLeft: 'auto',
+                  marginRight: 'auto',
+                  background: event.completed ? 'var(--green)' : 'var(--bg-secondary)',
+                }}
               ></div>
             )}
           </div>
           <div>
-            <div className={event.completed ? 'fw-semibold' : 'text-muted'}>
+            <div style={event.completed ? { fontWeight: 600 } : { color: 'var(--text-secondary)' }}>
               {event.label}
             </div>
             {event.date && (
-              <small className="text-muted">{formatDate(event.date)}</small>
+              <small style={{ color: 'var(--text-secondary)' }}>{formatDate(event.date)}</small>
             )}
           </div>
         </div>

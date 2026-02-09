@@ -148,78 +148,55 @@ export default function QuotesPage() {
   return (
     <div>
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
-          <h4 className="fw-bold mb-1">Quote Requests</h4>
-          <p className="mb-0 text-muted">Request custom pricing for bulk orders</p>
+          <h4 style={{ fontWeight: 700, marginBottom: '0.25rem' }}>Quote Requests</h4>
+          <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Request custom pricing for bulk orders</p>
         </div>
-        <button onClick={() => setRequestModal(true)} className="btn btn-primary">
-          <i className="ti ti-plus me-1"></i>New Quote Request
+        <button onClick={() => setRequestModal(true)} className="btn-apple btn-apple-primary">
+          <i className="ti ti-plus" style={{ marginRight: '0.25rem' }}></i>New Quote Request
         </button>
       </div>
 
       {/* Stats Cards */}
-      <div className="row g-3 mb-4">
-        <div className="col-md-3">
-          <div className="card bg-primary text-white">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="mb-0 opacity-75">Total Quotes</p>
-                  <h3 className="mb-0">{quotes.length}</h3>
-                </div>
-                <i className="ti ti-file-invoice fs-1 opacity-50"></i>
-              </div>
-            </div>
+      <div className="stats-grid" style={{ marginBottom: '1.5rem' }}>
+        <div className="stat-card" style={{ background: 'var(--accent)', color: '#fff' }}>
+          <div className="stat-icon"><i className="ti ti-file-invoice"></i></div>
+          <div className="stat-info">
+            <span className="stat-label" style={{ opacity: 0.85 }}>Total Quotes</span>
+            <span className="stat-value">{quotes.length}</span>
           </div>
         </div>
-        <div className="col-md-3">
-          <div className="card">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="mb-0 text-muted">Pending</p>
-                  <h3 className="mb-0 text-warning">{statusCounts.pending}</h3>
-                </div>
-                <i className="ti ti-clock fs-1 text-warning opacity-50"></i>
-              </div>
-            </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ color: 'var(--orange)' }}><i className="ti ti-clock"></i></div>
+          <div className="stat-info">
+            <span className="stat-label">Pending</span>
+            <span className="stat-value" style={{ color: 'var(--orange)' }}>{statusCounts.pending}</span>
           </div>
         </div>
-        <div className="col-md-3">
-          <div className="card">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="mb-0 text-muted">Ready to Accept</p>
-                  <h3 className="mb-0 text-info">{statusCounts.quoted}</h3>
-                </div>
-                <i className="ti ti-check fs-1 text-info opacity-50"></i>
-              </div>
-            </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ color: 'var(--accent)' }}><i className="ti ti-check"></i></div>
+          <div className="stat-info">
+            <span className="stat-label">Ready to Accept</span>
+            <span className="stat-value" style={{ color: 'var(--accent)' }}>{statusCounts.quoted}</span>
           </div>
         </div>
-        <div className="col-md-3">
-          <div className="card">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="mb-0 text-muted">Approved</p>
-                  <h3 className="mb-0 text-success">{statusCounts.approved}</h3>
-                </div>
-                <i className="ti ti-circle-check fs-1 text-success opacity-50"></i>
-              </div>
-            </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ color: 'var(--green)' }}><i className="ti ti-circle-check"></i></div>
+          <div className="stat-info">
+            <span className="stat-label">Approved</span>
+            <span className="stat-value" style={{ color: 'var(--green)' }}>{statusCounts.approved}</span>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="d-flex gap-2 mb-4">
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
         {(['all', 'pending', 'quoted', 'approved', 'rejected'] as const).map(f => (
           <button
             key={f}
-            className={`btn btn-sm ${filter === f ? 'btn-primary' : 'btn-outline-secondary'}`}
+            className={`btn-apple ${filter === f ? 'btn-apple-primary' : 'btn-apple-secondary'}`}
+            style={{ fontSize: '0.85rem', padding: '0.35rem 0.75rem' }}
             onClick={() => setFilter(f)}
           >
             {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -231,23 +208,23 @@ export default function QuotesPage() {
       <div className="card">
         <div className="card-body">
           {loading ? (
-            <div className="text-center py-5">
-              <div className="spinner-border text-primary"></div>
-              <p className="mt-3 text-muted">Loading quotes...</p>
+            <div style={{ textAlign: 'center', padding: '2.5rem 0' }}>
+              <div className="spinner-apple"></div>
+              <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Loading quotes...</p>
             </div>
           ) : filteredQuotes.length === 0 ? (
-            <div className="text-center py-5">
-              <i className="ti ti-file-invoice ti-3x text-muted mb-3"></i>
+            <div style={{ textAlign: 'center', padding: '2.5rem 0' }}>
+              <i className="ti ti-file-invoice ti-3x" style={{ color: 'var(--text-secondary)', marginBottom: '1rem', display: 'block' }}></i>
               <h5>{filter === 'all' ? 'No quote requests yet' : `No ${filter} quotes`}</h5>
-              <p className="text-muted">Request a quote for bulk orders to get custom pricing</p>
+              <p style={{ color: 'var(--text-secondary)' }}>Request a quote for bulk orders to get custom pricing</p>
               {filter === 'all' && (
-                <button onClick={() => setRequestModal(true)} className="btn btn-primary mt-3">
-                  <i className="ti ti-plus me-1"></i>Request Your First Quote
+                <button onClick={() => setRequestModal(true)} className="btn-apple btn-apple-primary" style={{ marginTop: '1rem' }}>
+                  <i className="ti ti-plus" style={{ marginRight: '0.25rem' }}></i>Request Your First Quote
                 </button>
               )}
             </div>
           ) : (
-            <div className="list-group list-group-flush">
+            <div>
               {filteredQuotes.map((quote) => {
                 const itemCount = quote.items?.length || 0;
                 const totalQuantity = quote.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
@@ -255,25 +232,26 @@ export default function QuotesPage() {
                 return (
                   <div 
                     key={quote.id} 
-                    className="list-group-item list-group-item-action p-3"
                     onClick={() => setDetailModal(quote)}
-                    style={{ cursor: 'pointer' }}
+                    style={{ padding: '1rem', cursor: 'pointer', borderBottom: '1px solid var(--border)', transition: 'background 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-secondary)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
-                    <div className="d-flex justify-content-between align-items-start">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div>
-                        <div className="d-flex align-items-center gap-2 mb-1">
-                          <h6 className="mb-0 fw-semibold">Quote #{quote.quoteNumber || quote.id.substring(0, 8)}</h6>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                          <h6 style={{ margin: 0, fontWeight: 600 }}>Quote #{quote.quoteNumber || quote.id.substring(0, 8)}</h6>
                           <QuoteStatusBadge status={quote.status} size="sm" />
-                          {quote.priority === 'urgent' && <span className="badge bg-danger small">Urgent</span>}
+                          {quote.priority === 'urgent' && <span className="badge" style={{ background: 'rgba(255,59,48,0.12)', color: 'var(--red)' }}>Urgent</span>}
                         </div>
-                        <p className="text-muted small mb-1">
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
                           {itemCount > 0 ? `${itemCount} product${itemCount !== 1 ? 's' : ''} • ${totalQuantity} units` : quote.notes?.substring(0, 100)}
                         </p>
-                        <small className="text-muted"><i className="ti ti-clock me-1"></i>{formatRelativeTime(quote.createdAt)}</small>
+                        <small style={{ color: 'var(--text-secondary)' }}><i className="ti ti-clock" style={{ marginRight: '0.25rem' }}></i>{formatRelativeTime(quote.createdAt)}</small>
                       </div>
-                      <div className="text-end">
-                        {quote.total && <div className="fw-bold text-success mb-1">{formatCurrency(quote.total)}</div>}
-                        <i className="ti ti-chevron-right text-muted"></i>
+                      <div style={{ textAlign: 'right' }}>
+                        {quote.total && <div style={{ fontWeight: 700, color: 'var(--green)', marginBottom: '0.25rem' }}>{formatCurrency(quote.total)}</div>}
+                        <i className="ti ti-chevron-right" style={{ color: 'var(--text-tertiary)' }}></i>
                       </div>
                     </div>
                   </div>
@@ -293,34 +271,34 @@ export default function QuotesPage() {
       {detailModal && (
         <Modal show={!!detailModal} onClose={() => setDetailModal(null)} title={`Quote #${detailModal.quoteNumber || detailModal.id.substring(0, 8)}`}>
           <div className="quote-detail">
-            <div className="d-flex align-items-center gap-3 mb-4">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
               <QuoteStatusBadge status={detailModal.status} size="lg" />
-              {detailModal.priority === 'urgent' && <span className="badge bg-danger">Urgent</span>}
+              {detailModal.priority === 'urgent' && <span className="badge" style={{ background: 'rgba(255,59,48,0.12)', color: 'var(--red)' }}>Urgent</span>}
             </div>
             
             {detailModal.responseNotes && (
-              <div className="alert alert-info mb-3">
-                <i className="ti ti-message me-2"></i><strong>Sales Response:</strong>
-                <p className="mb-0 mt-1">{detailModal.responseNotes}</p>
+              <div className="alert alert-info" style={{ marginBottom: '1rem' }}>
+                <i className="ti ti-message" style={{ marginRight: '0.5rem' }}></i><strong>Sales Response:</strong>
+                <p style={{ margin: '0.25rem 0 0 0' }}>{detailModal.responseNotes}</p>
               </div>
             )}
 
-            <div className="mb-3">
+            <div style={{ marginBottom: '1rem' }}>
               <QuoteTimeline quote={detailModal as Parameters<typeof QuoteTimeline>[0]['quote']} />
             </div>
 
             {detailModal.items && detailModal.items.length > 0 && (
-              <div className="card mb-3">
-                <div className="card-header"><h6 className="mb-0">Quote Items</h6></div>
-                <div className="table-responsive">
-                  <table className="table mb-0">
-                    <thead><tr><th>Product</th><th className="text-center">Qty</th><th className="text-end">Price</th></tr></thead>
+              <div className="card" style={{ marginBottom: '1rem' }}>
+                <div className="card-header"><h6 style={{ margin: 0 }}>Quote Items</h6></div>
+                <div className="table-container">
+                  <table className="apple-table">
+                    <thead><tr><th>Product</th><th style={{ textAlign: 'center' }}>Qty</th><th style={{ textAlign: 'right' }}>Price</th></tr></thead>
                     <tbody>
                       {detailModal.items.map((item) => (
                         <tr key={item.id}>
-                          <td><div className="fw-semibold">{item.title}</div>{item.variantTitle && <small className="text-muted">{item.variantTitle}</small>}</td>
-                          <td className="text-center">{item.quantity}</td>
-                          <td className="text-end">{item.quotedPrice ? formatCurrency(item.quotedPrice) : <span className="text-muted">Pending</span>}</td>
+                          <td><div style={{ fontWeight: 600 }}>{item.title}</div>{item.variantTitle && <small style={{ color: 'var(--text-secondary)' }}>{item.variantTitle}</small>}</td>
+                          <td style={{ textAlign: 'center' }}>{item.quantity}</td>
+                          <td style={{ textAlign: 'right' }}>{item.quotedPrice ? formatCurrency(item.quotedPrice) : <span style={{ color: 'var(--text-secondary)' }}>Pending</span>}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -330,26 +308,26 @@ export default function QuotesPage() {
             )}
 
             {detailModal.notes && (
-              <div className="card mb-3">
-                <div className="card-header"><h6 className="mb-0">Your Notes</h6></div>
-                <div className="card-body"><p className="mb-0">{detailModal.notes}</p></div>
+              <div className="card" style={{ marginBottom: '1rem' }}>
+                <div className="card-header"><h6 style={{ margin: 0 }}>Your Notes</h6></div>
+                <div className="card-body"><p style={{ margin: 0 }}>{detailModal.notes}</p></div>
               </div>
             )}
 
             {detailModal.total && (
-              <div className="card bg-light mb-3">
+              <div className="card" style={{ background: 'var(--bg-secondary)', marginBottom: '1rem' }}>
                 <div className="card-body">
-                  <div className="d-flex justify-content-between py-2 border-bottom"><span>Subtotal</span><span>{formatCurrency(detailModal.subtotal || 0)}</span></div>
-                  {detailModal.discount && detailModal.discount > 0 && <div className="d-flex justify-content-between py-2 text-success"><span>Discount</span><span>-{formatCurrency(detailModal.discount)}</span></div>}
-                  <div className="d-flex justify-content-between py-2 fw-bold fs-5"><span>Total</span><span className="text-success">{formatCurrency(detailModal.total)}</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border)' }}><span>Subtotal</span><span>{formatCurrency(detailModal.subtotal || 0)}</span></div>
+                  {detailModal.discount && detailModal.discount > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', color: 'var(--green)' }}><span>Discount</span><span>-{formatCurrency(detailModal.discount)}</span></div>}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', fontWeight: 700, fontSize: '1.15rem' }}><span>Total</span><span style={{ color: 'var(--green)' }}>{formatCurrency(detailModal.total)}</span></div>
                 </div>
               </div>
             )}
 
             {detailModal.status === 'quoted' && (
-              <div className="d-flex justify-content-end gap-2 pt-3 border-top">
-                <button className="btn btn-outline-danger" onClick={() => handleRejectQuote(detailModal.id)}><i className="ti ti-x me-1"></i>Decline</button>
-                <button className="btn btn-success" onClick={() => handleAcceptQuote(detailModal.id)}><i className="ti ti-check me-1"></i>Accept Quote</button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+                <button className="btn-apple btn-apple-secondary" style={{ color: 'var(--red)' }} onClick={() => handleRejectQuote(detailModal.id)}><i className="ti ti-x" style={{ marginRight: '0.25rem' }}></i>Decline</button>
+                <button className="btn-apple btn-apple-primary" style={{ background: 'var(--green)' }} onClick={() => handleAcceptQuote(detailModal.id)}><i className="ti ti-check" style={{ marginRight: '0.25rem' }}></i>Accept Quote</button>
               </div>
             )}
           </div>
@@ -358,12 +336,12 @@ export default function QuotesPage() {
 
       {/* Result Modal */}
       <Modal show={resultModal.show} onClose={() => setResultModal({show: false, message: '', type: 'success'})} title={resultModal.type === 'success' ? 'Success' : 'Error'}>
-        <div className="text-center py-3">
-          <i className={`ti ti-${resultModal.type === 'success' ? 'circle-check text-success' : 'alert-circle text-danger'} ti-3x mb-3`}></i>
-          <p className="mb-0">{resultModal.message}</p>
+        <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+          <i className={`ti ti-${resultModal.type === 'success' ? 'circle-check' : 'alert-circle'} ti-3x`} style={{ color: resultModal.type === 'success' ? 'var(--green)' : 'var(--red)', marginBottom: '1rem', display: 'block' }}></i>
+          <p style={{ margin: 0 }}>{resultModal.message}</p>
         </div>
-        <div className="text-end mt-3">
-          <button className="btn btn-primary" onClick={() => setResultModal({show: false, message: '', type: 'success'})}>OK</button>
+        <div style={{ textAlign: 'right', marginTop: '1rem' }}>
+          <button className="btn-apple btn-apple-primary" onClick={() => setResultModal({show: false, message: '', type: 'success'})}>OK</button>
         </div>
       </Modal>
     </div>

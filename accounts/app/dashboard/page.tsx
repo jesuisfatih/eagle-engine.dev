@@ -133,9 +133,9 @@ export default function AccountsDashboard() {
 
       {/* Recent Orders */}
       <div className="card">
-        <div className="card-header d-flex justify-content-between align-items-center">
-          <h5 className="card-title mb-0">Recent Orders</h5>
-          <Link href="/orders" className="btn btn-sm btn-primary">View All</Link>
+        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 className="card-title">Recent Orders</h3>
+          <Link href="/orders" className="btn-apple btn-apple-primary" style={{ height: 34, fontSize: 13 }}>View All</Link>
         </div>
         <div className="card-body">
           {recentOrders.length === 0 ? (
@@ -149,8 +149,8 @@ export default function AccountsDashboard() {
               }}
             />
           ) : (
-            <div className="table-responsive">
-              <table className="table table-hover">
+            <div className="table-container">
+              <table className="apple-table">
                 <thead>
                   <tr>
                     <th>Order</th>
@@ -164,22 +164,22 @@ export default function AccountsDashboard() {
                   {recentOrders.map((order) => (
                     <tr key={order.id}>
                       <td>
-                        <Link href={`/orders/${order.id}`} className="fw-semibold text-primary">
+                        <Link href={`/orders/${order.id}`} style={{ fontWeight: 600, color: 'var(--accent)', textDecoration: 'none' }}>
                           #{order.orderNumber || order.shopifyOrderNumber}
                         </Link>
                       </td>
-                      <td className="small text-muted">
+                      <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
                         {formatRelativeTime(order.createdAt)}
                       </td>
-                      <td className="fw-semibold">
+                      <td style={{ fontWeight: 600 }}>
                         {formatCurrency(order.totalPrice)}
                       </td>
                       <td>
                         <OrderStatusBadge status={order.financialStatus} />
                       </td>
                       <td>
-                        <Link href={`/orders/${order.id}`} className="btn btn-sm btn-outline-primary">
-                          <i className="ti ti-eye me-1"></i>
+                        <Link href={`/orders/${order.id}`} className="btn-apple btn-apple-secondary" style={{ height: 30, fontSize: 12, textDecoration: 'none' }}>
+                          <i className="ti ti-eye" style={{ marginRight: 4, fontSize: 14 }}></i>
                           View
                         </Link>
                       </td>
@@ -197,19 +197,19 @@ export default function AccountsDashboard() {
 
 // Order Status Badge Component
 function OrderStatusBadge({ status }: { status: string }) {
-  const statusConfig: Record<string, { class: string; label: string }> = {
-    pending: { class: 'bg-label-warning', label: 'Pending' },
-    paid: { class: 'bg-label-success', label: 'Paid' },
-    fulfilled: { class: 'bg-label-info', label: 'Shipped' },
-    delivered: { class: 'bg-label-success', label: 'Delivered' },
-    cancelled: { class: 'bg-label-danger', label: 'Cancelled' },
-    refunded: { class: 'bg-label-secondary', label: 'Refunded' },
+  const statusConfig: Record<string, { color: string; label: string }> = {
+    pending: { color: 'var(--orange)', label: 'Pending' },
+    paid: { color: 'var(--green)', label: 'Paid' },
+    fulfilled: { color: 'var(--accent)', label: 'Shipped' },
+    delivered: { color: 'var(--green)', label: 'Delivered' },
+    cancelled: { color: 'var(--red)', label: 'Cancelled' },
+    refunded: { color: 'var(--text-tertiary)', label: 'Refunded' },
   };
 
-  const config = statusConfig[status?.toLowerCase()] || { class: 'bg-label-secondary', label: status };
+  const config = statusConfig[status?.toLowerCase()] || { color: 'var(--text-tertiary)', label: status };
 
   return (
-    <span className={`badge ${config.class}`}>
+    <span className="badge" style={{ background: `${config.color}18`, color: config.color }}>
       {config.label}
     </span>
   );

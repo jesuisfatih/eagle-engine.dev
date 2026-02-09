@@ -1,83 +1,74 @@
 'use client';
 
-import NotificationDropdown from './NotificationDropdown';
+import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 
 export default function Header() {
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const query = (e.target as HTMLInputElement).value;
+      if (query.trim()) {
+        window.location.href = `/companies?search=${encodeURIComponent(query)}`;
+      }
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('eagle_admin_token');
+    localStorage.removeItem('eagle_merchantId');
+    window.location.href = '/login';
+  };
+
   return (
-    <nav className="layout-navbar navbar navbar-expand-xl align-items-center bg-navbar-theme" id="layout-navbar">
-      <div className="container-xxl">
-        <div className="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
-          {/* Search */}
-          <div className="navbar-nav align-items-center">
-            <div className="nav-item navbar-search-wrapper mb-0">
-              <span className="d-inline-block p-1 me-2">
-                <i className="icon-base ti tabler-search ti-sm"></i>
-              </span>
-              <input
-                type="text"
-                className="form-control border-0 shadow-none"
-                placeholder="Search companies, orders..."
-                aria-label="Search..."
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    const query = (e.target as HTMLInputElement).value;
-                    window.location.href = `/companies?search=${query}`;
-                  }
-                }}
-              />
-            </div>
+    <header className="apple-header">
+      <div className="header-search">
+        <i className="ti ti-search header-search-icon" />
+        <input
+          type="text"
+          placeholder="Search companies, orders..."
+          onKeyDown={handleSearch}
+        />
+      </div>
+
+      <div className="header-actions">
+        <button className="header-action-btn">
+          <i className="ti ti-bell" />
+        </button>
+
+        <div ref={dropdownRef} style={{ position: 'relative' }}>
+          <div
+            className="header-avatar"
+            onClick={() => setShowDropdown(!showDropdown)}
+          >
+            AD
           </div>
 
-          <ul className="navbar-nav flex-row align-items-center ms-auto">
-            {/* Notifications */}
-            <li className="nav-item dropdown-notifications navbar-dropdown dropdown me-3 me-xl-1">
-              <a
-                className="nav-link dropdown-toggle hide-arrow"
-                href="javascript:void(0);"
-                data-bs-toggle="dropdown"
-              >
-                <i className="icon-base ti tabler-bell ti-md"></i>
-                <span className="badge bg-danger rounded-pill badge-notifications">0</span>
-              </a>
-              <NotificationDropdown />
-            </li>
-
-            {/* User */}
-            <li className="nav-item navbar-dropdown dropdown-user dropdown">
-              <a
-                className="nav-link dropdown-toggle hide-arrow"
-                href="javascript:void(0);"
-                data-bs-toggle="dropdown"
-              >
-                <div className="avatar avatar-online">
-                  <span className="avatar-initial rounded-circle bg-label-primary">AD</span>
-                </div>
-              </a>
-              <ul className="dropdown-menu dropdown-menu-end">
-                <li>
-                  <a className="dropdown-item" href="/settings">
-                    <i className="ti ti-settings me-2 ti-sm"></i>
-                    <span className="align-middle">Settings</span>
-                  </a>
-                </li>
-                <li>
-                  <div className="dropdown-divider"></div>
-                </li>
-                <li>
-                  <a className="dropdown-item" href="/login">
-                    <i className="ti ti-logout me-2 ti-sm"></i>
-                    <span className="align-middle">Log Out</span>
-                  </a>
-                </li>
-              </ul>
-            </li>
-          </ul>
+          <div className={`apple-dropdown ${showDropdown ? 'open' : ''}`}>
+            <Link href="/settings" className="dropdown-item-apple" onClick={() => setShowDropdown(false)}>
+              <i className="ti ti-settings" style={{ fontSize: 16 }} />
+              Settings
+            </Link>
+            <div className="dropdown-divider-apple" />
+            <button className="dropdown-item-apple danger" onClick={handleLogout}>
+              <i className="ti ti-logout" style={{ fontSize: 16 }} />
+              Log Out
+            </button>
+          </div>
         </div>
       </div>
-    </nav>
+    </header>
   );
 }
-
-
-
-

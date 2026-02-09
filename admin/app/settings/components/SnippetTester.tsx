@@ -20,18 +20,18 @@ export default function SnippetTester() {
   };
 
   return (
-    <div className="card">
-      <div className="card-header">
-        <h6 className="card-title mb-0">Snippet Test</h6>
+    <div className="apple-card">
+      <div className="apple-card-header">
+        <h3 className="apple-card-title">Snippet Test</h3>
       </div>
-      <div className="card-body">
-        <button onClick={testSnippet} className="btn btn-primary">
-          <i className="ti ti-code me-1"></i>
-          Test Snippet
+      <div className="apple-card-body">
+        <button onClick={testSnippet} className="btn-apple primary">
+          <i className="ti ti-code" /> Test Snippet
         </button>
         {testResult && (
-          <div className={`alert mt-3 ${testResult.includes('✅') ? 'alert-success' : 'alert-danger'}`}>
-            {testResult}
+          <div className={`apple-alert ${testResult.includes('✅') ? 'success' : 'error'}`} style={{ marginTop: 12 }}>
+            <i className={`ti ${testResult.includes('✅') ? 'ti-check' : 'ti-x'}`} />
+            <span>{testResult}</span>
           </div>
         )}
       </div>

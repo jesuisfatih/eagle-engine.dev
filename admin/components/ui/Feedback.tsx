@@ -1,492 +1,199 @@
 'use client';
 
-import React from 'react';
+import { ReactNode } from 'react';
 
-// ============================================
-// LOADING OVERLAY
-// ============================================
-
-interface LoadingOverlayProps {
-  visible: boolean;
-  text?: string;
-  blur?: boolean;
-  fullScreen?: boolean;
-}
-
-export function LoadingOverlay({
-  visible,
-  text = 'Loading...',
-  blur = true,
-  fullScreen = false,
-}: LoadingOverlayProps) {
-  if (!visible) return null;
-
+/* ─── Loading Overlay ─── */
+export function LoadingOverlay({ show }: { show: boolean }) {
+  if (!show) return null;
   return (
-    <div
-      className={`${fullScreen ? 'position-fixed' : 'position-absolute'} top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center`}
-      style={{
-        backgroundColor: blur ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.95)',
-        backdropFilter: blur ? 'blur(4px)' : 'none',
-        zIndex: 1000,
-      }}
-    >
-      <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
-        <span className="visually-hidden">Loading...</span>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(255,255,255,0.6)',
+      backdropFilter: 'blur(4px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 9999,
+    }}>
+      <div style={{ textAlign: 'center' }}>
+        <i className="ti ti-loader-2 spin" style={{ fontSize: 32, color: 'var(--accent-primary)' }} />
+        <div style={{ marginTop: 12, color: 'var(--text-secondary)', fontSize: 14 }}>Loading...</div>
       </div>
-      <p className="mt-3 text-muted">{text}</p>
     </div>
   );
 }
 
-// ============================================
-// ACTION RESULT TOAST
-// ============================================
-
+/* ─── Action Result ─── */
 interface ActionResultProps {
-  show: boolean;
-  type: 'success' | 'error' | 'warning' | 'info';
+  type: 'success' | 'danger' | 'warning' | 'info';
   message: string;
-  onClose: () => void;
+  onDismiss?: () => void;
 }
 
-export function ActionResult({ show, type, message, onClose }: ActionResultProps) {
-  React.useEffect(() => {
-    if (show) {
-      const timer = setTimeout(onClose, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [show, onClose]);
-
-  if (!show) return null;
-
-  const typeConfig = {
-    success: { bg: 'success', icon: 'ti-check' },
-    error: { bg: 'danger', icon: 'ti-x' },
-    warning: { bg: 'warning', icon: 'ti-alert-triangle' },
-    info: { bg: 'info', icon: 'ti-info-circle' },
+export function ActionResult({ type, message, onDismiss }: ActionResultProps) {
+  const icons: Record<string, string> = {
+    success: 'ti-check',
+    danger: 'ti-x',
+    warning: 'ti-alert-triangle',
+    info: 'ti-info-circle',
   };
 
-  const config = typeConfig[type];
-
   return (
-    <div
-      className={`position-fixed bottom-0 end-0 m-3 toast show bg-${config.bg} text-white`}
-      style={{ 
-        zIndex: 1100,
-        animation: 'slideInUp 0.3s ease-out',
-      }}
-    >
-      <style>{`
-        @keyframes slideInUp {
-          from { transform: translateY(100%); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-      `}</style>
-      <div className="d-flex">
-        <div className="toast-body d-flex align-items-center">
-          <i className={`ti ${config.icon} me-2`}></i>
-          {message}
-        </div>
-        <button
-          type="button"
-          className="btn-close btn-close-white me-2 m-auto"
-          onClick={onClose}
-        ></button>
-      </div>
+    <div className={`apple-alert ${type}`} style={{ marginBottom: 16 }}>
+      <i className={`ti ${icons[type]}`} />
+      <span style={{ flex: 1 }}>{message}</span>
+      {onDismiss && (
+        <button onClick={onDismiss} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+          <i className="ti ti-x" style={{ fontSize: 14, color: 'var(--text-tertiary)' }} />
+        </button>
+      )}
     </div>
   );
 }
 
-// ============================================
-// STATS SKELETON
-// ============================================
+/* ─── Skeletons ─── */
+function SkeletonLine({ width = '100%', height = 14 }: { width?: string | number; height?: number }) {
+  return <div className="skeleton" style={{ width, height, borderRadius: 6 }} />;
+}
 
 export function StatsSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <div className="row g-3 mb-4">
+    <div className="stats-grid">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="col-sm-6 col-lg-3">
-          <div className="card h-100">
-            <div className="card-body">
-              <div className="d-flex align-items-center">
-                <div
-                  className="rounded-3 me-3"
-                  style={{
-                    width: '48px',
-                    height: '48px',
-                    backgroundColor: '#e9ecef',
-                    animation: 'pulse 1.5s ease-in-out infinite',
-                  }}
-                />
-                <div className="flex-grow-1">
-                  <div
-                    style={{
-                      width: '60%',
-                      height: '14px',
-                      backgroundColor: '#e9ecef',
-                      borderRadius: '4px',
-                      marginBottom: '8px',
-                      animation: 'pulse 1.5s ease-in-out infinite',
-                    }}
-                  />
-                  <div
-                    style={{
-                      width: '40%',
-                      height: '24px',
-                      backgroundColor: '#e9ecef',
-                      borderRadius: '4px',
-                      animation: 'pulse 1.5s ease-in-out infinite',
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+        <div key={i} className="stat-card">
+          <SkeletonLine width={80} />
+          <SkeletonLine width={60} height={28} />
         </div>
       ))}
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-      `}</style>
     </div>
   );
 }
 
-// ============================================
-// TABLE SKELETON
-// ============================================
-
-export function TableSkeleton({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
+export function TableSkeleton({ rows = 5, cols = 4 }: { rows?: number; cols?: number }) {
   return (
-    <div className="card">
-      <div className="table-responsive">
-        <table className="table table-hover">
-          <thead>
-            <tr>
-              {Array.from({ length: columns }).map((_, i) => (
-                <th key={i}>
-                  <div
-                    style={{
-                      width: `${60 + Math.random() * 30}%`,
-                      height: '16px',
-                      backgroundColor: '#e9ecef',
-                      borderRadius: '4px',
-                      animation: 'pulse 1.5s ease-in-out infinite',
-                    }}
-                  />
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: rows }).map((_, rowIndex) => (
-              <tr key={rowIndex}>
-                {Array.from({ length: columns }).map((_, colIndex) => (
-                  <td key={colIndex}>
-                    <div
-                      style={{
-                        width: `${50 + Math.random() * 40}%`,
-                        height: '14px',
-                        backgroundColor: '#e9ecef',
-                        borderRadius: '4px',
-                        animation: 'pulse 1.5s ease-in-out infinite',
-                        animationDelay: `${(rowIndex * columns + colIndex) * 0.05}s`,
-                      }}
-                    />
-                  </td>
-                ))}
-              </tr>
+    <div className="apple-card">
+      <div style={{ padding: 20 }}>
+        {Array.from({ length: rows }).map((_, r) => (
+          <div key={r} style={{ display: 'flex', gap: 16, marginBottom: 16, alignItems: 'center' }}>
+            {Array.from({ length: cols }).map((_, c) => (
+              <SkeletonLine key={c} width={`${Math.random() * 40 + 60}%`} />
             ))}
-          </tbody>
-        </table>
+          </div>
+        ))}
       </div>
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-      `}</style>
     </div>
   );
 }
-
-// ============================================
-// FORM SKELETON
-// ============================================
 
 export function FormSkeleton({ fields = 4 }: { fields?: number }) {
   return (
-    <div className="card">
-      <div className="card-body">
+    <div className="apple-card">
+      <div className="apple-card-body">
         {Array.from({ length: fields }).map((_, i) => (
-          <div key={i} className="mb-3">
-            <div
-              style={{
-                width: '30%',
-                height: '14px',
-                backgroundColor: '#e9ecef',
-                borderRadius: '4px',
-                marginBottom: '8px',
-                animation: 'pulse 1.5s ease-in-out infinite',
-              }}
-            />
-            <div
-              style={{
-                width: '100%',
-                height: '38px',
-                backgroundColor: '#e9ecef',
-                borderRadius: '6px',
-                animation: 'pulse 1.5s ease-in-out infinite',
-                animationDelay: `${i * 0.1}s`,
-              }}
-            />
+          <div key={i} style={{ marginBottom: 20 }}>
+            <SkeletonLine width={120} height={12} />
+            <div style={{ marginTop: 8 }}>
+              <SkeletonLine height={40} />
+            </div>
           </div>
         ))}
-        <div className="d-flex gap-2 mt-4">
-          <div
-            style={{
-              width: '100px',
-              height: '38px',
-              backgroundColor: '#e9ecef',
-              borderRadius: '6px',
-              animation: 'pulse 1.5s ease-in-out infinite',
-            }}
-          />
-          <div
-            style={{
-              width: '80px',
-              height: '38px',
-              backgroundColor: '#e9ecef',
-              borderRadius: '6px',
-              animation: 'pulse 1.5s ease-in-out infinite',
-            }}
-          />
-        </div>
       </div>
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-      `}</style>
     </div>
   );
 }
 
-// ============================================
-// INLINE ERROR
-// ============================================
-
-interface InlineErrorProps {
-  message: string;
-  className?: string;
-}
-
-export function InlineError({ message, className = '' }: InlineErrorProps) {
+/* ─── Inline Error ─── */
+export function InlineError({ message }: { message: string }) {
   return (
-    <div className={`text-danger small mt-1 d-flex align-items-center ${className}`}>
-      <i className="ti ti-alert-circle me-1"></i>
-      {message}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-danger)', fontSize: 13, marginTop: 4 }}>
+      <i className="ti ti-alert-circle" style={{ fontSize: 14 }} />
+      <span>{message}</span>
     </div>
   );
 }
 
-// ============================================
-// FIELD VALIDATION STATUS
-// ============================================
-
-interface FieldStatusProps {
-  status: 'valid' | 'invalid' | 'pending' | 'none';
-  message?: string;
-}
-
-export function FieldStatus({ status, message }: FieldStatusProps) {
-  if (status === 'none') return null;
-
-  const statusConfig = {
-    valid: { icon: 'ti-check', color: 'text-success' },
-    invalid: { icon: 'ti-x', color: 'text-danger' },
-    pending: { icon: 'ti-loader', color: 'text-muted', spin: true },
+/* ─── Field Status ─── */
+export function FieldStatus({ status, message }: { status: 'valid' | 'invalid' | 'loading'; message?: string }) {
+  const config = {
+    valid: { color: 'var(--color-success)', icon: 'ti-check' },
+    invalid: { color: 'var(--color-danger)', icon: 'ti-x' },
+    loading: { color: 'var(--text-tertiary)', icon: 'ti-loader-2 spin' },
   };
-
-  const config = statusConfig[status];
+  const c = config[status];
 
   return (
-    <span className={`${config.color} ms-2`}>
-      <i
-        className={`ti ${config.icon}`}
-        style={'spin' in config && config.spin ? { animation: 'spin 1s linear infinite' } : undefined}
-      />
-      {message && <span className="ms-1 small">{message}</span>}
-      {'spin' in config && config.spin && (
-        <style>{`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
-      )}
-    </span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: c.color, marginTop: 4 }}>
+      <i className={`ti ${c.icon}`} style={{ fontSize: 14 }} />
+      {message && <span>{message}</span>}
+    </div>
   );
 }
 
-// ============================================
-// STEP INDICATOR
-// ============================================
-
-interface Step {
-  label: string;
-  completed?: boolean;
-}
-
+/* ─── Step Indicator ─── */
 interface StepIndicatorProps {
-  steps: Step[];
-  currentStep: number;
-  className?: string;
+  steps: string[];
+  current: number;
 }
 
-export function StepIndicator({ steps, currentStep, className = '' }: StepIndicatorProps) {
+export function StepIndicator({ steps, current }: StepIndicatorProps) {
   return (
-    <div className={`d-flex align-items-center justify-content-between ${className}`}>
-      {steps.map((step, index) => (
-        <React.Fragment key={index}>
-          <div className="d-flex flex-column align-items-center">
-            <div
-              className={`rounded-circle d-flex align-items-center justify-content-center ${
-                index < currentStep
-                  ? 'bg-success text-white'
-                  : index === currentStep
-                  ? 'bg-primary text-white'
-                  : 'bg-light text-muted'
-              }`}
-              style={{ width: '32px', height: '32px' }}
-            >
-              {index < currentStep ? (
-                <i className="ti ti-check"></i>
-              ) : (
-                <span>{index + 1}</span>
-              )}
-            </div>
-            <span className={`small mt-1 ${index <= currentStep ? 'text-dark' : 'text-muted'}`}>
-              {step.label}
-            </span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+      {steps.map((step, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            width: 28,
+            height: 28,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 12,
+            fontWeight: 600,
+            background: i <= current ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
+            color: i <= current ? '#fff' : 'var(--text-tertiary)',
+            transition: 'all 0.2s',
+          }}>
+            {i < current ? <i className="ti ti-check" style={{ fontSize: 14 }} /> : i + 1}
           </div>
-          {index < steps.length - 1 && (
-            <div
-              className={`flex-grow-1 mx-2 ${index < currentStep ? 'bg-success' : 'bg-light'}`}
-              style={{ height: '2px' }}
-            />
+          <span style={{
+            fontSize: 13,
+            fontWeight: i === current ? 500 : 400,
+            color: i <= current ? 'var(--text-primary)' : 'var(--text-tertiary)',
+          }}>
+            {step}
+          </span>
+          {i < steps.length - 1 && (
+            <div style={{
+              width: 24,
+              height: 1,
+              background: i < current ? 'var(--accent-primary)' : 'var(--border-default)',
+            }} />
           )}
-        </React.Fragment>
+        </div>
       ))}
     </div>
   );
 }
 
-// ============================================
-// ANIMATED COUNTER
-// ============================================
-
-interface AnimatedCounterProps {
-  value: number;
-  duration?: number;
-  prefix?: string;
-  suffix?: string;
-  className?: string;
+/* ─── Animated Counter ─── */
+export function AnimatedCounter({ value }: { value: number }) {
+  return <span>{value.toLocaleString()}</span>;
 }
 
-export function AnimatedCounter({
-  value,
-  duration = 1000,
-  prefix = '',
-  suffix = '',
-  className = '',
-}: AnimatedCounterProps) {
-  const [displayValue, setDisplayValue] = React.useState(0);
-
-  React.useEffect(() => {
-    let start = 0;
-    const end = value;
-    const startTime = Date.now();
-
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      // Easing function (ease-out)
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const current = Math.floor(start + (end - start) * eased);
-      
-      setDisplayValue(current);
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
-
-    requestAnimationFrame(animate);
-  }, [value, duration]);
-
-  return (
-    <span className={className}>
-      {prefix}
-      {displayValue.toLocaleString()}
-      {suffix}
-    </span>
-  );
-}
-
-// ============================================
-// COPY BUTTON
-// ============================================
-
-interface CopyButtonProps {
-  text: string;
-  className?: string;
-  size?: 'sm' | 'md';
-}
-
-export function CopyButton({ text, className = '', size = 'md' }: CopyButtonProps) {
-  const [copied, setCopied] = React.useState(false);
-
+/* ─── Copy Button ─── */
+export function CopyButton({ text, children }: { text: string; children?: ReactNode }) {
   const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
+    await navigator.clipboard.writeText(text);
   };
 
   return (
     <button
-      type="button"
-      className={`btn btn-outline-secondary ${size === 'sm' ? 'btn-sm' : ''} ${className}`}
+      className="btn-apple ghost small"
       onClick={handleCopy}
-      title={copied ? 'Copied!' : 'Copy to clipboard'}
+      title="Copy to clipboard"
     >
-      <i className={`ti ${copied ? 'ti-check' : 'ti-copy'}`}></i>
-      {size !== 'sm' && <span className="ms-1">{copied ? 'Copied!' : 'Copy'}</span>}
+      {children || <i className="ti ti-copy" style={{ fontSize: 14 }} />}
     </button>
   );
 }
-
-// ============================================
-// EXPORT ALL
-// ============================================
-
-export {
-  LoadingOverlay,
-  ActionResult,
-  StatsSkeleton,
-  TableSkeleton,
-  FormSkeleton,
-  InlineError,
-  FieldStatus,
-  StepIndicator,
-  AnimatedCounter,
-  CopyButton,
-};

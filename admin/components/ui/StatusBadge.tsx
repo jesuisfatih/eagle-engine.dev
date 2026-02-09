@@ -1,99 +1,47 @@
+'use client';
+
 interface StatusBadgeProps {
   status: string;
-  variant?: 'default' | 'dot';
-  size?: 'sm' | 'md';
+  colorMap?: Record<string, string>;
+  className?: string;
 }
 
-/**
- * Status color mapping
- */
-const statusColors: Record<string, string> = {
-  // Company statuses
-  active: 'success',
-  approved: 'success',
-  pending: 'warning',
-  rejected: 'danger',
-  suspended: 'secondary',
-  
-  // Order statuses
-  paid: 'success',
-  refunded: 'info',
-  partially_refunded: 'info',
-  authorized: 'warning',
-  pending_payment: 'warning',
-  voided: 'secondary',
-  
-  // Fulfillment statuses
-  fulfilled: 'success',
-  unfulfilled: 'warning',
-  partial: 'info',
-  
-  // Quote statuses
-  accepted: 'success',
-  declined: 'danger',
-  expired: 'secondary',
-  
-  // Generic
-  true: 'success',
-  false: 'danger',
-  yes: 'success',
-  no: 'danger',
-  enabled: 'success',
-  disabled: 'secondary',
-  
-  // Default
-  default: 'secondary',
+const DEFAULT_MAP: Record<string, { label: string; variant: string }> = {
+  active: { label: 'Active', variant: 'success' },
+  inactive: { label: 'Inactive', variant: 'secondary' },
+  pending: { label: 'Pending', variant: 'warning' },
+  approved: { label: 'Approved', variant: 'success' },
+  rejected: { label: 'Rejected', variant: 'danger' },
+  completed: { label: 'Completed', variant: 'success' },
+  cancelled: { label: 'Cancelled', variant: 'danger' },
+  processing: { label: 'Processing', variant: 'info' },
+  shipped: { label: 'Shipped', variant: 'info' },
+  delivered: { label: 'Delivered', variant: 'success' },
+  paid: { label: 'Paid', variant: 'success' },
+  unpaid: { label: 'Unpaid', variant: 'warning' },
+  refunded: { label: 'Refunded', variant: 'danger' },
+  draft: { label: 'Draft', variant: 'secondary' },
+  open: { label: 'Open', variant: 'info' },
+  closed: { label: 'Closed', variant: 'secondary' },
+  ACTIVE: { label: 'Active', variant: 'success' },
+  INACTIVE: { label: 'Inactive', variant: 'secondary' },
+  PENDING: { label: 'Pending', variant: 'warning' },
+  APPROVED: { label: 'Approved', variant: 'success' },
 };
 
-/**
- * Get status label (clean up for display)
- */
-function getStatusLabel(status: string): string {
-  return status
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, l => l.toUpperCase());
-}
+export default function StatusBadge({ status, colorMap, className = '' }: StatusBadgeProps) {
+  let variant = 'secondary';
+  let label = status;
 
-/**
- * Get color for status
- */
-function getStatusColor(status: string): string {
-  const normalizedStatus = status.toLowerCase().replace(/\s/g, '_');
-  return statusColors[normalizedStatus] || statusColors.default;
-}
-
-/**
- * Reusable Status Badge Component
- * Consistent status display across admin panel
- */
-export default function StatusBadge({ 
-  status, 
-  variant = 'default',
-  size = 'md' 
-}: StatusBadgeProps) {
-  const color = getStatusColor(status);
-  const label = getStatusLabel(status);
-  const sizeClass = size === 'sm' ? 'small' : '';
-
-  if (variant === 'dot') {
-    return (
-      <span className={`d-inline-flex align-items-center gap-2 ${sizeClass}`}>
-        <span 
-          className={`badge badge-dot bg-${color}`}
-          style={{ 
-            width: size === 'sm' ? '6px' : '8px', 
-            height: size === 'sm' ? '6px' : '8px', 
-            borderRadius: '50%',
-            display: 'inline-block',
-          }}
-        ></span>
-        <span>{label}</span>
-      </span>
-    );
+  if (colorMap && colorMap[status]) {
+    variant = colorMap[status];
+  } else if (DEFAULT_MAP[status]) {
+    variant = DEFAULT_MAP[status].variant;
+    label = DEFAULT_MAP[status].label;
   }
 
   return (
-    <span className={`badge bg-label-${color} ${sizeClass}`}>
+    <span className={`badge-apple ${variant} ${className}`}>
       {label}
     </span>
   );

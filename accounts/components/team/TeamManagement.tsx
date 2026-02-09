@@ -64,26 +64,26 @@ export function TeamMembersList({
   return (
     <div className="team-members-list">
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h5 className="mb-1">Team Members</h5>
-          <p className="text-muted mb-0">
+          <h5 style={{ marginBottom: 4 }}>Team Members</h5>
+          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
             {members.length} member{members.length !== 1 ? 's' : ''} • 
             {members.filter(m => m.status === 'active').length} active
           </p>
         </div>
-        <button className="btn btn-primary" onClick={onInvite}>
-          <i className="ti ti-user-plus me-1"></i>
+        <button className="btn-apple btn-apple-primary" onClick={onInvite}>
+          <i className="ti ti-user-plus" style={{ marginRight: 4 }}></i>
           Invite Member
         </button>
       </div>
 
       {/* Filters */}
-      <div className="d-flex gap-2 mb-4">
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         {(['all', 'active', 'pending'] as const).map(f => (
           <button
             key={f}
-            className={`btn btn-sm ${filter === f ? 'btn-primary' : 'btn-outline-secondary'}`}
+            className={filter === f ? 'btn-apple btn-apple-primary' : 'btn-apple btn-apple-secondary'}
             onClick={() => setFilter(f)}
           >
             {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -93,19 +93,19 @@ export function TeamMembersList({
 
       {/* Members Table */}
       {isLoading ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary"></div>
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <div className="spinner-apple"></div>
         </div>
       ) : filteredMembers.length === 0 ? (
-        <div className="text-center py-5">
-          <i className="ti ti-users-group ti-3x text-muted mb-3"></i>
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <i className="ti ti-users-group ti-3x" style={{ color: 'var(--text-secondary)', marginBottom: 12, display: 'block' }}></i>
           <h5>No team members</h5>
-          <p className="text-muted">Invite team members to get started</p>
+          <p style={{ color: 'var(--text-secondary)' }}>Invite team members to get started</p>
         </div>
       ) : (
         <div className="card">
-          <div className="table-responsive">
-            <table className="table table-hover mb-0">
+          <div className="table-container">
+            <table className="apple-table">
               <thead>
                 <tr>
                   <th>Member</th>
@@ -113,7 +113,7 @@ export function TeamMembersList({
                   <th>Spending Limit</th>
                   <th>Status</th>
                   <th>Last Active</th>
-                  <th className="text-end">Actions</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -127,86 +127,97 @@ export function TeamMembersList({
                   return (
                     <tr key={member.id}>
                       <td>
-                        <div className="d-flex align-items-center">
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
                           <div 
-                            className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
-                            style={{ width: 40, height: 40 }}
+                            style={{ 
+                              width: 40, height: 40, borderRadius: '50%',
+                              background: 'var(--accent)', color: '#fff',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              marginRight: 12, fontWeight: 600, fontSize: 14
+                            }}
                           >
                             {(member.firstName?.[0] || member.email[0]).toUpperCase()}
                           </div>
                           <div>
-                            <div className="fw-semibold">
+                            <div style={{ fontWeight: 600 }}>
                               {member.firstName && member.lastName 
                                 ? `${member.firstName} ${member.lastName}`
                                 : member.email
                               }
                               {isCurrentUser && (
-                                <span className="badge bg-info ms-2 small">You</span>
+                                <span className="badge" style={{ background: 'var(--accent)', color: '#fff', marginLeft: 8, fontSize: 11 }}>You</span>
                               )}
                             </div>
-                            <div className="small text-muted">{member.email}</div>
+                            <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{member.email}</div>
                           </div>
                         </div>
                       </td>
                       <td>
-                        <span className={`badge ${role.class}`}>
-                          <i className={`ti ti-${role.icon} me-1`}></i>
+                        <span className="badge" style={role.style}>
+                          <i className={`ti ti-${role.icon}`} style={{ marginRight: 4 }}></i>
                           {role.label}
                         </span>
                       </td>
                       <td>
                         {member.spendingLimit ? (
                           <div>
-                            <div className="small text-muted">
+                            <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
                               {formatCurrency(member.monthlySpent || 0)} / {formatCurrency(member.spendingLimit)}
                             </div>
-                            <div className="progress" style={{ height: 4 }}>
+                            <div style={{ height: 4, borderRadius: 2, background: 'var(--bg-secondary)', overflow: 'hidden' }}>
                               <div 
-                                className={`progress-bar ${spendingPercent > 80 ? 'bg-danger' : spendingPercent > 50 ? 'bg-warning' : 'bg-success'}`}
-                                style={{ width: `${Math.min(spendingPercent, 100)}%` }}
+                                style={{ 
+                                  height: '100%', borderRadius: 2,
+                                  width: `${Math.min(spendingPercent, 100)}%`,
+                                  background: spendingPercent > 80 ? 'var(--red)' : spendingPercent > 50 ? 'var(--orange)' : 'var(--green)',
+                                }}
                               ></div>
                             </div>
                           </div>
                         ) : (
-                          <span className="text-muted">Unlimited</span>
+                          <span style={{ color: 'var(--text-secondary)' }}>Unlimited</span>
                         )}
                       </td>
                       <td>
-                        <span className={`badge ${
-                          member.status === 'active' ? 'bg-success' :
-                          member.status === 'pending' ? 'bg-warning' : 'bg-secondary'
-                        }`}>
+                        <span className="badge" style={{
+                          background: member.status === 'active' ? 'var(--green)' :
+                            member.status === 'pending' ? 'var(--orange)' : 'var(--text-tertiary)',
+                          color: '#fff'
+                        }}>
                           {member.status}
                         </span>
                       </td>
-                      <td className="text-muted small">
+                      <td style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
                         {member.lastActiveAt 
                           ? formatRelativeTime(member.lastActiveAt)
                           : 'Never'
                         }
                       </td>
-                      <td className="text-end">
+                      <td style={{ textAlign: 'right' }}>
                         {member.status === 'pending' && onResendInvite && (
                           <button
-                            className="btn btn-sm btn-text-primary me-1"
+                            className="btn-apple btn-apple-secondary"
                             onClick={() => onResendInvite(member.id)}
                             title="Resend invite"
+                            style={{ padding: '4px 8px', marginRight: 4 }}
                           >
                             <i className="ti ti-send"></i>
                           </button>
                         )}
                         <button
-                          className="btn btn-sm btn-text-primary me-1"
+                          className="btn-apple btn-apple-secondary"
                           onClick={() => onEdit(member)}
                           title="Edit"
+                          style={{ padding: '4px 8px', marginRight: 4 }}
                         >
                           <i className="ti ti-edit"></i>
                         </button>
                         {!isCurrentUser && (
                           <button
-                            className="btn btn-sm btn-text-danger"
+                            className="btn-apple btn-apple-secondary"
                             onClick={() => onRemove(member.id)}
                             title="Remove"
+                            style={{ padding: '4px 8px', color: 'var(--red)' }}
                           >
                             <i className="ti ti-trash"></i>
                           </button>
@@ -277,42 +288,42 @@ export function InviteMemberForm({ onSubmit, onCancel, isSubmitting = false }: I
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="row g-3">
-        <div className="col-md-6">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div>
           <label className="form-label">First Name</label>
           <input
             type="text"
-            className="form-control"
+            className="form-input"
             value={formData.firstName}
             onChange={e => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
             placeholder="John"
           />
         </div>
-        <div className="col-md-6">
+        <div>
           <label className="form-label">Last Name</label>
           <input
             type="text"
-            className="form-control"
+            className="form-input"
             value={formData.lastName}
             onChange={e => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
             placeholder="Doe"
           />
         </div>
-        <div className="col-12">
-          <label className="form-label">Email Address <span className="text-danger">*</span></label>
+        <div style={{ gridColumn: '1 / -1' }}>
+          <label className="form-label">Email Address <span style={{ color: 'var(--red)' }}>*</span></label>
           <input
             type="email"
-            className="form-control"
+            className="form-input"
             value={formData.email}
             onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
             placeholder="john@company.com"
             required
           />
         </div>
-        <div className="col-md-6">
-          <label className="form-label">Role <span className="text-danger">*</span></label>
+        <div>
+          <label className="form-label">Role <span style={{ color: 'var(--red)' }}>*</span></label>
           <select
-            className="form-select"
+            className="form-input"
             value={formData.role}
             onChange={e => setFormData(prev => ({ ...prev, role: e.target.value as TeamRole }))}
           >
@@ -323,13 +334,19 @@ export function InviteMemberForm({ onSubmit, onCancel, isSubmitting = false }: I
             ))}
           </select>
         </div>
-        <div className="col-md-6">
+        <div>
           <label className="form-label">Monthly Spending Limit</label>
-          <div className="input-group">
-            <span className="input-group-text">$</span>
+          <div style={{ display: 'flex', alignItems: 'stretch' }}>
+            <span style={{ 
+              padding: '8px 12px', background: 'var(--bg-secondary)', 
+              border: '1px solid var(--border)', borderRight: 'none',
+              borderRadius: '8px 0 0 8px', color: 'var(--text-secondary)',
+              display: 'flex', alignItems: 'center'
+            }}>$</span>
             <input
               type="number"
-              className="form-control"
+              className="form-input"
+              style={{ borderRadius: '0 8px 8px 0' }}
               value={formData.spendingLimit || ''}
               onChange={e => setFormData(prev => ({ 
                 ...prev, 
@@ -340,29 +357,29 @@ export function InviteMemberForm({ onSubmit, onCancel, isSubmitting = false }: I
               step="100"
             />
           </div>
-          <small className="text-muted">Leave empty for unlimited</small>
+          <small style={{ color: 'var(--text-secondary)' }}>Leave empty for unlimited</small>
         </div>
 
         {/* Advanced Permissions */}
-        <div className="col-12">
+        <div style={{ gridColumn: '1 / -1' }}>
           <button
             type="button"
-            className="btn btn-link p-0"
+            style={{ background: 'none', border: 'none', color: 'var(--accent)', padding: 0, cursor: 'pointer', fontSize: 14 }}
             onClick={() => setShowAdvanced(!showAdvanced)}
           >
-            <i className={`ti ti-chevron-${showAdvanced ? 'up' : 'down'} me-1`}></i>
+            <i className={`ti ti-chevron-${showAdvanced ? 'up' : 'down'}`} style={{ marginRight: 4 }}></i>
             {showAdvanced ? 'Hide' : 'Show'} Advanced Permissions
           </button>
         </div>
 
         {showAdvanced && (
-          <div className="col-12">
-            <div className="card bg-light">
+          <div style={{ gridColumn: '1 / -1' }}>
+            <div className="card" style={{ background: 'var(--bg-secondary)' }}>
               <div className="card-body">
-                <h6 className="mb-3">Custom Permissions</h6>
-                <div className="row g-3">
+                <h6 style={{ marginBottom: 12 }}>Custom Permissions</h6>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   {Object.entries(permissions).map(([key, value]) => (
-                    <div key={key} className="col-md-6">
+                    <div key={key}>
                       <div className="form-check form-switch">
                         <input
                           type="checkbox"
@@ -384,23 +401,23 @@ export function InviteMemberForm({ onSubmit, onCancel, isSubmitting = false }: I
         )}
       </div>
 
-      <div className="d-flex justify-content-end gap-2 mt-4">
-        <button type="button" className="btn btn-secondary" onClick={onCancel}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 24 }}>
+        <button type="button" className="btn-apple btn-apple-secondary" onClick={onCancel}>
           Cancel
         </button>
         <button 
           type="submit" 
-          className="btn btn-primary"
+          className="btn-apple btn-apple-primary"
           disabled={isSubmitting || !formData.email}
         >
           {isSubmitting ? (
             <>
-              <span className="spinner-border spinner-border-sm me-2"></span>
+              <span className="spinner-apple" style={{ width: 16, height: 16, marginRight: 8 }}></span>
               Sending Invite...
             </>
           ) : (
             <>
-              <i className="ti ti-send me-1"></i>
+              <i className="ti ti-send" style={{ marginRight: 4 }}></i>
               Send Invitation
             </>
           )}
@@ -418,11 +435,11 @@ interface RoleBadgeProps {
 
 export function RoleBadge({ role, size = 'md' }: RoleBadgeProps) {
   const config = getRoleConfig(role);
-  const sizeClass = size === 'sm' ? 'small' : size === 'lg' ? 'fs-6' : '';
+  const fontSize = size === 'sm' ? 11 : size === 'lg' ? 16 : 13;
   
   return (
-    <span className={`badge ${config.class} ${sizeClass}`}>
-      <i className={`ti ti-${config.icon} me-1`}></i>
+    <span className="badge" style={{ ...config.style, fontSize }}>
+      <i className={`ti ti-${config.icon}`} style={{ marginRight: 4 }}></i>
       {config.label}
     </span>
   );
@@ -444,26 +461,29 @@ export function SpendingLimitProgress({ spent, limit, showAmount = true, classNa
   return (
     <div className={className}>
       {showAmount && (
-        <div className="d-flex justify-content-between small mb-1">
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
           <span>{formatCurrency(spent)} spent</span>
-          <span className="text-muted">{formatCurrency(limit)} limit</span>
+          <span style={{ color: 'var(--text-secondary)' }}>{formatCurrency(limit)} limit</span>
         </div>
       )}
-      <div className="progress" style={{ height: 8 }}>
+      <div style={{ height: 8, borderRadius: 4, background: 'var(--bg-secondary)', overflow: 'hidden' }}>
         <div 
-          className={`progress-bar ${isOverLimit ? 'bg-danger' : isNearLimit ? 'bg-warning' : 'bg-success'}`}
-          style={{ width: `${Math.min(percentage, 100)}%` }}
+          style={{ 
+            height: '100%', borderRadius: 4,
+            width: `${Math.min(percentage, 100)}%`,
+            background: isOverLimit ? 'var(--red)' : isNearLimit ? 'var(--orange)' : 'var(--green)',
+          }}
         ></div>
       </div>
       {isNearLimit && !isOverLimit && (
-        <small className="text-warning">
-          <i className="ti ti-alert-triangle me-1"></i>
+        <small style={{ color: 'var(--orange)' }}>
+          <i className="ti ti-alert-triangle" style={{ marginRight: 4 }}></i>
           {(100 - percentage).toFixed(0)}% remaining
         </small>
       )}
       {isOverLimit && (
-        <small className="text-danger">
-          <i className="ti ti-alert-circle me-1"></i>
+        <small style={{ color: 'var(--red)' }}>
+          <i className="ti ti-alert-circle" style={{ marginRight: 4 }}></i>
           Limit exceeded by {formatCurrency(spent - limit)}
         </small>
       )}
@@ -492,29 +512,29 @@ export function TeamActivityFeed({ activities, maxItems = 10 }: TeamActivityFeed
   return (
     <div className="card">
       <div className="card-header">
-        <h6 className="mb-0">
-          <i className="ti ti-activity me-2"></i>
+        <h6 style={{ margin: 0 }}>
+          <i className="ti ti-activity" style={{ marginRight: 8 }}></i>
           Team Activity
         </h6>
       </div>
-      <div className="card-body p-0">
+      <div className="card-body" style={{ padding: 0 }}>
         {displayActivities.length === 0 ? (
-          <div className="text-center py-4 text-muted">
-            <p className="mb-0">No recent activity</p>
+          <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)' }}>
+            <p style={{ margin: 0 }}>No recent activity</p>
           </div>
         ) : (
-          <div className="list-group list-group-flush">
+          <div>
             {displayActivities.map(activity => (
-              <div key={activity.id} className="list-group-item">
-                <div className="d-flex justify-content-between">
+              <div key={activity.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <div>
                     <strong>{activity.userName}</strong>{' '}
-                    <span className="text-muted">{activity.action}</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>{activity.action}</span>
                     {activity.details && (
-                      <span className="text-muted"> - {activity.details}</span>
+                      <span style={{ color: 'var(--text-secondary)' }}> - {activity.details}</span>
                     )}
                   </div>
-                  <small className="text-muted">{formatRelativeTime(activity.timestamp)}</small>
+                  <small style={{ color: 'var(--text-secondary)' }}>{formatRelativeTime(activity.timestamp)}</small>
                 </div>
               </div>
             ))}
@@ -527,12 +547,12 @@ export function TeamActivityFeed({ activities, maxItems = 10 }: TeamActivityFeed
 
 // Helper functions
 function getRoleConfig(role: TeamRole) {
-  const configs: Record<TeamRole, { label: string; class: string; icon: string }> = {
-    owner: { label: 'Owner', class: 'bg-dark', icon: 'crown' },
-    admin: { label: 'Admin', class: 'bg-danger', icon: 'shield' },
-    manager: { label: 'Manager', class: 'bg-warning', icon: 'users' },
-    buyer: { label: 'Buyer', class: 'bg-primary', icon: 'shopping-cart' },
-    viewer: { label: 'Viewer', class: 'bg-secondary', icon: 'eye' },
+  const configs: Record<TeamRole, { label: string; style: { background: string; color: string }; icon: string }> = {
+    owner: { label: 'Owner', style: { background: 'var(--text-primary)', color: '#fff' }, icon: 'crown' },
+    admin: { label: 'Admin', style: { background: 'var(--red)', color: '#fff' }, icon: 'shield' },
+    manager: { label: 'Manager', style: { background: 'var(--orange)', color: '#fff' }, icon: 'users' },
+    buyer: { label: 'Buyer', style: { background: 'var(--accent)', color: '#fff' }, icon: 'shopping-cart' },
+    viewer: { label: 'Viewer', style: { background: 'var(--text-tertiary)', color: '#fff' }, icon: 'eye' },
   };
   return configs[role];
 }

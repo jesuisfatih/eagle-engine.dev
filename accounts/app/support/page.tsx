@@ -149,80 +149,75 @@ export default function SupportPage() {
   return (
     <div>
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h4 className="fw-bold mb-1">Help & Support</h4>
-          <p className="mb-0 text-muted">Get help with your orders, quotes, or account</p>
+          <h4 style={{ fontWeight: 600, marginBottom: 4 }}>Help & Support</h4>
+          <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Get help with your orders, quotes, or account</p>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="row g-3 mb-4">
-        <div className="col-md-4">
-          <div className="card bg-primary text-white">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="mb-0 opacity-75">Open Tickets</p>
-                  <h3 className="mb-0">{stats.open}</h3>
-                </div>
-                <i className="ti ti-ticket fs-1 opacity-50"></i>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
+        <div className="card" style={{ background: 'var(--accent)', color: '#fff' }}>
+          <div className="card-body" style={{ padding: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ margin: 0, opacity: 0.75 }}>Open Tickets</p>
+                <h3 style={{ margin: 0 }}>{stats.open}</h3>
               </div>
+              <i className="ti ti-ticket" style={{ fontSize: '2rem', opacity: 0.5 }}></i>
             </div>
           </div>
         </div>
-        <div className="col-md-4">
-          <div className="card">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="mb-0 text-muted">In Progress</p>
-                  <h3 className="mb-0 text-warning">{stats.inProgress}</h3>
-                </div>
-                <i className="ti ti-loader fs-1 text-warning opacity-50"></i>
+        <div className="card">
+          <div className="card-body" style={{ padding: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ margin: 0, color: 'var(--text-secondary)' }}>In Progress</p>
+                <h3 style={{ margin: 0, color: 'var(--orange)' }}>{stats.inProgress}</h3>
               </div>
+              <i className="ti ti-loader" style={{ fontSize: '2rem', color: 'var(--orange)', opacity: 0.5 }}></i>
             </div>
           </div>
         </div>
-        <div className="col-md-4">
-          <div className="card">
-            <div className="card-body py-3">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <p className="mb-0 text-muted">Resolved</p>
-                  <h3 className="mb-0 text-success">{stats.resolved}</h3>
-                </div>
-                <i className="ti ti-check fs-1 text-success opacity-50"></i>
+        <div className="card">
+          <div className="card-body" style={{ padding: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ margin: 0, color: 'var(--text-secondary)' }}>Resolved</p>
+                <h3 style={{ margin: 0, color: 'var(--green)' }}>{stats.resolved}</h3>
               </div>
+              <i className="ti ti-check" style={{ fontSize: '2rem', color: 'var(--green)', opacity: 0.5 }}></i>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="row g-4">
+      <div style={{ display: 'grid', gridTemplateColumns: '5fr 7fr', gap: 24 }}>
         {/* New Ticket Form */}
-        <div className="col-lg-5">
-          <div className="card sticky-top" style={{ top: 80 }}>
+        <div>
+          <div className="card" style={{ position: 'sticky', top: 80 }}>
             <div className="card-header">
-              <h5 className="card-title mb-0">
-                <i className="ti ti-plus me-2"></i>New Support Request
+              <h5 className="card-title" style={{ margin: 0 }}>
+                <i className="ti ti-plus" style={{ marginRight: 8 }}></i>New Support Request
               </h5>
             </div>
             <div className="card-body">
               <form onSubmit={handleSubmit}>
                 {/* Category Selection */}
-                <div className="mb-3">
+                <div className="form-group" style={{ marginBottom: 16 }}>
                   <label className="form-label">Category</label>
-                  <div className="row g-2">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                     {categories.map(cat => (
-                      <div key={cat.key} className="col-6">
+                      <div key={cat.key}>
                         <div 
-                          className={`card cursor-pointer ${formData.category === cat.key ? 'border-primary bg-primary-subtle' : ''}`}
+                          className="card"
+                          style={{ cursor: 'pointer', borderColor: formData.category === cat.key ? 'var(--accent)' : undefined, background: formData.category === cat.key ? 'var(--bg-secondary)' : undefined }}
                           onClick={() => setFormData(prev => ({...prev, category: cat.key}))}
                         >
-                          <div className="card-body py-2 px-3 text-center">
-                            <i className={`ti ti-${cat.icon} ${formData.category === cat.key ? 'text-primary' : 'text-muted'}`}></i>
-                            <small className={`d-block ${formData.category === cat.key ? 'text-primary fw-semibold' : ''}`}>
+                          <div className="card-body" style={{ padding: '8px 12px', textAlign: 'center' }}>
+                            <i className={`ti ti-${cat.icon}`} style={{ color: formData.category === cat.key ? 'var(--accent)' : 'var(--text-secondary)' }}></i>
+                            <small style={{ display: 'block', color: formData.category === cat.key ? 'var(--accent)' : undefined, fontWeight: formData.category === cat.key ? 600 : undefined }}>
                               {cat.label}
                             </small>
                           </div>
@@ -232,11 +227,11 @@ export default function SupportPage() {
                   </div>
                 </div>
 
-                <div className="mb-3">
+                <div className="form-group" style={{ marginBottom: 16 }}>
                   <label className="form-label">Subject *</label>
                   <input 
                     type="text" 
-                    className="form-control" 
+                    className="form-input" 
                     value={formData.subject}
                     onChange={(e) => setFormData(prev => ({...prev, subject: e.target.value}))}
                     placeholder="Brief description of your issue"
@@ -244,10 +239,10 @@ export default function SupportPage() {
                   />
                 </div>
 
-                <div className="mb-3">
+                <div className="form-group" style={{ marginBottom: 16 }}>
                   <label className="form-label">Priority</label>
                   <select 
-                    className="form-select"
+                    className="form-input"
                     value={formData.priority}
                     onChange={(e) => setFormData(prev => ({...prev, priority: e.target.value as any}))}
                   >
@@ -258,10 +253,10 @@ export default function SupportPage() {
                   </select>
                 </div>
 
-                <div className="mb-3">
+                <div className="form-group" style={{ marginBottom: 16 }}>
                   <label className="form-label">Message *</label>
                   <textarea 
-                    className="form-control" 
+                    className="form-input" 
                     rows={4} 
                     value={formData.message}
                     onChange={(e) => setFormData(prev => ({...prev, message: e.target.value}))}
@@ -272,17 +267,18 @@ export default function SupportPage() {
 
                 <button 
                   type="submit" 
-                  className="btn btn-primary w-100"
+                  className="btn-apple btn-apple-primary"
+                  style={{ width: '100%' }}
                   disabled={submitting || !formData.subject || !formData.message}
                 >
                   {submitting ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2"></span>
+                      <span className="spinner-apple" style={{ width: 16, height: 16, marginRight: 8 }}></span>
                       Submitting...
                     </>
                   ) : (
                     <>
-                      <i className="ti ti-send me-1"></i>
+                      <i className="ti ti-send" style={{ marginRight: 4 }}></i>
                       Submit Request
                     </>
                   )}
@@ -293,31 +289,31 @@ export default function SupportPage() {
         </div>
 
         {/* Tickets List */}
-        <div className="col-lg-7">
+        <div>
           <div className="card">
-            <div className="card-header d-flex justify-content-between align-items-center">
-              <h5 className="card-title mb-0">Your Tickets</h5>
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h5 className="card-title" style={{ margin: 0 }}>Your Tickets</h5>
               <button 
-                className="btn btn-sm btn-outline-secondary"
+                className="btn-apple btn-apple-secondary"
                 onClick={loadTickets}
                 disabled={loading}
               >
-                <i className="ti ti-refresh me-1"></i>Refresh
+                <i className="ti ti-refresh" style={{ marginRight: 4 }}></i>Refresh
               </button>
             </div>
             
             {/* Filters */}
-            <div className="card-body border-bottom py-2">
-              <div className="d-flex flex-wrap gap-2">
+            <div className="card-body" style={{ borderBottom: '1px solid var(--border)', padding: '8px 16px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).map(status => (
                   <button
                     key={status}
-                    className={`btn btn-sm ${filter === status ? 'btn-primary' : 'btn-outline-secondary'}`}
+                    className={filter === status ? 'btn-apple btn-apple-primary' : 'btn-apple btn-apple-secondary'}
                     onClick={() => setFilter(status)}
                   >
                     {status === 'all' ? 'All' : status.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
                     {status !== 'all' && (
-                      <span className="badge bg-white text-dark ms-1">
+                      <span className="badge" style={{ background: '#fff', color: '#1d1d1f', marginLeft: 4 }}>
                         {tickets.filter(t => t.status === status).length}
                       </span>
                     )}
@@ -328,15 +324,15 @@ export default function SupportPage() {
             
             <div className="card-body">
               {loading ? (
-                <div className="text-center py-5">
-                  <div className="spinner-border text-primary"></div>
-                  <p className="mt-3 text-muted">Loading tickets...</p>
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                  <div className="spinner-apple"></div>
+                  <p style={{ marginTop: 16, color: 'var(--text-secondary)' }}>Loading tickets...</p>
                 </div>
               ) : filteredTickets.length === 0 ? (
-                <div className="text-center py-5">
-                  <i className="ti ti-ticket-off ti-3x text-muted mb-3"></i>
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                  <i className="ti ti-ticket-off ti-3x" style={{ color: 'var(--text-secondary)', marginBottom: 16, display: 'block' }}></i>
                   <h5>No tickets found</h5>
-                  <p className="text-muted">
+                  <p style={{ color: 'var(--text-secondary)' }}>
                     {filter === 'all' 
                       ? 'Submit a request using the form' 
                       : 'No tickets with this status'
@@ -352,65 +348,66 @@ export default function SupportPage() {
                     return (
                       <div 
                         key={ticket.id} 
-                        className={`list-group-item list-group-item-action cursor-pointer ${selectedTicket?.id === ticket.id ? 'bg-light' : ''}`}
+                        className="list-group-item list-group-item-action"
+                        style={{ cursor: 'pointer', background: selectedTicket?.id === ticket.id ? 'var(--bg-secondary)' : undefined }}
                         onClick={() => setSelectedTicket(selectedTicket?.id === ticket.id ? null : ticket)}
                       >
-                        <div className="d-flex justify-content-between align-items-start">
-                          <div className="flex-grow-1">
-                            <div className="d-flex align-items-center gap-2 mb-1">
-                              <i className={`ti ti-${getCategoryIcon(ticket.category)} text-muted`}></i>
-                              <h6 className="mb-0">{ticket.subject}</h6>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                              <i className={`ti ti-${getCategoryIcon(ticket.category)}`} style={{ color: 'var(--text-secondary)' }}></i>
+                              <h6 style={{ margin: 0 }}>{ticket.subject}</h6>
                             </div>
-                            <p className="text-muted small mb-2 text-truncate" style={{ maxWidth: '300px' }}>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 300 }}>
                               {ticket.message}
                             </p>
-                            <div className="d-flex flex-wrap gap-2 align-items-center">
-                              <span className={`badge ${statusConfig.class}`}>
-                                <i className={`ti ti-${statusConfig.icon} me-1`}></i>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                              <span className="badge" style={{ background: statusConfig.class === 'bg-primary' ? 'var(--accent)' : statusConfig.class === 'bg-warning' ? 'var(--orange)' : statusConfig.class === 'bg-success' ? 'var(--green)' : 'var(--text-tertiary)', color: '#fff' }}>
+                                <i className={`ti ti-${statusConfig.icon}`} style={{ marginRight: 4 }}></i>
                                 {statusConfig.label}
                               </span>
-                              <span className={`badge ${priorityConfig.class}`}>
-                                <i className={`ti ti-${priorityConfig.icon} me-1`}></i>
+                              <span className="badge" style={{ background: ticket.priority === 'urgent' ? 'var(--red)' : ticket.priority === 'high' ? 'var(--orange)' : ticket.priority === 'medium' ? 'var(--accent)' : 'var(--text-tertiary)', color: '#fff' }}>
+                                <i className={`ti ti-${priorityConfig.icon}`} style={{ marginRight: 4 }}></i>
                                 {ticket.priority}
                               </span>
-                              <small className="text-muted">
+                              <small style={{ color: 'var(--text-secondary)' }}>
                                 {formatRelativeTime(ticket.createdAt)}
                               </small>
                             </div>
                           </div>
-                          <i className={`ti ti-chevron-${selectedTicket?.id === ticket.id ? 'up' : 'down'} text-muted`}></i>
+                          <i className={`ti ti-chevron-${selectedTicket?.id === ticket.id ? 'up' : 'down'}`} style={{ color: 'var(--text-secondary)' }}></i>
                         </div>
                         
                         {/* Expanded Detail */}
                         {selectedTicket?.id === ticket.id && (
-                          <div className="mt-3 pt-3 border-top">
-                            <h6 className="small text-muted mb-2">Full Message:</h6>
-                            <p className="mb-3">{ticket.message}</p>
+                          <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+                            <h6 style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: 8 }}>Full Message:</h6>
+                            <p style={{ marginBottom: 16 }}>{ticket.message}</p>
                             
                             {ticket.replies && ticket.replies.length > 0 && (
                               <>
-                                <h6 className="small text-muted mb-2">Replies:</h6>
-                                <div className="d-flex flex-column gap-2">
+                                <h6 style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: 8 }}>Replies:</h6>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                   {ticket.replies.map(reply => (
                                     <div 
                                       key={reply.id} 
-                                      className={`p-2 rounded ${reply.isStaff ? 'bg-primary-subtle' : 'bg-light'}`}
+                                      style={{ padding: 8, borderRadius: 8, background: reply.isStaff ? 'var(--bg-secondary)' : 'var(--bg-secondary)' }}
                                     >
-                                      <div className="d-flex justify-content-between mb-1">
-                                        <small className="fw-semibold">
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                        <small style={{ fontWeight: 600 }}>
                                           {reply.isStaff ? '🛡️ Support Team' : reply.authorName || 'You'}
                                         </small>
-                                        <small className="text-muted">{formatRelativeTime(reply.createdAt)}</small>
+                                        <small style={{ color: 'var(--text-secondary)' }}>{formatRelativeTime(reply.createdAt)}</small>
                                       </div>
-                                      <p className="mb-0 small">{reply.message}</p>
+                                      <p style={{ margin: 0, fontSize: '0.875rem' }}>{reply.message}</p>
                                     </div>
                                   ))}
                                 </div>
                               </>
                             )}
                             
-                            <div className="mt-3 text-end">
-                              <small className="text-muted">
+                            <div style={{ marginTop: 16, textAlign: 'right' }}>
+                              <small style={{ color: 'var(--text-secondary)' }}>
                                 Last updated: {formatRelativeTime(ticket.updatedAt)}
                               </small>
                             </div>
@@ -427,45 +424,39 @@ export default function SupportPage() {
       </div>
 
       {/* Contact Info */}
-      <div className="card mt-4">
+      <div className="card" style={{ marginTop: 24 }}>
         <div className="card-body">
-          <h5 className="card-title mb-3">
-            <i className="ti ti-headset me-2"></i>Other Ways to Reach Us
+          <h5 className="card-title" style={{ marginBottom: 16 }}>
+            <i className="ti ti-headset" style={{ marginRight: 8 }}></i>Other Ways to Reach Us
           </h5>
-          <div className="row g-4">
-            <div className="col-md-4">
-              <div className="d-flex align-items-center gap-3">
-                <div className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white" style={{ width: 50, height: 50 }}>
-                  <i className="ti ti-mail fs-5"></i>
-                </div>
-                <div>
-                  <small className="text-muted d-block">Email</small>
-                  <a href="mailto:support@eagledtfsupply.com" className="fw-semibold text-body">
-                    support@eagledtfsupply.com
-                  </a>
-                </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                <i className="ti ti-mail" style={{ fontSize: '1.25rem' }}></i>
+              </div>
+              <div>
+                <small style={{ color: 'var(--text-secondary)', display: 'block' }}>Email</small>
+                <a href="mailto:support@eagledtfsupply.com" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                  support@eagledtfsupply.com
+                </a>
               </div>
             </div>
-            <div className="col-md-4">
-              <div className="d-flex align-items-center gap-3">
-                <div className="rounded-circle bg-success d-flex align-items-center justify-content-center text-white" style={{ width: 50, height: 50 }}>
-                  <i className="ti ti-phone fs-5"></i>
-                </div>
-                <div>
-                  <small className="text-muted d-block">Phone</small>
-                  <a href="tel:+18005550123" className="fw-semibold text-body">(800) 555-0123</a>
-                </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                <i className="ti ti-phone" style={{ fontSize: '1.25rem' }}></i>
+              </div>
+              <div>
+                <small style={{ color: 'var(--text-secondary)', display: 'block' }}>Phone</small>
+                <a href="tel:+18005550123" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>(800) 555-0123</a>
               </div>
             </div>
-            <div className="col-md-4">
-              <div className="d-flex align-items-center gap-3">
-                <div className="rounded-circle bg-info d-flex align-items-center justify-content-center text-white" style={{ width: 50, height: 50 }}>
-                  <i className="ti ti-clock fs-5"></i>
-                </div>
-                <div>
-                  <small className="text-muted d-block">Business Hours</small>
-                  <span className="fw-semibold">Mon-Fri, 9AM-6PM EST</span>
-                </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                <i className="ti ti-clock" style={{ fontSize: '1.25rem' }}></i>
+              </div>
+              <div>
+                <small style={{ color: 'var(--text-secondary)', display: 'block' }}>Business Hours</small>
+                <span style={{ fontWeight: 600 }}>Mon-Fri, 9AM-6PM EST</span>
               </div>
             </div>
           </div>
@@ -473,10 +464,10 @@ export default function SupportPage() {
       </div>
 
       {/* FAQ Section */}
-      <div className="card mt-4">
+      <div className="card" style={{ marginTop: 24 }}>
         <div className="card-header">
-          <h5 className="card-title mb-0">
-            <i className="ti ti-help-circle me-2"></i>Frequently Asked Questions
+          <h5 className="card-title" style={{ margin: 0 }}>
+            <i className="ti ti-help-circle" style={{ marginRight: 8 }}></i>Frequently Asked Questions
           </h5>
         </div>
         <div className="card-body">

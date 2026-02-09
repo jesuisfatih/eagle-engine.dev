@@ -2,89 +2,77 @@
 
 import { useState, useEffect } from 'react';
 import { adminFetch } from '@/lib/api-client';
-import type { Order, CompanyWithCounts, PricingRuleWithCompany } from '@/types';
+import { PageHeader } from '@/components/ui';
 
 interface ActivityItem {
-  type: 'order' | 'company' | 'pricing';
-  message: string;
-  time: string;
+  id: string;
+  type: string;
+  description: string;
+  createdAt: string;
+  user?: string;
 }
 
 export default function ActivityPage() {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadActivity();
+    (async () => {
+      try {
+        const res = await adminFetch('/api/v1/activity?limit=50');
+        if (res.ok) { const d = await res.json(); setActivities(d.activities || d.data || []); }
+      } catch { /* silent */ }
+      finally { setLoading(false); }
+    })();
   }, []);
 
-  const loadActivity = async () => {
-    try {
-      const [ordersData, companiesData, pricingRulesData] = await Promise.all([
-        adminFetch('/api/v1/orders').then(r => r.json()).catch(() => []),
-        adminFetch('/api/v1/companies').then(r => r.json()).catch(() => ({ data: [] })),
-        adminFetch('/api/v1/pricing/rules').then(r => r.json()).catch(() => []),
-      ]);
-      
-      // Handle different response formats
-      const orders = Array.isArray(ordersData) ? ordersData : ordersData.data || [];
-      const companies = Array.isArray(companiesData) ? companiesData : companiesData.data || [];
-      const pricingRules = Array.isArray(pricingRulesData) ? pricingRulesData : pricingRulesData.data || [];
-      
-      const activityList: ActivityItem[] = [];
-      (orders as Order[]).forEach((order) => {
-        activityList.push({
-          type: 'order',
-          message: `Order #${order.orderNumber} created`,
-          time: order.createdAt,
-        });
-      });
-      (companies as CompanyWithCounts[]).forEach((company) => {
-        activityList.push({
-          type: 'company',
-          message: `Company ${company.name} ${company.status}`,
-          time: company.createdAt,
-        });
-      });
-      (pricingRules as PricingRuleWithCompany[]).forEach((rule) => {
-        activityList.push({
-          type: 'pricing',
-          message: `Pricing rule "${rule.name}" created`,
-          time: rule.createdAt,
-        });
-      });
-      
-      activityList.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-      setActivities(activityList.slice(0, 20));
-    } catch (err) {
-      setActivities([]);
-    }
+  const typeIcons: Record<string, { icon: string; color: string }> = {
+    order: { icon: 'ti-shopping-cart', color: '#007aff' },
+    company: { icon: 'ti-building', color: '#34c759' },
+    user: { icon: 'ti-user', color: '#5856d6' },
+    sync: { icon: 'ti-refresh', color: '#ff9500' },
+    pricing: { icon: 'ti-discount', color: '#ff3b30' },
   };
 
   return (
     <div>
-      <h4 className="fw-bold mb-4">Activity Log</h4>
-
-      <div className="card">
-        <div className="card-body">
-          <div className="timeline">
-            {activities.length === 0 ? (
-              <div className="text-center py-4">
-                <p className="text-muted mb-0">No activity yet</p>
-              </div>
-            ) : (
-              activities.map((activity, i) => (
-                <div key={i} className="timeline-item mb-3">
-                  <span className={`timeline-point timeline-point-${activity.type === 'order' ? 'success' : 'primary'}`}></span>
-                  <div className="timeline-event">
-                    <div className="timeline-header mb-1">
-                      <h6 className="mb-0">{activity.message}</h6>
-                      <small className="text-muted">{new Date(activity.time).toLocaleString()}</small>
+      <PageHeader title="Activity Log" subtitle="Recent platform activity" />
+      <div className="apple-card">
+        <div className="apple-card-body">
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: 48 }}>
+              <i className="ti ti-loader-2 spin" style={{ fontSize: 24, color: 'var(--accent-primary)' }} />
+            </div>
+          ) : activities.length === 0 ? (
+            <div className="empty-state" style={{ padding: 48 }}>
+              <div className="empty-state-icon"><i className="ti ti-activity" /></div>
+              <h4 className="empty-state-title">No activity yet</h4>
+              <p className="empty-state-desc">Activity will appear here as users interact with the platform.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {activities.map((a, i) => {
+                const t = typeIcons[a.type] || { icon: 'ti-activity', color: '#8e8e93' };
+                return (
+                  <div key={a.id || i} style={{
+                    display: 'flex', gap: 16, padding: '16px 0',
+                    borderBottom: i < activities.length - 1 ? '1px solid var(--border-light)' : 'none',
+                  }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: `${t.color}14`, color: t.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <i className={`ti ${t.icon}`} style={{ fontSize: 18 }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 500, fontSize: 14 }}>{a.description}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                        {a.user && <span>{a.user} · </span>}
+                        {new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>

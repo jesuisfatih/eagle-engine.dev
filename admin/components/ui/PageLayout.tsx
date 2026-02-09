@@ -1,368 +1,222 @@
 'use client';
 
-import React from 'react';
+import { ReactNode } from 'react';
 import Link from 'next/link';
 
-interface Breadcrumb {
-  label: string;
-  href?: string;
-}
-
+/* ─── Page Header ─── */
 interface PageAction {
   label: string;
   icon?: string;
+  variant?: string;
   onClick?: () => void;
   href?: string;
-  variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning';
   disabled?: boolean;
-  loading?: boolean;
 }
 
 interface PageHeaderProps {
   title: string;
   subtitle?: string;
-  breadcrumbs?: Breadcrumb[];
-  actions?: PageAction[];
-  children?: React.ReactNode;
+  actions?: PageAction[] | ReactNode;
 }
 
-/**
- * PageHeader - Consistent page header with title, breadcrumbs, and actions
- */
-export function PageHeader({ 
-  title, 
-  subtitle, 
-  breadcrumbs, 
-  actions,
-  children 
-}: PageHeaderProps) {
+export function PageHeader({ title, subtitle, actions }: PageHeaderProps) {
   return (
-    <div className="mb-4">
-      {/* Breadcrumbs */}
-      {breadcrumbs && breadcrumbs.length > 0 && (
-        <nav aria-label="breadcrumb" className="mb-2">
-          <ol className="breadcrumb">
-            {breadcrumbs.map((crumb, index) => (
-              <li 
-                key={index} 
-                className={`breadcrumb-item ${!crumb.href ? 'active' : ''}`}
-              >
-                {crumb.href ? (
-                  <Link href={crumb.href}>{crumb.label}</Link>
-                ) : (
-                  crumb.label
-                )}
-              </li>
-            ))}
-          </ol>
-        </nav>
-      )}
-
-      {/* Title and Actions Row */}
-      <div className="d-flex justify-content-between align-items-center">
-        <div>
-          <h4 className="fw-bold mb-1">{title}</h4>
-          {subtitle && (
-            <p className="mb-0 text-muted">{subtitle}</p>
-          )}
-        </div>
-        
-        {/* Actions */}
-        {actions && actions.length > 0 && (
-          <div className="d-flex gap-2">
-            {actions.map((action, index) => {
-              const className = `btn btn-${action.variant || 'primary'} ${action.disabled || action.loading ? 'disabled' : ''}`;
-              
-              if (action.href) {
-                return (
-                  <Link key={index} href={action.href} className={className}>
-                    {action.icon && <i className={`ti ti-${action.icon} me-1`}></i>}
-                    {action.label}
-                  </Link>
-                );
-              }
-              
-              return (
-                <button
-                  key={index}
-                  className={className}
-                  onClick={action.onClick}
-                  disabled={action.disabled || action.loading}
-                >
-                  {action.loading ? (
-                    <span className="spinner-border spinner-border-sm me-1"></span>
-                  ) : action.icon ? (
-                    <i className={`ti ti-${action.icon} me-1`}></i>
-                  ) : null}
-                  {action.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
+    <div className="page-header">
+      <div>
+        <h1 className="page-title">{title}</h1>
+        {subtitle && <p className="page-subtitle">{subtitle}</p>}
       </div>
-
-      {/* Optional filter/search row */}
-      {children}
+      {actions && (
+        <div className="page-header-actions">
+          {Array.isArray(actions) ? actions.map((action, i) => {
+            const cls = `btn-apple ${action.variant || 'secondary'}`;
+            if (action.href) {
+              return (
+                <Link key={i} href={action.href} className={cls} style={{ textDecoration: 'none' }}>
+                  {action.icon && <i className={`ti ti-${action.icon}`} />}
+                  {action.label}
+                </Link>
+              );
+            }
+            return (
+              <button key={i} className={cls} onClick={action.onClick} disabled={action.disabled}>
+                {action.icon && <i className={`ti ti-${action.icon}`} />}
+                {action.label}
+              </button>
+            );
+          }) : actions}
+        </div>
+      )}
     </div>
   );
 }
 
+/* ─── Page Content ─── */
 interface PageContentProps {
-  children: React.ReactNode;
+  children: ReactNode;
+  className?: string;
   loading?: boolean;
-  error?: string | null;
-  empty?: {
-    show: boolean;
-    icon?: string;
-    title: string;
-    message?: string;
-    action?: PageAction;
-  };
+  empty?: { show: boolean; icon?: string; title?: string; message?: string };
 }
 
-/**
- * PageContent - Content wrapper with loading, error, and empty states
- */
-export function PageContent({ children, loading, error, empty }: PageContentProps) {
+export function PageContent({ children, className = '', loading, empty }: PageContentProps) {
   if (loading) {
     return (
-      <div className="card">
-        <div className="card-body">
-          <div className="text-center py-5">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p className="mt-3 text-muted">Loading...</p>
-          </div>
-        </div>
+      <div className={className} style={{ display: 'flex', justifyContent: 'center', padding: 48 }}>
+        <i className="ti ti-loader-2 spin" style={{ fontSize: 28, color: 'var(--accent-primary)' }} />
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className="alert alert-danger" role="alert">
-        <i className="ti ti-alert-circle me-2"></i>
-        {error}
-      </div>
-    );
-  }
-
   if (empty?.show) {
     return (
-      <div className="card">
-        <div className="card-body">
-          <div className="text-center py-5">
-            {empty.icon && (
-              <i className={`ti ti-${empty.icon} ti-3x text-muted mb-3 d-block`}></i>
-            )}
-            <h5>{empty.title}</h5>
-            {empty.message && (
-              <p className="text-muted mb-3">{empty.message}</p>
-            )}
-            {empty.action && (
-              empty.action.href ? (
-                <Link href={empty.action.href} className={`btn btn-${empty.action.variant || 'primary'}`}>
-                  {empty.action.icon && <i className={`ti ti-${empty.action.icon} me-1`}></i>}
-                  {empty.action.label}
-                </Link>
-              ) : (
-                <button 
-                  className={`btn btn-${empty.action.variant || 'primary'}`}
-                  onClick={empty.action.onClick}
-                >
-                  {empty.action.icon && <i className={`ti ti-${empty.action.icon} me-1`}></i>}
-                  {empty.action.label}
-                </button>
-              )
-            )}
-          </div>
+      <div className="empty-state" style={{ padding: 48 }}>
+        <div className="empty-state-icon">
+          <i className={`ti ti-${empty.icon || 'database-off'}`} />
         </div>
+        <h4 className="empty-state-title">{empty.title || 'No data'}</h4>
+        <p className="empty-state-desc">{empty.message}</p>
       </div>
     );
   }
-
-  return <>{children}</>;
+  return <div className={className}>{children}</div>;
 }
+
+/* ─── Stats Card ─── */
+const COLOR_MAP: Record<string, string> = {
+  primary: '#007aff',
+  success: '#34c759',
+  warning: '#ff9500',
+  danger: '#ff3b30',
+  info: '#5856d6',
+  secondary: '#8e8e93',
+};
 
 interface StatsCardProps {
   title: string;
   value: string | number;
-  icon?: string;
-  iconColor?: 'primary' | 'success' | 'warning' | 'danger' | 'info';
-  change?: {
-    value: number;
-    label?: string;
-  };
+  icon: string;
+  color?: string;
+  iconColor?: string;
+  trend?: string;
   loading?: boolean;
 }
 
-/**
- * StatsCard - Dashboard-style stat display
- */
-export function StatsCard({ 
-  title, 
-  value, 
-  icon, 
-  iconColor = 'primary',
-  change,
-  loading 
-}: StatsCardProps) {
-  return (
-    <div className="card">
-      <div className="card-body">
-        <div className="d-flex justify-content-between">
-          <div>
-            <p className="card-text mb-0 text-muted">{title}</p>
-            {loading ? (
-              <div className="spinner-border spinner-border-sm mt-2"></div>
-            ) : (
-              <h4 className="mb-0">{value}</h4>
-            )}
-            {change && !loading && (
-              <small className={change.value >= 0 ? 'text-success' : 'text-danger'}>
-                <i className={`ti ti-arrow-${change.value >= 0 ? 'up' : 'down'} me-1`}></i>
-                {Math.abs(change.value)}% {change.label || 'vs last period'}
-              </small>
-            )}
-          </div>
-          {icon && (
-            <span className={`badge bg-label-${iconColor} rounded p-2`}>
-              <i className={`ti ti-${icon} ti-sm`}></i>
-            </span>
-          )}
-        </div>
+export function StatsCard({ title, value, icon, color, iconColor, trend, loading }: StatsCardProps) {
+  const resolvedColor = color || COLOR_MAP[iconColor || 'primary'] || '#007aff';
+
+  if (loading) {
+    return (
+      <div className="stat-card">
+        <div className="skeleton" style={{ height: 14, width: 80, marginBottom: 8 }} />
+        <div className="skeleton" style={{ height: 28, width: 60 }} />
       </div>
+    );
+  }
+
+  return (
+    <div className="stat-card">
+      <div className="stat-icon" style={{ background: `${resolvedColor}14`, color: resolvedColor }}>
+        <i className={`ti ti-${icon}`} />
+      </div>
+      <div className="stat-label">{title}</div>
+      <div className="stat-value">{value}</div>
+      {trend && <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4 }}>{trend}</div>}
     </div>
   );
 }
 
+/* ─── Tabs ─── */
 interface TabItem {
   id: string;
   label: string;
   icon?: string;
   count?: number;
-  disabled?: boolean;
 }
 
 interface TabsProps {
   tabs: TabItem[];
-  activeTab: string;
-  onChange: (tabId: string) => void;
+  active?: string;
+  activeTab?: string;
+  onChange: (id: string) => void;
 }
 
-/**
- * Tabs - Tab navigation component
- */
-export function Tabs({ tabs, activeTab, onChange }: TabsProps) {
+export function Tabs({ tabs, active, activeTab, onChange }: TabsProps) {
+  const current = active || activeTab || tabs[0]?.id;
   return (
-    <ul className="nav nav-tabs mb-4">
-      {tabs.map(tab => (
-        <li key={tab.id} className="nav-item">
-          <button
-            className={`nav-link ${activeTab === tab.id ? 'active' : ''} ${tab.disabled ? 'disabled' : ''}`}
-            onClick={() => !tab.disabled && onChange(tab.id)}
-            disabled={tab.disabled}
-          >
-            {tab.icon && <i className={`ti ti-${tab.icon} me-1`}></i>}
-            {tab.label}
-            {tab.count !== undefined && (
-              <span className="badge bg-label-primary ms-1">{tab.count}</span>
-            )}
-          </button>
-        </li>
+    <div className="apple-tabs" style={{ marginBottom: 20 }}>
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          className={`apple-tab ${current === tab.id ? 'active' : ''}`}
+          onClick={() => onChange(tab.id)}
+        >
+          {tab.icon && <i className={`ti ti-${tab.icon}`} style={{ fontSize: 16 }} />}
+          {tab.label}
+          {tab.count !== undefined && (
+            <span className="badge-apple info" style={{ marginLeft: 6, fontSize: 11 }}>
+              {tab.count}
+            </span>
+          )}
+        </button>
       ))}
-    </ul>
+    </div>
   );
 }
 
-interface FilterBarProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-/**
- * FilterBar - Filter/search bar container
- */
-export function FilterBar({ children, className = '' }: FilterBarProps) {
+/* ─── Filter Bar ─── */
+export function FilterBar({ children }: { children: ReactNode }) {
   return (
-    <div className={`d-flex gap-2 align-items-center flex-wrap mt-3 ${className}`}>
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      flexWrap: 'wrap',
+      marginBottom: 16,
+    }}>
       {children}
     </div>
   );
 }
 
+/* ─── Search Input ─── */
 interface SearchInputProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  width?: string;
 }
 
-/**
- * SearchInput - Search input with icon
- */
-export function SearchInput({ 
-  value, 
-  onChange, 
-  placeholder = 'Search...', 
-  width = '250px' 
-}: SearchInputProps) {
+export function SearchInput({ value, onChange, placeholder = 'Search...' }: SearchInputProps) {
   return (
-    <div className="input-group" style={{ maxWidth: width }}>
-      <span className="input-group-text">
-        <i className="ti ti-search"></i>
-      </span>
+    <div className="input-apple" style={{ minWidth: 240 }}>
+      <i className="ti ti-search input-icon" />
       <input
         type="text"
-        className="form-control"
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
-      {value && (
-        <button 
-          className="btn btn-outline-secondary" 
-          onClick={() => onChange('')}
-          type="button"
-        >
-          <i className="ti ti-x"></i>
-        </button>
-      )}
     </div>
   );
 }
 
+/* ─── Select Filter ─── */
 interface SelectFilterProps {
   value: string;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
   placeholder?: string;
-  width?: string;
 }
 
-/**
- * SelectFilter - Dropdown filter
- */
-export function SelectFilter({ 
-  value, 
-  onChange, 
-  options, 
-  placeholder = 'All',
-  width = '150px'
-}: SelectFilterProps) {
+export function SelectFilter({ value, onChange, options, placeholder }: SelectFilterProps) {
   return (
-    <select 
-      className="form-select" 
-      value={value} 
-      onChange={(e) => onChange(e.target.value)}
-      style={{ maxWidth: width }}
-    >
-      <option value="">{placeholder}</option>
-      {options.map(opt => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
-      ))}
-    </select>
+    <div className="select-apple">
+      <select value={value} onChange={(e) => onChange(e.target.value)}>
+        {placeholder && <option value="">{placeholder}</option>}
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+      <i className="ti ti-chevron-down select-icon" />
+    </div>
   );
 }
