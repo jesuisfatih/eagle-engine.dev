@@ -1,13 +1,15 @@
-import { Processor, Process } from '@nestjs/bull';
+import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bull';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ShopifyService } from '../../shopify/shopify.service';
 import { ShopifyGraphqlService } from '../../shopify/shopify-graphql.service';
+import { ShopifyService } from '../../shopify/shopify.service';
+import { SyncStateService } from '../sync-state.service';
 
 interface SyncJobData {
   merchantId: string;
   syncLogId?: string;
+  isInitial?: boolean;
 }
 
 @Processor('customers-sync')
@@ -18,12 +20,20 @@ export class CustomersSyncWorker {
     private prisma: PrismaService,
     private shopifyService: ShopifyService,
     private shopifyGraphql: ShopifyGraphqlService,
+    private syncState: SyncStateService,
   ) {}
 
-  @Process('initial-sync')
-  async handleInitialSync(job: Job<SyncJobData>) {
-    const { merchantId, syncLogId } = job.data;
-    this.logger.log(`Starting initial customers sync for merchant: ${merchantId}`);
+  @Process('sync')
+  async handleSync(job: Job<SyncJobData>) {
+    const { merchantId, syncLogId, isInitial } = job.data;
+    this.logger.log(`Starting customers sync for merchant: ${merchantId} (initial: ${!!isInitial})`);
+
+    // Acquire lock via DB
+    const lockAcquired = await this.syncState.acquireLock(merchantId, 'customers');
+    if (!lockAcquired) {
+      this.logger.warn(`Could not acquire lock for customers sync (merchant: ${merchantId})`);
+      return { skipped: true, reason: 'lock_not_acquired' };
+    }
 
     try {
       const merchant = await this.prisma.merchant.findUnique({
@@ -34,9 +44,12 @@ export class CustomersSyncWorker {
         throw new Error('Merchant not found');
       }
 
-      let cursor: string | undefined;
+      // Get cursor from DB state for incremental sync
+      const state = await this.syncState.getState(merchantId, 'customers');
+      let cursor: string | undefined = isInitial ? undefined : (state.lastCursor || undefined);
       let hasNextPage = true;
       let processed = 0;
+      let lastCursor: string | null = null;
 
       while (hasNextPage) {
         const result: any = await this.shopifyGraphql.getCustomers(
@@ -50,16 +63,16 @@ export class CustomersSyncWorker {
 
         for (const edge of customers) {
           const customer = edge.node;
-          
+
           // Extract amount from GraphQL amountSpent object
-          const totalSpent = customer.amountSpent?.amount 
-            ? parseFloat(customer.amountSpent.amount) 
+          const totalSpent = customer.amountSpent?.amount
+            ? parseFloat(customer.amountSpent.amount)
             : 0;
           // Shopify returns numberOfOrders as String, convert to Int
-          const ordersCount = customer.numberOfOrders 
-            ? parseInt(customer.numberOfOrders, 10) 
+          const ordersCount = customer.numberOfOrders
+            ? parseInt(customer.numberOfOrders, 10)
             : 0;
-          
+
           await this.prisma.shopifyCustomer.upsert({
             where: {
               merchantId_shopifyCustomerId: {
@@ -100,10 +113,18 @@ export class CustomersSyncWorker {
         }
 
         hasNextPage = result.customers.pageInfo.hasNextPage;
-        cursor = result.customers.pageInfo.endCursor;
+        lastCursor = result.customers.pageInfo.endCursor || null;
+        cursor = lastCursor || undefined;
 
-        await job.progress((processed / 1000) * 100); // Estimate progress
+        // Update cursor in DB after each page (crash recovery)
+        await this.syncState.updateCursor(merchantId, 'customers', lastCursor);
+        await job.progress(Math.min((processed / 1000) * 100, 99));
       }
+
+      // Sync completed successfully
+      await this.syncState.updateMetrics(merchantId, 'customers', processed);
+      await this.syncState.releaseLock(merchantId, 'customers', 'completed');
+      await this.syncState.updateMerchantLastSync(merchantId);
 
       if (syncLogId) {
         await this.prisma.syncLog.update({
@@ -120,7 +141,10 @@ export class CustomersSyncWorker {
       return { processed };
     } catch (error) {
       this.logger.error('Customers sync failed', error);
-      
+
+      // Release lock with failure state in DB
+      await this.syncState.releaseLock(merchantId, 'customers', 'failed', error.message);
+
       if (syncLogId) {
         await this.prisma.syncLog.update({
           where: { id: syncLogId },
@@ -135,13 +159,4 @@ export class CustomersSyncWorker {
       throw error;
     }
   }
-
-  @Process('sync')
-  async handleContinuousSync(job: Job<SyncJobData>) {
-    // This runs periodically (e.g., every 20 seconds)
-    return this.handleInitialSync(job);
-  }
 }
-
-
-

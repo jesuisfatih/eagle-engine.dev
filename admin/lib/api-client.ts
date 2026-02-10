@@ -1,12 +1,12 @@
 import type {
-  Company,
-  Order,
-  PricingRule,
-  Merchant,
-  MerchantSettings,
-  MerchantStats,
-  PaginatedResponse,
-  SyncLog,
+    Company,
+    Merchant,
+    MerchantSettings,
+    MerchantStats,
+    Order,
+    PaginatedResponse,
+    PricingRule,
+    SyncLog,
 } from '@eagle/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.eagledtfsupply.com';
@@ -106,7 +106,7 @@ class ApiClient {
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
-    
+
     // Load token from localStorage (client-side only)
     if (typeof window !== 'undefined') {
       this.token = localStorage.getItem('eagle_admin_token');
@@ -257,6 +257,18 @@ class ApiClient {
     return this.request('/api/v1/sync/status');
   }
 
+  async resetEntitySync(entityType: 'customers' | 'products' | 'orders'): Promise<{ message: string }> {
+    return this.request(`/api/v1/sync/reset/${entityType}`, {
+      method: 'POST',
+    });
+  }
+
+  async resetAllSync(): Promise<{ message: string }> {
+    return this.request('/api/v1/sync/reset-all', {
+      method: 'POST',
+    });
+  }
+
   // Analytics
   async getAnalytics(params?: AnalyticsParams): Promise<Record<string, unknown>> {
     const query = this.buildQueryString(params);
@@ -272,16 +284,16 @@ export const apiClient = new ApiClient(API_URL);
  */
 export async function adminFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('eagle_admin_token') : null;
-  
+
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
-  
+
   if (token) {
     (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
   }
-  
+
   return fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
@@ -295,7 +307,3 @@ export function getMerchantId(): string {
   if (typeof window === 'undefined') return '';
   return localStorage.getItem('eagle_merchantId') || '';
 }
-
-
-
-

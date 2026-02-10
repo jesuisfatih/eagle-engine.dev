@@ -1,8 +1,8 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@prisma/client';
+import { Pool } from 'pg';
 
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
@@ -89,6 +89,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.prisma.syncLog;
   }
 
+  get syncState() {
+    return this.prisma.syncState;
+  }
+
   get wishlist() {
     return this.prisma.wishlist;
   }
@@ -136,7 +140,3 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return Promise.all(models.map((modelKey) => this[modelKey].deleteMany()));
   }
 }
-
-
-
-

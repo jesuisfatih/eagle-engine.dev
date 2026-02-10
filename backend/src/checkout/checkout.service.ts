@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PricingCalculatorService } from '../pricing/pricing-calculator.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { ShopifyRestService } from '../shopify/shopify-rest.service';
 import { ShopifyAdminDiscountService } from '../shopify/shopify-admin-discount.service';
+import { ShopifyCustomerSyncService } from '../shopify/shopify-customer-sync.service';
+import { ShopifyRestService } from '../shopify/shopify-rest.service';
+import { ShopifySsoService } from '../shopify/shopify-sso.service';
 import { ShopifyStorefrontService } from '../shopify/shopify-storefront.service';
 import { DiscountEngineService } from './discount-engine.service';
-import { PricingCalculatorService } from '../pricing/pricing-calculator.service';
-import { ShopifySsoService } from '../shopify/shopify-sso.service';
-import { ShopifyCustomerSyncService } from '../shopify/shopify-customer-sync.service';
 
 @Injectable()
 export class CheckoutService {
@@ -137,16 +137,16 @@ export class CheckoutService {
 
       // Create discount in Shopify Admin API (SYNC)
       try {
-        const shopifyDiscount = await this.shopifyAdminDiscount.createPriceRule(
+        const shopifyDiscount = await this.shopifyAdminDiscount.createDiscountCode(
           merchant.shopDomain,
           merchant.accessToken,
           discountCode,
           discountAmount,
           'fixed_amount',
         );
-        
+
         this.logger.log(`Shopify discount created: ${discountCode} (ID: ${shopifyDiscount.discountId})`);
-        
+
         // Update discount code with Shopify ID (store as string since it's GraphQL ID format)
         if (shopifyDiscount.discountId) {
           await this.prisma.discountCode.updateMany({
@@ -167,11 +167,11 @@ export class CheckoutService {
     }));
 
     let checkoutUrl: string;
-    
+
     // Get storefront token - prefer .env, fallback to merchant settings
     const settings = (merchant.settings as any) || {};
     const storefrontToken = this.storefrontToken || settings.storefrontToken || '';
-    
+
     // Try Storefront API with buyer identity if token exists
     if (storefrontToken && user) {
       try {
@@ -180,11 +180,11 @@ export class CheckoutService {
 
         // Create checkout with buyer identity (email & address pre-filled)
         // Use address country code or derive from country name or default to US
-        const countryCode = shippingAddress?.countryCode || 
-          (shippingAddress?.country === 'United States' ? 'US' : 
-           shippingAddress?.country === 'Turkey' ? 'TR' : 
+        const countryCode = shippingAddress?.countryCode ||
+          (shippingAddress?.country === 'United States' ? 'US' :
+           shippingAddress?.country === 'Turkey' ? 'TR' :
            shippingAddress?.country?.substring(0, 2).toUpperCase()) || 'US';
-        
+
         // NEW 2025-10 API format: deliveryAddress instead of deliveryAddressPreferences
         const buyerIdentity = {
           email: user.email,
@@ -228,7 +228,7 @@ export class CheckoutService {
         this.logger.log(`✅ Checkout URL created with buyer identity: ${checkoutUrl}`, {
           email: user.email,
         });
-        
+
         // If SSO URL exists, append it to checkout URL
         if (ssoUrl) {
           // Extract return_to and update checkout URL
@@ -335,4 +335,3 @@ export class CheckoutService {
     return null;
   }
 }
-

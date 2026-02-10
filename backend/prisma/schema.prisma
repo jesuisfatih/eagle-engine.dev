@@ -38,6 +38,7 @@ model Merchant {
   activityLogs   ActivityLog[]
   discountCodes  DiscountCode[]
   syncLogs       SyncLog[]
+  syncStates     SyncState[]
   wishlists      Wishlist[]
   addresses      Address[]
   supportTickets SupportTicket[]
@@ -533,6 +534,54 @@ model SyncLog {
   @@index([syncType])
   @@index([status])
   @@map("sync_logs")
+}
+
+// ============================================
+// SYNC STATE (Per-entity persistent state)
+// ============================================
+
+model SyncState {
+  id         String @id @default(uuid())
+  merchantId String @map("merchant_id")
+  entityType String @map("entity_type") // 'customers' | 'products' | 'orders'
+
+  // Current state
+  status          String  @default("idle") // 'idle' | 'running' | 'completed' | 'failed'
+  isLocked        Boolean @default(false) @map("is_locked")
+  lockedAt        DateTime? @map("locked_at")
+  lockExpiresAt   DateTime? @map("lock_expires_at")
+
+  // Cursor for incremental sync
+  lastCursor      String? @map("last_cursor")
+  lastSyncedId    BigInt? @map("last_synced_id")
+
+  // Timestamps
+  lastStartedAt   DateTime? @map("last_started_at")
+  lastCompletedAt DateTime? @map("last_completed_at")
+  lastFailedAt    DateTime? @map("last_failed_at")
+
+  // Metrics
+  totalRecordsSynced Int @default(0) @map("total_records_synced")
+  lastRunRecords     Int @default(0) @map("last_run_records")
+  consecutiveFailures Int @default(0) @map("consecutive_failures")
+
+  // Error tracking
+  lastError       String? @map("last_error")
+
+  // Metadata
+  metadata        Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@unique([merchantId, entityType])
+  @@index([merchantId])
+  @@index([entityType])
+  @@index([status])
+  @@map("sync_states")
 }
 
 // ============================================

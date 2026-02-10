@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { SyncStateService } from '../sync/sync-state.service';
 import { SyncService } from '../sync/sync.service';
 
 @Injectable()
@@ -10,64 +11,86 @@ export class SyncScheduler {
   constructor(
     private prisma: PrismaService,
     private syncService: SyncService,
+    private syncState: SyncStateService,
   ) {}
 
-  // Her 5 dakikada bir customers sync (Shopify API rate limiting önlemek için)
+  /**
+   * Customers sync every 5 minutes.
+   * DB-backed state prevents concurrent runs and handles failures.
+   */
   @Cron(CronExpression.EVERY_5_MINUTES)
   async handleCustomersSync() {
     this.logger.debug('Running scheduled customers sync...');
-
-    // Get all active merchants
-    const merchants = await this.prisma.merchant.findMany({
-      where: { status: 'active' },
-    });
-
-    for (const merchant of merchants) {
-      try {
-        await this.syncService.triggerCustomersSync(merchant.id);
-      } catch (error) {
-        this.logger.error(`Failed to sync customers for merchant ${merchant.shopDomain}`, error);
-      }
-    }
+    await this.runSyncForAllMerchants('customers');
   }
 
-  // Her 5 dakikada bir products sync
+  /**
+   * Products sync every 5 minutes.
+   */
   @Cron(CronExpression.EVERY_5_MINUTES)
   async handleProductsSync() {
     this.logger.debug('Running scheduled products sync...');
-
-    const merchants = await this.prisma.merchant.findMany({
-      where: { status: 'active' },
-    });
-
-    for (const merchant of merchants) {
-      try {
-        await this.syncService.triggerProductsSync(merchant.id);
-      } catch (error) {
-        this.logger.error(`Failed to sync products for merchant ${merchant.shopDomain}`, error);
-      }
-    }
+    await this.runSyncForAllMerchants('products');
   }
 
-  // Her 10 dakikada bir orders sync
+  /**
+   * Orders sync every 10 minutes.
+   */
   @Cron(CronExpression.EVERY_10_MINUTES)
   async handleOrdersSync() {
     this.logger.debug('Running scheduled orders sync...');
+    await this.runSyncForAllMerchants('orders');
+  }
 
+  /**
+   * Run sync for all active merchants with proper DB state checks.
+   * - Skips merchants where sync is already running (DB lock)
+   * - Skips merchants with too many consecutive failures
+   * - All state read/written from database
+   */
+  private async runSyncForAllMerchants(entityType: 'customers' | 'products' | 'orders') {
     const merchants = await this.prisma.merchant.findMany({
       where: { status: 'active' },
     });
 
     for (const merchant of merchants) {
       try {
-        await this.syncService.triggerOrdersSync(merchant.id);
+        // Check DB state: is it already running?
+        const isRunning = await this.syncState.isRunning(merchant.id, entityType);
+        if (isRunning) {
+          this.logger.debug(
+            `Skipping ${entityType} sync for ${merchant.shopDomain}: already running`,
+          );
+          continue;
+        }
+
+        // Check DB state: too many failures?
+        const shouldSkip = await this.syncState.shouldSkip(merchant.id, entityType);
+        if (shouldSkip) {
+          this.logger.debug(
+            `Skipping ${entityType} sync for ${merchant.shopDomain}: too many consecutive failures`,
+          );
+          continue;
+        }
+
+        // Trigger sync (which will check DB state again and queue the job)
+        switch (entityType) {
+          case 'customers':
+            await this.syncService.triggerCustomersSync(merchant.id);
+            break;
+          case 'products':
+            await this.syncService.triggerProductsSync(merchant.id);
+            break;
+          case 'orders':
+            await this.syncService.triggerOrdersSync(merchant.id);
+            break;
+        }
       } catch (error) {
-        this.logger.error(`Failed to sync orders for merchant ${merchant.shopDomain}`, error);
+        this.logger.error(
+          `Failed to trigger ${entityType} sync for merchant ${merchant.shopDomain}`,
+          error,
+        );
       }
     }
   }
 }
-
-
-
-

@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
+import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { ShopifyService } from './shopify.service';
 
@@ -26,7 +26,7 @@ export class ShopifyAdminDiscountService {
     const url = this.shopifyService.buildAdminGraphQLUrl(shop);
 
     // Build the discount value based on type
-    const customerGets = valueType === 'percentage' 
+    const customerGets = valueType === 'percentage'
       ? {
           value: {
             percentage: value / 100, // Shopify expects decimal (0.1 for 10%)
@@ -179,18 +179,4 @@ export class ShopifyAdminDiscountService {
     }
   }
 
-  // Legacy method name for backward compatibility
-  async createPriceRule(
-    shop: string,
-    accessToken: string,
-    code: string,
-    value: number,
-    valueType: 'fixed_amount' | 'percentage',
-  ) {
-    return this.createDiscountCode(shop, accessToken, code, value, valueType);
-  }
 }
-
-
-
-

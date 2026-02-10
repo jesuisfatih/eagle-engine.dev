@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
+import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { ShopifyService } from './shopify.service';
 
@@ -107,7 +107,7 @@ export class ShopifyRestService {
     customerId: string,
   ): Promise<{ customer_invite: { to: string; from: string; subject: string; custom_message: string; invite_url: string } }> {
     const url = this.shopifyService.buildAdminApiUrl(shop, `/customers/${customerId}/send_invite.json`);
-    
+
     try {
       const response = await firstValueFrom(
         this.httpService.post(
@@ -146,7 +146,7 @@ export class ShopifyRestService {
     acceptsMarketing: boolean,
   ): Promise<any> {
     const url = this.shopifyService.buildAdminApiUrl(shop, `/customers/${customerId}.json`);
-    
+
     try {
       const response = await firstValueFrom(
         this.httpService.put(
@@ -188,7 +188,7 @@ export class ShopifyRestService {
   ): Promise<any> {
     // First, get existing metafields
     const getUrl = this.shopifyService.buildAdminApiUrl(shop, `/customers/${customerId}/metafields.json`);
-    
+
     try {
       // Delete existing metafields in namespace
       const existingResponse = await firstValueFrom(
@@ -201,7 +201,7 @@ export class ShopifyRestService {
       );
 
       const existingMetafields = existingResponse.data.metafields || [];
-      
+
       // Delete existing metafields
       for (const metafield of existingMetafields) {
         if (metafields.some(m => m.namespace === metafield.namespace && m.key === metafield.key)) {
@@ -266,7 +266,7 @@ export class ShopifyRestService {
     customerId: string,
   ): Promise<any[]> {
     const url = this.shopifyService.buildAdminApiUrl(shop, `/customers/${customerId}/metafields.json`);
-    
+
     try {
       const response = await firstValueFrom(
         this.httpService.get(url, {
@@ -291,12 +291,4 @@ export class ShopifyRestService {
   async getOrders(shop: string, accessToken: string, limit = 250) {
     return this.get(shop, accessToken, `/orders.json?limit=${limit}&status=any`);
   }
-
-  async createDiscountCode(shop: string, accessToken: string, data: any) {
-    return this.post(shop, accessToken, '/price_rules.json', data);
-  }
 }
-
-
-
-

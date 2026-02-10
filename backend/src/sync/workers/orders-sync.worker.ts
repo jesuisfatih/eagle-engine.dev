@@ -1,13 +1,15 @@
-import { Processor, Process } from '@nestjs/bull';
+import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bull';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ShopifyService } from '../../shopify/shopify.service';
 import { ShopifyRestService } from '../../shopify/shopify-rest.service';
+import { ShopifyService } from '../../shopify/shopify.service';
+import { SyncStateService } from '../sync-state.service';
 
 interface SyncJobData {
   merchantId: string;
   syncLogId?: string;
+  isInitial?: boolean;
 }
 
 @Processor('orders-sync')
@@ -18,12 +20,20 @@ export class OrdersSyncWorker {
     private prisma: PrismaService,
     private shopifyService: ShopifyService,
     private shopifyRest: ShopifyRestService,
+    private syncState: SyncStateService,
   ) {}
 
-  @Process('initial-sync')
-  async handleInitialSync(job: Job<SyncJobData>) {
-    const { merchantId, syncLogId } = job.data;
-    this.logger.log(`Starting initial orders sync for merchant: ${merchantId}`);
+  @Process('sync')
+  async handleSync(job: Job<SyncJobData>) {
+    const { merchantId, syncLogId, isInitial } = job.data;
+    this.logger.log(`Starting orders sync for merchant: ${merchantId} (initial: ${!!isInitial})`);
+
+    // Acquire lock via DB
+    const lockAcquired = await this.syncState.acquireLock(merchantId, 'orders');
+    if (!lockAcquired) {
+      this.logger.warn(`Could not acquire lock for orders sync (merchant: ${merchantId})`);
+      return { skipped: true, reason: 'lock_not_acquired' };
+    }
 
     try {
       const merchant = await this.prisma.merchant.findUnique({
@@ -34,16 +44,33 @@ export class OrdersSyncWorker {
         throw new Error('Merchant not found');
       }
 
-      const result: any = await this.shopifyRest.getOrders(
+      // Get last synced order ID from DB state for incremental sync
+      const state = await this.syncState.getState(merchantId, 'orders');
+      const sinceId = isInitial ? undefined : state.lastSyncedId;
+
+      // Build query params - use since_id for incremental sync
+      let path = `/orders.json?limit=250&status=any`;
+      if (sinceId) {
+        path += `&since_id=${sinceId.toString()}`;
+      }
+
+      const result: any = await this.shopifyRest.get(
         merchant.shopDomain,
         merchant.accessToken,
-        250,
+        path,
       );
 
       const orders = result.orders || [];
       let processed = 0;
+      let maxOrderId: bigint | null = null;
 
       for (const order of orders) {
+        // Track the highest order ID for incremental sync
+        const orderId = BigInt(order.id);
+        if (!maxOrderId || orderId > maxOrderId) {
+          maxOrderId = orderId;
+        }
+
         // Try to find associated company user
         let companyId: string | undefined;
         let companyUserId: string | undefined;
@@ -114,6 +141,16 @@ export class OrdersSyncWorker {
         processed++;
       }
 
+      // Save last synced order ID for incremental sync
+      if (maxOrderId) {
+        await this.syncState.updateCursor(merchantId, 'orders', null, maxOrderId);
+      }
+
+      // Sync completed successfully
+      await this.syncState.updateMetrics(merchantId, 'orders', processed);
+      await this.syncState.releaseLock(merchantId, 'orders', 'completed');
+      await this.syncState.updateMerchantLastSync(merchantId);
+
       if (syncLogId) {
         await this.prisma.syncLog.update({
           where: { id: syncLogId },
@@ -129,7 +166,10 @@ export class OrdersSyncWorker {
       return { processed };
     } catch (error) {
       this.logger.error('Orders sync failed', error);
-      
+
+      // Release lock with failure state in DB
+      await this.syncState.releaseLock(merchantId, 'orders', 'failed', error.message);
+
       if (syncLogId) {
         await this.prisma.syncLog.update({
           where: { id: syncLogId },
@@ -144,12 +184,4 @@ export class OrdersSyncWorker {
       throw error;
     }
   }
-
-  @Process('sync')
-  async handleContinuousSync(job: Job<SyncJobData>) {
-    return this.handleInitialSync(job);
-  }
 }
-
-
-

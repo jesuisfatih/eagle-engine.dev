@@ -1,12 +1,13 @@
-import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bull';
 import { HttpModule } from '@nestjs/axios';
-import { SyncService } from './sync.service';
-import { SyncController } from './sync.controller';
-import { CustomersSyncWorker } from './workers/customers-sync.worker';
-import { ProductsSyncWorker } from './workers/products-sync.worker';
-import { OrdersSyncWorker } from './workers/orders-sync.worker';
+import { BullModule } from '@nestjs/bull';
+import { Module } from '@nestjs/common';
 import { ShopifyModule } from '../shopify/shopify.module';
+import { SyncStateService } from './sync-state.service';
+import { SyncController } from './sync.controller';
+import { SyncService } from './sync.service';
+import { CustomersSyncWorker } from './workers/customers-sync.worker';
+import { OrdersSyncWorker } from './workers/orders-sync.worker';
+import { ProductsSyncWorker } from './workers/products-sync.worker';
 
 @Module({
   imports: [
@@ -25,8 +26,13 @@ import { ShopifyModule } from '../shopify/shopify.module';
     ),
   ],
   controllers: [SyncController],
-  providers: [SyncService, CustomersSyncWorker, ProductsSyncWorker, OrdersSyncWorker],
-  exports: [SyncService],
+  providers: [
+    SyncService,
+    SyncStateService,
+    CustomersSyncWorker,
+    ProductsSyncWorker,
+    OrdersSyncWorker,
+  ],
+  exports: [SyncService, SyncStateService],
 })
 export class SyncModule {}
-
