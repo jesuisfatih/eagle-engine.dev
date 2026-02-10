@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { adminFetch } from '@/lib/api-client';
 import { PageHeader, StatusBadge, showToast } from '@/components/ui';
+import { adminFetch } from '@/lib/api-client';
+import { useState } from 'react';
 
 interface Ticket {
   id: string;
@@ -23,7 +23,7 @@ export default function SupportPage() {
   useState(() => {
     (async () => {
       try {
-        const res = await adminFetch('/api/v1/support/tickets');
+        const res = await adminFetch('/api/v1/support-tickets');
         if (res.ok) { const d = await res.json(); setTickets(d.tickets || d.data || d || []); }
       } catch { /* silent */ }
       finally { setLoading(false); }
@@ -34,7 +34,7 @@ export default function SupportPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await adminFetch('/api/v1/support/tickets', {
+      const res = await adminFetch('/api/v1/support-tickets', {
         method: 'POST',
         body: JSON.stringify(form),
       });
@@ -127,4 +127,3 @@ export default function SupportPage() {
     </div>
   );
 }
-

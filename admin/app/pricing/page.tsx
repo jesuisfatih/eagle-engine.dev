@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { adminFetch } from '@/lib/api-client';
-import { PageHeader, showToast } from '@/components/ui';
 import Modal from '@/components/Modal';
+import { PageHeader, showToast } from '@/components/ui';
+import { adminFetch } from '@/lib/api-client';
+import { useCallback, useEffect, useState } from 'react';
 
 interface PricingRule {
   id: string;
@@ -32,7 +32,7 @@ export default function PricingPage() {
   const loadRules = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await adminFetch('/api/v1/pricing-rules');
+      const res = await adminFetch('/api/v1/pricing/rules');
       if (res.ok) { const d = await res.json(); setRules(d.rules || d.data || d || []); }
     } catch { /* silent */ }
     finally { setLoading(false); }
@@ -44,7 +44,7 @@ export default function PricingPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await adminFetch('/api/v1/pricing-rules', { method: 'POST', body: JSON.stringify(form) });
+      const res = await adminFetch('/api/v1/pricing/rules', { method: 'POST', body: JSON.stringify(form) });
       if (res.ok) { showToast('Rule created!', 'success'); setShowCreate(false); setForm({ name: '', type: 'percentage', value: 0, companyId: '', productId: '', minQuantity: 1, maxQuantity: 0 }); loadRules(); }
       else showToast('Failed to create rule', 'danger');
     } catch { showToast('Error', 'danger'); }
@@ -54,7 +54,7 @@ export default function PricingPage() {
   const deleteRule = async (rule: PricingRule) => {
     setDeleteModal({show: false, rule: null});
     try {
-      const res = await adminFetch(`/api/v1/pricing-rules/${rule.id}`, { method: 'DELETE' });
+      const res = await adminFetch(`/api/v1/pricing/rules/${rule.id}`, { method: 'DELETE' });
       if (res.ok) { showToast('Rule deleted', 'success'); loadRules(); }
       else showToast('Failed', 'danger');
     } catch { showToast('Error', 'danger'); }
@@ -62,7 +62,7 @@ export default function PricingPage() {
 
   const toggleActive = async (rule: PricingRule) => {
     try {
-      const res = await adminFetch(`/api/v1/pricing-rules/${rule.id}`, { method: 'PATCH', body: JSON.stringify({ isActive: !rule.isActive }) });
+      const res = await adminFetch(`/api/v1/pricing/rules/${rule.id}/toggle`, { method: 'PUT', body: JSON.stringify({ isActive: !rule.isActive }) });
       if (res.ok) loadRules();
     } catch { /* silent */ }
   };

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { adminFetch } from '@/lib/api-client';
 import { PageHeader } from '@/components/ui';
+import { adminFetch } from '@/lib/api-client';
+import { useEffect, useState } from 'react';
 
 interface ActivityItem {
   id: string;
@@ -19,7 +19,7 @@ export default function ActivityPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await adminFetch('/api/v1/activity?limit=50');
+        const res = await adminFetch('/api/v1/events/admin-activity?limit=50');
         if (res.ok) { const d = await res.json(); setActivities(d.activities || d.data || []); }
       } catch { /* silent */ }
       finally { setLoading(false); }
@@ -78,4 +78,3 @@ export default function ActivityPage() {
     </div>
   );
 }
-

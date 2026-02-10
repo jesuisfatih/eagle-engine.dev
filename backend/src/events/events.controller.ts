@@ -1,10 +1,10 @@
-import { Controller, Post, Get, Body, Query, UseGuards } from '@nestjs/common';
-import { Throttle, SkipThrottle } from '@nestjs/throttler';
-import { EventsService } from './events.service';
-import { Public } from '../auth/decorators/public.decorator';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CollectEventDto, GetEventsQueryDto, AnalyticsQueryDto } from './dto/event.dto';
+import { AnalyticsQueryDto, CollectEventDto, GetEventsQueryDto } from './dto/event.dto';
+import { EventsService } from './events.service';
 
 @Controller('events')
 export class EventsController {
@@ -45,8 +45,17 @@ export class EventsController {
 
     return this.eventsService.getAnalytics(merchantId, dateRange);
   }
+
+  /**
+   * Admin activity feed - returns recent activity logs
+   */
+  @SkipThrottle()
+  @UseGuards(JwtAuthGuard)
+  @Get('admin-activity')
+  async getAdminActivity(
+    @CurrentUser('merchantId') merchantId: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.eventsService.getAdminActivityFeed(merchantId, limit ? parseInt(limit) : 50);
+  }
 }
-
-
-
-

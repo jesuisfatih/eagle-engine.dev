@@ -34,6 +34,7 @@ export class MerchantsService {
       totalUsers,
       totalOrders,
       totalRevenue,
+      totalProducts,
     ] = await Promise.all([
       this.prisma.company.count({ where: { merchantId: id } }),
       this.prisma.companyUser.count({
@@ -44,17 +45,19 @@ export class MerchantsService {
         where: { merchantId: id },
         _sum: { totalPrice: true },
       }),
+      this.prisma.catalogProduct.count({ where: { merchantId: id } }),
     ]);
+
+    const revenue = totalRevenue._sum.totalPrice || 0;
+    const avgOrderValue = totalOrders > 0 ? Number(revenue) / totalOrders : 0;
 
     return {
       totalCompanies,
       totalUsers,
       totalOrders,
-      totalRevenue: totalRevenue._sum.totalPrice || 0,
+      totalRevenue: revenue,
+      totalProducts,
+      avgOrderValue,
     };
   }
 }
-
-
-
-

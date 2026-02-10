@@ -1,24 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
 
-const API_BASE = 'https://api.eagledtfsupply.com';
-
-function getToken() {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('eagle_admin_token');
-}
-
-async function adminFetch(path: string): Promise<Response> {
-  const token = getToken();
-  return fetch(`${API_BASE}${path}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-}
+import { adminFetch } from '@/lib/api-client';
 
 interface Stats {
   companies: number;
@@ -60,7 +45,7 @@ export default function DashboardPage() {
 
   const loadActivities = useCallback(async () => {
     try {
-      const res = await adminFetch('/api/v1/activity?limit=5');
+      const res = await adminFetch('/api/v1/events/admin-activity?limit=5');
       if (res.ok) {
         const data = await res.json();
         setActivities(data.activities || data.data || []);
@@ -78,7 +63,7 @@ export default function DashboardPage() {
     setSyncing(true);
     setSyncResult('');
     try {
-      const res = await adminFetch('/api/v1/sync/initial');
+      const res = await adminFetch('/api/v1/sync/initial', { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         setSyncResult(`Synced: ${data.products || 0} products, ${data.customers || 0} customers, ${data.orders || 0} orders`);

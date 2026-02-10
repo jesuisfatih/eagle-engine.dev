@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
+import { Injectable, Logger } from '@nestjs/common';
 import type { Queue } from 'bull';
 import { PrismaService } from '../prisma/prisma.service';
 import { CollectEventDto } from './dto/event.dto';
@@ -49,7 +49,7 @@ export class EventsService {
 
   async getAnalytics(merchantId: string, dateRange?: { from: Date; to: Date }) {
     const where: any = { merchantId };
-    
+
     if (dateRange) {
       where.createdAt = {
         gte: dateRange.from,
@@ -90,7 +90,66 @@ export class EventsService {
       topProducts,
     };
   }
+
+  /**
+   * Admin activity feed - returns recent activity logs formatted for the admin UI
+   */
+  async getAdminActivityFeed(merchantId: string, limit: number = 50) {
+    const logs = await this.prisma.activityLog.findMany({
+      where: { merchantId },
+      include: {
+        companyUser: {
+          select: { email: true, firstName: true, lastName: true },
+        },
+        company: {
+          select: { name: true },
+        },
+        product: {
+          select: { title: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+
+    const activities = logs.map(log => {
+      const userName = log.companyUser
+        ? `${log.companyUser.firstName || ''} ${log.companyUser.lastName || ''}`.trim() || log.companyUser.email
+        : 'System';
+      const companyName = log.company?.name || '';
+      const productTitle = log.product?.title || '';
+
+      let description = log.eventType;
+      switch (log.eventType) {
+        case 'product_view':
+          description = `Viewed product: ${productTitle}`;
+          break;
+        case 'add_to_cart':
+          description = `Added to cart: ${productTitle}`;
+          break;
+        case 'page_view':
+          description = 'Viewed a page';
+          break;
+        case 'login':
+          description = `User logged in`;
+          break;
+        case 'checkout_started':
+          description = 'Started checkout';
+          break;
+        default:
+          description = log.eventType.replace(/_/g, ' ');
+      }
+
+      return {
+        id: log.id,
+        type: log.eventType.split('_')[0] || 'system',
+        description,
+        user: userName,
+        company: companyName,
+        createdAt: log.createdAt,
+      };
+    });
+
+    return { activities, total: activities.length };
+  }
 }
-
-
-

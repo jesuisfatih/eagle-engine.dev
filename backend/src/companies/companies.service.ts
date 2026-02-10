@@ -1,13 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+    buildPrismaOrderBy,
+    buildPrismaSkipTake,
+    createPaginatedResponse,
+    PaginationParams
+} from '../common/utils/pagination.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { ShopifyCompanySyncService } from './shopify-company-sync.service';
-import { 
-  PaginationParams, 
-  parsePaginationParams, 
-  buildPrismaSkipTake, 
-  buildPrismaOrderBy,
-  createPaginatedResponse 
-} from '../common/utils/pagination.util';
 
 /**
  * Optimized select for company list (minimal data)
@@ -20,6 +19,17 @@ const COMPANY_LIST_SELECT = {
   status: true,
   createdAt: true,
   updatedAt: true,
+  users: {
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      role: true,
+      isActive: true,
+      lastLoginAt: true,
+    },
+  },
   _count: {
     select: {
       users: true,
@@ -152,7 +162,7 @@ export class CompaniesService {
 
   async approve(id: string, merchantId: string) {
     const company = await this.findOne(id, merchantId);
-    
+
     // Update company status
     const updatedCompany = await this.prisma.company.update({
       where: { id },
@@ -181,7 +191,7 @@ export class CompaniesService {
 
   async reject(id: string, merchantId: string, reason?: string) {
     const company = await this.findOne(id, merchantId);
-    
+
     const updatedCompany = await this.prisma.company.update({
       where: { id },
       data: {
@@ -251,7 +261,3 @@ export class CompaniesService {
     };
   }
 }
-
-
-
-

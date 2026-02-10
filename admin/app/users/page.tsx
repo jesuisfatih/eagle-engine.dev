@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Modal from '@/components/Modal';
-import { adminFetch } from '@/lib/api-client';
 import {
-  PageHeader,
-  PageContent,
-  StatsCard,
-  DataTable,
-  type DataTableColumn,
-  StatusBadge,
-  showToast
+    DataTable,
+    type DataTableColumn,
+    PageContent,
+    PageHeader,
+    StatsCard,
+    StatusBadge,
+    showToast
 } from '@/components/ui';
+import { adminFetch } from '@/lib/api-client';
+import { useEffect, useState } from 'react';
 
 interface User {
   id: string;
@@ -68,8 +68,8 @@ export default function UsersPage() {
     if (!roleModal.user) return;
     try {
       setUpdating(true);
-      const response = await adminFetch(`/api/v1/users/${roleModal.user.id}/role`, {
-        method: 'PATCH',
+      const response = await adminFetch(`/api/v1/company-users/${roleModal.user.id}/role`, {
+        method: 'PUT',
         body: JSON.stringify({ role: roleModal.selectedRole }),
       });
       setRoleModal({show: false, user: null, selectedRole: ''});
@@ -91,8 +91,8 @@ export default function UsersPage() {
     try {
       setUpdating(true);
       const newStatus = !statusModal.user.isActive;
-      const response = await adminFetch(`/api/v1/users/${statusModal.user.id}/status`, {
-        method: 'PATCH',
+      const response = await adminFetch(`/api/v1/company-users/${statusModal.user.id}/status`, {
+        method: 'PUT',
         body: JSON.stringify({ isActive: newStatus }),
       });
       setStatusModal({show: false, user: null});
@@ -212,4 +212,3 @@ export default function UsersPage() {
     </div>
   );
 }
-

@@ -1,18 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { adminFetch } from '@/lib/api-client';
 import { PageHeader, StatsCard, StatusBadge } from '@/components/ui';
+import { adminFetch } from '@/lib/api-client';
+import { useEffect, useState } from 'react';
 
 interface AbandonedCart {
   id: string;
-  customerEmail: string;
-  customerName?: string;
-  totalPrice: string;
-  itemCount: number;
+  total: string | number;
   status: string;
   createdAt: string;
-  recoveryUrl?: string;
+  items: any[];
+  createdBy?: { email: string; firstName?: string; lastName?: string };
+  company?: { name: string };
+  shopifyCheckoutUrl?: string;
 }
 
 export default function AbandonedCartsPage() {
@@ -29,7 +29,7 @@ export default function AbandonedCartsPage() {
     })();
   }, []);
 
-  const totalValue = carts.reduce((sum, c) => sum + parseFloat(c.totalPrice || '0'), 0);
+  const totalValue = carts.reduce((sum, c) => sum + parseFloat(String(c.total || '0')), 0);
   const recovered = carts.filter(c => c.status === 'recovered').length;
 
   return (
@@ -58,16 +58,16 @@ export default function AbandonedCartsPage() {
               {carts.map(c => (
                 <tr key={c.id}>
                   <td>
-                    <div style={{ fontWeight: 500 }}>{c.customerName || 'Guest'}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{c.customerEmail}</div>
+                    <div style={{ fontWeight: 500 }}>{c.createdBy ? `${c.createdBy.firstName || ''} ${c.createdBy.lastName || ''}`.trim() || 'Guest' : 'Guest'}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{c.createdBy?.email || c.company?.name || '-'}</div>
                   </td>
-                  <td>{c.itemCount} items</td>
-                  <td style={{ fontWeight: 500 }}>${parseFloat(c.totalPrice || '0').toFixed(2)}</td>
+                  <td>{c.items?.length || 0} items</td>
+                  <td style={{ fontWeight: 500 }}>${parseFloat(String(c.total || '0')).toFixed(2)}</td>
                   <td><StatusBadge status={c.status} colorMap={{ abandoned: 'warning', recovered: 'success', expired: 'secondary' }} /></td>
                   <td style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{new Date(c.createdAt).toLocaleDateString()}</td>
                   <td>
-                    {c.recoveryUrl && (
-                      <a href={c.recoveryUrl} target="_blank" rel="noopener noreferrer" className="btn-apple primary small" style={{ textDecoration: 'none' }}>
+                    {c.shopifyCheckoutUrl && (
+                      <a href={c.shopifyCheckoutUrl} target="_blank" rel="noopener noreferrer" className="btn-apple primary small" style={{ textDecoration: 'none' }}>
                         <i className="ti ti-mail" /> Send Recovery
                       </a>
                     )}
@@ -81,4 +81,3 @@ export default function AbandonedCartsPage() {
     </div>
   );
 }
-

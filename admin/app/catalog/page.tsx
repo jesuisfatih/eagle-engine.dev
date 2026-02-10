@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { adminFetch } from '@/lib/api-client';
 import { PageHeader, showToast } from '@/components/ui';
+import { adminFetch } from '@/lib/api-client';
+import { useCallback, useEffect, useState } from 'react';
 
 interface Product {
   id: string;
@@ -26,7 +26,7 @@ export default function CatalogPage() {
   const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await adminFetch('/api/v1/products');
+      const res = await adminFetch('/api/v1/catalog/products');
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : data.products || data.data || []);
     } catch { setProducts([]); }
@@ -154,4 +154,3 @@ export default function CatalogPage() {
     </div>
   );
 }
-
