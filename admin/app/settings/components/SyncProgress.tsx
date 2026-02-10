@@ -1,86 +1,102 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { adminFetch } from '@/lib/api-client';
+import { useCallback, useEffect, useState } from 'react';
+
+interface EntityState {
+  status: string;
+  isRunning: boolean;
+  totalRecordsSynced: number;
+  lastRunRecords: number;
+  lastCompletedAt: string | null;
+}
+
+const ENTITY_CONFIG = {
+  customers: { label: 'Customers', color: '#667eea' },
+  products: { label: 'Products', color: '#11998e' },
+  orders: { label: 'Orders', color: '#f5576c' },
+};
 
 export default function SyncProgress() {
-  const [progress, setProgress] = useState({ customers: 0, products: 0, orders: 0 });
+  const [entities, setEntities] = useState<Record<string, EntityState>>({});
+  const [isAnySyncing, setIsAnySyncing] = useState(false);
 
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const response = await adminFetch('/api/v1/sync/status');
-        
-        if (!response.ok) {
-          // Silently fail - don't spam console
-          return;
-        }
-        
-        const logs = await response.json();
-        
-        if (Array.isArray(logs) && logs.length > 0) {
-          const latest = logs[0];
-          if (latest && latest.status === 'running') {
-            setProgress({
-              customers: latest.recordsProcessed || 0,
-              products: latest.recordsProcessed || 0,
-              orders: latest.recordsProcessed || 0,
-            });
-          }
-        }
-      } catch (err) {
-        // Silently fail - endpoint might not be available
+  const fetchStatus = useCallback(async () => {
+    try {
+      const response = await adminFetch('/api/v1/sync/status');
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data?.entities) {
+        setEntities(data.entities);
+        setIsAnySyncing(data.isAnySyncing || false);
       }
-    }, 5000); // Reduced frequency to avoid 502 spam
-
-    return () => clearInterval(interval);
+    } catch {
+      // Silently fail
+    }
   }, []);
 
+  useEffect(() => {
+    fetchStatus();
+    const interval = setInterval(fetchStatus, isAnySyncing ? 3000 : 15000);
+    return () => clearInterval(interval);
+  }, [fetchStatus, isAnySyncing]);
+
+  if (Object.keys(entities).length === 0) return null;
+
   return (
-    <div className="card">
-      <div className="card-body">
-        <h6 className="card-title mb-3">Sync Progress</h6>
-        <div className="mb-3">
-          <div className="d-flex justify-content-between mb-1">
-            <span className="small">Customers</span>
-            <span className="small">{progress.customers}</span>
-          </div>
-          <div className="progress" style={{ height: '6px' }}>
-            <div
-              className="progress-bar bg-primary"
-              role="progressbar"
-              style={{ width: '100%' }}
-            ></div>
-          </div>
+    <div className="apple-card" style={{ marginBottom: 16 }}>
+      <div style={{ padding: '16px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+          <i className="ti ti-chart-bar" style={{ fontSize: 16, color: 'var(--text-tertiary)' }} />
+          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Sync Progress</span>
+          {isAnySyncing && (
+            <span style={{
+              fontSize: 11, padding: '2px 8px', borderRadius: 4,
+              background: 'rgba(59,130,246,0.1)', color: '#3b82f6',
+              fontWeight: 500, marginLeft: 'auto',
+            }}>
+              <i className="ti ti-loader-2 spin" style={{ fontSize: 10, marginRight: 4 }} />
+              Syncing
+            </span>
+          )}
         </div>
-        <div className="mb-3">
-          <div className="d-flex justify-content-between mb-1">
-            <span className="small">Products</span>
-            <span className="small">{progress.products}</span>
-          </div>
-          <div className="progress" style={{ height: '6px' }}>
-            <div
-              className="progress-bar bg-success"
-              role="progressbar"
-              style={{ width: '100%' }}
-            ></div>
-          </div>
-        </div>
-        <div className="mb-0">
-          <div className="d-flex justify-content-between mb-1">
-            <span className="small">Orders</span>
-            <span className="small">{progress.orders}</span>
-          </div>
-          <div className="progress" style={{ height: '6px' }}>
-            <div
-              className="progress-bar bg-warning"
-              role="progressbar"
-              style={{ width: '100%' }}
-            ></div>
-          </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {(Object.entries(ENTITY_CONFIG) as [string, typeof ENTITY_CONFIG.customers][]).map(([key, config]) => {
+            const entity = entities[key];
+            if (!entity) return null;
+            const isRunning = entity.isRunning;
+
+            return (
+              <div key={key}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>
+                    {config.label}
+                  </span>
+                  <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+                    {entity.totalRecordsSynced.toLocaleString()} records
+                  </span>
+                </div>
+                <div style={{
+                  height: 6, borderRadius: 3,
+                  background: 'var(--bg-tertiary)',
+                  overflow: 'hidden',
+                }}>
+                  <div style={{
+                    height: '100%', borderRadius: 3,
+                    background: isRunning
+                      ? `linear-gradient(90deg, ${config.color}, ${config.color}80, ${config.color})`
+                      : config.color,
+                    backgroundSize: isRunning ? '200% 100%' : undefined,
+                    animation: isRunning ? 'shimmer 1.5s infinite' : undefined,
+                    width: entity.status === 'completed' ? '100%' : isRunning ? '65%' : '0%',
+                    transition: 'width 0.5s ease',
+                  }} />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
   );
 }
-
