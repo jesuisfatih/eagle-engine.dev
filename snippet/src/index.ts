@@ -1,7 +1,10 @@
 /**
  * Eagle B2B Commerce Engine - Shopify Snippet
- * Browser fingerprinting, cart tracking, and customer identity resolution
+ * Browser fingerprinting, rrweb session replay, cart tracking, and customer identity resolution
  */
+
+import type { eventWithTime } from '@rrweb/types';
+import { record } from 'rrweb';
 
 interface EagleConfig {
   apiUrl: string;
@@ -9,9 +12,12 @@ interface EagleConfig {
   token?: string;
 }
 
-interface Window {
-  Shopify?: any;
-  ShopifyAnalytics?: any;
+declare global {
+  interface Window {
+    Shopify?: any;
+    ShopifyAnalytics?: any;
+    Eagle?: EagleSnippet;
+  }
 }
 
 class EagleSnippet {
@@ -21,12 +27,10 @@ class EagleSnippet {
   private cartToken: string | null = null;
   private fingerprintHash: string | null = null;
 
-  private mouseBuffer: Array<{x: number; y: number; t: number; type: string}> = [];
-  private mouseFlushInterval: ReturnType<typeof setInterval> | null = null;
+  private rrwebEvents: eventWithTime[] = [];
+  private rrwebFlushInterval: ReturnType<typeof setInterval> | null = null;
+  private rrwebStopFn: (() => void) | null | undefined = null;
   private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
-  private scrollY: number = 0;
-  private viewportWidth: number = 0;
-  private viewportHeight: number = 0;
 
   constructor(config: EagleConfig) {
     this.config = config;
@@ -48,9 +52,9 @@ class EagleSnippet {
     this.setupCustomerSync();
     this.setupCheckoutAutofill();
 
-    // Start presence heartbeat & mouse tracking
+    // Start presence heartbeat & rrweb session recording
     this.startHeartbeat();
-    this.startMouseTracking();
+    this.startSessionRecording();
   }
 
   // ============================
@@ -118,103 +122,86 @@ class EagleSnippet {
   }
 
   // ============================
-  // MOUSE & INTERACTION TRACKING (Clarity-like)
+  // SESSION RECORDING (rrweb — Clarity-grade)
   // ============================
 
-  private startMouseTracking() {
-    this.viewportWidth = window.innerWidth;
-    this.viewportHeight = window.innerHeight;
-
-    // Track mouse movements (sampled — every 100ms max)
-    let lastMouseTime = 0;
-    document.addEventListener('mousemove', (e) => {
-      const now = Date.now();
-      if (now - lastMouseTime < 100) return; // Throttle to 10fps
-      lastMouseTime = now;
-      this.mouseBuffer.push({
-        x: Math.round((e.clientX / this.viewportWidth) * 10000) / 100, // Normalized %
-        y: Math.round((e.clientY / this.viewportHeight) * 10000) / 100,
-        t: now,
-        type: 'm', // move
+  private startSessionRecording() {
+    try {
+      this.rrwebStopFn = record({
+        emit: (event: eventWithTime) => {
+          this.rrwebEvents.push(event);
+        },
+        // Privacy settings — mask all user input by default
+        maskAllInputs: true,
+        maskTextSelector: '[data-eagle-mask]',
+        // Performance — sample mouse movements
+        sampling: {
+          mousemove: true,
+          mouseInteraction: true,
+          scroll: 150,    // sample scroll every 150ms
+          media: 800,     // sample media every 800ms
+          input: 'last',  // only record last input value
+        },
+        // Inline styles for accurate replay
+        inlineStylesheet: true,
+        // Block large elements to save bandwidth
+        blockSelector: '[data-eagle-block], .no-replay',
+        // Slim mode: reduce snapshot size by using CSS text
+        slimDOMOptions: {
+          script: true,        // don't record script content
+          comment: true,       // don't record comments
+          headFavicon: true,   // skip favicons
+          headWhitespace: true,
+          headMetaDescKeywords: true,
+          headMetaSocial: true,
+          headMetaRobots: true,
+          headMetaHttpEquiv: true,
+          headMetaAuthorship: true,
+          headMetaVerification: true,
+        },
       });
-    });
 
-    // Track clicks
-    document.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      this.mouseBuffer.push({
-        x: Math.round((e.clientX / this.viewportWidth) * 10000) / 100,
-        y: Math.round((e.clientY / this.viewportHeight) * 10000) / 100,
-        t: Date.now(),
-        type: 'c', // click
+      console.log('🦅 Eagle: Session recording started (rrweb)');
+
+      // Flush rrweb events every 10 seconds
+      this.rrwebFlushInterval = setInterval(() => this.flushRrwebEvents(), 10000);
+
+      // Flush on page unload
+      window.addEventListener('beforeunload', () => {
+        if (this.rrwebFlushInterval) clearInterval(this.rrwebFlushInterval);
+        if (this.rrwebStopFn) this.rrwebStopFn();
+        this.flushRrwebEvents(true);
       });
-
-      // Also track click target info for heatmap
-      this.trackEvent('click', {
-        url: window.location.href,
-        path: window.location.pathname,
-        elementTag: target.tagName,
-        elementText: target.textContent?.slice(0, 50)?.trim(),
-        elementId: target.id || undefined,
-        elementClass: target.className?.toString()?.slice(0, 100) || undefined,
-        x: Math.round((e.clientX / this.viewportWidth) * 100),
-        y: Math.round((e.clientY / this.viewportHeight) * 100),
-      });
-    });
-
-    // Track scroll
-    let lastScrollTime = 0;
-    window.addEventListener('scroll', () => {
-      const now = Date.now();
-      if (now - lastScrollTime < 200) return; // Throttle scroll
-      lastScrollTime = now;
-      this.scrollY = window.scrollY;
-      this.mouseBuffer.push({
-        x: 0,
-        y: Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 10000) / 100,
-        t: now,
-        type: 's', // scroll
-      });
-    });
-
-    // Track window resize
-    window.addEventListener('resize', () => {
-      this.viewportWidth = window.innerWidth;
-      this.viewportHeight = window.innerHeight;
-    });
-
-    // Flush mouse buffer every 5 seconds
-    this.mouseFlushInterval = setInterval(() => this.flushMouseBuffer(), 5000);
-
-    // Flush on page unload
-    window.addEventListener('beforeunload', () => {
-      if (this.mouseFlushInterval) clearInterval(this.mouseFlushInterval);
-      this.flushMouseBuffer(true);
-    });
+    } catch (err) {
+      console.warn('🦅 Eagle: Session recording failed to start', err);
+    }
   }
 
-  private flushMouseBuffer(useBeacon: boolean = false) {
-    if (this.mouseBuffer.length === 0) return;
+  private flushRrwebEvents(useBeacon: boolean = false) {
+    if (this.rrwebEvents.length === 0) return;
 
+    const events = this.rrwebEvents.splice(0); // Take all and clear
     const data = {
       shop: this.config.shop,
       sessionId: this.sessionId,
       fingerprintHash: this.fingerprintHash,
-      viewport: { width: this.viewportWidth, height: this.viewportHeight },
+      viewport: { width: window.innerWidth, height: window.innerHeight },
       pageUrl: window.location.href,
-      events: this.mouseBuffer.splice(0), // Take all and clear
+      events, // Full rrweb events
     };
+
+    const payload = JSON.stringify(data);
 
     if (useBeacon) {
       navigator.sendBeacon(
         `${this.config.apiUrl}/api/v1/fingerprint/mouse`,
-        new Blob([JSON.stringify(data)], { type: 'application/json' })
+        new Blob([payload], { type: 'application/json' })
       );
     } else {
       fetch(`${this.config.apiUrl}/api/v1/fingerprint/mouse`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: payload,
         keepalive: true,
       }).catch(() => { /* silent */ });
     }

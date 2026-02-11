@@ -251,12 +251,7 @@ export declare class FingerprintService {
             height: number;
         };
         pageUrl: string;
-        events: Array<{
-            x: number;
-            y: number;
-            t: number;
-            type: string;
-        }>;
+        events: any[];
     }): Promise<void>;
     getActiveVisitors(merchantId: string): Promise<{
         totalOnline: number;

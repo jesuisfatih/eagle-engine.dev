@@ -767,7 +767,7 @@ let FingerprintService = FingerprintService_1 = class FingerprintService {
             events: data.events,
             timestamp: Date.now(),
         });
-        const cutoff = Date.now() - 300000;
+        const cutoff = Date.now() - 900000;
         const filtered = batches.filter(b => b.timestamp > cutoff);
         this.mouseData.set(key, filtered);
         if (filtered.length === 0) {
@@ -832,14 +832,13 @@ let FingerprintService = FingerprintService_1 = class FingerprintService {
         const allEvents = [];
         for (const batch of batches) {
             for (const event of batch.events) {
-                allEvents.push({
-                    ...event,
-                    pageUrl: batch.pageUrl,
-                    viewport: batch.viewport,
-                });
+                allEvents.push(event);
             }
         }
-        allEvents.sort((a, b) => a.t - b.t);
+        allEvents.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        const durationMs = allEvents.length > 1
+            ? (allEvents[allEvents.length - 1].timestamp || 0) - (allEvents[0].timestamp || 0)
+            : 0;
         return {
             session: session ? {
                 id: session.id,
@@ -853,7 +852,7 @@ let FingerprintService = FingerprintService_1 = class FingerprintService {
             } : null,
             events: allEvents,
             totalEvents: allEvents.length,
-            durationMs: allEvents.length > 1 ? allEvents[allEvents.length - 1].t - allEvents[0].t : 0,
+            durationMs,
         };
     }
     calculateBotScore(dto) {

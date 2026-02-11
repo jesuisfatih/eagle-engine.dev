@@ -921,7 +921,7 @@ export class FingerprintService {
   }
 
   // ============================
-  // MOUSE DATA (Clarity-like replay)
+  // SESSION RECORDING (rrweb replay data)
   // ============================
 
   async processMouseData(merchantId: string, data: {
@@ -929,7 +929,7 @@ export class FingerprintService {
     fingerprintHash: string;
     viewport: { width: number; height: number };
     pageUrl: string;
-    events: Array<{ x: number; y: number; t: number; type: string }>;
+    events: any[]; // rrweb eventWithTime objects
   }) {
     const key = `${merchantId}:${data.sessionId}`;
 
@@ -945,12 +945,11 @@ export class FingerprintService {
       timestamp: Date.now(),
     });
 
-    // Keep only last 5 minutes of data per session (prevent memory bloat)
-    const cutoff = Date.now() - 300000;
+    // Keep only last 15 minutes of rrweb data per session
+    const cutoff = Date.now() - 900000;
     const filtered = batches.filter(b => b.timestamp > cutoff);
     this.mouseData.set(key, filtered);
 
-    // Cleanup sessions with no data
     if (filtered.length === 0) {
       this.mouseData.delete(key);
     }
@@ -1016,7 +1015,7 @@ export class FingerprintService {
     const key = `${merchantId}:${sessionId}`;
     const batches = this.mouseData.get(key) || [];
 
-    // Also get session info
+    // Get session info from DB
     const session = await this.prisma.visitorSession.findFirst({
       where: { merchantId, sessionId },
       include: {
@@ -1026,18 +1025,19 @@ export class FingerprintService {
       },
     });
 
-    // Flatten all events and sort by time
+    // Flatten all rrweb events from batches and sort by timestamp
     const allEvents: any[] = [];
     for (const batch of batches) {
       for (const event of batch.events) {
-        allEvents.push({
-          ...event,
-          pageUrl: batch.pageUrl,
-          viewport: batch.viewport,
-        });
+        allEvents.push(event);
       }
     }
-    allEvents.sort((a, b) => a.t - b.t);
+    // rrweb events have a 'timestamp' field
+    allEvents.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+    const durationMs = allEvents.length > 1
+      ? (allEvents[allEvents.length - 1].timestamp || 0) - (allEvents[0].timestamp || 0)
+      : 0;
 
     return {
       session: session ? {
@@ -1052,7 +1052,7 @@ export class FingerprintService {
       } : null,
       events: allEvents,
       totalEvents: allEvents.length,
-      durationMs: allEvents.length > 1 ? allEvents[allEvents.length - 1].t - allEvents[0].t : 0,
+      durationMs,
     };
   }
 
