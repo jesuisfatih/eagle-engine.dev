@@ -409,6 +409,117 @@ export default function PricingPage() {
       {/* ─── Tab: Marketing Insights ─── */}
       {activeTab === 'marketing' && (
         <div style={{ marginTop: 20 }}>
+          {/* Quick Campaign Templates */}
+          <div className="apple-card" style={{ marginBottom: 20 }}>
+            <div className="apple-card-header">
+              <h3 className="apple-card-title"><i className="ti ti-rocket" style={{ color: 'var(--accent-blue)', marginRight: 6 }} />Quick Campaign Templates</h3>
+              <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Click to pre-fill a new rule</span>
+            </div>
+            <div className="apple-card-body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12 }}>
+              {[
+                {
+                  icon: 'ti-gift', color: '#34c759', title: 'First Order Discount',
+                  desc: 'Welcome new companies with 10% off their first order',
+                  preset: { name: 'New Customer Welcome — 10% Off', description: 'First order discount for new B2B customers', targetType: 'all', discountType: 'percentage', discountPercentage: 10, priority: 5 },
+                },
+                {
+                  icon: 'ti-packages', color: '#007aff', title: 'Volume Discount',
+                  desc: 'Quantity-based pricing tiers for bulk buyers',
+                  preset: {
+                    name: 'Volume Discount — Qty Breaks', description: 'Buy more, save more — quantity-based pricing', targetType: 'all', discountType: 'qty_break', priority: 3,
+                    qtyBreaks: [{ minQty: 50, discountPct: 5 }, { minQty: 100, discountPct: 10 }, { minQty: 500, discountPct: 15 }],
+                  },
+                },
+                {
+                  icon: 'ti-truck', color: '#ff9500', title: 'Min Cart Reward',
+                  desc: '$500+ orders get 5% off — boost average order value',
+                  preset: { name: '$500+ Order — 5% Off', description: 'Minimum cart threshold discount', targetType: 'all', discountType: 'percentage', discountPercentage: 5, minCartAmount: 500, priority: 2 },
+                },
+                {
+                  icon: 'ti-heart-handshake', color: '#ff2d55', title: 'Win-Back Campaign',
+                  desc: 'Re-engage inactive companies with a limited-time offer',
+                  preset: {
+                    name: 'Win-Back — 15% Off (30 days)', description: 'Limited-time discount for inactive customers',
+                    targetType: 'all', discountType: 'percentage', discountPercentage: 15, priority: 8,
+                    validFrom: new Date().toISOString().split('T')[0],
+                    validUntil: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+                  },
+                },
+              ].map(t => (
+                <div key={t.title}
+                  onClick={() => {
+                    setForm({ ...emptyForm, ...t.preset } as any);
+                    setEditRule(null);
+                    setShowCreate(true);
+                  }}
+                  style={{
+                    padding: 16, borderRadius: 12, cursor: 'pointer',
+                    border: '1px solid var(--border-primary)', background: 'var(--bg-tertiary)',
+                    transition: 'all 150ms',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow-md)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 9, background: `${t.color}14`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <i className={`ti ${t.icon}`} style={{ fontSize: 17, color: t.color }} />
+                    </div>
+                    <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>{t.title}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.4 }}>{t.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Price List Export */}
+          <div className="apple-card" style={{ marginBottom: 20, padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: '#af52de14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <i className="ti ti-file-spreadsheet" style={{ fontSize: 20, color: '#af52de' }} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>Price List Export</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>Export company-specific price lists with applied discounts</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <select className="select-apple" style={{ fontSize: 12, padding: '5px 10px' }} id="export-company">
+                  <option value="">All Companies</option>
+                  {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <button type="button" className="btn-apple secondary sm" onClick={async () => {
+                  const companyId = (document.getElementById('export-company') as HTMLSelectElement)?.value;
+                  try {
+                    const url = companyId ? `/api/v1/pricing/rules?companyId=${companyId}` : '/api/v1/pricing/rules';
+                    const res = await adminFetch(url);
+                    if (!res.ok) { showToast('Export failed', 'danger'); return; }
+                    const data = await res.json();
+                    const rulesList = Array.isArray(data) ? data : data.rules || data.data || [];
+                    const csvRows = ['Rule Name,Target,Scope,Discount Type,Discount Value,Min Cart,Priority,Status,Valid From,Valid Until'];
+                    rulesList.forEach((r: any) => {
+                      csvRows.push([
+                        `"${r.name}"`, r.targetType, r.scopeType, r.discountType,
+                        r.discountType === 'percentage' ? `${r.discountPercentage}%` : `$${r.discountValue || 0}`,
+                        r.minCartAmount || 0, r.priority, r.isActive ? 'Active' : 'Inactive',
+                        r.validFrom?.split('T')[0] || '', r.validUntil?.split('T')[0] || '',
+                      ].join(','));
+                    });
+                    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `price-list-${companyId || 'all'}-${new Date().toISOString().split('T')[0]}.csv`;
+                    a.click();
+                    showToast('Price list exported!', 'success');
+                  } catch { showToast('Export failed', 'danger'); }
+                }}>
+                  <i className="ti ti-download" style={{ fontSize: 14 }} /> Export CSV
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 16 }}>
             {/* At-Risk Companies */}
             <div className="apple-card" style={{ padding: 24 }}>
