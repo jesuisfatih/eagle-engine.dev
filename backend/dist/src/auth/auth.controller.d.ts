@@ -9,7 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ShopifyOauthService } from './shopify-oauth.service';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { AdminLoginDto, LoginDto, RegisterDto, AcceptInvitationDto, SendVerificationCodeDto, VerifyEmailCodeDto, ShopifyCustomerSyncDto } from './dto/auth.dto';
+import { AdminLoginDto, LoginDto, RegisterDto, AcceptInvitationDto, SendVerificationCodeDto, VerifyEmailCodeDto, ShopifyCustomerSyncDto, PasswordResetRequestDto, PasswordResetDto } from './dto/auth.dto';
 export declare class AuthController {
     private authService;
     private sessionSyncService;
@@ -32,6 +32,18 @@ export declare class AuthController {
     validateInvitation(token: string, res: Response): Promise<Response<any, Record<string, any>>>;
     sendVerificationCode(dto: SendVerificationCodeDto, res: Response): Promise<Response<any, Record<string, any>>>;
     verifyEmailCode(dto: VerifyEmailCodeDto, res: Response): Promise<Response<any, Record<string, any>>>;
+    requestInvitation(body: {
+        email: string;
+        companyName: string;
+        contactName: string;
+        phone?: string;
+        website?: string;
+        industry?: string;
+        estimatedMonthlyVolume?: string;
+        message?: string;
+    }, res: Response): Promise<Response<any, Record<string, any>>>;
+    forgotPassword(dto: PasswordResetRequestDto, res: Response): Promise<Response<any, Record<string, any>>>;
+    resetPassword(dto: PasswordResetDto, res: Response): Promise<Response<any, Record<string, any>>>;
     register(dto: RegisterDto, res: Response): Promise<Response<any, Record<string, any>>>;
     acceptInvitation(dto: AcceptInvitationDto): Promise<{
         accessToken: string;
@@ -75,6 +87,7 @@ export declare class AuthController {
             description: string | null;
             targetType: string;
             targetCompanyId: string | null;
+            targetCompanyUserId: string | null;
             targetCompanyGroup: string | null;
             scopeType: string;
             scopeProductIds: bigint[];

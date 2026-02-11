@@ -13,9 +13,18 @@ export declare class CompaniesController {
         updatedAt: Date;
         email: string | null;
         phone: string | null;
+        users: {
+            id: string;
+            email: string;
+            firstName: string | null;
+            lastName: string | null;
+            isActive: boolean;
+            role: string;
+            lastLoginAt: Date | null;
+        }[];
         _count: {
-            orders: number;
             users: number;
+            orders: number;
         };
     }>>;
     getStats(merchantId: string): Promise<{
@@ -26,21 +35,20 @@ export declare class CompaniesController {
         totalUsers: number;
     }>;
     findOne(id: string, merchantId: string): Promise<{
-        orders: {
+        merchant: {
             id: string;
+            shopDomain: string;
+            shopifyShopId: bigint | null;
+            accessToken: string;
+            scope: string | null;
+            planName: string;
+            status: string;
+            settings: import("@prisma/client/runtime/client").JsonValue;
+            snippetEnabled: boolean;
+            lastSyncAt: Date | null;
             createdAt: Date;
-            shopifyOrderId: bigint;
-            shopifyOrderNumber: string | null;
-            totalPrice: import("@prisma/client-runtime-utils").Decimal | null;
-            financialStatus: string | null;
-        }[];
-        pricingRules: {
-            name: string;
-            id: string;
-            discountType: string;
-            discountValue: import("@prisma/client-runtime-utils").Decimal | null;
-            priority: number;
-        }[];
+            updatedAt: Date;
+        };
         users: {
             id: string;
             email: string;
@@ -49,6 +57,21 @@ export declare class CompaniesController {
             isActive: boolean;
             role: string;
             lastLoginAt: Date | null;
+        }[];
+        pricingRules: {
+            name: string;
+            id: string;
+            discountType: string;
+            discountValue: import("@prisma/client-runtime-utils").Decimal | null;
+            priority: number;
+        }[];
+        orders: {
+            id: string;
+            createdAt: Date;
+            shopifyOrderId: bigint;
+            shopifyOrderNumber: string | null;
+            totalPrice: import("@prisma/client-runtime-utils").Decimal | null;
+            financialStatus: string | null;
         }[];
     } & {
         name: string;
@@ -193,6 +216,30 @@ export declare class CompaniesController {
         invitationToken: string | null;
         invitationSentAt: Date | null;
         invitationAcceptedAt: Date | null;
+    }>;
+    removeUser(companyId: string, userId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        shopifyCustomerId: bigint | null;
+        email: string;
+        firstName: string | null;
+        lastName: string | null;
+        companyId: string;
+        isActive: boolean;
+        passwordHash: string | null;
+        role: string;
+        permissions: import("@prisma/client/runtime/client").JsonValue;
+        lastLoginAt: Date | null;
+        invitationToken: string | null;
+        invitationSentAt: Date | null;
+        invitationAcceptedAt: Date | null;
+    }>;
+    resendInvite(companyId: string, body: {
+        email: string;
+    }): Promise<{
+        success: boolean;
+        message: string;
     }>;
     verifyUserEmail(userId: string): Promise<{
         id: string;

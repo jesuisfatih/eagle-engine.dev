@@ -15,11 +15,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EventsController = void 0;
 const common_1 = require("@nestjs/common");
 const throttler_1 = require("@nestjs/throttler");
-const events_service_1 = require("./events.service");
-const public_decorator_1 = require("../auth/decorators/public.decorator");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
+const public_decorator_1 = require("../auth/decorators/public.decorator");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const event_dto_1 = require("./dto/event.dto");
+const events_service_1 = require("./events.service");
 let EventsController = class EventsController {
     eventsService;
     constructor(eventsService) {
@@ -40,6 +40,15 @@ let EventsController = class EventsController {
             to: new Date(query.to),
         } : undefined;
         return this.eventsService.getAnalytics(merchantId, dateRange);
+    }
+    async getAdminActivity(merchantId, limit) {
+        return this.eventsService.getAdminActivityFeed(merchantId, limit ? parseInt(limit) : 50);
+    }
+    async getWebhookActivity(merchantId, limit) {
+        return this.eventsService.getWebhookActivityFeed(merchantId, limit ? parseInt(limit) : 100);
+    }
+    async getSessionActivity(merchantId, limit) {
+        return this.eventsService.getSessionActivityFeed(merchantId, limit ? parseInt(limit) : 50);
     }
 };
 exports.EventsController = EventsController;
@@ -72,6 +81,36 @@ __decorate([
     __metadata("design:paramtypes", [String, event_dto_1.AnalyticsQueryDto]),
     __metadata("design:returntype", Promise)
 ], EventsController.prototype, "getAnalytics", null);
+__decorate([
+    (0, throttler_1.SkipThrottle)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('admin-activity'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(1, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], EventsController.prototype, "getAdminActivity", null);
+__decorate([
+    (0, throttler_1.SkipThrottle)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('webhook-activity'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(1, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], EventsController.prototype, "getWebhookActivity", null);
+__decorate([
+    (0, throttler_1.SkipThrottle)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('session-activity'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(1, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], EventsController.prototype, "getSessionActivity", null);
 exports.EventsController = EventsController = __decorate([
     (0, common_1.Controller)('events'),
     __metadata("design:paramtypes", [events_service_1.EventsService])

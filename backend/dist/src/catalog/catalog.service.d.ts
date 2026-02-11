@@ -25,6 +25,7 @@ export declare class CatalogService {
         };
         variants: {
             id: string;
+            shopifyVariantId: bigint;
             price: import("@prisma/client-runtime-utils").Decimal | null;
             compareAtPrice: import("@prisma/client-runtime-utils").Decimal | null;
             inventoryQuantity: number | null;

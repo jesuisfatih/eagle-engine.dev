@@ -14,54 +14,60 @@ exports.SyncScheduler = void 0;
 const common_1 = require("@nestjs/common");
 const schedule_1 = require("@nestjs/schedule");
 const prisma_service_1 = require("../prisma/prisma.service");
+const sync_state_service_1 = require("../sync/sync-state.service");
 const sync_service_1 = require("../sync/sync.service");
 let SyncScheduler = SyncScheduler_1 = class SyncScheduler {
     prisma;
     syncService;
+    syncState;
     logger = new common_1.Logger(SyncScheduler_1.name);
-    constructor(prisma, syncService) {
+    constructor(prisma, syncService, syncState) {
         this.prisma = prisma;
         this.syncService = syncService;
+        this.syncState = syncState;
     }
     async handleCustomersSync() {
         this.logger.debug('Running scheduled customers sync...');
-        const merchants = await this.prisma.merchant.findMany({
-            where: { status: 'active' },
-        });
-        for (const merchant of merchants) {
-            try {
-                await this.syncService.triggerCustomersSync(merchant.id);
-            }
-            catch (error) {
-                this.logger.error(`Failed to sync customers for merchant ${merchant.shopDomain}`, error);
-            }
-        }
+        await this.runSyncForAllMerchants('customers');
     }
     async handleProductsSync() {
         this.logger.debug('Running scheduled products sync...');
-        const merchants = await this.prisma.merchant.findMany({
-            where: { status: 'active' },
-        });
-        for (const merchant of merchants) {
-            try {
-                await this.syncService.triggerProductsSync(merchant.id);
-            }
-            catch (error) {
-                this.logger.error(`Failed to sync products for merchant ${merchant.shopDomain}`, error);
-            }
-        }
+        await this.runSyncForAllMerchants('products');
     }
     async handleOrdersSync() {
         this.logger.debug('Running scheduled orders sync...');
+        await this.runSyncForAllMerchants('orders');
+    }
+    async runSyncForAllMerchants(entityType) {
         const merchants = await this.prisma.merchant.findMany({
             where: { status: 'active' },
         });
         for (const merchant of merchants) {
             try {
-                await this.syncService.triggerOrdersSync(merchant.id);
+                const isRunning = await this.syncState.isRunning(merchant.id, entityType);
+                if (isRunning) {
+                    this.logger.debug(`Skipping ${entityType} sync for ${merchant.shopDomain}: already running`);
+                    continue;
+                }
+                const shouldSkip = await this.syncState.shouldSkip(merchant.id, entityType);
+                if (shouldSkip) {
+                    this.logger.debug(`Skipping ${entityType} sync for ${merchant.shopDomain}: too many consecutive failures`);
+                    continue;
+                }
+                switch (entityType) {
+                    case 'customers':
+                        await this.syncService.triggerCustomersSync(merchant.id);
+                        break;
+                    case 'products':
+                        await this.syncService.triggerProductsSync(merchant.id);
+                        break;
+                    case 'orders':
+                        await this.syncService.triggerOrdersSync(merchant.id);
+                        break;
+                }
             }
             catch (error) {
-                this.logger.error(`Failed to sync orders for merchant ${merchant.shopDomain}`, error);
+                this.logger.error(`Failed to trigger ${entityType} sync for merchant ${merchant.shopDomain}`, error);
             }
         }
     }
@@ -88,6 +94,7 @@ __decorate([
 exports.SyncScheduler = SyncScheduler = SyncScheduler_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        sync_service_1.SyncService])
+        sync_service_1.SyncService,
+        sync_state_service_1.SyncStateService])
 ], SyncScheduler);
 //# sourceMappingURL=sync.scheduler.js.map

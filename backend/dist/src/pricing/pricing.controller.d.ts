@@ -1,5 +1,5 @@
+import { CalculatePricesDto, CreatePricingRuleDto, GetRulesQueryDto, ToggleRuleDto, UpdatePricingRuleDto } from './dto/pricing.dto';
 import { PricingService } from './pricing.service';
-import { CalculatePricesDto, CreatePricingRuleDto, UpdatePricingRuleDto, ToggleRuleDto, GetRulesQueryDto } from './dto/pricing.dto';
 export declare class PricingController {
     private pricingService;
     constructor(pricingService: PricingService);
@@ -8,6 +8,12 @@ export declare class PricingController {
         targetCompany: {
             name: string;
             id: string;
+        } | null;
+        targetCompanyUser: {
+            id: string;
+            email: string;
+            firstName: string | null;
+            lastName: string | null;
         } | null;
     } & {
         name: string;
@@ -18,6 +24,7 @@ export declare class PricingController {
         description: string | null;
         targetType: string;
         targetCompanyId: string | null;
+        targetCompanyUserId: string | null;
         targetCompanyGroup: string | null;
         scopeType: string;
         scopeProductIds: bigint[];
@@ -39,6 +46,12 @@ export declare class PricingController {
             name: string;
             id: string;
         } | null;
+        targetCompanyUser: {
+            id: string;
+            email: string;
+            firstName: string | null;
+            lastName: string | null;
+        } | null;
     } & {
         name: string;
         id: string;
@@ -48,6 +61,7 @@ export declare class PricingController {
         description: string | null;
         targetType: string;
         targetCompanyId: string | null;
+        targetCompanyUserId: string | null;
         targetCompanyGroup: string | null;
         scopeType: string;
         scopeProductIds: bigint[];
@@ -73,6 +87,7 @@ export declare class PricingController {
         description: string | null;
         targetType: string;
         targetCompanyId: string | null;
+        targetCompanyUserId: string | null;
         targetCompanyGroup: string | null;
         scopeType: string;
         scopeProductIds: bigint[];
@@ -98,6 +113,7 @@ export declare class PricingController {
         description: string | null;
         targetType: string;
         targetCompanyId: string | null;
+        targetCompanyUserId: string | null;
         targetCompanyGroup: string | null;
         scopeType: string;
         scopeProductIds: bigint[];
@@ -123,6 +139,7 @@ export declare class PricingController {
         description: string | null;
         targetType: string;
         targetCompanyId: string | null;
+        targetCompanyUserId: string | null;
         targetCompanyGroup: string | null;
         scopeType: string;
         scopeProductIds: bigint[];
@@ -148,6 +165,7 @@ export declare class PricingController {
         description: string | null;
         targetType: string;
         targetCompanyId: string | null;
+        targetCompanyUserId: string | null;
         targetCompanyGroup: string | null;
         scopeType: string;
         scopeProductIds: bigint[];

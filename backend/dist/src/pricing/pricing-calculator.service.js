@@ -43,7 +43,7 @@ let PricingCalculatorService = PricingCalculatorService_1 = class PricingCalcula
                 product: true,
             },
         });
-        const pricingRules = await this.getApplicableRules(merchantId, company);
+        const pricingRules = await this.getApplicableRules(merchantId, company, context.companyUserId);
         const results = [];
         for (const variant of variants) {
             const quantity = quantities[variant.shopifyVariantId.toString()] || 1;
@@ -71,8 +71,22 @@ let PricingCalculatorService = PricingCalculatorService_1 = class PricingCalcula
         }
         return results;
     }
-    async getApplicableRules(merchantId, company) {
+    async getApplicableRules(merchantId, company, companyUserId) {
         const now = new Date();
+        const targetConditions = [
+            { targetType: 'all' },
+            { targetType: 'company', targetCompanyId: company.id },
+            {
+                targetType: 'company_group',
+                targetCompanyGroup: company.companyGroup,
+            },
+        ];
+        if (companyUserId) {
+            targetConditions.push({
+                targetType: 'company_user',
+                targetCompanyUserId: companyUserId,
+            });
+        }
         const rules = await this.prisma.pricingRule.findMany({
             where: {
                 merchantId,
@@ -97,14 +111,7 @@ let PricingCalculatorService = PricingCalculatorService_1 = class PricingCalcula
                 ],
                 AND: [
                     {
-                        OR: [
-                            { targetType: 'all' },
-                            { targetType: 'company', targetCompanyId: company.id },
-                            {
-                                targetType: 'company_group',
-                                targetCompanyGroup: company.companyGroup,
-                            },
-                        ],
+                        OR: targetConditions,
                     },
                 ],
             },

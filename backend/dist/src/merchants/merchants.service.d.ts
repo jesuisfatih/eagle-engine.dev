@@ -49,5 +49,7 @@ export declare class MerchantsService {
         totalUsers: number;
         totalOrders: number;
         totalRevenue: number | import("@prisma/client-runtime-utils").Decimal;
+        totalProducts: number;
+        avgOrderValue: number;
     }>;
 }

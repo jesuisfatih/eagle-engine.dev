@@ -2,6 +2,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export interface PricingContext {
     merchantId: string;
     companyId: string;
+    companyUserId?: string;
     variantIds: bigint[];
     quantities?: {
         [variantId: string]: number;

@@ -10,6 +10,7 @@ export declare class JwtStrategy extends JwtStrategy_base {
     private prisma;
     constructor(config: ConfigService, prisma: PrismaService);
     validate(payload: JwtPayload): Promise<{
+        sub: string;
         userId: string;
         email: string;
         companyId: string;
@@ -18,6 +19,7 @@ export declare class JwtStrategy extends JwtStrategy_base {
         type: string;
         shopDomain?: undefined;
     } | {
+        sub: string;
         userId: string;
         email: string;
         merchantId: string;

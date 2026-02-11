@@ -7,42 +7,43 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
+const bull_1 = require("@nestjs/bull");
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
-const bull_1 = require("@nestjs/bull");
-const throttler_1 = require("@nestjs/throttler");
 const core_1 = require("@nestjs/core");
+const throttler_1 = require("@nestjs/throttler");
+const abandoned_carts_module_1 = require("./abandoned-carts/abandoned-carts.module");
+const addresses_module_1 = require("./addresses/addresses.module");
+const analytics_module_1 = require("./analytics/analytics.module");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
-const prisma_module_1 = require("./prisma/prisma.module");
-const redis_module_1 = require("./redis/redis.module");
-const common_module_1 = require("./common/common.module");
 const auth_module_1 = require("./auth/auth.module");
-const shopify_module_1 = require("./shopify/shopify.module");
-const sync_module_1 = require("./sync/sync.module");
-const pricing_module_1 = require("./pricing/pricing.module");
-const carts_module_1 = require("./carts/carts.module");
-const events_module_1 = require("./events/events.module");
-const webhooks_module_1 = require("./webhooks/webhooks.module");
-const companies_module_1 = require("./companies/companies.module");
-const catalog_module_1 = require("./catalog/catalog.module");
-const orders_module_1 = require("./orders/orders.module");
-const checkout_module_1 = require("./checkout/checkout.module");
-const merchants_module_1 = require("./merchants/merchants.module");
-const mail_module_1 = require("./mail/mail.module");
-const scheduler_module_1 = require("./scheduler/scheduler.module");
-const shopify_customers_module_1 = require("./shopify-customers/shopify-customers.module");
-const analytics_module_1 = require("./analytics/analytics.module");
-const quotes_module_1 = require("./quotes/quotes.module");
-const notifications_module_1 = require("./notifications/notifications.module");
-const settings_module_1 = require("./settings/settings.module");
-const uploads_module_1 = require("./uploads/uploads.module");
-const abandoned_carts_module_1 = require("./abandoned-carts/abandoned-carts.module");
-const support_tickets_module_1 = require("./support-tickets/support-tickets.module");
-const wishlist_module_1 = require("./wishlist/wishlist.module");
-const addresses_module_1 = require("./addresses/addresses.module");
 const jwt_auth_guard_1 = require("./auth/guards/jwt-auth.guard");
+const carts_module_1 = require("./carts/carts.module");
+const catalog_module_1 = require("./catalog/catalog.module");
+const checkout_module_1 = require("./checkout/checkout.module");
+const common_module_1 = require("./common/common.module");
 const http_exception_filter_1 = require("./common/filters/http-exception.filter");
+const companies_module_1 = require("./companies/companies.module");
+const events_module_1 = require("./events/events.module");
+const fingerprint_module_1 = require("./fingerprint/fingerprint.module");
+const mail_module_1 = require("./mail/mail.module");
+const merchants_module_1 = require("./merchants/merchants.module");
+const notifications_module_1 = require("./notifications/notifications.module");
+const orders_module_1 = require("./orders/orders.module");
+const pricing_module_1 = require("./pricing/pricing.module");
+const prisma_module_1 = require("./prisma/prisma.module");
+const quotes_module_1 = require("./quotes/quotes.module");
+const redis_module_1 = require("./redis/redis.module");
+const scheduler_module_1 = require("./scheduler/scheduler.module");
+const settings_module_1 = require("./settings/settings.module");
+const shopify_customers_module_1 = require("./shopify-customers/shopify-customers.module");
+const shopify_module_1 = require("./shopify/shopify.module");
+const support_tickets_module_1 = require("./support-tickets/support-tickets.module");
+const sync_module_1 = require("./sync/sync.module");
+const uploads_module_1 = require("./uploads/uploads.module");
+const webhooks_module_1 = require("./webhooks/webhooks.module");
+const wishlist_module_1 = require("./wishlist/wishlist.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -108,6 +109,7 @@ exports.AppModule = AppModule = __decorate([
             support_tickets_module_1.SupportTicketsModule,
             wishlist_module_1.WishlistModule,
             addresses_module_1.AddressesModule,
+            fingerprint_module_1.FingerprintModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

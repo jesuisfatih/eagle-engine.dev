@@ -626,6 +626,53 @@ let AuthService = AuthService_1 = class AuthService {
             },
         };
     }
+    async requestPasswordReset(email) {
+        const user = await this.prisma.companyUser.findUnique({
+            where: { email: email.toLowerCase() },
+            include: { company: true },
+        });
+        if (!user) {
+            this.logger.log(`[PASSWORD_RESET] No user found for email: ${email}`);
+            return { success: true };
+        }
+        const resetToken = await this.jwtService.signAsync({ sub: user.id, email: user.email, type: 'password_reset' }, { expiresIn: '1h' });
+        const redisKey = `password_reset:${user.id}`;
+        await this.redisService.set(redisKey, resetToken, 3600);
+        const resetUrl = `https://accounts.eagledtfsupply.com/reset-password?token=${resetToken}`;
+        try {
+            await this.mailService.sendPasswordReset(user.email, resetUrl);
+            this.logger.log(`✅ [PASSWORD_RESET] Reset email sent to ${email}`);
+        }
+        catch (mailError) {
+            this.logger.error(`❌ [PASSWORD_RESET] Failed to send email: ${mailError.message}`);
+        }
+        return { success: true };
+    }
+    async resetPassword(token, newPassword) {
+        try {
+            const decoded = await this.jwtService.verifyAsync(token);
+            if (!decoded.sub || decoded.type !== 'password_reset') {
+                return { success: false, message: 'Invalid reset token' };
+            }
+            const redisKey = `password_reset:${decoded.sub}`;
+            const storedToken = await this.redisService.get(redisKey);
+            if (!storedToken || storedToken !== token) {
+                return { success: false, message: 'Reset token has expired or already been used' };
+            }
+            const passwordHash = await this.hashPassword(newPassword);
+            await this.prisma.companyUser.update({
+                where: { id: decoded.sub },
+                data: { passwordHash },
+            });
+            await this.redisService.del(redisKey);
+            this.logger.log(`✅ [PASSWORD_RESET] Password reset successful for user ${decoded.sub}`);
+            return { success: true };
+        }
+        catch (error) {
+            this.logger.error(`❌ [PASSWORD_RESET] Token verification failed: ${error.message}`);
+            return { success: false, message: 'Invalid or expired reset token' };
+        }
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = AuthService_1 = __decorate([

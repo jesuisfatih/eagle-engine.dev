@@ -37,6 +37,7 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
                 throw new common_1.UnauthorizedException('User not found or inactive');
             }
             return {
+                sub: user.id,
                 userId: user.id,
                 email: user.email,
                 companyId: user.companyId,
@@ -54,6 +55,7 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
                 throw new common_1.UnauthorizedException('Merchant not found or inactive');
             }
             return {
+                sub: merchant.id,
                 userId: merchant.id,
                 email: payload.email,
                 merchantId: merchant.id,

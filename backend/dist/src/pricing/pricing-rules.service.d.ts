@@ -2,9 +2,12 @@ import { PrismaService } from '../prisma/prisma.service';
 export interface CreatePricingRuleDto {
     name: string;
     description?: string;
-    targetType: 'all' | 'company' | 'company_group';
+    targetType: 'all' | 'company' | 'company_group' | 'company_user' | 'segment' | 'buyer_intent';
     targetCompanyId?: string;
+    targetCompanyUserId?: string;
     targetCompanyGroup?: string;
+    targetSegment?: string;
+    targetBuyerIntent?: string;
     scopeType: 'all' | 'products' | 'collections' | 'tags' | 'variants';
     scopeProductIds?: bigint[];
     scopeCollectionIds?: bigint[];
@@ -33,6 +36,7 @@ export declare class PricingRulesService {
         description: string | null;
         targetType: string;
         targetCompanyId: string | null;
+        targetCompanyUserId: string | null;
         targetCompanyGroup: string | null;
         scopeType: string;
         scopeProductIds: bigint[];
@@ -52,10 +56,18 @@ export declare class PricingRulesService {
     findAll(merchantId: string, filters?: {
         isActive?: boolean;
         companyId?: string;
+        companyUserId?: string;
+        targetType?: string;
     }): Promise<({
         targetCompany: {
             name: string;
             id: string;
+        } | null;
+        targetCompanyUser: {
+            id: string;
+            email: string;
+            firstName: string | null;
+            lastName: string | null;
         } | null;
     } & {
         name: string;
@@ -66,6 +78,7 @@ export declare class PricingRulesService {
         description: string | null;
         targetType: string;
         targetCompanyId: string | null;
+        targetCompanyUserId: string | null;
         targetCompanyGroup: string | null;
         scopeType: string;
         scopeProductIds: bigint[];
@@ -87,6 +100,12 @@ export declare class PricingRulesService {
             name: string;
             id: string;
         } | null;
+        targetCompanyUser: {
+            id: string;
+            email: string;
+            firstName: string | null;
+            lastName: string | null;
+        } | null;
     } & {
         name: string;
         id: string;
@@ -96,6 +115,7 @@ export declare class PricingRulesService {
         description: string | null;
         targetType: string;
         targetCompanyId: string | null;
+        targetCompanyUserId: string | null;
         targetCompanyGroup: string | null;
         scopeType: string;
         scopeProductIds: bigint[];
@@ -121,6 +141,7 @@ export declare class PricingRulesService {
         description: string | null;
         targetType: string;
         targetCompanyId: string | null;
+        targetCompanyUserId: string | null;
         targetCompanyGroup: string | null;
         scopeType: string;
         scopeProductIds: bigint[];
@@ -146,6 +167,7 @@ export declare class PricingRulesService {
         description: string | null;
         targetType: string;
         targetCompanyId: string | null;
+        targetCompanyUserId: string | null;
         targetCompanyGroup: string | null;
         scopeType: string;
         scopeProductIds: bigint[];
@@ -171,6 +193,7 @@ export declare class PricingRulesService {
         description: string | null;
         targetType: string;
         targetCompanyId: string | null;
+        targetCompanyUserId: string | null;
         targetCompanyGroup: string | null;
         scopeType: string;
         scopeProductIds: bigint[];
@@ -187,4 +210,31 @@ export declare class PricingRulesService {
         validFrom: Date | null;
         validUntil: Date | null;
     }>;
+    duplicate(id: string, merchantId: string): Promise<{
+        name: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        merchantId: string;
+        description: string | null;
+        targetType: string;
+        targetCompanyId: string | null;
+        targetCompanyUserId: string | null;
+        targetCompanyGroup: string | null;
+        scopeType: string;
+        scopeProductIds: bigint[];
+        scopeCollectionIds: bigint[];
+        scopeTags: string | null;
+        scopeVariantIds: bigint[];
+        discountType: string;
+        discountValue: import("@prisma/client-runtime-utils").Decimal | null;
+        discountPercentage: import("@prisma/client-runtime-utils").Decimal | null;
+        qtyBreaks: import("@prisma/client/runtime/client").JsonValue | null;
+        minCartAmount: import("@prisma/client-runtime-utils").Decimal | null;
+        priority: number;
+        isActive: boolean;
+        validFrom: Date | null;
+        validUntil: Date | null;
+    }>;
+    bulkToggle(merchantId: string, ruleIds: string[], isActive: boolean): Promise<import("@prisma/client").Prisma.BatchPayload>;
 }

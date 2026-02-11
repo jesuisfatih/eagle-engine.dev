@@ -127,4 +127,11 @@ export declare class AuthService {
             companyId: string;
         };
     }>;
+    requestPasswordReset(email: string): Promise<{
+        success: boolean;
+    }>;
+    resetPassword(token: string, newPassword: string): Promise<{
+        success: boolean;
+        message?: string;
+    }>;
 }

@@ -12,10 +12,10 @@ var PrismaService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PrismaService = void 0;
 const common_1 = require("@nestjs/common");
-const client_1 = require("@prisma/client");
-const adapter_pg_1 = require("@prisma/adapter-pg");
-const pg_1 = require("pg");
 const config_1 = require("@nestjs/config");
+const adapter_pg_1 = require("@prisma/adapter-pg");
+const client_1 = require("@prisma/client");
+const pg_1 = require("pg");
 let PrismaService = PrismaService_1 = class PrismaService {
     config;
     logger = new common_1.Logger(PrismaService_1.name);
@@ -82,6 +82,9 @@ let PrismaService = PrismaService_1 = class PrismaService {
     get syncLog() {
         return this.prisma.syncLog;
     }
+    get syncState() {
+        return this.prisma.syncState;
+    }
     get wishlist() {
         return this.prisma.wishlist;
     }
@@ -96,6 +99,21 @@ let PrismaService = PrismaService_1 = class PrismaService {
     }
     get ticketResponse() {
         return this.prisma.ticketResponse;
+    }
+    get visitorFingerprint() {
+        return this.prisma.visitorFingerprint;
+    }
+    get visitorIdentity() {
+        return this.prisma.visitorIdentity;
+    }
+    get visitorSession() {
+        return this.prisma.visitorSession;
+    }
+    get visitorEvent() {
+        return this.prisma.visitorEvent;
+    }
+    get companyIntelligence() {
+        return this.prisma.companyIntelligence;
     }
     async onModuleInit() {
         try {

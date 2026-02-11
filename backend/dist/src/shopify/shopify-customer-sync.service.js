@@ -55,9 +55,27 @@ let ShopifyCustomerSyncService = ShopifyCustomerSyncService_1 = class ShopifyCus
             }
             const permissions = user.permissions || {};
             const emailVerified = permissions.emailVerified || false;
+            const formatPhone = (phone) => {
+                if (!phone)
+                    return '';
+                let cleaned = phone.replace(/[^\d+]/g, '');
+                if (cleaned && !cleaned.startsWith('+')) {
+                    if (cleaned.startsWith('1') && cleaned.length === 11) {
+                        cleaned = '+' + cleaned;
+                    }
+                    else if (cleaned.length === 10) {
+                        cleaned = '+1' + cleaned;
+                    }
+                    else {
+                        cleaned = '+' + cleaned;
+                    }
+                }
+                return cleaned;
+            };
             const formatAddress = (address, userData) => {
                 if (!address)
                     return [];
+                const formattedPhone = formatPhone(userData.company.phone);
                 return [{
                         address1: address.address1 || address.street || '',
                         address2: address.address2 || '',
@@ -65,17 +83,18 @@ let ShopifyCustomerSyncService = ShopifyCustomerSyncService_1 = class ShopifyCus
                         province: address.province || address.state || '',
                         country: address.country || 'Turkey',
                         zip: address.zip || address.postalCode || '',
-                        phone: userData.company.phone || '',
+                        phone: formattedPhone,
                         first_name: userData.firstName || '',
                         last_name: userData.lastName || '',
                     }];
             };
+            const formattedPhone = formatPhone(user.company.phone);
             const customerData = {
                 customer: {
                     email: user.email,
                     first_name: user.firstName || '',
                     last_name: user.lastName || '',
-                    phone: user.company.phone || '',
+                    phone: formattedPhone,
                     addresses: formatAddress(user.company.billingAddress, user),
                     tags: [`eagle-b2b-user`, `company-${user.companyId}`],
                     accepts_marketing: emailVerified,

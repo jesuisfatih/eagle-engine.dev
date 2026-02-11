@@ -11,8 +11,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var ShopifyRestService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ShopifyRestService = void 0;
-const common_1 = require("@nestjs/common");
 const axios_1 = require("@nestjs/axios");
+const common_1 = require("@nestjs/common");
 const rxjs_1 = require("rxjs");
 const shopify_service_1 = require("./shopify.service");
 let ShopifyRestService = ShopifyRestService_1 = class ShopifyRestService {
@@ -203,9 +203,6 @@ let ShopifyRestService = ShopifyRestService_1 = class ShopifyRestService {
     }
     async getOrders(shop, accessToken, limit = 250) {
         return this.get(shop, accessToken, `/orders.json?limit=${limit}&status=any`);
-    }
-    async createDiscountCode(shop, accessToken, data) {
-        return this.post(shop, accessToken, '/price_rules.json', data);
     }
 };
 exports.ShopifyRestService = ShopifyRestService;

@@ -14,21 +14,29 @@ exports.ProductsSyncWorker = void 0;
 const bull_1 = require("@nestjs/bull");
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
-const shopify_service_1 = require("../../shopify/shopify.service");
 const shopify_graphql_service_1 = require("../../shopify/shopify-graphql.service");
+const shopify_service_1 = require("../../shopify/shopify.service");
+const sync_state_service_1 = require("../sync-state.service");
 let ProductsSyncWorker = ProductsSyncWorker_1 = class ProductsSyncWorker {
     prisma;
     shopifyService;
     shopifyGraphql;
+    syncState;
     logger = new common_1.Logger(ProductsSyncWorker_1.name);
-    constructor(prisma, shopifyService, shopifyGraphql) {
+    constructor(prisma, shopifyService, shopifyGraphql, syncState) {
         this.prisma = prisma;
         this.shopifyService = shopifyService;
         this.shopifyGraphql = shopifyGraphql;
+        this.syncState = syncState;
     }
-    async handleInitialSync(job) {
-        const { merchantId, syncLogId } = job.data;
-        this.logger.log(`Starting initial products sync for merchant: ${merchantId}`);
+    async handleSync(job) {
+        const { merchantId, syncLogId, isInitial } = job.data;
+        this.logger.log(`Starting products sync for merchant: ${merchantId} (initial: ${!!isInitial})`);
+        const lockAcquired = await this.syncState.acquireLock(merchantId, 'products');
+        if (!lockAcquired) {
+            this.logger.warn(`Could not acquire lock for products sync (merchant: ${merchantId})`);
+            return { skipped: true, reason: 'lock_not_acquired' };
+        }
         try {
             const merchant = await this.prisma.merchant.findUnique({
                 where: { id: merchantId },
@@ -36,9 +44,11 @@ let ProductsSyncWorker = ProductsSyncWorker_1 = class ProductsSyncWorker {
             if (!merchant) {
                 throw new Error('Merchant not found');
             }
-            let cursor;
+            const state = await this.syncState.getState(merchantId, 'products');
+            let cursor = isInitial ? undefined : (state.lastCursor || undefined);
             let hasNextPage = true;
             let processed = 0;
+            let lastCursor = null;
             while (hasNextPage) {
                 const result = await this.shopifyGraphql.getProductsWithVariants(merchant.shopDomain, merchant.accessToken, 50, cursor);
                 const products = result.products.edges;
@@ -119,9 +129,14 @@ let ProductsSyncWorker = ProductsSyncWorker_1 = class ProductsSyncWorker {
                     processed++;
                 }
                 hasNextPage = result.products.pageInfo.hasNextPage;
-                cursor = result.products.pageInfo.endCursor;
-                await job.progress((processed / 100) * 100);
+                lastCursor = result.products.pageInfo.endCursor || null;
+                cursor = lastCursor || undefined;
+                await this.syncState.updateCursor(merchantId, 'products', lastCursor);
+                await job.progress(Math.min((processed / 500) * 100, 99));
             }
+            await this.syncState.updateMetrics(merchantId, 'products', processed);
+            await this.syncState.releaseLock(merchantId, 'products', 'completed');
+            await this.syncState.updateMerchantLastSync(merchantId);
             if (syncLogId) {
                 await this.prisma.syncLog.update({
                     where: { id: syncLogId },
@@ -137,6 +152,7 @@ let ProductsSyncWorker = ProductsSyncWorker_1 = class ProductsSyncWorker {
         }
         catch (error) {
             this.logger.error('Products sync failed', error);
+            await this.syncState.releaseLock(merchantId, 'products', 'failed', error.message);
             if (syncLogId) {
                 await this.prisma.syncLog.update({
                     where: { id: syncLogId },
@@ -150,27 +166,19 @@ let ProductsSyncWorker = ProductsSyncWorker_1 = class ProductsSyncWorker {
             throw error;
         }
     }
-    async handleContinuousSync(job) {
-        return this.handleInitialSync(job);
-    }
 };
 exports.ProductsSyncWorker = ProductsSyncWorker;
-__decorate([
-    (0, bull_1.Process)('initial-sync'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], ProductsSyncWorker.prototype, "handleInitialSync", null);
 __decorate([
     (0, bull_1.Process)('sync'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], ProductsSyncWorker.prototype, "handleContinuousSync", null);
+], ProductsSyncWorker.prototype, "handleSync", null);
 exports.ProductsSyncWorker = ProductsSyncWorker = ProductsSyncWorker_1 = __decorate([
     (0, bull_1.Processor)('products-sync'),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         shopify_service_1.ShopifyService,
-        shopify_graphql_service_1.ShopifyGraphqlService])
+        shopify_graphql_service_1.ShopifyGraphqlService,
+        sync_state_service_1.SyncStateService])
 ], ProductsSyncWorker);
 //# sourceMappingURL=products-sync.worker.js.map

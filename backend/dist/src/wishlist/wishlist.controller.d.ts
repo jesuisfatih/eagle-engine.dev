@@ -7,9 +7,9 @@ export declare class WishlistController {
         id: string;
         productId: string;
         variantId: string | null;
-        price: number;
-        variantTitle: string | null;
         productTitle: string;
+        variantTitle: string | null;
+        price: number;
         productImage: string | null;
         wishlistId: string;
         addedAt: Date;
@@ -18,9 +18,9 @@ export declare class WishlistController {
         id: string;
         productId: string;
         variantId: string | null;
-        price: number;
-        variantTitle: string | null;
         productTitle: string;
+        variantTitle: string | null;
+        price: number;
         productImage: string | null;
         wishlistId: string;
         addedAt: Date;

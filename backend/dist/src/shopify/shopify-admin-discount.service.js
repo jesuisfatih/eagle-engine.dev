@@ -11,8 +11,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var ShopifyAdminDiscountService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ShopifyAdminDiscountService = void 0;
-const common_1 = require("@nestjs/common");
 const axios_1 = require("@nestjs/axios");
+const common_1 = require("@nestjs/common");
 const rxjs_1 = require("rxjs");
 const shopify_service_1 = require("./shopify.service");
 let ShopifyAdminDiscountService = ShopifyAdminDiscountService_1 = class ShopifyAdminDiscountService {
@@ -146,9 +146,6 @@ let ShopifyAdminDiscountService = ShopifyAdminDiscountService_1 = class ShopifyA
             this.logger.error('Failed to delete Shopify discount', error.response?.data || error.message);
             throw error;
         }
-    }
-    async createPriceRule(shop, accessToken, code, value, valueType) {
-        return this.createDiscountCode(shop, accessToken, code, value, valueType);
     }
 };
 exports.ShopifyAdminDiscountService = ShopifyAdminDiscountService;

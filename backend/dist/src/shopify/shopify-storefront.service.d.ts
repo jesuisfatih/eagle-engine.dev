@@ -7,6 +7,7 @@ interface CartLineItem {
 interface DeliveryAddress {
     firstName?: string;
     lastName?: string;
+    company?: string;
     address1: string;
     address2?: string;
     city: string;
@@ -19,9 +20,12 @@ interface BuyerIdentity {
     email: string;
     phone?: string;
     countryCode?: string;
-    deliveryAddressPreferences?: {
-        deliveryAddress: DeliveryAddress;
-    }[];
+    customerAccessToken?: string;
+    deliveryAddress?: DeliveryAddress;
+}
+interface CartAttribute {
+    key: string;
+    value: string;
 }
 export declare class ShopifyStorefrontService {
     private httpService;
@@ -30,18 +34,24 @@ export declare class ShopifyStorefrontService {
     private readonly apiVersion;
     constructor(httpService: HttpService, config: ConfigService);
     private buildStorefrontUrl;
-    createCart(shop: string, storefrontAccessToken: string, lines: CartLineItem[], discountCodes?: string[], customerAccessToken?: string): Promise<{
+    createCart(shop: string, storefrontAccessToken: string, lines: CartLineItem[], buyerIdentity?: {
+        email?: string;
+        phone?: string;
+        countryCode?: string;
+        customerAccessToken?: string;
+    }, discountCodes?: string[], attributes?: CartAttribute[], note?: string): Promise<{
         cartId: any;
         checkoutUrl: any;
         total: any;
+        currency: any;
+        discountCodes: any;
     }>;
-    createCustomerAccessToken(shop: string, storefrontAccessToken: string, email: string, password: string): Promise<string | null>;
-    updateCartBuyerIdentity(shop: string, storefrontAccessToken: string, cartId: string, buyerIdentity: BuyerIdentity): Promise<{
+    addDeliveryAddress(shop: string, storefrontAccessToken: string, cartId: string, address: DeliveryAddress): Promise<{
         cartId: any;
         checkoutUrl: any;
-        buyerIdentity: any;
     }>;
-    createCheckoutWithBuyerIdentity(shop: string, storefrontAccessToken: string, lines: CartLineItem[], buyerIdentity: BuyerIdentity, discountCodes?: string[]): Promise<{
+    createCustomerAccessToken(shop: string, storefrontAccessToken: string, email: string, password: string): Promise<string | null>;
+    createCheckoutWithBuyerIdentity(shop: string, storefrontAccessToken: string, lines: CartLineItem[], buyerIdentity: BuyerIdentity, discountCodes?: string[], attributes?: CartAttribute[]): Promise<{
         cartId: string;
         checkoutUrl: string;
         email: string;

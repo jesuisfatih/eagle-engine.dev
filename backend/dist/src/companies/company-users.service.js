@@ -51,6 +51,7 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const shopify_rest_service_1 = require("../shopify/shopify-rest.service");
 const crypto = __importStar(require("crypto"));
+const bcrypt = __importStar(require("bcrypt"));
 let CompanyUsersService = CompanyUsersService_1 = class CompanyUsersService {
     prisma;
     shopifyRest;
@@ -133,6 +134,89 @@ let CompanyUsersService = CompanyUsersService_1 = class CompanyUsersService {
             }
         }
         return updatedUser;
+    }
+    async changePassword(userId, currentPassword, newPassword) {
+        const user = await this.prisma.companyUser.findUnique({
+            where: { id: userId },
+        });
+        if (!user) {
+            throw new common_1.BadRequestException('User not found');
+        }
+        if (user.passwordHash) {
+            const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+            if (!isValid) {
+                throw new common_1.BadRequestException('Current password is incorrect');
+            }
+        }
+        const newPasswordHash = await bcrypt.hash(newPassword, 10);
+        await this.prisma.companyUser.update({
+            where: { id: userId },
+            data: { passwordHash: newPasswordHash },
+        });
+        this.logger.log(`Password changed for user ${user.email}`);
+        return { success: true, message: 'Password changed successfully' };
+    }
+    async getNotificationPreferences(userId) {
+        const user = await this.prisma.companyUser.findUnique({
+            where: { id: userId },
+            select: { permissions: true },
+        });
+        if (!user) {
+            throw new common_1.BadRequestException('User not found');
+        }
+        const permissions = user.permissions || {};
+        const notificationPrefs = permissions.notifications || {
+            orderUpdates: true,
+            promotions: true,
+            quoteAlerts: true,
+            teamActivity: true,
+            weeklyDigest: false,
+        };
+        return notificationPrefs;
+    }
+    async updateNotificationPreferences(userId, preferences) {
+        const user = await this.prisma.companyUser.findUnique({
+            where: { id: userId },
+            select: { permissions: true },
+        });
+        if (!user) {
+            throw new common_1.BadRequestException('User not found');
+        }
+        const currentPermissions = user.permissions || {};
+        const updatedPermissions = {
+            ...currentPermissions,
+            notifications: {
+                ...currentPermissions.notifications,
+                ...preferences,
+            },
+        };
+        await this.prisma.companyUser.update({
+            where: { id: userId },
+            data: { permissions: updatedPermissions },
+        });
+        this.logger.log(`Notification preferences updated for user ${userId}`);
+        return updatedPermissions.notifications;
+    }
+    async resendInvitation(companyId, email) {
+        const user = await this.prisma.companyUser.findFirst({
+            where: { companyId, email },
+        });
+        if (!user) {
+            throw new common_1.BadRequestException('User not found');
+        }
+        if (user.invitationAcceptedAt) {
+            throw new common_1.BadRequestException('Invitation already accepted');
+        }
+        const invitationToken = crypto.randomBytes(32).toString('hex');
+        await this.prisma.companyUser.update({
+            where: { id: user.id },
+            data: {
+                invitationToken,
+                invitationSentAt: new Date(),
+            },
+        });
+        this.logger.log(`Invitation resent to ${email}`);
+        return { success: true, message: 'Invitation resent successfully' };
     }
 };
 exports.CompanyUsersService = CompanyUsersService;

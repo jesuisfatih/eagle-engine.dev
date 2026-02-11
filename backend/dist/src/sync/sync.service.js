@@ -14,23 +14,27 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 var SyncService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SyncService = void 0;
-const common_1 = require("@nestjs/common");
 const bull_1 = require("@nestjs/bull");
+const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const sync_state_service_1 = require("./sync-state.service");
 let SyncService = SyncService_1 = class SyncService {
     prisma;
+    syncState;
     customersQueue;
     productsQueue;
     ordersQueue;
     logger = new common_1.Logger(SyncService_1.name);
-    constructor(prisma, customersQueue, productsQueue, ordersQueue) {
+    constructor(prisma, syncState, customersQueue, productsQueue, ordersQueue) {
         this.prisma = prisma;
+        this.syncState = syncState;
         this.customersQueue = customersQueue;
         this.productsQueue = productsQueue;
         this.ordersQueue = ordersQueue;
     }
     async triggerInitialSync(merchantId) {
         this.logger.log(`Triggering initial sync for merchant: ${merchantId}`);
+        await this.syncState.resetAll(merchantId);
         const syncLog = await this.prisma.syncLog.create({
             data: {
                 merchantId,
@@ -38,38 +42,69 @@ let SyncService = SyncService_1 = class SyncService {
                 status: 'running',
             },
         });
-        await this.customersQueue.add('initial-sync', { merchantId, syncLogId: syncLog.id });
-        await this.productsQueue.add('initial-sync', { merchantId, syncLogId: syncLog.id });
-        await this.ordersQueue.add('initial-sync', { merchantId, syncLogId: syncLog.id });
+        await this.customersQueue.add('sync', {
+            merchantId,
+            syncLogId: syncLog.id,
+            isInitial: true,
+        });
+        await this.productsQueue.add('sync', {
+            merchantId,
+            syncLogId: syncLog.id,
+            isInitial: true,
+        });
+        await this.ordersQueue.add('sync', {
+            merchantId,
+            syncLogId: syncLog.id,
+            isInitial: true,
+        });
         return { message: 'Initial sync started', syncLogId: syncLog.id };
     }
     async triggerCustomersSync(merchantId) {
-        await this.customersQueue.add('sync', { merchantId });
-        return { message: 'Customers sync queued' };
+        return this.triggerEntitySync(merchantId, 'customers', this.customersQueue);
     }
     async triggerProductsSync(merchantId) {
-        await this.productsQueue.add('sync', { merchantId });
-        return { message: 'Products sync queued' };
+        return this.triggerEntitySync(merchantId, 'products', this.productsQueue);
     }
     async triggerOrdersSync(merchantId) {
-        await this.ordersQueue.add('sync', { merchantId });
-        return { message: 'Orders sync queued' };
+        return this.triggerEntitySync(merchantId, 'orders', this.ordersQueue);
+    }
+    async triggerEntitySync(merchantId, entityType, queue) {
+        const isRunning = await this.syncState.isRunning(merchantId, entityType);
+        if (isRunning) {
+            this.logger.debug(`${entityType} sync already running for merchant ${merchantId}, skipping`);
+            return { message: `${entityType} sync already running`, skipped: true };
+        }
+        const shouldSkip = await this.syncState.shouldSkip(merchantId, entityType);
+        if (shouldSkip) {
+            this.logger.warn(`${entityType} sync has too many consecutive failures for merchant ${merchantId}. ` +
+                `Use reset endpoint to re-enable.`);
+            return {
+                message: `${entityType} sync disabled due to consecutive failures. Use reset to re-enable.`,
+                skipped: true,
+            };
+        }
+        await queue.add('sync', { merchantId });
+        return { message: `${entityType} sync queued` };
     }
     async getSyncStatus(merchantId) {
-        const recentSyncs = await this.prisma.syncLog.findMany({
-            where: { merchantId },
-            orderBy: { startedAt: 'desc' },
-            take: 10,
-        });
-        return recentSyncs;
+        return this.syncState.getComprehensiveStatus(merchantId);
+    }
+    async resetEntitySync(merchantId, entityType) {
+        await this.syncState.resetFailures(merchantId, entityType);
+        return { message: `${entityType} sync reset successfully` };
+    }
+    async resetAllSync(merchantId) {
+        await this.syncState.resetAll(merchantId);
+        return { message: 'All sync states reset successfully' };
     }
 };
 exports.SyncService = SyncService;
 exports.SyncService = SyncService = SyncService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __param(1, (0, bull_1.InjectQueue)('customers-sync')),
-    __param(2, (0, bull_1.InjectQueue)('products-sync')),
-    __param(3, (0, bull_1.InjectQueue)('orders-sync')),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService, Object, Object, Object])
+    __param(2, (0, bull_1.InjectQueue)('customers-sync')),
+    __param(3, (0, bull_1.InjectQueue)('products-sync')),
+    __param(4, (0, bull_1.InjectQueue)('orders-sync')),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        sync_state_service_1.SyncStateService, Object, Object, Object])
 ], SyncService);
 //# sourceMappingURL=sync.service.js.map

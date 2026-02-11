@@ -6,6 +6,7 @@ export declare enum TicketPriority {
 }
 export declare enum TicketCategory {
     ORDER = "order",
+    QUOTE = "quote",
     PRODUCT = "product",
     BILLING = "billing",
     TECHNICAL = "technical",

@@ -37,6 +37,7 @@ export declare class SessionSyncService {
             description: string | null;
             targetType: string;
             targetCompanyId: string | null;
+            targetCompanyUserId: string | null;
             targetCompanyGroup: string | null;
             scopeType: string;
             scopeProductIds: bigint[];

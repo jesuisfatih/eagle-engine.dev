@@ -124,4 +124,14 @@ export declare class CompanyUsersService {
         invitationSentAt: Date | null;
         invitationAcceptedAt: Date | null;
     }>;
+    changePassword(userId: string, currentPassword: string, newPassword: string): Promise<{
+        success: boolean;
+        message: string;
+    }>;
+    getNotificationPreferences(userId: string): Promise<any>;
+    updateNotificationPreferences(userId: string, preferences: any): Promise<any>;
+    resendInvitation(companyId: string, email: string): Promise<{
+        success: boolean;
+        message: string;
+    }>;
 }

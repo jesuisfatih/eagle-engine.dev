@@ -17,27 +17,6 @@ export declare class CompaniesService {
         updatedAt: Date;
         email: string | null;
         phone: string | null;
-        _count: {
-            orders: number;
-            users: number;
-        };
-    }>>;
-    findOne(id: string, merchantId: string): Promise<{
-        orders: {
-            id: string;
-            createdAt: Date;
-            shopifyOrderId: bigint;
-            shopifyOrderNumber: string | null;
-            totalPrice: import("@prisma/client-runtime-utils").Decimal | null;
-            financialStatus: string | null;
-        }[];
-        pricingRules: {
-            name: string;
-            id: string;
-            discountType: string;
-            discountValue: import("@prisma/client-runtime-utils").Decimal | null;
-            priority: number;
-        }[];
         users: {
             id: string;
             email: string;
@@ -46,6 +25,50 @@ export declare class CompaniesService {
             isActive: boolean;
             role: string;
             lastLoginAt: Date | null;
+        }[];
+        _count: {
+            users: number;
+            orders: number;
+        };
+    }>>;
+    findOne(id: string, merchantId: string): Promise<{
+        merchant: {
+            id: string;
+            shopDomain: string;
+            shopifyShopId: bigint | null;
+            accessToken: string;
+            scope: string | null;
+            planName: string;
+            status: string;
+            settings: import("@prisma/client/runtime/client").JsonValue;
+            snippetEnabled: boolean;
+            lastSyncAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+        users: {
+            id: string;
+            email: string;
+            firstName: string | null;
+            lastName: string | null;
+            isActive: boolean;
+            role: string;
+            lastLoginAt: Date | null;
+        }[];
+        pricingRules: {
+            name: string;
+            id: string;
+            discountType: string;
+            discountValue: import("@prisma/client-runtime-utils").Decimal | null;
+            priority: number;
+        }[];
+        orders: {
+            id: string;
+            createdAt: Date;
+            shopifyOrderId: bigint;
+            shopifyOrderNumber: string | null;
+            totalPrice: import("@prisma/client-runtime-utils").Decimal | null;
+            financialStatus: string | null;
         }[];
     } & {
         name: string;

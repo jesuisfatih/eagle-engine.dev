@@ -69,6 +69,12 @@ let AbandonedCartsController = class AbandonedCartsController {
         }
         return this.abandonedCartsService.getAllCartActivityLogs(merchantId, limit ? parseInt(limit) : 100);
     }
+    async restoreCart(id, merchantId) {
+        return this.abandonedCartsService.markAsRestored(id, merchantId);
+    }
+    async deleteCart(id, merchantId) {
+        return this.abandonedCartsService.deleteCart(id, merchantId);
+    }
 };
 exports.AbandonedCartsController = AbandonedCartsController;
 __decorate([
@@ -128,6 +134,26 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], AbandonedCartsController.prototype, "getAllCartActivity", null);
+__decorate([
+    (0, throttler_1.SkipThrottle)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)(':id/restore'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], AbandonedCartsController.prototype, "restoreCart", null);
+__decorate([
+    (0, throttler_1.SkipThrottle)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Delete)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], AbandonedCartsController.prototype, "deleteCart", null);
 exports.AbandonedCartsController = AbandonedCartsController = __decorate([
     (0, common_1.Controller)('abandoned-carts'),
     __metadata("design:paramtypes", [abandoned_carts_service_1.AbandonedCartsService])

@@ -14,21 +14,29 @@ exports.OrdersSyncWorker = void 0;
 const bull_1 = require("@nestjs/bull");
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
-const shopify_service_1 = require("../../shopify/shopify.service");
 const shopify_rest_service_1 = require("../../shopify/shopify-rest.service");
+const shopify_service_1 = require("../../shopify/shopify.service");
+const sync_state_service_1 = require("../sync-state.service");
 let OrdersSyncWorker = OrdersSyncWorker_1 = class OrdersSyncWorker {
     prisma;
     shopifyService;
     shopifyRest;
+    syncState;
     logger = new common_1.Logger(OrdersSyncWorker_1.name);
-    constructor(prisma, shopifyService, shopifyRest) {
+    constructor(prisma, shopifyService, shopifyRest, syncState) {
         this.prisma = prisma;
         this.shopifyService = shopifyService;
         this.shopifyRest = shopifyRest;
+        this.syncState = syncState;
     }
-    async handleInitialSync(job) {
-        const { merchantId, syncLogId } = job.data;
-        this.logger.log(`Starting initial orders sync for merchant: ${merchantId}`);
+    async handleSync(job) {
+        const { merchantId, syncLogId, isInitial } = job.data;
+        this.logger.log(`Starting orders sync for merchant: ${merchantId} (initial: ${!!isInitial})`);
+        const lockAcquired = await this.syncState.acquireLock(merchantId, 'orders');
+        if (!lockAcquired) {
+            this.logger.warn(`Could not acquire lock for orders sync (merchant: ${merchantId})`);
+            return { skipped: true, reason: 'lock_not_acquired' };
+        }
         try {
             const merchant = await this.prisma.merchant.findUnique({
                 where: { id: merchantId },
@@ -36,10 +44,21 @@ let OrdersSyncWorker = OrdersSyncWorker_1 = class OrdersSyncWorker {
             if (!merchant) {
                 throw new Error('Merchant not found');
             }
-            const result = await this.shopifyRest.getOrders(merchant.shopDomain, merchant.accessToken, 250);
+            const state = await this.syncState.getState(merchantId, 'orders');
+            const sinceId = isInitial ? undefined : state.lastSyncedId;
+            let path = `/orders.json?limit=250&status=any`;
+            if (sinceId) {
+                path += `&since_id=${sinceId.toString()}`;
+            }
+            const result = await this.shopifyRest.get(merchant.shopDomain, merchant.accessToken, path);
             const orders = result.orders || [];
             let processed = 0;
+            let maxOrderId = null;
             for (const order of orders) {
+                const orderId = BigInt(order.id);
+                if (!maxOrderId || orderId > maxOrderId) {
+                    maxOrderId = orderId;
+                }
                 let companyId;
                 let companyUserId;
                 if (order.customer?.id) {
@@ -104,6 +123,12 @@ let OrdersSyncWorker = OrdersSyncWorker_1 = class OrdersSyncWorker {
                 });
                 processed++;
             }
+            if (maxOrderId) {
+                await this.syncState.updateCursor(merchantId, 'orders', null, maxOrderId);
+            }
+            await this.syncState.updateMetrics(merchantId, 'orders', processed);
+            await this.syncState.releaseLock(merchantId, 'orders', 'completed');
+            await this.syncState.updateMerchantLastSync(merchantId);
             if (syncLogId) {
                 await this.prisma.syncLog.update({
                     where: { id: syncLogId },
@@ -119,6 +144,7 @@ let OrdersSyncWorker = OrdersSyncWorker_1 = class OrdersSyncWorker {
         }
         catch (error) {
             this.logger.error('Orders sync failed', error);
+            await this.syncState.releaseLock(merchantId, 'orders', 'failed', error.message);
             if (syncLogId) {
                 await this.prisma.syncLog.update({
                     where: { id: syncLogId },
@@ -132,27 +158,19 @@ let OrdersSyncWorker = OrdersSyncWorker_1 = class OrdersSyncWorker {
             throw error;
         }
     }
-    async handleContinuousSync(job) {
-        return this.handleInitialSync(job);
-    }
 };
 exports.OrdersSyncWorker = OrdersSyncWorker;
-__decorate([
-    (0, bull_1.Process)('initial-sync'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], OrdersSyncWorker.prototype, "handleInitialSync", null);
 __decorate([
     (0, bull_1.Process)('sync'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], OrdersSyncWorker.prototype, "handleContinuousSync", null);
+], OrdersSyncWorker.prototype, "handleSync", null);
 exports.OrdersSyncWorker = OrdersSyncWorker = OrdersSyncWorker_1 = __decorate([
     (0, bull_1.Processor)('orders-sync'),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         shopify_service_1.ShopifyService,
-        shopify_rest_service_1.ShopifyRestService])
+        shopify_rest_service_1.ShopifyRestService,
+        sync_state_service_1.SyncStateService])
 ], OrdersSyncWorker);
 //# sourceMappingURL=orders-sync.worker.js.map

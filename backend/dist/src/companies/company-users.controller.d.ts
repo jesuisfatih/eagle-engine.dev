@@ -50,4 +50,59 @@ export declare class CompanyUsersController {
         invitationSentAt: Date | null;
         invitationAcceptedAt: Date | null;
     }>;
+    changePassword(userId: string, body: {
+        currentPassword: string;
+        newPassword: string;
+    }): Promise<{
+        success: boolean;
+        message: string;
+    }>;
+    getNotificationPreferences(userId: string): Promise<any>;
+    updateNotificationPreferences(userId: string, preferences: {
+        orderUpdates?: boolean;
+        promotions?: boolean;
+        quoteAlerts?: boolean;
+        teamActivity?: boolean;
+        weeklyDigest?: boolean;
+    }): Promise<any>;
+    updateUserRole(userId: string, body: {
+        role: string;
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        shopifyCustomerId: bigint | null;
+        email: string;
+        firstName: string | null;
+        lastName: string | null;
+        companyId: string;
+        isActive: boolean;
+        passwordHash: string | null;
+        role: string;
+        permissions: import("@prisma/client/runtime/client").JsonValue;
+        lastLoginAt: Date | null;
+        invitationToken: string | null;
+        invitationSentAt: Date | null;
+        invitationAcceptedAt: Date | null;
+    }>;
+    updateUserStatus(userId: string, body: {
+        isActive: boolean;
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        shopifyCustomerId: bigint | null;
+        email: string;
+        firstName: string | null;
+        lastName: string | null;
+        companyId: string;
+        isActive: boolean;
+        passwordHash: string | null;
+        role: string;
+        permissions: import("@prisma/client/runtime/client").JsonValue;
+        lastLoginAt: Date | null;
+        invitationToken: string | null;
+        invitationSentAt: Date | null;
+        invitationAcceptedAt: Date | null;
+    }>;
 }

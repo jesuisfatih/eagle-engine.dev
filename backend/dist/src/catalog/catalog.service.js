@@ -28,6 +28,7 @@ const PRODUCT_LIST_SELECT = {
         take: 1,
         select: {
             id: true,
+            shopifyVariantId: true,
             price: true,
             compareAtPrice: true,
             inventoryQuantity: true,

@@ -1,12 +1,12 @@
 import { ConfigService } from '@nestjs/config';
+import { PricingCalculatorService } from '../pricing/pricing-calculator.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { ShopifyRestService } from '../shopify/shopify-rest.service';
 import { ShopifyAdminDiscountService } from '../shopify/shopify-admin-discount.service';
+import { ShopifyCustomerSyncService } from '../shopify/shopify-customer-sync.service';
+import { ShopifyRestService } from '../shopify/shopify-rest.service';
+import { ShopifySsoService } from '../shopify/shopify-sso.service';
 import { ShopifyStorefrontService } from '../shopify/shopify-storefront.service';
 import { DiscountEngineService } from './discount-engine.service';
-import { PricingCalculatorService } from '../pricing/pricing-calculator.service';
-import { ShopifySsoService } from '../shopify/shopify-sso.service';
-import { ShopifyCustomerSyncService } from '../shopify/shopify-customer-sync.service';
 export declare class CheckoutService {
     private config;
     private prisma;

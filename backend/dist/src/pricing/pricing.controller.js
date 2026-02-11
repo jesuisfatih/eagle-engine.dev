@@ -14,10 +14,10 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PricingController = void 0;
 const common_1 = require("@nestjs/common");
-const pricing_service_1 = require("./pricing.service");
-const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const pricing_dto_1 = require("./dto/pricing.dto");
+const pricing_service_1 = require("./pricing.service");
 let PricingController = class PricingController {
     pricingService;
     constructor(pricingService) {
@@ -49,6 +49,12 @@ let PricingController = class PricingController {
         }
         if (query.companyId) {
             filters.companyId = query.companyId;
+        }
+        if (query.companyUserId) {
+            filters.companyUserId = query.companyUserId;
+        }
+        if (query.targetType) {
+            filters.targetType = query.targetType;
         }
         return this.pricingService.getRules(merchantId, filters);
     }

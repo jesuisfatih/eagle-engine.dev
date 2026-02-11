@@ -11,9 +11,4 @@ export declare class ShopifyAdminDiscountService {
         code: string;
     }>;
     deleteDiscountCode(shop: string, accessToken: string, discountId: string): Promise<any>;
-    createPriceRule(shop: string, accessToken: string, code: string, value: number, valueType: 'fixed_amount' | 'percentage'): Promise<{
-        discountId: any;
-        discountCodeId: any;
-        code: string;
-    }>;
 }

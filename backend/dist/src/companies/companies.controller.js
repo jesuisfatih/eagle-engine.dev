@@ -80,6 +80,15 @@ let CompaniesController = class CompaniesController {
     async inviteUser(companyId, dto) {
         return this.companyUsersService.invite(companyId, dto);
     }
+    async removeUser(companyId, userId) {
+        return this.companyUsersService.delete(userId);
+    }
+    async resendInvite(companyId, body) {
+        if (!body.email) {
+            throw new common_1.BadRequestException('Email is required');
+        }
+        return this.companyUsersService.resendInvitation(companyId, body.email);
+    }
     async verifyUserEmail(userId) {
         return this.companyUsersService.verifyEmail(userId);
     }
@@ -165,6 +174,22 @@ __decorate([
     __metadata("design:paramtypes", [String, company_dto_1.InviteUserDto]),
     __metadata("design:returntype", Promise)
 ], CompaniesController.prototype, "inviteUser", null);
+__decorate([
+    (0, common_1.Delete)(':id/users/:userId'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Param)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], CompaniesController.prototype, "removeUser", null);
+__decorate([
+    (0, common_1.Post)(':id/users/resend-invite'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], CompaniesController.prototype, "resendInvite", null);
 __decorate([
     (0, common_1.Post)('users/:userId/verify-email'),
     __param(0, (0, common_1.Param)('userId')),

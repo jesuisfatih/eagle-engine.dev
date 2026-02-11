@@ -13,14 +13,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CheckoutService = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
+const pricing_calculator_service_1 = require("../pricing/pricing-calculator.service");
 const prisma_service_1 = require("../prisma/prisma.service");
-const shopify_rest_service_1 = require("../shopify/shopify-rest.service");
 const shopify_admin_discount_service_1 = require("../shopify/shopify-admin-discount.service");
+const shopify_customer_sync_service_1 = require("../shopify/shopify-customer-sync.service");
+const shopify_rest_service_1 = require("../shopify/shopify-rest.service");
+const shopify_sso_service_1 = require("../shopify/shopify-sso.service");
 const shopify_storefront_service_1 = require("../shopify/shopify-storefront.service");
 const discount_engine_service_1 = require("./discount-engine.service");
-const pricing_calculator_service_1 = require("../pricing/pricing-calculator.service");
-const shopify_sso_service_1 = require("../shopify/shopify-sso.service");
-const shopify_customer_sync_service_1 = require("../shopify/shopify-customer-sync.service");
 let CheckoutService = CheckoutService_1 = class CheckoutService {
     config;
     prisma;
@@ -121,7 +121,7 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
         if (discountAmount > 0) {
             discountCode = await this.discountEngine.generateDiscountCode(merchant.id, cart.companyId, cartId, discountAmount);
             try {
-                const shopifyDiscount = await this.shopifyAdminDiscount.createPriceRule(merchant.shopDomain, merchant.accessToken, discountCode, discountAmount, 'fixed_amount');
+                const shopifyDiscount = await this.shopifyAdminDiscount.createDiscountCode(merchant.shopDomain, merchant.accessToken, discountCode, discountAmount, 'fixed_amount');
                 this.logger.log(`Shopify discount created: ${discountCode} (ID: ${shopifyDiscount.discountId})`);
                 if (shopifyDiscount.discountId) {
                     await this.prisma.discountCode.updateMany({
@@ -144,31 +144,39 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
         if (storefrontToken && user) {
             try {
                 const shippingAddress = await this.getShippingAddress(user);
+                const countryCode = shippingAddress?.countryCode ||
+                    (shippingAddress?.country === 'United States' ? 'US' :
+                        shippingAddress?.country === 'Turkey' ? 'TR' :
+                            shippingAddress?.country?.substring(0, 2).toUpperCase()) || 'US';
                 const buyerIdentity = {
                     email: user.email,
-                    phone: user.company?.phone || undefined,
-                    countryCode: 'TR',
-                    deliveryAddressPreferences: shippingAddress
-                        ? [
-                            {
-                                deliveryAddress: {
-                                    firstName: user.firstName || '',
-                                    lastName: user.lastName || '',
-                                    address1: shippingAddress.address1 || '',
-                                    address2: shippingAddress.address2 || '',
-                                    city: shippingAddress.city || '',
-                                    province: shippingAddress.province || '',
-                                    country: shippingAddress.country || 'Turkey',
-                                    zip: shippingAddress.zip || '',
-                                    phone: shippingAddress.phone || user.company?.phone || '',
-                                },
-                            },
-                        ]
+                    phone: shippingAddress?.phone || user.company?.phone || undefined,
+                    countryCode,
+                    deliveryAddress: shippingAddress
+                        ? {
+                            firstName: shippingAddress.firstName || user.firstName || '',
+                            lastName: shippingAddress.lastName || user.lastName || '',
+                            company: user.company?.name || '',
+                            address1: shippingAddress.address1 || '',
+                            address2: shippingAddress.address2 || '',
+                            city: shippingAddress.city || '',
+                            province: shippingAddress.province || shippingAddress.provinceCode || '',
+                            country: countryCode,
+                            zip: shippingAddress.zip || '',
+                            phone: shippingAddress.phone || user.company?.phone || '',
+                        }
                         : undefined,
                 };
-                const result = await this.shopifyStorefront.createCheckoutWithBuyerIdentity(merchant.shopDomain, storefrontToken, lines, buyerIdentity, discountCode ? [discountCode] : undefined);
+                const attributes = [
+                    { key: 'company_id', value: user.companyId || '' },
+                    { key: 'company_name', value: user.company?.name || '' },
+                    { key: 'order_source', value: 'b2b_portal' },
+                    { key: 'user_id', value: user.id },
+                    { key: 'user_email', value: user.email },
+                ];
+                const result = await this.shopifyStorefront.createCheckoutWithBuyerIdentity(merchant.shopDomain, storefrontToken, lines, buyerIdentity, discountCode ? [discountCode] : undefined, attributes);
                 checkoutUrl = result.checkoutUrl;
-                this.logger.log(`Checkout URL created with buyer identity: ${checkoutUrl}`, {
+                this.logger.log(`✅ Checkout URL created with buyer identity: ${checkoutUrl}`, {
                     email: user.email,
                 });
                 if (ssoUrl) {
@@ -179,7 +187,7 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
             catch (error) {
                 this.logger.warn('Storefront API with buyer identity failed, trying basic cart', error);
                 try {
-                    const result = await this.shopifyStorefront.createCart(merchant.shopDomain, storefrontToken, lines, discountCode ? [discountCode] : undefined);
+                    const result = await this.shopifyStorefront.createCart(merchant.shopDomain, storefrontToken, lines, undefined, discountCode ? [discountCode] : undefined);
                     checkoutUrl = result.checkoutUrl;
                 }
                 catch (fallbackError) {
@@ -190,7 +198,7 @@ let CheckoutService = CheckoutService_1 = class CheckoutService {
         }
         else if (storefrontToken) {
             try {
-                const result = await this.shopifyStorefront.createCart(merchant.shopDomain, storefrontToken, lines, discountCode ? [discountCode] : undefined, shopifyCustomerAccessToken);
+                const result = await this.shopifyStorefront.createCart(merchant.shopDomain, storefrontToken, lines, shopifyCustomerAccessToken ? { customerAccessToken: shopifyCustomerAccessToken } : undefined, discountCode ? [discountCode] : undefined);
                 checkoutUrl = result.checkoutUrl;
                 this.logger.log(`Checkout URL created via Storefront API: ${checkoutUrl}`);
             }

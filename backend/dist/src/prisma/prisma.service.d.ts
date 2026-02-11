@@ -1,4 +1,4 @@
-import { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 export declare class PrismaService implements OnModuleInit, OnModuleDestroy {
     private config;
@@ -24,11 +24,17 @@ export declare class PrismaService implements OnModuleInit, OnModuleDestroy {
     get activityLog(): import("@prisma/client").Prisma.ActivityLogDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     get discountCode(): import("@prisma/client").Prisma.DiscountCodeDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     get syncLog(): import("@prisma/client").Prisma.SyncLogDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    get syncState(): import("@prisma/client").Prisma.SyncStateDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     get wishlist(): import("@prisma/client").Prisma.WishlistDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     get wishlistItem(): import("@prisma/client").Prisma.WishlistItemDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     get address(): import("@prisma/client").Prisma.AddressDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     get supportTicket(): import("@prisma/client").Prisma.SupportTicketDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     get ticketResponse(): import("@prisma/client").Prisma.TicketResponseDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    get visitorFingerprint(): import("@prisma/client").Prisma.VisitorFingerprintDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    get visitorIdentity(): import("@prisma/client").Prisma.VisitorIdentityDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    get visitorSession(): import("@prisma/client").Prisma.VisitorSessionDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    get visitorEvent(): import("@prisma/client").Prisma.VisitorEventDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    get companyIntelligence(): import("@prisma/client").Prisma.CompanyIntelligenceDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     onModuleInit(): Promise<void>;
     onModuleDestroy(): Promise<void>;
     cleanDatabase(): Promise<any>;

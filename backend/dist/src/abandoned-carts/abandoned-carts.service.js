@@ -397,6 +397,36 @@ let AbandonedCartsService = AbandonedCartsService_1 = class AbandonedCartsServic
             throw error;
         }
     }
+    async markAsRestored(cartId, merchantId) {
+        const cart = await this.prisma.cart.findFirst({
+            where: { id: cartId, merchantId },
+        });
+        if (!cart) {
+            throw new Error('Cart not found');
+        }
+        await this.prisma.cart.update({
+            where: { id: cartId },
+            data: { status: 'restored' },
+        });
+        this.logger.log(`Cart ${cartId} marked as restored`);
+        return { success: true, message: 'Cart restored' };
+    }
+    async deleteCart(cartId, merchantId) {
+        const cart = await this.prisma.cart.findFirst({
+            where: { id: cartId, merchantId },
+        });
+        if (!cart) {
+            throw new Error('Cart not found');
+        }
+        await this.prisma.cartItem.deleteMany({
+            where: { cartId },
+        });
+        await this.prisma.cart.delete({
+            where: { id: cartId },
+        });
+        this.logger.log(`Cart ${cartId} deleted`);
+        return { success: true, message: 'Cart deleted' };
+    }
 };
 exports.AbandonedCartsService = AbandonedCartsService;
 exports.AbandonedCartsService = AbandonedCartsService = AbandonedCartsService_1 = __decorate([

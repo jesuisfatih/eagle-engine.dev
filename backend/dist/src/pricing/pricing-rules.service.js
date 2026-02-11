@@ -28,6 +28,7 @@ let PricingRulesService = PricingRulesService_1 = class PricingRulesService {
                     description: dto.description,
                     targetType: dto.targetType,
                     targetCompanyId: dto.targetCompanyId,
+                    targetCompanyUserId: dto.targetCompanyUserId,
                     targetCompanyGroup: dto.targetCompanyGroup,
                     scopeType: dto.scopeType,
                     scopeProductIds: dto.scopeProductIds || [],
@@ -58,20 +59,29 @@ let PricingRulesService = PricingRulesService_1 = class PricingRulesService {
         if (filters?.isActive !== undefined) {
             where.isActive = filters.isActive;
         }
+        if (filters?.targetType) {
+            where.targetType = filters.targetType;
+        }
         if (filters?.companyId) {
             where.OR = [
                 { targetType: 'all' },
                 { targetType: 'company', targetCompanyId: filters.companyId },
             ];
         }
+        if (filters?.companyUserId) {
+            where.OR = [
+                ...(where.OR || []),
+                { targetType: 'company_user', targetCompanyUserId: filters.companyUserId },
+            ];
+        }
         return this.prisma.pricingRule.findMany({
             where,
             include: {
                 targetCompany: {
-                    select: {
-                        id: true,
-                        name: true,
-                    },
+                    select: { id: true, name: true },
+                },
+                targetCompanyUser: {
+                    select: { id: true, email: true, firstName: true, lastName: true },
                 },
             },
             orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
@@ -82,10 +92,10 @@ let PricingRulesService = PricingRulesService_1 = class PricingRulesService {
             where: { id, merchantId },
             include: {
                 targetCompany: {
-                    select: {
-                        id: true,
-                        name: true,
-                    },
+                    select: { id: true, name: true },
+                },
+                targetCompanyUser: {
+                    select: { id: true, email: true, firstName: true, lastName: true },
                 },
             },
         });
@@ -103,6 +113,7 @@ let PricingRulesService = PricingRulesService_1 = class PricingRulesService {
                 description: dto.description,
                 targetType: dto.targetType,
                 targetCompanyId: dto.targetCompanyId,
+                targetCompanyUserId: dto.targetCompanyUserId,
                 targetCompanyGroup: dto.targetCompanyGroup,
                 scopeType: dto.scopeType,
                 scopeProductIds: dto.scopeProductIds,
@@ -123,14 +134,28 @@ let PricingRulesService = PricingRulesService_1 = class PricingRulesService {
     }
     async delete(id, merchantId) {
         await this.findOne(id, merchantId);
-        return this.prisma.pricingRule.delete({
-            where: { id },
-        });
+        return this.prisma.pricingRule.delete({ where: { id } });
     }
     async toggleActive(id, merchantId, isActive) {
         await this.findOne(id, merchantId);
         return this.prisma.pricingRule.update({
             where: { id },
+            data: { isActive },
+        });
+    }
+    async duplicate(id, merchantId) {
+        const rule = await this.findOne(id, merchantId);
+        const { id: _, createdAt, updatedAt, targetCompany, targetCompanyUser, ...ruleData } = rule;
+        return this.prisma.pricingRule.create({
+            data: {
+                ...ruleData,
+                name: `${ruleData.name} (Copy)`,
+            },
+        });
+    }
+    async bulkToggle(merchantId, ruleIds, isActive) {
+        return this.prisma.pricingRule.updateMany({
+            where: { id: { in: ruleIds }, merchantId },
             data: { isActive },
         });
     }

@@ -11,9 +11,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CompaniesService = void 0;
 const common_1 = require("@nestjs/common");
+const pagination_util_1 = require("../common/utils/pagination.util");
 const prisma_service_1 = require("../prisma/prisma.service");
 const shopify_company_sync_service_1 = require("./shopify-company-sync.service");
-const pagination_util_1 = require("../common/utils/pagination.util");
 const COMPANY_LIST_SELECT = {
     id: true,
     name: true,
@@ -22,6 +22,17 @@ const COMPANY_LIST_SELECT = {
     status: true,
     createdAt: true,
     updatedAt: true,
+    users: {
+        select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            isActive: true,
+            lastLoginAt: true,
+        },
+    },
     _count: {
         select: {
             users: true,
@@ -30,6 +41,7 @@ const COMPANY_LIST_SELECT = {
     },
 };
 const COMPANY_DETAIL_INCLUDE = {
+    merchant: true,
     users: {
         select: {
             id: true,

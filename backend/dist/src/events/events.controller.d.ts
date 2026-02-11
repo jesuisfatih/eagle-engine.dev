@@ -1,5 +1,5 @@
+import { AnalyticsQueryDto, CollectEventDto, GetEventsQueryDto } from './dto/event.dto';
 import { EventsService } from './events.service';
-import { CollectEventDto, GetEventsQueryDto, AnalyticsQueryDto } from './dto/event.dto';
 export declare class EventsController {
     private eventsService;
     constructor(eventsService: EventsService);
@@ -46,5 +46,33 @@ export declare class EventsController {
                 id: number;
             };
         })[];
+    }>;
+    getAdminActivity(merchantId: string, limit?: string): Promise<{
+        activities: {
+            id: string;
+            type: string;
+            description: string;
+            user: string;
+            company: string;
+            createdAt: Date;
+        }[];
+        total: number;
+    }>;
+    getWebhookActivity(merchantId: string, limit?: string): Promise<{
+        logs: {
+            id: string;
+            topic: string;
+            status: string;
+            payload: string | null;
+            company: string | undefined;
+            user: string | null;
+            ipAddress: string | null;
+            createdAt: Date;
+        }[];
+        total: number;
+    }>;
+    getSessionActivity(merchantId: string, limit?: string): Promise<{
+        sessions: any[];
+        total: number;
     }>;
 }

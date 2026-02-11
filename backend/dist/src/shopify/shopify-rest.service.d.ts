@@ -29,5 +29,4 @@ export declare class ShopifyRestService {
     getCustomerMetafields(shop: string, accessToken: string, customerId: string): Promise<any[]>;
     getProducts(shop: string, accessToken: string, limit?: number): Promise<unknown>;
     getOrders(shop: string, accessToken: string, limit?: number): Promise<unknown>;
-    createDiscountCode(shop: string, accessToken: string, data: any): Promise<unknown>;
 }

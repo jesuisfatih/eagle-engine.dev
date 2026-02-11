@@ -21,6 +21,8 @@ export declare class MerchantsController {
         totalUsers: number;
         totalOrders: number;
         totalRevenue: number | import("@prisma/client-runtime-utils").Decimal;
+        totalProducts: number;
+        avgOrderValue: number;
     }>;
     updateSettings(merchantId: string, settings: any): Promise<{
         id: string;

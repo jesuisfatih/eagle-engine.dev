@@ -76,7 +76,7 @@ let AuthController = AuthController_1 = class AuthController {
                 });
             }
             const payload = {
-                sub: 'admin',
+                sub: merchant.id,
                 type: 'merchant',
                 merchantId: merchant.id,
                 shopDomain: merchant.shopDomain,
@@ -215,6 +215,94 @@ let AuthController = AuthController_1 = class AuthController {
         catch (error) {
             return res.status(common_1.HttpStatus.BAD_REQUEST).json({
                 error: error.message || 'Failed to verify code',
+            });
+        }
+    }
+    async requestInvitation(body, res) {
+        try {
+            this.logger.log(`📩 [REQUEST_INVITATION] New invitation request from ${body.email}`);
+            const merchant = await this.prisma.merchant.findFirst();
+            if (!merchant) {
+                return res.status(common_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    message: 'System not configured',
+                });
+            }
+            const company = await this.prisma.company.create({
+                data: {
+                    merchantId: merchant.id,
+                    name: body.companyName,
+                    email: body.email,
+                    phone: body.phone,
+                    website: body.website,
+                    companyGroup: 'b2b-request',
+                    status: 'pending',
+                    settings: {
+                        requestDetails: {
+                            contactName: body.contactName,
+                            industry: body.industry,
+                            estimatedMonthlyVolume: body.estimatedMonthlyVolume,
+                            message: body.message,
+                            requestedAt: new Date().toISOString(),
+                        },
+                    },
+                },
+            });
+            this.logger.log(`✅ [REQUEST_INVITATION] Request stored for ${body.email} (Company ID: ${company.id})`);
+            return res.json({
+                success: true,
+                message: 'Your B2B access request has been submitted. We will review and get back to you within 1-2 business days.',
+                requestId: company.id,
+            });
+        }
+        catch (error) {
+            this.logger.error(`❌ [REQUEST_INVITATION] Request failed for ${body.email}: ${error.message}`);
+            return res.status(common_1.HttpStatus.BAD_REQUEST).json({
+                success: false,
+                message: error.message || 'Failed to submit request',
+            });
+        }
+    }
+    async forgotPassword(dto, res) {
+        try {
+            this.logger.log(`🔑 [FORGOT_PASSWORD] Password reset requested for ${dto.email}`);
+            const result = await this.authService.requestPasswordReset(dto.email);
+            return res.json({
+                success: true,
+                message: 'If an account exists with this email, you will receive a password reset link.',
+            });
+        }
+        catch (error) {
+            this.logger.error(`❌ [FORGOT_PASSWORD] Failed for ${dto.email}: ${error.message}`);
+            return res.json({
+                success: true,
+                message: 'If an account exists with this email, you will receive a password reset link.',
+            });
+        }
+    }
+    async resetPassword(dto, res) {
+        try {
+            this.logger.log(`🔑 [RESET_PASSWORD] Password reset attempt with token`);
+            const result = await this.authService.resetPassword(dto.token, dto.newPassword);
+            if (result.success) {
+                this.logger.log(`✅ [RESET_PASSWORD] Password reset successful`);
+                return res.json({
+                    success: true,
+                    message: 'Password has been reset successfully. You can now log in with your new password.',
+                });
+            }
+            else {
+                return res.status(common_1.HttpStatus.BAD_REQUEST).json({
+                    success: false,
+                    message: result.message || 'Failed to reset password',
+                });
+            }
+        }
+        catch (error) {
+            this.logger.error(`❌ [RESET_PASSWORD] Failed: ${error.message}`);
+            return res.status(common_1.HttpStatus.BAD_REQUEST).json({
+                success: false,
+                message: error.message || 'Invalid or expired reset token',
             });
         }
     }
@@ -525,6 +613,36 @@ __decorate([
     __metadata("design:paramtypes", [auth_dto_1.VerifyEmailCodeDto, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "verifyEmailCode", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, throttler_1.Throttle)({ short: { limit: 3, ttl: 60000 } }),
+    (0, common_1.Post)('request-invitation'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "requestInvitation", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, throttler_1.Throttle)({ short: { limit: 3, ttl: 60000 } }),
+    (0, common_1.Post)('forgot-password'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [auth_dto_1.PasswordResetRequestDto, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "forgotPassword", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, throttler_1.Throttle)({ short: { limit: 5, ttl: 60000 } }),
+    (0, common_1.Post)('reset-password'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [auth_dto_1.PasswordResetDto, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "resetPassword", null);
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, throttler_1.Throttle)({ short: { limit: 3, ttl: 60000 }, medium: { limit: 10, ttl: 300000 } }),

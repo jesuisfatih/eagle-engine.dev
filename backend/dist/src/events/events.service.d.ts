@@ -53,4 +53,32 @@ export declare class EventsService {
             };
         })[];
     }>;
+    getAdminActivityFeed(merchantId: string, limit?: number): Promise<{
+        activities: {
+            id: string;
+            type: string;
+            description: string;
+            user: string;
+            company: string;
+            createdAt: Date;
+        }[];
+        total: number;
+    }>;
+    getWebhookActivityFeed(merchantId: string, limit?: number): Promise<{
+        logs: {
+            id: string;
+            topic: string;
+            status: string;
+            payload: string | null;
+            company: string | undefined;
+            user: string | null;
+            ipAddress: string | null;
+            createdAt: Date;
+        }[];
+        total: number;
+    }>;
+    getSessionActivityFeed(merchantId: string, limit?: number): Promise<{
+        sessions: any[];
+        total: number;
+    }>;
 }

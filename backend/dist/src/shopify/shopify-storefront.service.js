@@ -19,16 +19,15 @@ let ShopifyStorefrontService = ShopifyStorefrontService_1 = class ShopifyStorefr
     httpService;
     config;
     logger = new common_1.Logger(ShopifyStorefrontService_1.name);
-    apiVersion;
+    apiVersion = '2025-10';
     constructor(httpService, config) {
         this.httpService = httpService;
         this.config = config;
-        this.apiVersion = this.config.get('SHOPIFY_API_VERSION', '2024-10');
     }
     buildStorefrontUrl(shop) {
         return `https://${shop}/api/${this.apiVersion}/graphql.json`;
     }
-    async createCart(shop, storefrontAccessToken, lines, discountCodes, customerAccessToken) {
+    async createCart(shop, storefrontAccessToken, lines, buyerIdentity, discountCodes, attributes, note) {
         const url = this.buildStorefrontUrl(shop);
         const mutation = `
       mutation cartCreate($input: CartInput!) {
@@ -47,6 +46,7 @@ let ShopifyStorefrontService = ShopifyStorefrontService_1 = class ShopifyStorefr
                       title
                       price {
                         amount
+                        currencyCode
                       }
                     }
                   }
@@ -60,41 +60,56 @@ let ShopifyStorefrontService = ShopifyStorefrontService_1 = class ShopifyStorefr
               }
               subtotalAmount {
                 amount
+                currencyCode
               }
             }
             buyerIdentity {
               email
-              customer {
-                id
-                email
-                firstName
-                lastName
-              }
+              phone
+              countryCode
+            }
+            discountCodes {
+              code
+              applicable
             }
           }
           userErrors {
             field
             message
+            code
+          }
+          warnings {
+            code
+            message
           }
         }
       }
     `;
-        const variables = {
-            input: {
-                lines,
-                discountCodes,
-            },
-        };
-        if (customerAccessToken) {
-            variables.input.buyerIdentity = {
-                customerAccessToken,
-            };
+        const input = { lines };
+        if (buyerIdentity) {
+            input.buyerIdentity = {};
+            if (buyerIdentity.customerAccessToken) {
+                input.buyerIdentity.customerAccessToken = buyerIdentity.customerAccessToken;
+                if (buyerIdentity.email)
+                    input.buyerIdentity.email = buyerIdentity.email;
+                if (buyerIdentity.phone)
+                    input.buyerIdentity.phone = buyerIdentity.phone;
+            }
+            if (buyerIdentity.countryCode)
+                input.buyerIdentity.countryCode = buyerIdentity.countryCode;
         }
+        if (discountCodes && discountCodes.length > 0) {
+            input.discountCodes = discountCodes;
+        }
+        if (attributes && attributes.length > 0) {
+            input.attributes = attributes;
+        }
+        if (note) {
+            input.note = note;
+        }
+        this.logger.log('Creating Shopify cart', { shop, linesCount: lines.length, email: buyerIdentity?.email });
         try {
-            const response = await (0, rxjs_1.firstValueFrom)(this.httpService.post(url, {
-                query: mutation,
-                variables,
-            }, {
+            const response = await (0, rxjs_1.firstValueFrom)(this.httpService.post(url, { query: mutation, variables: { input } }, {
                 headers: {
                     'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
                     'Content-Type': 'application/json',
@@ -102,18 +117,93 @@ let ShopifyStorefrontService = ShopifyStorefrontService_1 = class ShopifyStorefr
             }));
             if (response.data.errors) {
                 this.logger.error('Storefront API errors:', response.data.errors);
-                throw new Error('Failed to create cart');
+                throw new Error(`Storefront API Error: ${JSON.stringify(response.data.errors)}`);
             }
-            const cart = response.data.data.cartCreate.cart;
-            this.logger.log(`Created Shopify cart: ${cart.id}`);
+            const result = response.data.data.cartCreate;
+            if (result.userErrors?.length > 0) {
+                this.logger.error('Cart creation userErrors:', result.userErrors);
+                throw new Error(`Cart creation failed: ${result.userErrors[0].message}`);
+            }
+            if (result.warnings?.length > 0) {
+                result.warnings.forEach((w) => this.logger.warn(`Cart warning: ${w.code} - ${w.message}`));
+            }
+            const cart = result.cart;
+            this.logger.log(`✅ Created Shopify cart: ${cart.id}`, { checkoutUrl: cart.checkoutUrl });
             return {
                 cartId: cart.id,
                 checkoutUrl: cart.checkoutUrl,
                 total: cart.cost.totalAmount.amount,
+                currency: cart.cost.totalAmount.currencyCode,
+                discountCodes: cart.discountCodes,
             };
         }
         catch (error) {
             this.logger.error('Failed to create Shopify cart', error);
+            throw error;
+        }
+    }
+    async addDeliveryAddress(shop, storefrontAccessToken, cartId, address) {
+        const url = this.buildStorefrontUrl(shop);
+        const mutation = `
+      mutation cartDeliveryAddressesAdd($cartId: ID!, $addresses: [CartSelectableAddressInput!]!) {
+        cartDeliveryAddressesAdd(cartId: $cartId, addresses: $addresses) {
+          cart {
+            id
+            checkoutUrl
+          }
+          userErrors {
+            field
+            message
+            code
+          }
+        }
+      }
+    `;
+        const variables = {
+            cartId,
+            addresses: [
+                {
+                    address: {
+                        firstName: address.firstName || '',
+                        lastName: address.lastName || '',
+                        company: address.company || '',
+                        address1: address.address1,
+                        address2: address.address2 || '',
+                        city: address.city,
+                        province: address.province || '',
+                        country: address.country,
+                        zip: address.zip,
+                        phone: address.phone || '',
+                    },
+                    selected: true,
+                },
+            ],
+        };
+        this.logger.log('Adding delivery address to cart', { cartId, city: address.city, country: address.country });
+        try {
+            const response = await (0, rxjs_1.firstValueFrom)(this.httpService.post(url, { query: mutation, variables }, {
+                headers: {
+                    'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
+                    'Content-Type': 'application/json',
+                },
+            }));
+            if (response.data.errors) {
+                this.logger.error('Delivery address add errors:', response.data.errors);
+                throw new Error(`Storefront API Error: ${JSON.stringify(response.data.errors)}`);
+            }
+            const result = response.data.data.cartDeliveryAddressesAdd;
+            if (result.userErrors?.length > 0) {
+                this.logger.error('Delivery address userErrors:', result.userErrors);
+                throw new Error(`Delivery address add failed: ${result.userErrors[0].message}`);
+            }
+            this.logger.log(`✅ Added delivery address to cart: ${cartId}`);
+            return {
+                cartId: result.cart.id,
+                checkoutUrl: result.cart.checkoutUrl,
+            };
+        }
+        catch (error) {
+            this.logger.error('Failed to add delivery address', error);
             throw error;
         }
     }
@@ -169,86 +259,38 @@ let ShopifyStorefrontService = ShopifyStorefrontService_1 = class ShopifyStorefr
             return null;
         }
     }
-    async updateCartBuyerIdentity(shop, storefrontAccessToken, cartId, buyerIdentity) {
-        const url = this.buildStorefrontUrl(shop);
-        const mutation = `
-      mutation cartBuyerIdentityUpdate($cartId: ID!, $buyerIdentity: CartBuyerIdentityInput!) {
-        cartBuyerIdentityUpdate(cartId: $cartId, buyerIdentity: $buyerIdentity) {
-          cart {
-            id
-            checkoutUrl
-            buyerIdentity {
-              email
-              phone
-              deliveryAddressPreferences {
-                ... on MailingAddress {
-                  address1
-                  address2
-                  city
-                  province
-                  country
-                  zip
-                }
-              }
-            }
-          }
-          userErrors {
-            field
-            message
-          }
-        }
-      }
-    `;
-        const variables = {
-            cartId,
-            buyerIdentity: {
-                email: buyerIdentity.email,
-                phone: buyerIdentity.phone,
-                countryCode: buyerIdentity.countryCode || 'TR',
-                deliveryAddressPreferences: buyerIdentity.deliveryAddressPreferences,
-            },
-        };
-        try {
-            const response = await (0, rxjs_1.firstValueFrom)(this.httpService.post(url, { query: mutation, variables }, {
-                headers: {
-                    'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
-                    'Content-Type': 'application/json',
-                },
-            }));
-            if (response.data.errors) {
-                this.logger.error('Buyer identity update errors:', response.data.errors);
-                throw new Error(`Storefront API Error: ${JSON.stringify(response.data.errors)}`);
-            }
-            const result = response.data.data.cartBuyerIdentityUpdate;
-            if (result.userErrors?.length > 0) {
-                throw new Error(`Buyer identity update failed: ${result.userErrors[0].message}`);
-            }
-            const cart = result.cart;
-            this.logger.log(`Updated buyer identity for cart: ${cart.id}`, {
-                email: buyerIdentity.email,
-            });
-            return {
-                cartId: cart.id,
-                checkoutUrl: cart.checkoutUrl,
-                buyerIdentity: cart.buyerIdentity,
-            };
-        }
-        catch (error) {
-            this.logger.error('Failed to update cart buyer identity', error);
-            throw error;
-        }
-    }
-    async createCheckoutWithBuyerIdentity(shop, storefrontAccessToken, lines, buyerIdentity, discountCodes) {
-        const cart = await this.createCart(shop, storefrontAccessToken, lines, discountCodes);
-        const updatedCart = await this.updateCartBuyerIdentity(shop, storefrontAccessToken, cart.cartId, buyerIdentity);
-        this.logger.log(`Checkout ready with buyer identity`, {
-            cartId: updatedCart.cartId,
+    async createCheckoutWithBuyerIdentity(shop, storefrontAccessToken, lines, buyerIdentity, discountCodes, attributes) {
+        this.logger.log('Creating checkout with buyer identity', {
+            shop,
             email: buyerIdentity.email,
-            checkoutUrl: updatedCart.checkoutUrl,
+            linesCount: lines.length,
+            hasAddress: !!buyerIdentity.deliveryAddress,
+        });
+        const cart = await this.createCart(shop, storefrontAccessToken, lines, {
+            email: buyerIdentity.email,
+            phone: buyerIdentity.phone,
+            countryCode: buyerIdentity.countryCode || 'US',
+            customerAccessToken: buyerIdentity.customerAccessToken,
+        }, discountCodes, attributes);
+        let finalCheckoutUrl = cart.checkoutUrl;
+        if (buyerIdentity.deliveryAddress) {
+            try {
+                const addressResult = await this.addDeliveryAddress(shop, storefrontAccessToken, cart.cartId, buyerIdentity.deliveryAddress);
+                finalCheckoutUrl = addressResult.checkoutUrl;
+                this.logger.log('✅ Delivery address added to cart');
+            }
+            catch (addressError) {
+                this.logger.warn('Failed to add delivery address, continuing without it', addressError);
+            }
+        }
+        this.logger.log(`✅ Checkout ready with buyer identity`, {
+            cartId: cart.cartId,
+            email: buyerIdentity.email,
+            checkoutUrl: finalCheckoutUrl,
         });
         return {
-            cartId: updatedCart.cartId,
-            checkoutUrl: updatedCart.checkoutUrl,
+            cartId: cart.cartId,
+            checkoutUrl: finalCheckoutUrl,
             email: buyerIdentity.email,
         };
     }

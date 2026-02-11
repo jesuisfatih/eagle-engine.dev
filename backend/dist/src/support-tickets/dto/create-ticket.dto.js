@@ -21,6 +21,7 @@ var TicketPriority;
 var TicketCategory;
 (function (TicketCategory) {
     TicketCategory["ORDER"] = "order";
+    TicketCategory["QUOTE"] = "quote";
     TicketCategory["PRODUCT"] = "product";
     TicketCategory["BILLING"] = "billing";
     TicketCategory["TECHNICAL"] = "technical";

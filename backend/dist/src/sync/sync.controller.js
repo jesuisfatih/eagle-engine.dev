@@ -14,9 +14,9 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SyncController = void 0;
 const common_1 = require("@nestjs/common");
-const sync_service_1 = require("./sync.service");
-const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const sync_service_1 = require("./sync.service");
 let SyncController = class SyncController {
     syncService;
     constructor(syncService) {
@@ -51,6 +51,22 @@ let SyncController = class SyncController {
             throw new common_1.BadRequestException('Merchant ID required');
         }
         return this.syncService.getSyncStatus(merchantId);
+    }
+    async resetEntitySync(merchantId, entityType) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
+        const validTypes = ['customers', 'products', 'orders'];
+        if (!validTypes.includes(entityType)) {
+            throw new common_1.BadRequestException(`Invalid entity type. Must be one of: ${validTypes.join(', ')}`);
+        }
+        return this.syncService.resetEntitySync(merchantId, entityType);
+    }
+    async resetAllSync(merchantId) {
+        if (!merchantId) {
+            throw new common_1.BadRequestException('Merchant ID required');
+        }
+        return this.syncService.resetAllSync(merchantId);
     }
 };
 exports.SyncController = SyncController;
@@ -89,6 +105,21 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], SyncController.prototype, "getSyncStatus", null);
+__decorate([
+    (0, common_1.Post)('reset/:entityType'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(1, (0, common_1.Param)('entityType')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], SyncController.prototype, "resetEntitySync", null);
+__decorate([
+    (0, common_1.Post)('reset-all'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], SyncController.prototype, "resetAllSync", null);
 exports.SyncController = SyncController = __decorate([
     (0, common_1.Controller)('sync'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
