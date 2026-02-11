@@ -13,7 +13,8 @@ export class FingerprintService {
    * This is the core identity resolution engine:
    * 1. Upsert fingerprint record
    * 2. Resolve identity (link to Shopify customer / Eagle user)
-   * 3. Update behavioral profile
+   * 3. Create/update session archive
+   * 4. Update behavioral profile
    */
   async collectFingerprint(dto: CollectFingerprintDto, ipAddress?: string) {
     const merchant = await this.prisma.merchant.findUnique({
@@ -33,7 +34,6 @@ export class FingerprintService {
 
     if (isBot) {
       this.logger.debug(`Bot detected: ${dto.fingerprintHash} (score: ${botScore})`);
-      // Still store but flag as bot
     }
 
     // === 2. Upsert Fingerprint ===
@@ -82,7 +82,6 @@ export class FingerprintService {
         lastSeenAt: new Date(),
         visitCount: { increment: 1 },
         ipAddress,
-        // Update signals if more detailed data is available
         ...(dto.gpuVendor && { gpuVendor: dto.gpuVendor }),
         ...(dto.gpuRenderer && { gpuRenderer: dto.gpuRenderer }),
         ...(dto.connectionType && { connectionType: dto.connectionType }),
@@ -91,7 +90,12 @@ export class FingerprintService {
     });
 
     // === 3. Identity Resolution ===
-    await this.resolveIdentity(merchantId, fingerprint.id, dto, ipAddress);
+    const identity = await this.resolveIdentity(merchantId, fingerprint.id, dto, ipAddress);
+
+    // === 4. Create/Update Session Archive ===
+    if (dto.sessionId) {
+      await this.upsertSession(merchantId, fingerprint.id, dto, ipAddress, identity, isBot);
+    }
 
     return {
       success: true,
@@ -104,11 +108,6 @@ export class FingerprintService {
 
   /**
    * Identity Resolution Engine
-   * Tries multiple strategies to link a fingerprint to a known customer:
-   * 1. Direct login (Eagle token)
-   * 2. Shopify customer ID
-   * 3. Email match
-   * 4. Fingerprint match (returning visitor)
    */
   private async resolveIdentity(
     merchantId: string,
@@ -119,14 +118,12 @@ export class FingerprintService {
     const matchType = this.determineMatchType(dto);
     const matchConfidence = this.calculateMatchConfidence(matchType, dto);
 
-    // Find linked company user by various signals
     let companyUserId: string | null = null;
     let companyId: string | null = null;
     let shopifyCustomerIdBigInt: bigint | null = null;
 
     // Strategy 1: Eagle Token → CompanyUser
     if (dto.eagleToken) {
-      // Eagle token contains user info - look up the session
       const existingIdentity = await this.prisma.visitorIdentity.findFirst({
         where: { merchantId, eagleToken: dto.eagleToken },
         select: { companyUserId: true, companyId: true },
@@ -169,7 +166,7 @@ export class FingerprintService {
       }
     }
 
-    // Strategy 4: Check if this fingerprint was previously linked
+    // Strategy 4: Check previous identity
     if (!companyUserId) {
       const previousIdentity = await this.prisma.visitorIdentity.findFirst({
         where: {
@@ -187,7 +184,7 @@ export class FingerprintService {
     }
 
     // Upsert identity record
-    await this.prisma.visitorIdentity.upsert({
+    const identity = await this.prisma.visitorIdentity.upsert({
       where: {
         merchantId_fingerprintId_matchType: {
           merchantId,
@@ -217,10 +214,149 @@ export class FingerprintService {
         matchConfidence: Math.max(matchConfidence),
       },
     });
+
+    return { companyUserId, companyId, identityId: identity.id };
   }
 
   /**
-   * Update behavioral profile after an event (called from events queue processor)
+   * Create or update a browsing session
+   */
+  private async upsertSession(
+    merchantId: string,
+    fingerprintId: string,
+    dto: CollectFingerprintDto,
+    ipAddress?: string,
+    identity?: { companyUserId: string | null; companyId: string | null },
+    isBot = false,
+  ) {
+    try {
+      await this.prisma.visitorSession.upsert({
+        where: {
+          merchantId_sessionId: { merchantId, sessionId: dto.sessionId! },
+        },
+        create: {
+          merchantId,
+          fingerprintId,
+          sessionId: dto.sessionId!,
+          companyUserId: identity?.companyUserId,
+          companyId: identity?.companyId,
+          ipAddress,
+          userAgent: dto.userAgent,
+          platform: dto.platform,
+          language: dto.language,
+          timezone: dto.timezone,
+          isLoggedIn: !!dto.eagleToken || !!dto.email,
+          isBot,
+        },
+        update: {
+          lastActivityAt: new Date(),
+          ...(identity?.companyUserId && { companyUserId: identity.companyUserId }),
+          ...(identity?.companyId && { companyId: identity.companyId }),
+          isLoggedIn: !!dto.eagleToken || !!dto.email,
+        },
+      });
+    } catch (error) {
+      this.logger.debug(`Session upsert error: ${error}`);
+    }
+  }
+
+  /**
+   * Track and archive an event (called from events collector)
+   */
+  async trackEvent(
+    merchantId: string,
+    sessionId: string,
+    fingerprintHash: string,
+    eventType: string,
+    payload: any,
+  ) {
+    // Find fingerprint
+    const fingerprint = await this.prisma.visitorFingerprint.findUnique({
+      where: { merchantId_fingerprintHash: { merchantId, fingerprintHash } },
+    });
+
+    if (!fingerprint) return;
+
+    // Find or create session to get identity linkage
+    let session = await this.prisma.visitorSession.findUnique({
+      where: { merchantId_sessionId: { merchantId, sessionId } },
+      select: { id: true, companyUserId: true, companyId: true },
+    });
+
+    // If session doesn't exist yet, create it
+    if (!session) {
+      try {
+        const created = await this.prisma.visitorSession.create({
+          data: {
+            merchantId,
+            fingerprintId: fingerprint.id,
+            sessionId,
+          },
+          select: { id: true, companyUserId: true, companyId: true },
+        });
+        session = created;
+      } catch {
+        // Race condition or other error — skip event archival
+        return;
+      }
+    }
+
+    // Archive the event
+    try {
+      await this.prisma.visitorEvent.create({
+        data: {
+          merchantId,
+          sessionId: session.id,
+          fingerprintId: fingerprint.id,
+          companyUserId: session?.companyUserId,
+          companyId: session?.companyId,
+          eventType,
+          pageUrl: payload?.url,
+          pagePath: payload?.path,
+          pageTitle: payload?.title,
+          referrer: payload?.referrer,
+          shopifyProductId: payload?.productId ? BigInt(payload.productId) : undefined,
+          shopifyVariantId: payload?.variantId ? BigInt(payload.variantId) : undefined,
+          productTitle: payload?.productTitle,
+          productPrice: payload?.productPrice,
+          quantity: payload?.quantity,
+          searchQuery: payload?.searchQuery,
+          cartValue: payload?.cartValue,
+          metadata: payload,
+        },
+      });
+    } catch (error) {
+      this.logger.debug(`Event archive error: ${error}`);
+    }
+
+    // Update session counters
+    if (session) {
+      const updateData: any = { lastActivityAt: new Date() };
+      if (eventType === 'page_view') updateData.pageViews = { increment: 1 };
+      if (eventType === 'product_view') updateData.productViews = { increment: 1 };
+      if (eventType === 'add_to_cart') updateData.addToCarts = { increment: 1 };
+      if (eventType === 'search') updateData.searchCount = { increment: 1 };
+      if (payload?.url) updateData.exitPage = payload.url;
+
+      try {
+        await this.prisma.visitorSession.update({
+          where: { id: session.id },
+          data: updateData,
+        });
+      } catch (e) { /* silent */ }
+    }
+
+    // Update identity behavioral counters
+    await this.updateBehavior(merchantId, fingerprintHash, eventType, payload);
+
+    // Update company intelligence async
+    if (session?.companyId) {
+      this.updateCompanyIntelligence(merchantId, session.companyId).catch(() => {});
+    }
+  }
+
+  /**
+   * Update behavioral profile after an event
    */
   async updateBehavior(
     merchantId: string,
@@ -255,7 +391,6 @@ export class FingerprintService {
         data: updateData,
       });
 
-      // Recalculate engagement score
       await this.recalculateEngagement(fingerprint.id);
     }
   }
@@ -269,8 +404,6 @@ export class FingerprintService {
     });
 
     for (const identity of identities) {
-      // Engagement Score Formula:
-      // pageViews * 1 + productViews * 3 + addToCarts * 10 + orders * 25
       const score = Math.min(100,
         identity.totalPageViews * 1 +
         identity.totalProductViews * 3 +
@@ -278,13 +411,11 @@ export class FingerprintService {
         identity.totalOrders * 25
       );
 
-      // Buyer Intent Classification
       let buyerIntent = 'cold';
       if (identity.totalOrders > 0) buyerIntent = 'converting';
       else if (identity.totalAddToCarts > 0) buyerIntent = 'hot';
       else if (identity.totalProductViews >= 3) buyerIntent = 'warm';
 
-      // Segment Assignment
       let segment = 'new_visitor';
       if (identity.totalOrders > 5) segment = 'VIP';
       else if (identity.totalOrders > 0) segment = 'customer';
@@ -295,6 +426,165 @@ export class FingerprintService {
         where: { id: identity.id },
         data: { engagementScore: score, buyerIntent, segment },
       });
+    }
+  }
+
+  /**
+   * Update Company Intelligence — aggregate all user behavior for a company
+   */
+  async updateCompanyIntelligence(merchantId: string, companyId: string) {
+    try {
+      // Count unique visitors for this company
+      const [sessions, identities, orders] = await Promise.all([
+        this.prisma.visitorSession.aggregate({
+          where: { merchantId, companyId },
+          _count: { id: true },
+          _avg: { durationSeconds: true },
+        }),
+        this.prisma.visitorIdentity.aggregate({
+          where: { merchantId, companyId },
+          _count: { id: true },
+          _sum: {
+            totalPageViews: true,
+            totalProductViews: true,
+            totalAddToCarts: true,
+            totalOrders: true,
+            totalRevenue: true,
+          },
+        }),
+        this.prisma.orderLocal.aggregate({
+          where: { merchantId, companyId },
+          _count: { id: true },
+          _avg: { totalPrice: true },
+          _max: { createdAt: true },
+          _min: { createdAt: true },
+        }),
+      ]);
+
+      const totalOrders = orders._count.id || 0;
+      const totalRevenue = Number(identities._sum?.totalRevenue || 0);
+      const avgOrderValue = orders._avg?.totalPrice ? Number(orders._avg.totalPrice) : 0;
+      const lastOrderAt = orders._max?.createdAt;
+      const firstOrderAt = orders._min?.createdAt;
+      const daysSinceLastOrder = lastOrderAt
+        ? Math.floor((Date.now() - new Date(lastOrderAt).getTime()) / 86400000)
+        : null;
+
+      // Engagement score: weighted sum of all behaviors
+      const totalPageViews = identities._sum?.totalPageViews || 0;
+      const totalProductViews = identities._sum?.totalProductViews || 0;
+      const totalAddToCarts = identities._sum?.totalAddToCarts || 0;
+      const engagementScore = Math.min(100,
+        totalPageViews * 0.5 +
+        totalProductViews * 2 +
+        totalAddToCarts * 5 +
+        totalOrders * 15 +
+        (totalRevenue / 100) * 3
+      );
+
+      // Buyer Intent
+      let buyerIntent = 'cold';
+      if (totalOrders > 0) buyerIntent = 'converting';
+      else if (totalAddToCarts > 0) buyerIntent = 'hot';
+      else if (totalProductViews >= 5) buyerIntent = 'warm';
+
+      // Company Segment
+      let segment = 'new';
+      if (totalOrders > 10) segment = 'loyal';
+      else if (totalOrders > 3) segment = 'active';
+      else if (totalOrders > 0) segment = 'interested';
+      else if (daysSinceLastOrder && daysSinceLastOrder > 60) segment = 'at_risk';
+      else if (daysSinceLastOrder && daysSinceLastOrder > 120) segment = 'churned';
+
+      // Churn risk
+      let churnRisk = 0;
+      if (daysSinceLastOrder) {
+        if (daysSinceLastOrder > 90) churnRisk = 0.9;
+        else if (daysSinceLastOrder > 60) churnRisk = 0.7;
+        else if (daysSinceLastOrder > 30) churnRisk = 0.4;
+        else churnRisk = 0.1;
+      }
+
+      // Upsell potential
+      const upsellPotential = Math.min(1,
+        (totalProductViews > totalOrders * 5 ? 0.3 : 0) +
+        (totalAddToCarts > totalOrders * 2 ? 0.3 : 0) +
+        (engagementScore > 50 ? 0.2 : 0) +
+        (buyerIntent === 'hot' ? 0.2 : 0)
+      );
+
+      // Suggested discount based on segment
+      let suggestedDiscount: number | null = null;
+      if (segment === 'at_risk') suggestedDiscount = 15;
+      else if (segment === 'churned') suggestedDiscount = 20;
+      else if (buyerIntent === 'hot' && totalOrders === 0) suggestedDiscount = 10;
+
+      // Top viewed products
+      const topProducts = await this.prisma.visitorEvent.groupBy({
+        by: ['shopifyProductId'],
+        where: { merchantId, companyId, eventType: 'product_view', shopifyProductId: { not: null } },
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+        take: 10,
+      });
+
+      await this.prisma.companyIntelligence.upsert({
+        where: { companyId },
+        create: {
+          merchantId,
+          companyId,
+          totalVisitors: sessions._count.id,
+          totalSessions: sessions._count.id,
+          totalPageViews,
+          totalProductViews,
+          totalAddToCarts,
+          totalOrders,
+          totalRevenue,
+          avgSessionDuration: sessions._avg?.durationSeconds ? Math.round(sessions._avg.durationSeconds) : 0,
+          avgOrderValue,
+          engagementScore,
+          buyerIntent,
+          segment,
+          lastActiveAt: new Date(),
+          firstOrderAt,
+          lastOrderAt,
+          daysSinceLastOrder,
+          suggestedDiscount,
+          churnRisk,
+          upsellPotential,
+          topViewedProducts: topProducts.map(p => ({
+            productId: p.shopifyProductId?.toString(),
+            views: p._count.id,
+          })),
+        },
+        update: {
+          totalVisitors: sessions._count.id,
+          totalSessions: sessions._count.id,
+          totalPageViews,
+          totalProductViews,
+          totalAddToCarts,
+          totalOrders,
+          totalRevenue,
+          avgSessionDuration: sessions._avg?.durationSeconds ? Math.round(sessions._avg.durationSeconds) : 0,
+          avgOrderValue,
+          engagementScore,
+          buyerIntent,
+          segment,
+          lastActiveAt: new Date(),
+          firstOrderAt,
+          lastOrderAt,
+          daysSinceLastOrder,
+          suggestedDiscount,
+          churnRisk,
+          upsellPotential,
+          topViewedProducts: topProducts.map(p => ({
+            productId: p.shopifyProductId?.toString(),
+            views: p._count.id,
+          })),
+        },
+      });
+    } catch (error) {
+      this.logger.error(`Company intelligence update failed for ${companyId}: ${error}`);
     }
   }
 
@@ -321,21 +611,18 @@ export class FingerprintService {
       this.prisma.visitorIdentity.count({ where: { merchantId, companyUserId: { not: null } } }),
       this.prisma.visitorFingerprint.count({ where: { merchantId, isBot: true } }),
 
-      // Intent distribution
       this.prisma.visitorIdentity.groupBy({
         by: ['buyerIntent'],
         where: { merchantId },
         _count: { id: true },
       }),
 
-      // Segment distribution
       this.prisma.visitorIdentity.groupBy({
         by: ['segment'],
         where: { merchantId, segment: { not: null } },
         _count: { id: true },
       }),
 
-      // Recent visitors
       this.prisma.visitorFingerprint.findMany({
         where: { merchantId, isBot: false },
         include: {
@@ -352,7 +639,6 @@ export class FingerprintService {
         take: 20,
       }),
 
-      // Top engaged
       this.prisma.visitorIdentity.findMany({
         where: { merchantId, engagementScore: { gt: 0 } },
         include: {
@@ -468,6 +754,61 @@ export class FingerprintService {
     };
   }
 
+  /**
+   * Get company intelligence data for admin
+   */
+  async getCompanyIntelligence(merchantId: string, companyId?: string) {
+    if (companyId) {
+      const intel = await this.prisma.companyIntelligence.findUnique({
+        where: { companyId },
+        include: {
+          company: { select: { name: true, email: true, status: true } },
+        },
+      });
+      return intel;
+    }
+
+    return this.prisma.companyIntelligence.findMany({
+      where: { merchantId },
+      include: {
+        company: { select: { name: true, email: true, status: true } },
+      },
+      orderBy: { engagementScore: 'desc' },
+      take: 50,
+    });
+  }
+
+  /**
+   * Get session history for a visitor/company/user
+   */
+  async getSessionHistory(merchantId: string, filters: {
+    companyId?: string;
+    companyUserId?: string;
+    fingerprintId?: string;
+    limit?: number;
+  }) {
+    const where: any = { merchantId };
+    if (filters.companyId) where.companyId = filters.companyId;
+    if (filters.companyUserId) where.companyUserId = filters.companyUserId;
+    if (filters.fingerprintId) where.fingerprintId = filters.fingerprintId;
+
+    const sessions = await this.prisma.visitorSession.findMany({
+      where,
+      include: {
+        companyUser: { select: { email: true, firstName: true, lastName: true } },
+        company: { select: { name: true } },
+        events: {
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+        },
+      },
+      orderBy: { startedAt: 'desc' },
+      take: filters.limit || 20,
+    });
+
+    return sessions;
+  }
+
   // ============================
   // Scoring Helpers
   // ============================
@@ -476,19 +817,16 @@ export class FingerprintService {
     let score = 0;
     let signals = 0;
 
-    // Missing critical signals → likely bot
     if (!dto.canvasHash) { score += 0.3; signals++; }
     if (!dto.webglHash) { score += 0.2; signals++; }
     if (!dto.audioHash) { score += 0.1; signals++; }
     if (!dto.timezone) { score += 0.1; signals++; }
     if (dto.hardwareConcurrency === 0) { score += 0.2; signals++; }
 
-    // Headless browser markers
     if (dto.userAgent?.includes('HeadlessChrome')) { score += 0.8; signals++; }
     if (dto.userAgent?.includes('PhantomJS')) { score += 0.9; signals++; }
     if (dto.platform === '' || !dto.platform) { score += 0.2; signals++; }
 
-    // Suspicious screen dimensions
     if (dto.screenWidth === 0 || dto.screenHeight === 0) { score += 0.3; signals++; }
 
     return signals > 0 ? Math.min(1, score / signals) : 0;

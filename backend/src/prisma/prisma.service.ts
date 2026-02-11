@@ -121,6 +121,18 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.prisma.visitorIdentity;
   }
 
+  get visitorSession() {
+    return this.prisma.visitorSession;
+  }
+
+  get visitorEvent() {
+    return this.prisma.visitorEvent;
+  }
+
+  get companyIntelligence() {
+    return this.prisma.companyIntelligence;
+  }
+
   async onModuleInit() {
     try {
       await this.$connect();

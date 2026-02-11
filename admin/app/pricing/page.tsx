@@ -1,58 +1,193 @@
 'use client';
 
 import Modal from '@/components/Modal';
-import { PageHeader, showToast } from '@/components/ui';
+import { PageHeader, showToast, StatsCard, Tabs } from '@/components/ui';
 import { adminFetch } from '@/lib/api-client';
 import { useCallback, useEffect, useState } from 'react';
 
+/* ─── Interfaces ─── */
 interface PricingRule {
   id: string;
   name: string;
-  type: string;
-  value: number;
-  companyId?: string;
-  companyName?: string;
-  productId?: string;
-  productTitle?: string;
-  minQuantity?: number;
-  maxQuantity?: number;
+  description?: string;
+  targetType: string;
+  targetCompanyId?: string;
+  targetCompanyUserId?: string;
+  targetCompanyGroup?: string;
+  targetCompany?: { id: string; name: string };
+  targetCompanyUser?: { id: string; email: string; firstName?: string; lastName?: string };
+  scopeType: string;
+  scopeProductIds?: string[];
+  scopeCollectionIds?: string[];
+  scopeTags?: string;
+  scopeVariantIds?: string[];
+  discountType: string;
+  discountValue?: number;
+  discountPercentage?: number;
+  qtyBreaks?: any[];
+  minCartAmount?: number;
+  priority: number;
   isActive: boolean;
+  validFrom?: string;
+  validUntil?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
+interface Company {
+  id: string;
+  name: string;
+  email?: string;
+  status: string;
+  users?: CompanyUser[];
+}
+
+interface CompanyUser {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  role: string;
+}
+
+interface CompanyIntel {
+  id: string;
+  companyId: string;
+  company: { name: string; email?: string; status: string };
+  engagementScore: number;
+  buyerIntent: string;
+  segment: string;
+  totalVisitors: number;
+  totalSessions: number;
+  totalPageViews: number;
+  totalProductViews: number;
+  totalAddToCarts: number;
+  totalOrders: number;
+  totalRevenue: number;
+  avgOrderValue: number;
+  churnRisk: number;
+  upsellPotential: number;
+  suggestedDiscount?: number;
+  daysSinceLastOrder?: number;
+  lastActiveAt?: string;
+}
+
+/* ─── Badge components ─── */
+function TargetBadge({ type }: { type: string }) {
+  const map: Record<string, { label: string; color: string; icon: string }> = {
+    all: { label: 'All Companies', color: '#8e8e93', icon: 'ti-world' },
+    company: { label: 'Company', color: '#007aff', icon: 'ti-building' },
+    company_user: { label: 'User', color: '#5856d6', icon: 'ti-user' },
+    company_group: { label: 'Group', color: '#ff9500', icon: 'ti-users-group' },
+    segment: { label: 'Segment', color: '#34c759', icon: 'ti-chart-pie' },
+    buyer_intent: { label: 'Intent', color: '#ff2d55', icon: 'ti-flame' },
+  };
+  const t = map[type] || map.all;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: `${t.color}18`, color: t.color }}>
+      <i className={`ti ${t.icon}`} style={{ fontSize: 12 }} /> {t.label}
+    </span>
+  );
+}
+
+function DiscountBadge({ type, value, percentage }: { type: string; value?: number; percentage?: number }) {
+  if (type === 'percentage') return <span className="badge-apple info">{percentage || value}% off</span>;
+  if (type === 'fixed_amount') return <span className="badge-apple warning">${value} off</span>;
+  if (type === 'fixed_price') return <span className="badge-apple" style={{ background: '#5856d618', color: '#5856d6' }}>${value}</span>;
+  if (type === 'qty_break') return <span className="badge-apple success">Qty Breaks</span>;
+  return <span className="badge-apple">{type}</span>;
+}
+
+function ScopeBadge({ type, tags }: { type: string; tags?: string }) {
+  const map: Record<string, string> = { all: '🌐 All products', products: '📦 Products', collections: '📁 Collections', tags: '🏷️ Tags', variants: '🔢 Variants' };
+  return <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{map[type] || type}{tags ? `: ${tags}` : ''}</span>;
+}
+
+/* ─── Main Page ─── */
 export default function PricingPage() {
   const [rules, setRules] = useState<PricingRule[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [companyIntel, setCompanyIntel] = useState<CompanyIntel[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [filterTarget, setFilterTarget] = useState('');
   const [showCreate, setShowCreate] = useState(false);
-  const [deleteModal, setDeleteModal] = useState<{show: boolean; rule: PricingRule | null}>({show: false, rule: null});
-  const [form, setForm] = useState({ name: '', type: 'percentage', value: 0, companyId: '', productId: '', minQuantity: 1, maxQuantity: 0 });
+  const [editRule, setEditRule] = useState<PricingRule | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ show: boolean; rule: PricingRule | null }>({ show: false, rule: null });
+  const [activeTab, setActiveTab] = useState(0);
   const [saving, setSaving] = useState(false);
+
+  const emptyForm = {
+    name: '', description: '', targetType: 'all', targetCompanyId: '', targetCompanyUserId: '', targetCompanyGroup: '',
+    scopeType: 'all', scopeTags: '', discountType: 'percentage', discountValue: 0, discountPercentage: 10,
+    minCartAmount: 0, priority: 0, isActive: true, validFrom: '', validUntil: '',
+  };
+  const [form, setForm] = useState(emptyForm);
 
   const loadRules = useCallback(async () => {
     setLoading(true);
     try {
       const res = await adminFetch('/api/v1/pricing/rules');
-      if (res.ok) { const d = await res.json(); setRules(d.rules || d.data || d || []); }
+      if (res.ok) { const d = await res.json(); setRules(Array.isArray(d) ? d : d.rules || d.data || []); }
     } catch { /* silent */ }
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { loadRules(); }, [loadRules]);
+  const loadCompanies = useCallback(async () => {
+    try {
+      const res = await adminFetch('/api/v1/companies');
+      if (res.ok) { const d = await res.json(); setCompanies(Array.isArray(d) ? d : d.companies || d.data || []); }
+    } catch { /* silent */ }
+  }, []);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const loadIntel = useCallback(async () => {
+    try {
+      const res = await adminFetch('/api/v1/fingerprint/company-intelligence');
+      if (res.ok) { const d = await res.json(); setCompanyIntel(Array.isArray(d) ? d : []); }
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => { loadRules(); loadCompanies(); loadIntel(); }, [loadRules, loadCompanies, loadIntel]);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    const payload: any = {
+      name: form.name,
+      description: form.description || undefined,
+      targetType: form.targetType,
+      scopeType: form.scopeType,
+      scopeTags: form.scopeTags || undefined,
+      discountType: form.discountType,
+      priority: form.priority,
+      isActive: form.isActive,
+    };
+
+    if (form.targetCompanyId) payload.targetCompanyId = form.targetCompanyId;
+    if (form.targetCompanyUserId) payload.targetCompanyUserId = form.targetCompanyUserId;
+    if (form.targetCompanyGroup) payload.targetCompanyGroup = form.targetCompanyGroup;
+
+    if (form.discountType === 'percentage') {
+      payload.discountPercentage = form.discountPercentage;
+    } else {
+      payload.discountValue = form.discountValue;
+    }
+    if (form.minCartAmount) payload.minCartAmount = form.minCartAmount;
+    if (form.validFrom) payload.validFrom = form.validFrom;
+    if (form.validUntil) payload.validUntil = form.validUntil;
+
     try {
-      const res = await adminFetch('/api/v1/pricing/rules', { method: 'POST', body: JSON.stringify(form) });
-      if (res.ok) { showToast('Rule created!', 'success'); setShowCreate(false); setForm({ name: '', type: 'percentage', value: 0, companyId: '', productId: '', minQuantity: 1, maxQuantity: 0 }); loadRules(); }
-      else showToast('Failed to create rule', 'danger');
+      const url = editRule ? `/api/v1/pricing/rules/${editRule.id}` : '/api/v1/pricing/rules';
+      const method = editRule ? 'PUT' : 'POST';
+      const res = await adminFetch(url, { method, body: JSON.stringify(payload) });
+      if (res.ok) { showToast(editRule ? 'Rule updated!' : 'Rule created!', 'success'); setShowCreate(false); setEditRule(null); setForm(emptyForm); loadRules(); }
+      else showToast('Failed to save rule', 'danger');
     } catch { showToast('Error', 'danger'); }
     finally { setSaving(false); }
   };
 
   const deleteRule = async (rule: PricingRule) => {
-    setDeleteModal({show: false, rule: null});
+    setDeleteModal({ show: false, rule: null });
     try {
       const res = await adminFetch(`/api/v1/pricing/rules/${rule.id}`, { method: 'DELETE' });
       if (res.ok) { showToast('Rule deleted', 'success'); loadRules(); }
@@ -67,98 +202,441 @@ export default function PricingPage() {
     } catch { /* silent */ }
   };
 
-  const filtered = rules.filter(r => !search || r.name.toLowerCase().includes(search.toLowerCase()));
+  const openEdit = (rule: PricingRule) => {
+    setForm({
+      name: rule.name, description: rule.description || '', targetType: rule.targetType,
+      targetCompanyId: rule.targetCompanyId || '', targetCompanyUserId: rule.targetCompanyUserId || '',
+      targetCompanyGroup: rule.targetCompanyGroup || '', scopeType: rule.scopeType,
+      scopeTags: rule.scopeTags || '', discountType: rule.discountType,
+      discountValue: Number(rule.discountValue || 0), discountPercentage: Number(rule.discountPercentage || 0),
+      minCartAmount: Number(rule.minCartAmount || 0), priority: rule.priority,
+      isActive: rule.isActive, validFrom: rule.validFrom?.split('T')[0] || '', validUntil: rule.validUntil?.split('T')[0] || '',
+    });
+    setEditRule(rule);
+    setShowCreate(true);
+  };
+
+  const filtered = rules.filter(r => {
+    if (search && !r.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filterTarget && r.targetType !== filterTarget) return false;
+    return true;
+  });
+
+  // Compute stats
+  const activeCount = rules.filter(r => r.isActive).length;
+  const companyRules = rules.filter(r => r.targetType === 'company').length;
+  const userRules = rules.filter(r => r.targetType === 'company_user').length;
+  const intelsWithDiscount = companyIntel.filter(i => i.suggestedDiscount && i.suggestedDiscount > 0);
+
+  const selectedCompanyUsers = form.targetCompanyId
+    ? companies.find(c => c.id === form.targetCompanyId)?.users || []
+    : [];
 
   return (
     <div>
-      <PageHeader title="Pricing Rules" subtitle={`${rules.length} pricing rules`}
-        actions={[{ label: 'Add Rule', icon: 'plus', variant: 'primary', onClick: () => setShowCreate(true) }]} />
+      <PageHeader title="Pricing & Marketing Intelligence" subtitle={`${rules.length} rules · ${companyIntel.length} company profiles`}
+        actions={[
+          { label: 'New Rule', icon: 'plus', variant: 'primary' as const, onClick: () => { setForm(emptyForm); setEditRule(null); setShowCreate(true); } },
+          { label: 'Refresh', icon: 'refresh', variant: 'secondary' as const, onClick: () => { loadRules(); loadIntel(); } },
+        ]} />
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-        <div className="input-apple" style={{ flex: 1, maxWidth: 360 }}>
-          <i className="ti ti-search input-icon" />
-          <input placeholder="Search rules..." value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
+      {/* Stats */}
+      <div className="stats-grid cols-5">
+        <StatsCard title="TOTAL RULES" value={rules.length} icon="receipt" color="#007aff" meta={`${activeCount} active`} />
+        <StatsCard title="COMPANY RULES" value={companyRules} icon="building" color="#5856d6" meta="Targeted pricing" />
+        <StatsCard title="USER RULES" value={userRules} icon="user-check" color="#ff9500" meta="Individual pricing" />
+        <StatsCard title="AI SUGGESTIONS" value={intelsWithDiscount.length} icon="sparkles" color="#34c759" meta="Auto-discount recommendations" />
+        <StatsCard title="COMPANY PROFILES" value={companyIntel.length} icon="brain" color="#ff2d55" meta="Intelligence profiles" />
       </div>
 
-      <div className="apple-card">
-        {loading ? (
-          <div style={{ padding: 48, textAlign: 'center' }}><i className="ti ti-loader-2 spin" style={{ fontSize: 24, color: 'var(--accent-primary)' }} /></div>
-        ) : filtered.length === 0 ? (
-          <div className="empty-state" style={{ padding: 48 }}>
-            <div className="empty-state-icon"><i className="ti ti-discount" /></div>
-            <h4 className="empty-state-title">No pricing rules</h4>
-            <p className="empty-state-desc">Create rules to offer custom pricing to companies.</p>
+      <Tabs tabs={['Pricing Rules', 'Company Intelligence', 'Marketing Insights']} activeTab={activeTab} onChange={setActiveTab} />
+
+      {/* ─── Tab 0: Pricing Rules ─── */}
+      {activeTab === 0 && (
+        <>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 20, marginTop: 20 }}>
+            <div className="input-apple" style={{ flex: 1, maxWidth: 360 }}>
+              <i className="ti ti-search input-icon" />
+              <input placeholder="Search rules..." value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+            <div className="select-apple" style={{ width: 180 }}>
+              <select value={filterTarget} onChange={e => setFilterTarget(e.target.value)}>
+                <option value="">All Targets</option>
+                <option value="all">Global</option>
+                <option value="company">Company</option>
+                <option value="company_user">User</option>
+                <option value="company_group">Group</option>
+              </select>
+              <i className="ti ti-chevron-down select-icon" />
+            </div>
           </div>
-        ) : (
-          <table className="apple-table">
-            <thead><tr><th>Name</th><th>Type</th><th>Value</th><th>Company</th><th>Product</th><th>Active</th><th>Actions</th></tr></thead>
-            <tbody>
-              {filtered.map(r => (
-                <tr key={r.id}>
-                  <td style={{ fontWeight: 500 }}>{r.name}</td>
-                  <td><span className="badge-apple info">{r.type}</span></td>
-                  <td>{r.type === 'percentage' ? `${r.value}%` : `$${r.value}`}</td>
-                  <td>{r.companyName || 'All'}</td>
-                  <td style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.productTitle || 'All'}</td>
-                  <td>
-                    <label className="apple-toggle">
-                      <input type="checkbox" checked={r.isActive} onChange={() => toggleActive(r)} />
-                      <span className="toggle-slider" />
-                    </label>
-                  </td>
-                  <td>
-                    <button className="btn-apple danger small" onClick={() => setDeleteModal({show: true, rule: r})}><i className="ti ti-trash" /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
 
-      {/* Create Modal */}
-      {showCreate && (
-        <div className="apple-modal-overlay" onClick={() => setShowCreate(false)}>
-          <div className="apple-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
-            <div className="apple-modal-header"><h3 className="apple-modal-title">New Pricing Rule</h3></div>
-            <form onSubmit={handleCreate}>
-              <div className="apple-modal-body">
-                <div style={{ marginBottom: 16 }}>
-                  <label className="input-label">Rule Name</label>
-                  <div className="input-apple"><input placeholder="e.g. VIP 10% discount" value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required /></div>
+          <div className="apple-card">
+            {loading ? (
+              <div style={{ padding: 48, textAlign: 'center' }}><i className="ti ti-loader-2 spin" style={{ fontSize: 24, color: 'var(--accent-primary)' }} /></div>
+            ) : filtered.length === 0 ? (
+              <div className="empty-state" style={{ padding: 48 }}>
+                <div className="empty-state-icon"><i className="ti ti-discount" /></div>
+                <h4 className="empty-state-title">No pricing rules</h4>
+                <p className="empty-state-desc">Create rules to offer custom pricing to companies and users.</p>
+              </div>
+            ) : (
+              <table className="apple-table">
+                <thead><tr>
+                  <th>Rule Name</th>
+                  <th>Target</th>
+                  <th>Assigned To</th>
+                  <th>Scope</th>
+                  <th>Discount</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr></thead>
+                <tbody>
+                  {filtered.map(r => (
+                    <tr key={r.id}>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{r.name}</div>
+                        {r.description && <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>{r.description}</div>}
+                      </td>
+                      <td><TargetBadge type={r.targetType} /></td>
+                      <td style={{ fontSize: 12 }}>
+                        {r.targetCompany?.name || r.targetCompanyUser?.email || r.targetCompanyGroup || 'Everyone'}
+                        {r.targetCompanyUser && <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{r.targetCompanyUser.firstName} {r.targetCompanyUser.lastName}</div>}
+                      </td>
+                      <td><ScopeBadge type={r.scopeType} tags={r.scopeTags || undefined} /></td>
+                      <td><DiscountBadge type={r.discountType} value={Number(r.discountValue)} percentage={Number(r.discountPercentage)} /></td>
+                      <td><span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{r.priority}</span></td>
+                      <td>
+                        <label className="apple-toggle">
+                          <input type="checkbox" checked={r.isActive} onChange={() => toggleActive(r)} />
+                          <span className="toggle-slider" />
+                        </label>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button className="btn-apple secondary small" onClick={() => openEdit(r)} title="Edit">
+                            <i className="ti ti-pencil" />
+                          </button>
+                          <button className="btn-apple danger small" onClick={() => setDeleteModal({ show: true, rule: r })} title="Delete">
+                            <i className="ti ti-trash" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ─── Tab 1: Company Intelligence ─── */}
+      {activeTab === 1 && (
+        <div style={{ marginTop: 20 }}>
+          {companyIntel.length === 0 ? (
+            <div className="apple-card">
+              <div className="empty-state" style={{ padding: 48 }}>
+                <div className="empty-state-icon"><i className="ti ti-brain" /></div>
+                <h4 className="empty-state-title">No Company Intelligence Data</h4>
+                <p className="empty-state-desc">Company profiles are built automatically as visitors browse your store.</p>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 16 }}>
+              {companyIntel.map(intel => (
+                <CompanyIntCard key={intel.id} intel={intel} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── Tab 2: Marketing Insights ─── */}
+      {activeTab === 2 && (
+        <div style={{ marginTop: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 16 }}>
+            {/* At-Risk Companies */}
+            <div className="apple-card" style={{ padding: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#ff3b3014', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <i className="ti ti-alert-triangle" style={{ fontSize: 18, color: '#ff3b30' }} />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-                  <div>
-                    <label className="input-label">Type</label>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>At-Risk Companies</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>High churn probability</div>
+                </div>
+              </div>
+              {companyIntel.filter(i => i.churnRisk > 0.5).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 20, color: 'var(--text-tertiary)', fontSize: 13 }}>No at-risk companies 🎉</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {companyIntel.filter(i => i.churnRisk > 0.5).sort((a, b) => b.churnRisk - a.churnRisk).slice(0, 5).map(i => (
+                    <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-primary)', borderRadius: 8, border: '1px solid var(--border-primary)' }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{i.company.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                          {i.daysSinceLastOrder ? `${i.daysSinceLastOrder} days since last order` : 'No orders yet'}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--bg-tertiary)', overflow: 'hidden' }}>
+                          <div style={{ width: `${i.churnRisk * 100}%`, height: '100%', background: i.churnRisk > 0.7 ? '#ff3b30' : '#ff9500', borderRadius: 2 }} />
+                        </div>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: i.churnRisk > 0.7 ? '#ff3b30' : '#ff9500' }}>{(i.churnRisk * 100).toFixed(0)}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Upsell Opportunities */}
+            <div className="apple-card" style={{ padding: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#34c75914', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <i className="ti ti-trending-up" style={{ fontSize: 18, color: '#34c759' }} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>Upsell Opportunities</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>High potential for conversion</div>
+                </div>
+              </div>
+              {companyIntel.filter(i => i.upsellPotential > 0.4).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 20, color: 'var(--text-tertiary)', fontSize: 13 }}>No upsell opportunities yet</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {companyIntel.filter(i => i.upsellPotential > 0.4).sort((a, b) => b.upsellPotential - a.upsellPotential).slice(0, 5).map(i => (
+                    <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-primary)', borderRadius: 8, border: '1px solid var(--border-primary)' }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{i.company.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{i.totalProductViews} views · {i.totalAddToCarts} carts · {i.totalOrders} orders</div>
+                      </div>
+                      <span className="badge-apple success" style={{ fontSize: 11 }}>{(i.upsellPotential * 100).toFixed(0)}% potential</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* AI Discount Suggestions */}
+            <div className="apple-card" style={{ padding: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#5856d614', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <i className="ti ti-sparkles" style={{ fontSize: 18, color: '#5856d6' }} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>AI Discount Suggestions</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Algorithm-recommended offers</div>
+                </div>
+              </div>
+              {intelsWithDiscount.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 20, color: 'var(--text-tertiary)', fontSize: 13 }}>No discount suggestions yet</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {intelsWithDiscount.slice(0, 5).map(i => (
+                    <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-primary)', borderRadius: 8, border: '1px solid var(--border-primary)' }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{i.company.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                          Segment: {i.segment} · Intent: {i.buyerIntent}
+                        </div>
+                      </div>
+                      <span className="badge-apple warning" style={{ fontSize: 11, fontWeight: 700 }}>
+                        Suggest {i.suggestedDiscount}% off
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Revenue by Segment */}
+            <div className="apple-card" style={{ padding: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#007aff14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <i className="ti ti-chart-bar" style={{ fontSize: 18, color: '#007aff' }} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>Segment Breakdown</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Company distribution by segment</div>
+                </div>
+              </div>
+              {(() => {
+                const segments: Record<string, number> = {};
+                companyIntel.forEach(i => { segments[i.segment] = (segments[i.segment] || 0) + 1; });
+                const segColors: Record<string, string> = { new: '#8e8e93', active: '#007aff', loyal: '#34c759', interested: '#ff9500', at_risk: '#ff3b30', churned: '#636366' };
+                return Object.entries(segments).map(([seg, count]) => (
+                  <div key={seg} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: 4, background: segColors[seg] || '#8e8e93' }} />
+                      <span style={{ fontSize: 13, fontWeight: 500, textTransform: 'capitalize' }}>{seg.replace('_', ' ')}</span>
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{count}</span>
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Create/Edit Modal ─── */}
+      {showCreate && (
+        <div className="apple-modal-overlay" onClick={() => { setShowCreate(false); setEditRule(null); }}>
+          <div className="apple-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 600, maxHeight: '90vh', overflow: 'auto' }}>
+            <div className="apple-modal-header">
+              <h3 className="apple-modal-title">{editRule ? 'Edit Pricing Rule' : 'New Pricing Rule'}</h3>
+            </div>
+            <form onSubmit={handleSave}>
+              <div className="apple-modal-body">
+                {/* Name & Description */}
+                <div style={{ marginBottom: 16 }}>
+                  <label className="input-label">Rule Name *</label>
+                  <div className="input-apple"><input placeholder="e.g. VIP 10% discount" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required /></div>
+                </div>
+                <div style={{ marginBottom: 20 }}>
+                  <label className="input-label">Description</label>
+                  <div className="input-apple"><input placeholder="Optional description..." value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} /></div>
+                </div>
+
+                {/* Section: Target */}
+                <div style={{ marginBottom: 20, padding: '16px', background: 'var(--bg-primary)', borderRadius: 12, border: '1px solid var(--border-primary)' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <i className="ti ti-target" style={{ color: 'var(--accent-primary)' }} /> Who should this rule apply to?
+                  </div>
+                  <div className="select-apple" style={{ marginBottom: 12 }}>
+                    <select value={form.targetType} onChange={e => setForm(p => ({ ...p, targetType: e.target.value, targetCompanyId: '', targetCompanyUserId: '', targetCompanyGroup: '' }))}>
+                      <option value="all">🌐 All Companies</option>
+                      <option value="company">🏢 Specific Company</option>
+                      <option value="company_user">👤 Specific User</option>
+                      <option value="company_group">👥 Company Group</option>
+                    </select>
+                    <i className="ti ti-chevron-down select-icon" />
+                  </div>
+
+                  {form.targetType === 'company' && (
                     <div className="select-apple">
-                      <select value={form.type} onChange={e => setForm(p => ({...p, type: e.target.value}))}>
-                        <option value="percentage">Percentage</option>
-                        <option value="fixed">Fixed Amount</option>
-                        <option value="override">Price Override</option>
+                      <select value={form.targetCompanyId} onChange={e => setForm(p => ({ ...p, targetCompanyId: e.target.value, targetCompanyUserId: '' }))} required>
+                        <option value="">Select a company...</option>
+                        {companies.map(c => <option key={c.id} value={c.id}>{c.name} ({c.status})</option>)}
                       </select>
                       <i className="ti ti-chevron-down select-icon" />
                     </div>
+                  )}
+
+                  {form.targetType === 'company_user' && (
+                    <>
+                      <div className="select-apple" style={{ marginBottom: 8 }}>
+                        <select value={form.targetCompanyId} onChange={e => setForm(p => ({ ...p, targetCompanyId: e.target.value, targetCompanyUserId: '' }))} required>
+                          <option value="">Select company first...</option>
+                          {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                        <i className="ti ti-chevron-down select-icon" />
+                      </div>
+                      {selectedCompanyUsers.length > 0 && (
+                        <div className="select-apple">
+                          <select value={form.targetCompanyUserId} onChange={e => setForm(p => ({ ...p, targetCompanyUserId: e.target.value }))} required>
+                            <option value="">Select user...</option>
+                            {selectedCompanyUsers.map(u => <option key={u.id} value={u.id}>{u.email} ({u.firstName} {u.lastName})</option>)}
+                          </select>
+                          <i className="ti ti-chevron-down select-icon" />
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {form.targetType === 'company_group' && (
+                    <div className="input-apple">
+                      <input placeholder="Enter company group name..." value={form.targetCompanyGroup} onChange={e => setForm(p => ({ ...p, targetCompanyGroup: e.target.value }))} required />
+                    </div>
+                  )}
+                </div>
+
+                {/* Section: Scope */}
+                <div style={{ marginBottom: 20, padding: '16px', background: 'var(--bg-primary)', borderRadius: 12, border: '1px solid var(--border-primary)' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <i className="ti ti-package" style={{ color: '#5856d6' }} /> What products does it apply to?
                   </div>
-                  <div>
-                    <label className="input-label">Value</label>
-                    <div className="input-apple"><input type="number" min={0} value={form.value} onChange={e => setForm(p => ({...p, value: +e.target.value}))} required /></div>
+                  <div className="select-apple" style={{ marginBottom: 12 }}>
+                    <select value={form.scopeType} onChange={e => setForm(p => ({ ...p, scopeType: e.target.value }))}>
+                      <option value="all">All Products</option>
+                      <option value="tags">By Tags</option>
+                      <option value="products">Specific Products</option>
+                      <option value="collections">Collections</option>
+                      <option value="variants">Specific Variants</option>
+                    </select>
+                    <i className="ti ti-chevron-down select-icon" />
+                  </div>
+                  {form.scopeType === 'tags' && (
+                    <div className="input-apple"><input placeholder="Comma-separated tags, e.g. DTF,wholesale" value={form.scopeTags} onChange={e => setForm(p => ({ ...p, scopeTags: e.target.value }))} /></div>
+                  )}
+                </div>
+
+                {/* Section: Discount */}
+                <div style={{ marginBottom: 20, padding: '16px', background: 'var(--bg-primary)', borderRadius: 12, border: '1px solid var(--border-primary)' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <i className="ti ti-discount" style={{ color: '#ff9500' }} /> Discount configuration
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                    <div>
+                      <label className="input-label">Discount Type</label>
+                      <div className="select-apple">
+                        <select value={form.discountType} onChange={e => setForm(p => ({ ...p, discountType: e.target.value }))}>
+                          <option value="percentage">Percentage (%)</option>
+                          <option value="fixed_amount">Fixed Amount ($)</option>
+                          <option value="fixed_price">Fixed Price</option>
+                          <option value="qty_break">Quantity Breaks</option>
+                        </select>
+                        <i className="ti ti-chevron-down select-icon" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="input-label">{form.discountType === 'percentage' ? 'Percentage' : 'Amount ($)'}</label>
+                      <div className="input-apple">
+                        <input type="number" min={0} max={form.discountType === 'percentage' ? 100 : undefined} step="0.01"
+                          value={form.discountType === 'percentage' ? form.discountPercentage : form.discountValue}
+                          onChange={e => {
+                            const val = +e.target.value;
+                            if (form.discountType === 'percentage') setForm(p => ({ ...p, discountPercentage: val }));
+                            else setForm(p => ({ ...p, discountValue: val }));
+                          }} required />
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
+                      <label className="input-label">Min Cart Amount ($)</label>
+                      <div className="input-apple"><input type="number" min={0} step="0.01" value={form.minCartAmount} onChange={e => setForm(p => ({ ...p, minCartAmount: +e.target.value }))} /></div>
+                    </div>
+                    <div>
+                      <label className="input-label">Priority (higher = first)</label>
+                      <div className="input-apple"><input type="number" min={0} value={form.priority} onChange={e => setForm(p => ({ ...p, priority: +e.target.value }))} /></div>
+                    </div>
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div>
-                    <label className="input-label">Min Quantity</label>
-                    <div className="input-apple"><input type="number" min={1} value={form.minQuantity} onChange={e => setForm(p => ({...p, minQuantity: +e.target.value}))} /></div>
+
+                {/* Section: Scheduling */}
+                <div style={{ padding: '16px', background: 'var(--bg-primary)', borderRadius: 12, border: '1px solid var(--border-primary)' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <i className="ti ti-calendar" style={{ color: '#34c759' }} /> Schedule (optional)
                   </div>
-                  <div>
-                    <label className="input-label">Max Quantity</label>
-                    <div className="input-apple"><input type="number" min={0} placeholder="0 = unlimited" value={form.maxQuantity} onChange={e => setForm(p => ({...p, maxQuantity: +e.target.value}))} /></div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
+                      <label className="input-label">Valid From</label>
+                      <div className="input-apple"><input type="date" value={form.validFrom} onChange={e => setForm(p => ({ ...p, validFrom: e.target.value }))} /></div>
+                    </div>
+                    <div>
+                      <label className="input-label">Valid Until</label>
+                      <div className="input-apple"><input type="date" value={form.validUntil} onChange={e => setForm(p => ({ ...p, validUntil: e.target.value }))} /></div>
+                    </div>
                   </div>
                 </div>
               </div>
               <div className="apple-modal-footer">
-                <button type="button" className="btn-apple secondary" onClick={() => setShowCreate(false)}>Cancel</button>
-                <button type="submit" className="btn-apple primary" disabled={saving}>{saving ? 'Creating...' : 'Create Rule'}</button>
+                <button type="button" className="btn-apple secondary" onClick={() => { setShowCreate(false); setEditRule(null); }}>Cancel</button>
+                <button type="submit" className="btn-apple primary" disabled={saving}>{saving ? 'Saving...' : (editRule ? 'Update Rule' : 'Create Rule')}</button>
               </div>
             </form>
           </div>
@@ -166,9 +644,82 @@ export default function PricingPage() {
       )}
 
       {deleteModal.show && deleteModal.rule && (
-        <Modal show onClose={() => setDeleteModal({show: false, rule: null})} onConfirm={() => deleteRule(deleteModal.rule!)}
-          title="Delete Rule" message={`Delete "${deleteModal.rule.name}"?`} confirmText="Delete" type="danger" />
+        <Modal show onClose={() => setDeleteModal({ show: false, rule: null })} onConfirm={() => deleteRule(deleteModal.rule!)}
+          title="Delete Rule" message={`Delete "${deleteModal.rule.name}"? This action cannot be undone.`} confirmText="Delete" type="danger" />
       )}
+    </div>
+  );
+}
+
+/* ─── Company Intelligence Card ─── */
+function CompanyIntCard({ intel }: { intel: CompanyIntel }) {
+  const segColors: Record<string, string> = { new: '#8e8e93', active: '#007aff', loyal: '#34c759', interested: '#ff9500', at_risk: '#ff3b30', churned: '#636366' };
+  const intentEmojis: Record<string, string> = { cold: '❄️', warm: '🌤️', hot: '🔥', converting: '💰' };
+  const segColor = segColors[intel.segment] || '#8e8e93';
+
+  return (
+    <div className="apple-card" style={{ padding: 20 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>{intel.company.name}</div>
+          {intel.company.email && <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>{intel.company.email}</div>}
+        </div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: `${segColor}18`, color: segColor, textTransform: 'capitalize' }}>
+            {intel.segment.replace('_', ' ')}
+          </span>
+          <span style={{ fontSize: 16 }}>{intentEmojis[intel.buyerIntent] || '❄️'}</span>
+        </div>
+      </div>
+
+      {/* Engagement Bar */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
+          <span style={{ color: 'var(--text-tertiary)' }}>Engagement</span>
+          <span style={{ fontWeight: 700 }}>{intel.engagementScore.toFixed(0)}/100</span>
+        </div>
+        <div style={{ height: 6, background: 'var(--bg-tertiary)', borderRadius: 3, overflow: 'hidden' }}>
+          <div style={{ width: `${Math.min(100, intel.engagementScore)}%`, height: '100%', background: `linear-gradient(90deg, ${segColor}, ${segColor}cc)`, borderRadius: 3, transition: 'width 0.3s ease' }} />
+        </div>
+      </div>
+
+      {/* Metrics Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+        {[
+          { label: 'Sessions', value: intel.totalSessions, icon: '🔗' },
+          { label: 'Page Views', value: intel.totalPageViews, icon: '👁️' },
+          { label: 'Product Views', value: intel.totalProductViews, icon: '📦' },
+          { label: 'Add to Cart', value: intel.totalAddToCarts, icon: '🛒' },
+          { label: 'Orders', value: intel.totalOrders, icon: '📋' },
+          { label: 'Revenue', value: `$${Number(intel.totalRevenue).toFixed(0)}`, icon: '💰' },
+        ].map(m => (
+          <div key={m.label} style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 14 }}>{m.icon}</div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{m.value}</div>
+            <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{m.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Risk Indicators */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        {intel.churnRisk > 0.3 && (
+          <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 600, background: '#ff3b3014', color: '#ff3b30' }}>
+            ⚠️ Churn risk: {(intel.churnRisk * 100).toFixed(0)}%
+          </span>
+        )}
+        {intel.upsellPotential > 0.3 && (
+          <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 600, background: '#34c75914', color: '#34c759' }}>
+            📈 Upsell: {(intel.upsellPotential * 100).toFixed(0)}%
+          </span>
+        )}
+        {intel.suggestedDiscount && intel.suggestedDiscount > 0 && (
+          <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 600, background: '#5856d614', color: '#5856d6' }}>
+            ✨ Suggest {intel.suggestedDiscount}% off
+          </span>
+        )}
+      </div>
     </div>
   );
 }

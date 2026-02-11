@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export interface PricingContext {
   merchantId: string;
   companyId: string;
+  companyUserId?: string;
   variantIds: bigint[];
   quantities?: { [variantId: string]: number };
   cartTotal?: number;
@@ -33,7 +34,7 @@ export class PricingCalculatorService {
 
     // Get company details
     let company: any = null;
-    
+
     if (companyId) {
       try {
         company = await this.prisma.company.findUnique({
@@ -60,7 +61,7 @@ export class PricingCalculatorService {
     });
 
     // Get all applicable pricing rules
-    const pricingRules = await this.getApplicableRules(merchantId, company);
+    const pricingRules = await this.getApplicableRules(merchantId, company, context.companyUserId);
 
     const results: CalculatedPrice[] = [];
 
@@ -105,10 +106,27 @@ export class PricingCalculatorService {
   }
 
   /**
-   * Get all applicable pricing rules for a company
+   * Get all applicable pricing rules for a company and optionally a specific user
    */
-  private async getApplicableRules(merchantId: string, company: any) {
+  private async getApplicableRules(merchantId: string, company: any, companyUserId?: string) {
     const now = new Date();
+
+    const targetConditions: any[] = [
+      { targetType: 'all' },
+      { targetType: 'company', targetCompanyId: company.id },
+      {
+        targetType: 'company_group',
+        targetCompanyGroup: company.companyGroup,
+      },
+    ];
+
+    // Add user-level targeting if companyUserId is provided
+    if (companyUserId) {
+      targetConditions.push({
+        targetType: 'company_user',
+        targetCompanyUserId: companyUserId,
+      });
+    }
 
     const rules = await this.prisma.pricingRule.findMany({
       where: {
@@ -134,14 +152,7 @@ export class PricingCalculatorService {
         ],
         AND: [
           {
-            OR: [
-              { targetType: 'all' },
-              { targetType: 'company', targetCompanyId: company.id },
-              {
-                targetType: 'company_group',
-                targetCompanyGroup: company.companyGroup,
-              },
-            ],
+            OR: targetConditions,
           },
         ],
       },
@@ -366,4 +377,3 @@ export class PricingCalculatorService {
     };
   }
 }
-

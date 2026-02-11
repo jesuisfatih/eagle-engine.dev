@@ -1,19 +1,19 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-  BadRequestException,
+    BadRequestException,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    Post,
+    Put,
+    Query,
+    UseGuards,
 } from '@nestjs/common';
-import { PricingService } from './pricing.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { CalculatePricesDto, CreatePricingRuleDto, UpdatePricingRuleDto, ToggleRuleDto, GetRulesQueryDto } from './dto/pricing.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CalculatePricesDto, CreatePricingRuleDto, GetRulesQueryDto, ToggleRuleDto, UpdatePricingRuleDto } from './dto/pricing.dto';
+import { PricingService } from './pricing.service';
 
 @Controller('pricing')
 @UseGuards(JwtAuthGuard)
@@ -59,6 +59,12 @@ export class PricingController {
     }
     if (query.companyId) {
       filters.companyId = query.companyId;
+    }
+    if (query.companyUserId) {
+      filters.companyUserId = query.companyUserId;
+    }
+    if (query.targetType) {
+      filters.targetType = query.targetType;
     }
 
     return this.pricingService.getRules(merchantId, filters);
@@ -121,7 +127,3 @@ export class PricingController {
     return this.pricingService.toggleRuleActive(id, merchantId, dto.isActive);
   }
 }
-
-
-
-

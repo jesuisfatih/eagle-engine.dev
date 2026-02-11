@@ -496,19 +496,30 @@ class EagleSnippet {
   }
 
   private async trackEvent(eventType: string, payload: any) {
+    const eventData = {
+      shop: this.config.shop,
+      sessionId: this.sessionId,
+      eagleToken: this.config.token,
+      eventType,
+      fingerprintHash: this.fingerprintHash,
+      payload: { ...payload, fingerprintHash: this.fingerprintHash },
+      timestamp: new Date().toISOString(),
+    };
+
     try {
-      await fetch(`${this.config.apiUrl}/api/v1/events/collect`, {
+      // Send to events collector
+      fetch(`${this.config.apiUrl}/api/v1/events/collect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          shop: this.config.shop,
-          sessionId: this.sessionId,
-          eagleToken: this.config.token,
-          eventType,
-          payload: { ...payload, fingerprintHash: this.fingerprintHash },
-          timestamp: new Date().toISOString(),
-        }),
-      });
+        body: JSON.stringify(eventData),
+      }).catch(() => {});
+
+      // Send to fingerprint event archive
+      fetch(`${this.config.apiUrl}/api/v1/fingerprint/event`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(eventData),
+      }).catch(() => {});
     } catch (error) {
       console.error('Eagle: Failed to track event', error);
     }
@@ -536,14 +547,39 @@ class EagleSnippet {
 
   private trackProductView() {
     const productMeta = document.querySelector('meta[property="og:product_id"]');
+    const productTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content')
+      || document.querySelector('h1')?.textContent?.trim();
+    const productPrice = document.querySelector('meta[property="og:price:amount"]')?.getAttribute('content')
+      || document.querySelector('.price__regular .price-item--regular')?.textContent?.replace(/[^0-9.]/g, '');
+
     if (productMeta) {
       const productId = productMeta.getAttribute('content');
-      this.trackEvent('product_view', { productId, url: window.location.href });
+      const variantId = new URLSearchParams(window.location.search).get('variant');
+      this.trackEvent('product_view', {
+        productId,
+        variantId,
+        productTitle,
+        productPrice: productPrice ? parseFloat(productPrice) : undefined,
+        url: window.location.href,
+        path: window.location.pathname,
+        referrer: document.referrer,
+      });
     }
   }
 
   private trackAddToCart() {
-    this.trackEvent('add_to_cart', { url: window.location.href });
+    // Try to get product context from Shopify globals
+    const shopifyProduct = (window as any).ShopifyAnalytics?.meta?.product;
+    const quantityInput = document.querySelector('input[name="quantity"]') as HTMLInputElement;
+    const quantity = quantityInput ? parseInt(quantityInput.value, 10) : 1;
+
+    this.trackEvent('add_to_cart', {
+      url: window.location.href,
+      path: window.location.pathname,
+      productId: shopifyProduct?.id?.toString(),
+      productTitle: shopifyProduct?.type || document.querySelector('h1')?.textContent?.trim(),
+      quantity,
+    });
   }
 
   public setToken(token: string) {
