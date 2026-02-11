@@ -2,7 +2,7 @@
 
 client_id = "e13c7c17ddbd3e8d5865948e21b552c9"
 name = "factoryengine"
-application_url = "https://shopify.dev/apps/default-app-home"
+application_url = "https://api.eagledtfsupply.com"
 embedded = true
 
 [build]
@@ -12,8 +12,11 @@ automatically_update_urls_on_dev = true
 api_version = "2026-04"
 
 [access_scopes]
-# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = ""
+scopes = "read_products,write_products,read_orders,write_orders,read_customers,write_customers,read_themes,write_themes,read_content,write_content,read_inventory,write_inventory,read_shipping,write_shipping"
 
 [auth]
-redirect_urls = [ "https://shopify.dev/apps/default-app-home/api/auth" ]
+redirect_urls = [
+  "https://api.eagledtfsupply.com/api/auth/callback",
+  "https://api.eagledtfsupply.com/api/v1/auth/callback",
+  "https://app.eagledtfsupply.com/api/auth/callback"
+]
