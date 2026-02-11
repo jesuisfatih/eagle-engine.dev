@@ -265,8 +265,9 @@ class EagleSnippet {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: payload,
-        keepalive: true,
-      }).catch(() => { /* silent */ });
+      }).catch((err) => {
+        console.warn('🦅 Eagle: Failed to flush rrweb events', err);
+      });
     }
   }
 
