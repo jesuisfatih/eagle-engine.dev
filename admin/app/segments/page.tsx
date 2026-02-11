@@ -1,6 +1,6 @@
 'use client';
 
-import PageHeader from '@/components/ui/PageHeader';
+import { PageHeader } from '@/components/ui/PageLayout';
 import { showToast } from '@/components/ui/Toast';
 import { adminFetch } from '@/lib/api-client';
 import { useEffect, useState } from 'react';
@@ -82,7 +82,6 @@ export default function SegmentsPage() {
       <PageHeader
         title="Segments"
         subtitle="Company segmentation based on behavior, revenue, and engagement"
-        icon="ti-filter"
       />
 
       {/* Stats Row */}

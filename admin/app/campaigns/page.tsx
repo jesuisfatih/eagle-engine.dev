@@ -1,6 +1,6 @@
 'use client';
 
-import PageHeader from '@/components/ui/PageHeader';
+import { PageHeader } from '@/components/ui/PageLayout';
 import { showToast } from '@/components/ui/Toast';
 import { adminFetch } from '@/lib/api-client';
 import { useCallback, useEffect, useState } from 'react';
@@ -58,7 +58,6 @@ export default function CampaignsPage() {
       <PageHeader
         title="Campaigns"
         subtitle="Segmentation & campaign management powered by Dittofeed"
-        icon="ti-speakerphone"
         actions={
           <div style={{ display: 'flex', gap: 8 }}>
             <button

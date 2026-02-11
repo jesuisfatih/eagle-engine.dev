@@ -1,6 +1,6 @@
 'use client';
 
-import PageHeader from '@/components/ui/PageHeader';
+import { PageHeader } from '@/components/ui/PageLayout';
 import { showToast } from '@/components/ui/Toast';
 import { adminFetch } from '@/lib/api-client';
 import { useState } from 'react';
@@ -65,7 +65,6 @@ export default function DataSyncPage() {
       <PageHeader
         title="Data Sync"
         subtitle="Sync Eagle Engine data → Dittofeed segmentation engine"
-        icon="ti-refresh"
         actions={
           <button className="btn-apple sm" onClick={fullSync} disabled={syncing.all}>
             {syncing.all ? <><i className="ti ti-loader-2 spin" style={{ fontSize: 14 }}/> Syncing All...</> : <><i className="ti ti-refresh" style={{ fontSize: 14 }}/> Full Sync</>}
