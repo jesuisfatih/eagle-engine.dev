@@ -3,8 +3,8 @@
  * Browser fingerprinting, rrweb session replay, cart tracking, and customer identity resolution
  */
 
+import { record } from '@rrweb/record';
 import type { eventWithTime } from '@rrweb/types';
-import { record } from 'rrweb';
 
 interface EagleConfig {
   apiUrl: string;

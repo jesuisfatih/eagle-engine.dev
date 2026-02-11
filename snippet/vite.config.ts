@@ -11,17 +11,18 @@ export default defineConfig({
     rollupOptions: {
       output: {
         extend: true,
+        // Ensure rrweb's internal modules are not tree-shaken
+        // which can strip the snapshot/serialization logic
+        inlineDynamicImports: true,
       },
+      // Disable tree-shaking to prevent rrweb snapshot module from being stripped
+      treeshake: false,
     },
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: false, // Keep console logs for debugging
+        drop_console: false,
       },
     },
   },
 });
-
-
-
-
