@@ -125,32 +125,39 @@ class EagleSnippet {
   // SESSION RECORDING (rrweb — Clarity-grade)
   // ============================
 
-  private startSessionRecording() {
+  private async startSessionRecording() {
     try {
+      // Step 1: Inline cross-origin stylesheets BEFORE rrweb takes its snapshot
+      // Shopify CSS lives on cdn.shopify.com and rrweb can't capture cross-origin styles
+      await this.inlineCrossOriginStyles();
+
+      // Step 2: Start rrweb recording
       this.rrwebStopFn = record({
         emit: (event: eventWithTime) => {
           this.rrwebEvents.push(event);
         },
-        // Privacy settings — mask all user input by default
+        // Privacy — mask user input
         maskAllInputs: true,
         maskTextSelector: '[data-eagle-mask]',
-        // Performance — sample mouse movements
+        // Performance — sample interactions
         sampling: {
-          mousemove: true,
-          mouseInteraction: true,
-          scroll: 150,    // sample scroll every 150ms
-          media: 800,     // sample media every 800ms
-          input: 'last',  // only record last input value
+          mousemove: 50,          // sample mousemove every 50ms (not every pixel)
+          mouseInteraction: true, // capture clicks etc.
+          scroll: 150,            // sample scroll every 150ms
+          media: 800,
+          input: 'last',
         },
-        // Inline styles for accurate replay
+        // Inline stylesheets for accurate replay
         inlineStylesheet: true,
-        // Block large elements to save bandwidth
-        blockSelector: '[data-eagle-block], .no-replay',
-        // Slim mode: reduce snapshot size by using CSS text
+        // Collect fonts for accurate typography
+        collectFonts: true,
+        // Block heavy elements
+        blockSelector: '[data-eagle-block], .no-replay, iframe[src*="youtube"], iframe[src*="vimeo"]',
+        // Slim mode — remove unnecessary head metadata
         slimDOMOptions: {
-          script: true,        // don't record script content
-          comment: true,       // don't record comments
-          headFavicon: true,   // skip favicons
+          script: true,
+          comment: true,
+          headFavicon: true,
           headWhitespace: true,
           headMetaDescKeywords: true,
           headMetaSocial: true,
@@ -174,6 +181,62 @@ class EagleSnippet {
       });
     } catch (err) {
       console.warn('🦅 Eagle: Session recording failed to start', err);
+    }
+  }
+
+  /**
+   * Fetch cross-origin stylesheets and inject them as inline <style> elements
+   * so rrweb can capture them in its FullSnapshot.
+   * Shopify stores CSS on cdn.shopify.com which is cross-origin.
+   */
+  private async inlineCrossOriginStyles() {
+    try {
+      const links = document.querySelectorAll('link[rel="stylesheet"]');
+      const fetches: Promise<void>[] = [];
+
+      links.forEach((link) => {
+        const href = link.getAttribute('href');
+        if (!href) return;
+
+        // Check if cross-origin
+        try {
+          const url = new URL(href, window.location.origin);
+          if (url.origin === window.location.origin) return; // same-origin, rrweb handles it
+        } catch {
+          return; // invalid URL
+        }
+
+        const fetchPromise = fetch(href, { mode: 'cors' })
+          .then((res) => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.text();
+          })
+          .then((cssText) => {
+            // Create an inline <style> element with the CSS content
+            const style = document.createElement('style');
+            style.setAttribute('data-eagle-inlined', 'true');
+            style.setAttribute('data-original-href', href);
+            style.textContent = cssText;
+            // Insert the inline style right after the original link
+            link.parentNode?.insertBefore(style, link.nextSibling);
+          })
+          .catch(() => {
+            // Silently skip stylesheets that can't be fetched (CORS blocked, etc.)
+          });
+
+        fetches.push(fetchPromise);
+      });
+
+      // Wait max 3 seconds for all fetches
+      if (fetches.length > 0) {
+        await Promise.race([
+          Promise.allSettled(fetches),
+          new Promise<void>((resolve) => setTimeout(resolve, 3000)),
+        ]);
+        console.log(`🦅 Eagle: Inlined ${fetches.length} cross-origin stylesheets`);
+      }
+    } catch {
+      // Non-critical — recording will work, just without cross-origin styles
     }
   }
 

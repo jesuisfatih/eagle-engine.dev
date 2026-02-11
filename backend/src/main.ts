@@ -1,6 +1,7 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { json } from 'express';
 import { AppModule } from './app.module';
 
 // BigInt serialization fix
@@ -14,6 +15,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
+
+  // Increase JSON body limit for rrweb session replay payloads (FullSnapshot can be 500KB+)
+  app.use(json({ limit: '10mb' }));
 
   const config = app.get(ConfigService);
 
