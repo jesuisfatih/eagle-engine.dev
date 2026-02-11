@@ -263,16 +263,13 @@ export default function PricingPage() {
               <i className="ti ti-search input-icon" />
               <input placeholder="Search rules..." value={search} onChange={e => setSearch(e.target.value)} />
             </div>
-            <div className="select-apple" style={{ width: 180 }}>
-              <select value={filterTarget} onChange={e => setFilterTarget(e.target.value)}>
-                <option value="">All Targets</option>
-                <option value="all">Global</option>
-                <option value="company">Company</option>
-                <option value="company_user">User</option>
-                <option value="company_group">Group</option>
-              </select>
-              <i className="ti ti-chevron-down select-icon" />
-            </div>
+            <select className="select-apple" style={{ width: 180 }} value={filterTarget} onChange={e => setFilterTarget(e.target.value)}>
+              <option value="">All Targets</option>
+              <option value="all">Global</option>
+              <option value="company">Company</option>
+              <option value="company_user">User</option>
+              <option value="company_group">Group</option>
+            </select>
           </div>
 
           <div className="apple-card">
@@ -510,43 +507,31 @@ export default function PricingPage() {
                   <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <i className="ti ti-target" style={{ color: 'var(--accent-primary)' }} /> Who should this rule apply to?
                   </div>
-                  <div className="select-apple" style={{ marginBottom: 12 }}>
-                    <select value={form.targetType} onChange={e => setForm(p => ({ ...p, targetType: e.target.value, targetCompanyId: '', targetCompanyUserId: '', targetCompanyGroup: '' }))}>
-                      <option value="all">🌐 All Companies</option>
-                      <option value="company">🏢 Specific Company</option>
-                      <option value="company_user">👤 Specific User</option>
-                      <option value="company_group">👥 Company Group</option>
-                    </select>
-                    <i className="ti ti-chevron-down select-icon" />
-                  </div>
+                  <select className="select-apple" style={{ marginBottom: 12 }} value={form.targetType} onChange={e => setForm(p => ({ ...p, targetType: e.target.value, targetCompanyId: '', targetCompanyUserId: '', targetCompanyGroup: '' }))}>
+                    <option value="all">🌐 All Companies</option>
+                    <option value="company">🏢 Specific Company</option>
+                    <option value="company_user">👤 Specific User</option>
+                    <option value="company_group">👥 Company Group</option>
+                  </select>
 
                   {form.targetType === 'company' && (
-                    <div className="select-apple">
-                      <select value={form.targetCompanyId} onChange={e => setForm(p => ({ ...p, targetCompanyId: e.target.value, targetCompanyUserId: '' }))} required>
-                        <option value="">Select a company...</option>
-                        {companies.map(c => <option key={c.id} value={c.id}>{c.name} ({c.status})</option>)}
-                      </select>
-                      <i className="ti ti-chevron-down select-icon" />
-                    </div>
+                    <select className="select-apple" value={form.targetCompanyId} onChange={e => setForm(p => ({ ...p, targetCompanyId: e.target.value, targetCompanyUserId: '' }))} required>
+                      <option value="">Select a company...</option>
+                      {companies.map(c => <option key={c.id} value={c.id}>{c.name} ({c.status})</option>)}
+                    </select>
                   )}
 
                   {form.targetType === 'company_user' && (
                     <>
-                      <div className="select-apple" style={{ marginBottom: 8 }}>
-                        <select value={form.targetCompanyId} onChange={e => setForm(p => ({ ...p, targetCompanyId: e.target.value, targetCompanyUserId: '' }))} required>
-                          <option value="">Select company first...</option>
-                          {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </select>
-                        <i className="ti ti-chevron-down select-icon" />
-                      </div>
+                      <select className="select-apple" style={{ marginBottom: 8 }} value={form.targetCompanyId} onChange={e => setForm(p => ({ ...p, targetCompanyId: e.target.value, targetCompanyUserId: '' }))} required>
+                        <option value="">Select company first...</option>
+                        {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
                       {selectedCompanyUsers.length > 0 && (
-                        <div className="select-apple">
-                          <select value={form.targetCompanyUserId} onChange={e => setForm(p => ({ ...p, targetCompanyUserId: e.target.value }))} required>
-                            <option value="">Select user...</option>
-                            {selectedCompanyUsers.map(u => <option key={u.id} value={u.id}>{u.email} ({u.firstName} {u.lastName})</option>)}
-                          </select>
-                          <i className="ti ti-chevron-down select-icon" />
-                        </div>
+                        <select className="select-apple" value={form.targetCompanyUserId} onChange={e => setForm(p => ({ ...p, targetCompanyUserId: e.target.value }))} required>
+                          <option value="">Select user...</option>
+                          {selectedCompanyUsers.map(u => <option key={u.id} value={u.id}>{u.email} ({u.firstName} {u.lastName})</option>)}
+                        </select>
                       )}
                     </>
                   )}
@@ -563,16 +548,13 @@ export default function PricingPage() {
                   <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <i className="ti ti-package" style={{ color: '#5856d6' }} /> What products does it apply to?
                   </div>
-                  <div className="select-apple" style={{ marginBottom: 12 }}>
-                    <select value={form.scopeType} onChange={e => setForm(p => ({ ...p, scopeType: e.target.value }))}>
-                      <option value="all">All Products</option>
-                      <option value="tags">By Tags</option>
-                      <option value="products">Specific Products</option>
-                      <option value="collections">Collections</option>
-                      <option value="variants">Specific Variants</option>
-                    </select>
-                    <i className="ti ti-chevron-down select-icon" />
-                  </div>
+                  <select className="select-apple" style={{ marginBottom: 12 }} value={form.scopeType} onChange={e => setForm(p => ({ ...p, scopeType: e.target.value }))}>
+                    <option value="all">All Products</option>
+                    <option value="tags">By Tags</option>
+                    <option value="products">Specific Products</option>
+                    <option value="collections">Collections</option>
+                    <option value="variants">Specific Variants</option>
+                  </select>
                   {form.scopeType === 'tags' && (
                     <div className="input-apple"><input placeholder="Comma-separated tags, e.g. DTF,wholesale" value={form.scopeTags} onChange={e => setForm(p => ({ ...p, scopeTags: e.target.value }))} /></div>
                   )}
@@ -586,15 +568,12 @@ export default function PricingPage() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
                     <div>
                       <label className="input-label">Discount Type</label>
-                      <div className="select-apple">
-                        <select value={form.discountType} onChange={e => setForm(p => ({ ...p, discountType: e.target.value }))}>
-                          <option value="percentage">Percentage (%)</option>
-                          <option value="fixed_amount">Fixed Amount ($)</option>
-                          <option value="fixed_price">Fixed Price</option>
-                          <option value="qty_break">Quantity Breaks</option>
-                        </select>
-                        <i className="ti ti-chevron-down select-icon" />
-                      </div>
+                      <select className="select-apple" value={form.discountType} onChange={e => setForm(p => ({ ...p, discountType: e.target.value }))}>
+                        <option value="percentage">Percentage (%)</option>
+                        <option value="fixed_amount">Fixed Amount ($)</option>
+                        <option value="fixed_price">Fixed Price</option>
+                        <option value="qty_break">Quantity Breaks</option>
+                      </select>
                     </div>
                     <div>
                       <label className="input-label">{form.discountType === 'percentage' ? 'Percentage' : 'Amount ($)'}</label>

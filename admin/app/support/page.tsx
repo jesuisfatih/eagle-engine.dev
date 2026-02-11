@@ -73,15 +73,12 @@ export default function SupportPage() {
               </div>
               <div style={{ marginBottom: 16 }}>
                 <label className="input-label">Priority</label>
-                <div className="select-apple">
-                  <select value={form.priority} onChange={e => setForm(p => ({...p, priority: e.target.value}))}>
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
-                  </select>
-                  <i className="ti ti-chevron-down select-icon" />
-                </div>
+                <select className="select-apple" value={form.priority} onChange={e => setForm(p => ({...p, priority: e.target.value}))}>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
               </div>
               <div style={{ marginBottom: 16 }}>
                 <label className="input-label">Description</label>

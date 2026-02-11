@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState, useMemo } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
 
 /* Column definition compatible with old API */
 export interface DataTableColumn<T> {
@@ -138,18 +138,16 @@ export default function DataTable<T extends Record<string, unknown>>({
             </div>
           )}
           {statusFilter && (
-            <div className="select-apple">
-              <select
-                value={statusValue}
-                onChange={(e) => { setStatusValue(e.target.value); setPage(1); }}
-              >
-                <option value="">All</option>
-                {statusFilter.options.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-              <i className="ti ti-chevron-down select-icon" />
-            </div>
+            <select
+              className="select-apple"
+              value={statusValue}
+              onChange={(e) => { setStatusValue(e.target.value); setPage(1); }}
+            >
+              <option value="">All</option>
+              {statusFilter.options.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
           )}
           <div style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--text-tertiary)' }}>
             {filtered.length} result{filtered.length !== 1 ? 's' : ''}

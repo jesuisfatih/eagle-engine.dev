@@ -182,15 +182,12 @@ export default function UsersPage() {
                 <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{roleModal.user.email}</span>
               </p>
               <label className="input-label">Select New Role</label>
-              <div className="select-apple">
-                <select value={roleModal.selectedRole} onChange={(e) => setRoleModal(prev => ({...prev, selectedRole: e.target.value}))}>
-                  <option value="admin">Admin</option>
-                  <option value="manager">Manager</option>
-                  <option value="buyer">Buyer</option>
-                  <option value="viewer">Viewer</option>
-                </select>
-                <i className="ti ti-chevron-down select-icon" />
-              </div>
+              <select className="select-apple" value={roleModal.selectedRole} onChange={(e) => setRoleModal(prev => ({...prev, selectedRole: e.target.value}))}>
+                <option value="admin">Admin</option>
+                <option value="manager">Manager</option>
+                <option value="buyer">Buyer</option>
+                <option value="viewer">Viewer</option>
+              </select>
             </div>
             <div className="apple-modal-footer">
               <button className="btn-apple secondary" onClick={() => setRoleModal({show: false, user: null, selectedRole: ''})} disabled={updating}>Cancel</button>
