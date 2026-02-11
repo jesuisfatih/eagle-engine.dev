@@ -13,7 +13,7 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "rrweb": "^2.0.0-alpha.4",
-    "rrweb-player": "^1.0.0-alpha.4"
+    "rrweb-player": "^2.0.0-alpha.18"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
