@@ -300,14 +300,33 @@ textarea.input-apple-field { min-height: 80px; resize: vertical; }
 @media (max-width: 640px) { .form-row, .form-row-3 { grid-template-columns: 1fr; } }
 
 /* ── Select (Native) ── */
-.select-apple {
-  appearance: none; width: 100%; padding: 9px 36px 9px 14px; border: 1px solid var(--border-primary);
+/* Pattern 1: <select class="select-apple"> (direct on element) */
+select.select-apple {
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  width: 100%; padding: 9px 36px 9px 14px; border: 1px solid var(--border-primary);
   border-radius: var(--radius-sm); font-size: 14px; font-family: inherit; color: var(--text-primary);
   background: var(--bg-secondary) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2386868b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;
   cursor: pointer; outline: none; transition: all var(--transition-fast); line-height: 1.5;
 }
-.select-apple:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(0,122,255,0.12); }
-.select-apple:disabled { opacity: 0.5; cursor: not-allowed; background-color: var(--bg-tertiary); }
+select.select-apple:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(0,122,255,0.12); }
+select.select-apple:disabled { opacity: 0.5; cursor: not-allowed; background-color: var(--bg-tertiary); }
+
+/* Pattern 2: <div class="select-apple"><select>...</select><i class="..."></i></div> (wrapper) */
+div.select-apple {
+  position: relative; width: 100%;
+}
+div.select-apple select {
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  width: 100%; padding: 9px 36px 9px 14px; border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm); font-size: 14px; font-family: inherit; color: var(--text-primary);
+  background: var(--bg-secondary) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2386868b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;
+  cursor: pointer; outline: none; transition: all var(--transition-fast); line-height: 1.5;
+}
+div.select-apple select:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(0,122,255,0.12); }
+div.select-apple select:disabled { opacity: 0.5; cursor: not-allowed; background-color: var(--bg-tertiary); }
+/* Hide the manual chevron icon since SVG background provides it */
+div.select-apple .select-icon,
+div.select-apple > i { display: none; }
 .select-apple option { padding: 8px; }
 
 /* Select wrapper with icon */
