@@ -933,6 +933,12 @@ export class FingerprintService {
   }) {
     const key = `${merchantId}:${data.sessionId}`;
 
+    // DEBUG: Log incoming event types
+    const eventTypes = data.events.map((e: any) => e.type);
+    const typeCounts: Record<number, number> = {};
+    eventTypes.forEach((t: number) => { typeCounts[t] = (typeCounts[t] || 0) + 1; });
+    console.log(`[rrweb] processMouseData key=${key} events=${data.events.length} types=${JSON.stringify(typeCounts)} payloadSize=${JSON.stringify(data).length}`);
+
     if (!this.mouseData.has(key)) {
       this.mouseData.set(key, []);
     }
@@ -949,6 +955,8 @@ export class FingerprintService {
     const cutoff = Date.now() - 900000;
     const filtered = batches.filter(b => b.timestamp > cutoff);
     this.mouseData.set(key, filtered);
+
+    console.log(`[rrweb] After save: key=${key} totalBatches=${filtered.length} totalEvents=${filtered.reduce((s, b) => s + b.events.length, 0)}`);
 
     if (filtered.length === 0) {
       this.mouseData.delete(key);
@@ -1034,6 +1042,11 @@ export class FingerprintService {
     }
     // rrweb events have a 'timestamp' field
     allEvents.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+    // DEBUG: Log event types being returned
+    const typeCounts: Record<number, number> = {};
+    allEvents.forEach((e: any) => { typeCounts[e.type] = (typeCounts[e.type] || 0) + 1; });
+    console.log(`[rrweb] getSessionReplay key=${key} batches=${batches.length} totalEvents=${allEvents.length} types=${JSON.stringify(typeCounts)}`);
 
     const durationMs = allEvents.length > 1
       ? (allEvents[allEvents.length - 1].timestamp || 0) - (allEvents[0].timestamp || 0)

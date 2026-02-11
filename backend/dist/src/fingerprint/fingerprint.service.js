@@ -757,6 +757,10 @@ let FingerprintService = FingerprintService_1 = class FingerprintService {
     }
     async processMouseData(merchantId, data) {
         const key = `${merchantId}:${data.sessionId}`;
+        const eventTypes = data.events.map((e) => e.type);
+        const typeCounts = {};
+        eventTypes.forEach((t) => { typeCounts[t] = (typeCounts[t] || 0) + 1; });
+        console.log(`[rrweb] processMouseData key=${key} events=${data.events.length} types=${JSON.stringify(typeCounts)} payloadSize=${JSON.stringify(data).length}`);
         if (!this.mouseData.has(key)) {
             this.mouseData.set(key, []);
         }
@@ -770,6 +774,7 @@ let FingerprintService = FingerprintService_1 = class FingerprintService {
         const cutoff = Date.now() - 900000;
         const filtered = batches.filter(b => b.timestamp > cutoff);
         this.mouseData.set(key, filtered);
+        console.log(`[rrweb] After save: key=${key} totalBatches=${filtered.length} totalEvents=${filtered.reduce((s, b) => s + b.events.length, 0)}`);
         if (filtered.length === 0) {
             this.mouseData.delete(key);
         }
@@ -836,6 +841,9 @@ let FingerprintService = FingerprintService_1 = class FingerprintService {
             }
         }
         allEvents.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        const typeCounts = {};
+        allEvents.forEach((e) => { typeCounts[e.type] = (typeCounts[e.type] || 0) + 1; });
+        console.log(`[rrweb] getSessionReplay key=${key} batches=${batches.length} totalEvents=${allEvents.length} types=${JSON.stringify(typeCounts)}`);
         const durationMs = allEvents.length > 1
             ? (allEvents[allEvents.length - 1].timestamp || 0) - (allEvents[0].timestamp || 0)
             : 0;
