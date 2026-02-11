@@ -3,7 +3,16 @@
 import Modal from '@/components/Modal';
 import { PageHeader, showToast, StatsCard, Tabs } from '@/components/ui';
 import { adminFetch } from '@/lib/api-client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+interface CatalogProduct {
+  id: string;
+  title: string;
+  handle: string;
+  featuredImageUrl?: string;
+  status: string;
+  variants?: { id: string; title: string; price: string; sku?: string }[];
+}
 
 /* ─── Interfaces ─── */
 interface PricingRule {
@@ -119,10 +128,48 @@ export default function PricingPage() {
 
   const emptyForm = {
     name: '', description: '', targetType: 'all', targetCompanyId: '', targetCompanyUserId: '', targetCompanyGroup: '',
-    scopeType: 'all', scopeTags: '', discountType: 'percentage', discountValue: 0, discountPercentage: 10,
+    scopeType: 'all', scopeTags: '', scopeProductIds: [] as string[], discountType: 'percentage', discountValue: 0, discountPercentage: 10,
+    qtyBreaks: [] as { minQty: number; discountPct: number }[],
     minCartAmount: 0, priority: 0, isActive: true, validFrom: '', validUntil: '',
   };
   const [form, setForm] = useState(emptyForm);
+
+  // Product picker state
+  const [productSearch, setProductSearch] = useState('');
+  const [productResults, setProductResults] = useState<CatalogProduct[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<CatalogProduct[]>([]);
+  const [searchingProducts, setSearchingProducts] = useState(false);
+  const searchTimeout = useRef<any>(null);
+
+  const searchProducts = useCallback(async (q: string) => {
+    if (!q || q.length < 2) { setProductResults([]); return; }
+    setSearchingProducts(true);
+    try {
+      const res = await adminFetch(`/api/v1/catalog/products?search=${encodeURIComponent(q)}&limit=10`);
+      if (res.ok) { const d = await res.json(); setProductResults(Array.isArray(d) ? d : d.products || d.data || []); }
+    } catch { /* silent */ }
+    setSearchingProducts(false);
+  }, []);
+
+  const handleProductSearch = (val: string) => {
+    setProductSearch(val);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => searchProducts(val), 300);
+  };
+
+  const addProduct = (p: CatalogProduct) => {
+    if (!selectedProducts.find(sp => sp.id === p.id)) {
+      setSelectedProducts(prev => [...prev, p]);
+      setForm(prev => ({ ...prev, scopeProductIds: [...prev.scopeProductIds, p.id] }));
+    }
+    setProductSearch('');
+    setProductResults([]);
+  };
+
+  const removeProduct = (id: string) => {
+    setSelectedProducts(prev => prev.filter(p => p.id !== id));
+    setForm(prev => ({ ...prev, scopeProductIds: prev.scopeProductIds.filter(pid => pid !== id) }));
+  };
 
   const loadRules = useCallback(async () => {
     setLoading(true);
@@ -158,6 +205,8 @@ export default function PricingPage() {
       targetType: form.targetType,
       scopeType: form.scopeType,
       scopeTags: form.scopeTags || undefined,
+      scopeProductIds: form.scopeProductIds.length > 0 ? form.scopeProductIds : undefined,
+      qtyBreaks: form.qtyBreaks.length > 0 ? form.qtyBreaks : undefined,
       discountType: form.discountType,
       priority: form.priority,
       isActive: form.isActive,
@@ -207,11 +256,14 @@ export default function PricingPage() {
       name: rule.name, description: rule.description || '', targetType: rule.targetType,
       targetCompanyId: rule.targetCompanyId || '', targetCompanyUserId: rule.targetCompanyUserId || '',
       targetCompanyGroup: rule.targetCompanyGroup || '', scopeType: rule.scopeType,
-      scopeTags: rule.scopeTags || '', discountType: rule.discountType,
+      scopeTags: rule.scopeTags || '', scopeProductIds: (rule.scopeProductIds || []).map(String),
+      discountType: rule.discountType,
       discountValue: Number(rule.discountValue || 0), discountPercentage: Number(rule.discountPercentage || 0),
+      qtyBreaks: Array.isArray(rule.qtyBreaks) ? rule.qtyBreaks : [],
       minCartAmount: Number(rule.minCartAmount || 0), priority: rule.priority,
       isActive: rule.isActive, validFrom: rule.validFrom?.split('T')[0] || '', validUntil: rule.validUntil?.split('T')[0] || '',
     });
+    setSelectedProducts([]);
     setEditRule(rule);
     setShowCreate(true);
   };
@@ -548,15 +600,97 @@ export default function PricingPage() {
                   <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <i className="ti ti-package" style={{ color: '#5856d6' }} /> What products does it apply to?
                   </div>
-                  <select className="select-apple" style={{ marginBottom: 12 }} value={form.scopeType} onChange={e => setForm(p => ({ ...p, scopeType: e.target.value }))}>
+                  <select className="select-apple" style={{ marginBottom: 12 }} value={form.scopeType} onChange={e => setForm(p => ({ ...p, scopeType: e.target.value, scopeProductIds: [], scopeTags: '' }))}>
                     <option value="all">All Products</option>
                     <option value="tags">By Tags</option>
                     <option value="products">Specific Products</option>
                     <option value="collections">Collections</option>
                     <option value="variants">Specific Variants</option>
                   </select>
+
                   {form.scopeType === 'tags' && (
                     <div className="input-apple"><input placeholder="Comma-separated tags, e.g. DTF,wholesale" value={form.scopeTags} onChange={e => setForm(p => ({ ...p, scopeTags: e.target.value }))} /></div>
+                  )}
+
+                  {/* ── Product Picker ── */}
+                  {(form.scopeType === 'products' || form.scopeType === 'variants') && (
+                    <div>
+                      {/* Search */}
+                      <div style={{ position: 'relative', marginBottom: 10 }}>
+                        <div className="input-apple" style={{ background: 'var(--bg-secondary)' }}>
+                          <span className="input-icon"><i className="ti ti-search" /></span>
+                          <input
+                            placeholder="Search products by name, SKU..."
+                            value={productSearch}
+                            onChange={e => handleProductSearch(e.target.value)}
+                          />
+                          {searchingProducts && <span style={{ padding: '0 10px', color: 'var(--text-quaternary)', fontSize: 12 }}>Loading...</span>}
+                        </div>
+                        {/* Dropdown */}
+                        {productResults.length > 0 && (
+                          <div style={{
+                            position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
+                            background: 'var(--bg-elevated)', border: '1px solid var(--border-primary)',
+                            borderRadius: 10, boxShadow: 'var(--shadow-lg)', maxHeight: 250, overflowY: 'auto', marginTop: 4,
+                          }}>
+                            {productResults.map(p => {
+                              const alreadySelected = selectedProducts.some(sp => sp.id === p.id);
+                              return (
+                                <div
+                                  key={p.id}
+                                  onClick={() => !alreadySelected && addProduct(p)}
+                                  style={{
+                                    display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px',
+                                    cursor: alreadySelected ? 'default' : 'pointer', opacity: alreadySelected ? 0.5 : 1,
+                                    borderBottom: '1px solid var(--border-secondary)',
+                                    transition: 'background 100ms',
+                                  }}
+                                  onMouseEnter={e => { if (!alreadySelected) (e.currentTarget.style.background = 'var(--bg-hover)'); }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                                >
+                                  {p.featuredImageUrl ? (
+                                    <img src={p.featuredImageUrl} alt="" style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover' }} />
+                                  ) : (
+                                    <div style={{ width: 32, height: 32, borderRadius: 6, background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                      <i className="ti ti-package" style={{ fontSize: 14, color: 'var(--text-quaternary)' }} />
+                                    </div>
+                                  )}
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</div>
+                                    {p.variants?.[0]?.sku && <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>SKU: {p.variants[0].sku}</div>}
+                                  </div>
+                                  {alreadySelected && <i className="ti ti-check" style={{ color: 'var(--accent-green)', fontSize: 16 }} />}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Selected chips */}
+                      {selectedProducts.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          {selectedProducts.map(p => (
+                            <span key={p.id} style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 6,
+                              padding: '4px 10px', borderRadius: 8, fontSize: 12, fontWeight: 500,
+                              background: 'var(--accent-blue-soft)', color: 'var(--accent-blue)',
+                              border: '1px solid rgba(0,122,255,0.15)',
+                            }}>
+                              {p.title}
+                              <i className="ti ti-x" style={{ fontSize: 12, cursor: 'pointer', opacity: 0.7 }} onClick={() => removeProduct(p.id)} />
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Count hint */}
+                      {form.scopeProductIds.length > 0 && selectedProducts.length === 0 && (
+                        <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>
+                          <i className="ti ti-info-circle" style={{ fontSize: 12 }} /> {form.scopeProductIds.length} product(s) linked to this rule
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -575,19 +709,66 @@ export default function PricingPage() {
                         <option value="qty_break">Quantity Breaks</option>
                       </select>
                     </div>
-                    <div>
-                      <label className="input-label">{form.discountType === 'percentage' ? 'Percentage' : 'Amount ($)'}</label>
-                      <div className="input-apple">
-                        <input type="number" min={0} max={form.discountType === 'percentage' ? 100 : undefined} step="0.01"
-                          value={form.discountType === 'percentage' ? form.discountPercentage : form.discountValue}
-                          onChange={e => {
-                            const val = +e.target.value;
-                            if (form.discountType === 'percentage') setForm(p => ({ ...p, discountPercentage: val }));
-                            else setForm(p => ({ ...p, discountValue: val }));
-                          }} required />
+                    {form.discountType !== 'qty_break' && (
+                      <div>
+                        <label className="input-label">{form.discountType === 'percentage' ? 'Percentage' : 'Amount ($)'}</label>
+                        <div className="input-apple">
+                          <input type="number" min={0} max={form.discountType === 'percentage' ? 100 : undefined} step="0.01"
+                            value={form.discountType === 'percentage' ? form.discountPercentage : form.discountValue}
+                            onChange={e => {
+                              const val = +e.target.value;
+                              if (form.discountType === 'percentage') setForm(p => ({ ...p, discountPercentage: val }));
+                              else setForm(p => ({ ...p, discountValue: val }));
+                            }} required />
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
+
+                  {/* Quantity Breaks Builder */}
+                  {form.discountType === 'qty_break' && (
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <label className="input-label" style={{ margin: 0 }}>Quantity Tiers</label>
+                        <button type="button" className="btn-apple sm primary" onClick={() => setForm(p => ({
+                          ...p, qtyBreaks: [...p.qtyBreaks, { minQty: (p.qtyBreaks.length > 0 ? p.qtyBreaks[p.qtyBreaks.length - 1].minQty * 2 : 10), discountPct: (p.qtyBreaks.length + 1) * 5 }]
+                        }))}>
+                          <i className="ti ti-plus" style={{ fontSize: 13 }} /> Add Tier
+                        </button>
+                      </div>
+                      {form.qtyBreaks.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: 16, color: 'var(--text-tertiary)', fontSize: 12, background: 'var(--bg-secondary)', borderRadius: 8, border: '1px dashed var(--border-primary)' }}>
+                          Click "Add Tier" to create quantity-based pricing tiers
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {form.qtyBreaks.map((qb, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border-primary)' }}>
+                              <span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 600, minWidth: 50 }}>Tier {i + 1}</span>
+                              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Min qty:</span>
+                                <div className="input-apple" style={{ flex: 1 }}>
+                                  <input type="number" min={1} value={qb.minQty} style={{ padding: '5px 8px', fontSize: 13 }}
+                                    onChange={e => { const breaks = [...form.qtyBreaks]; breaks[i] = { ...breaks[i], minQty: +e.target.value }; setForm(p => ({ ...p, qtyBreaks: breaks })); }} />
+                                </div>
+                                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Discount:</span>
+                                <div className="input-apple" style={{ width: 80 }}>
+                                  <input type="number" min={0} max={100} step={0.5} value={qb.discountPct} style={{ padding: '5px 8px', fontSize: 13 }}
+                                    onChange={e => { const breaks = [...form.qtyBreaks]; breaks[i] = { ...breaks[i], discountPct: +e.target.value }; setForm(p => ({ ...p, qtyBreaks: breaks })); }} />
+                                </div>
+                                <span style={{ fontSize: 12, color: 'var(--accent-green)', fontWeight: 600 }}>%</span>
+                              </div>
+                              <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-red)', fontSize: 16, padding: 4 }}
+                                onClick={() => setForm(p => ({ ...p, qtyBreaks: p.qtyBreaks.filter((_, j) => j !== i) }))}>
+                                <i className="ti ti-trash" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     <div>
                       <label className="input-label">Min Cart Amount ($)</label>
