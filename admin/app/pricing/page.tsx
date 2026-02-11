@@ -114,7 +114,7 @@ export default function PricingPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editRule, setEditRule] = useState<PricingRule | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ show: boolean; rule: PricingRule | null }>({ show: false, rule: null });
-  const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState('rules');
   const [saving, setSaving] = useState(false);
 
   const emptyForm = {
@@ -249,10 +249,14 @@ export default function PricingPage() {
         <StatsCard title="COMPANY PROFILES" value={companyIntel.length} icon="brain" color="#ff2d55" meta="Intelligence profiles" />
       </div>
 
-      <Tabs tabs={['Pricing Rules', 'Company Intelligence', 'Marketing Insights']} activeTab={activeTab} onChange={setActiveTab} />
+      <Tabs tabs={[
+        { id: 'rules', label: 'Pricing Rules', icon: 'receipt' },
+        { id: 'intelligence', label: 'Company Intelligence', icon: 'brain' },
+        { id: 'marketing', label: 'Marketing Insights', icon: 'sparkles' },
+      ]} activeTab={activeTab} onChange={setActiveTab} />
 
-      {/* ─── Tab 0: Pricing Rules ─── */}
-      {activeTab === 0 && (
+      {/* ─── Tab: Pricing Rules ─── */}
+      {activeTab === 'rules' && (
         <>
           <div style={{ display: 'flex', gap: 12, marginBottom: 20, marginTop: 20 }}>
             <div className="input-apple" style={{ flex: 1, maxWidth: 360 }}>
@@ -332,8 +336,8 @@ export default function PricingPage() {
         </>
       )}
 
-      {/* ─── Tab 1: Company Intelligence ─── */}
-      {activeTab === 1 && (
+      {/* ─── Tab: Company Intelligence ─── */}
+      {activeTab === 'intelligence' && (
         <div style={{ marginTop: 20 }}>
           {companyIntel.length === 0 ? (
             <div className="apple-card">
@@ -353,8 +357,8 @@ export default function PricingPage() {
         </div>
       )}
 
-      {/* ─── Tab 2: Marketing Insights ─── */}
-      {activeTab === 2 && (
+      {/* ─── Tab: Marketing Insights ─── */}
+      {activeTab === 'marketing' && (
         <div style={{ marginTop: 20 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 16 }}>
             {/* At-Risk Companies */}
