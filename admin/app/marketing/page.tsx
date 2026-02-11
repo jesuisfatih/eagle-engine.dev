@@ -49,15 +49,6 @@ interface ReferrerDomain {
   sessions: number;
 }
 
-interface DailyTrend {
-  date: string;
-  channel: string;
-  sessions: number;
-  unique_visitors: number;
-  page_views: number;
-  add_to_carts: number;
-}
-
 interface Summary {
   totalSessions: number;
   uniqueVisitors: number;
@@ -76,7 +67,7 @@ interface TrafficData {
   topLandingPages: LandingPage[];
   attributionPaths: AttributionPath[];
   referrerDomains: ReferrerDomain[];
-  dailyTrend: DailyTrend[];
+  dailyTrend: any[];
 }
 
 // ────────────────────────────────────────────────
@@ -90,8 +81,8 @@ const CHANNEL_META: Record<string, { label: string; color: string; icon: string 
   facebook_organic: { label: 'Facebook Organic', color: '#1877F2', icon: 'ti-brand-facebook' },
   instagram_ads: { label: 'Instagram Ads', color: '#E4405F', icon: 'ti-brand-instagram' },
   instagram_organic: { label: 'Instagram Organic', color: '#E4405F', icon: 'ti-brand-instagram' },
-  tiktok_ads: { label: 'TikTok Ads', color: '#000000', icon: 'ti-brand-tiktok' },
-  tiktok_organic: { label: 'TikTok Organic', color: '#000000', icon: 'ti-brand-tiktok' },
+  tiktok_ads: { label: 'TikTok Ads', color: '#010101', icon: 'ti-brand-tiktok' },
+  tiktok_organic: { label: 'TikTok Organic', color: '#010101', icon: 'ti-brand-tiktok' },
   bing_ads: { label: 'Bing Ads', color: '#008373', icon: 'ti-search' },
   bing_organic: { label: 'Bing Organic', color: '#008373', icon: 'ti-search' },
   email: { label: 'Email', color: '#D44638', icon: 'ti-mail' },
@@ -113,6 +104,7 @@ function getChannelMeta(channel: string) {
 }
 
 function formatDuration(seconds: number) {
+  if (!seconds || seconds < 1) return '0s';
   if (seconds < 60) return `${seconds}s`;
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
@@ -153,202 +145,241 @@ export default function MarketingPage() {
       if (channelFilter) params.set('channel', channelFilter);
       if (sourceFilter) params.set('utmSource', sourceFilter);
       if (campaignFilter) params.set('utmCampaign', campaignFilter);
-
       const res = await adminFetch(`/api/v1/fingerprint/traffic-analytics?${params}`);
-      if (res.ok) {
-        const d = await res.json();
-        setData(d);
-      }
+      if (res.ok) setData(await res.json());
     } catch { /* silent */ }
     setLoading(false);
   }, [datePreset, channelFilter, sourceFilter, campaignFilter]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Pre-compute max for bar charts
   const maxSessions = useMemo(() => {
     if (!data?.channelBreakdown?.length) return 1;
     return Math.max(...data.channelBreakdown.map(c => c.sessions), 1);
   }, [data]);
 
-  const totalFunnelSessions = data?.summary?.totalSessions || 1;
+  const totalSessions = data?.summary?.totalSessions || 1;
+
+  const tabs = [
+    { key: 'overview', label: 'Channel Overview', icon: 'ti-chart-pie' },
+    { key: 'campaigns', label: 'Campaigns', icon: 'ti-speakerphone' },
+    { key: 'attribution', label: 'Attribution Paths', icon: 'ti-route' },
+    { key: 'landing', label: 'Landing Pages', icon: 'ti-map-pin' },
+  ] as const;
 
   return (
-    <div className="marketing-page">
+    <div>
       <PageHeader
         title="Marketing Attribution"
         subtitle="Multi-touch traffic source analytics — understand where your visitors come from and what converts"
+        actions={[{ label: 'Refresh', icon: 'refresh', variant: 'secondary', onClick: loadData }]}
       />
 
       {/* ─── Toolbar ─── */}
-      <div className="mk-toolbar">
-        <div className="mk-toolbar-group">
-          {['7d', '30d', '90d', 'all'].map(p => (
-            <button
-              key={p}
-              className={`mk-chip ${datePreset === p ? 'active' : ''}`}
-              onClick={() => setDatePreset(p)}
-            >
-              {p === 'all' ? 'All Time' : `Last ${p.replace('d', ' days')}`}
-            </button>
-          ))}
-        </div>
-        <div className="mk-toolbar-group">
-          <select className="mk-select" value={channelFilter} onChange={e => setChannelFilter(e.target.value)}>
-            <option value="">All Channels</option>
-            {data?.channelBreakdown?.map(c => (
-              <option key={c.channel} value={c.channel}>{getChannelMeta(c.channel).label}</option>
+      <div className="apple-card" style={{ marginBottom: 20 }}>
+        <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[
+              { key: '7d', label: 'Last 7 days' },
+              { key: '30d', label: 'Last 30 days' },
+              { key: '90d', label: 'Last 90 days' },
+              { key: 'all', label: 'All Time' },
+            ].map(p => (
+              <button
+                key={p.key}
+                className={`btn-apple sm ${datePreset === p.key ? 'primary' : 'secondary'}`}
+                onClick={() => setDatePreset(p.key)}
+              >
+                {p.label}
+              </button>
             ))}
-          </select>
-          <select className="mk-select" value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}>
-            <option value="">All Sources</option>
-            {[...new Set(data?.campaignPerformance?.map(c => c.source).filter(Boolean) || [])].map(s => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-          <select className="mk-select" value={campaignFilter} onChange={e => setCampaignFilter(e.target.value)}>
-            <option value="">All Campaigns</option>
-            {[...new Set(data?.campaignPerformance?.map(c => c.campaign).filter(Boolean) || [])].map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <select className="input-apple-field" style={{ padding: '5px 10px', fontSize: 12, minWidth: 130 }} value={channelFilter} onChange={e => setChannelFilter(e.target.value)}>
+              <option value="">All Channels</option>
+              {data?.channelBreakdown?.map(c => (
+                <option key={c.channel} value={c.channel}>{getChannelMeta(c.channel).label}</option>
+              ))}
+            </select>
+            <select className="input-apple-field" style={{ padding: '5px 10px', fontSize: 12, minWidth: 120 }} value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}>
+              <option value="">All Sources</option>
+              {[...new Set(data?.campaignPerformance?.map(c => c.source).filter(Boolean) || [])].map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+            <select className="input-apple-field" style={{ padding: '5px 10px', fontSize: 12, minWidth: 130 }} value={campaignFilter} onChange={e => setCampaignFilter(e.target.value)}>
+              <option value="">All Campaigns</option>
+              {[...new Set(data?.campaignPerformance?.map(c => c.campaign).filter(Boolean) || [])].map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
       {loading ? (
-        <div className="mk-loading">
-          <i className="ti ti-loader-2 mk-spin" />
-          <span>Analyzing traffic data...</span>
+        <div className="empty-state" style={{ padding: 60 }}>
+          <div className="empty-state-icon"><i className="ti ti-loader-2" style={{ animation: 'spin 1s linear infinite' }} /></div>
+          <h4 className="empty-state-title">Analyzing traffic data...</h4>
         </div>
       ) : !data ? (
-        <div className="mk-empty">
-          <i className="ti ti-chart-arrows" />
-          <h3>No traffic data yet</h3>
-          <p>Traffic attribution data will appear once visitors start arriving with tracking parameters.</p>
+        <div className="empty-state" style={{ padding: 60 }}>
+          <div className="empty-state-icon"><i className="ti ti-chart-arrows" /></div>
+          <h4 className="empty-state-title">No traffic data yet</h4>
+          <p className="empty-state-desc">Traffic attribution data will appear once visitors start arriving with tracking parameters.</p>
         </div>
       ) : (
         <>
-          {/* ─── Summary Cards ─── */}
-          <div className="mk-stats-grid">
-            <StatsCard title="Total Sessions" value={data.summary.totalSessions.toLocaleString()} icon="ti-device-desktop" />
-            <StatsCard title="Unique Visitors" value={data.summary.uniqueVisitors.toLocaleString()} icon="ti-users" />
-            <StatsCard title="Avg Duration" value={formatDuration(data.summary.avgDuration)} icon="ti-clock" />
-            <StatsCard title="Pages / Session" value={data.summary.avgPagesPerSession.toString()} icon="ti-file" />
-            <StatsCard title="Total Page Views" value={data.summary.totalPageViews.toLocaleString()} icon="ti-eye" />
-            <StatsCard title="Product Views" value={data.summary.totalProductViews.toLocaleString()} icon="ti-package" />
-            <StatsCard title="Add to Carts" value={data.summary.totalAddToCarts.toLocaleString()} icon="ti-shopping-cart" />
+          {/* ─── KPI Cards ─── */}
+          <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
+            <StatsCard title="Total Sessions" value={data.summary.totalSessions.toLocaleString()} icon="device-desktop" iconColor="primary" />
+            <StatsCard title="Unique Visitors" value={data.summary.uniqueVisitors.toLocaleString()} icon="users" iconColor="info" />
+            <StatsCard title="Avg Duration" value={formatDuration(data.summary.avgDuration)} icon="clock" iconColor="warning" />
+            <StatsCard title="Pages / Session" value={String(data.summary.avgPagesPerSession)} icon="file" iconColor="primary" />
+            <StatsCard title="Page Views" value={data.summary.totalPageViews.toLocaleString()} icon="eye" iconColor="info" />
+            <StatsCard title="Product Views" value={data.summary.totalProductViews.toLocaleString()} icon="package" iconColor="success" />
+            <StatsCard title="Add to Carts" value={data.summary.totalAddToCarts.toLocaleString()} icon="shopping-cart" iconColor="success" />
           </div>
 
           {/* ─── Tabs ─── */}
-          <div className="mk-tabs">
-            {(['overview', 'campaigns', 'attribution', 'landing'] as const).map(tab => (
+          <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border-primary)', marginBottom: 20 }}>
+            {tabs.map(tab => (
               <button
-                key={tab}
-                className={`mk-tab ${activeTab === tab ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab)}
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '10px 18px', border: 'none', background: 'none',
+                  fontSize: 13, fontWeight: activeTab === tab.key ? 600 : 500, fontFamily: 'inherit',
+                  color: activeTab === tab.key ? 'var(--accent-blue)' : 'var(--text-secondary)',
+                  borderBottom: `2px solid ${activeTab === tab.key ? 'var(--accent-blue)' : 'transparent'}`,
+                  cursor: 'pointer', transition: 'all 150ms',
+                }}
               >
-                <i className={`ti ${
-                  tab === 'overview' ? 'ti-chart-pie' :
-                  tab === 'campaigns' ? 'ti-speakerphone' :
-                  tab === 'attribution' ? 'ti-route' :
-                  'ti-map-pin'
-                }`} />
-                {tab === 'overview' ? 'Channel Overview' :
-                 tab === 'campaigns' ? 'Campaigns' :
-                 tab === 'attribution' ? 'Attribution Paths' :
-                 'Landing Pages'}
+                <i className={`ti ${tab.icon}`} style={{ fontSize: 16 }} /> {tab.label}
               </button>
             ))}
           </div>
 
-          {/* ─── Tab Content ─── */}
-          <div className="mk-content">
-
-            {/* OVERVIEW TAB */}
-            {activeTab === 'overview' && (
-              <div className="mk-overview">
-                {/* Channel Breakdown */}
-                <div className="mk-card">
-                  <h3 className="mk-card-title">
-                    <i className="ti ti-chart-bar" /> Channel Breakdown
-                  </h3>
-                  <div className="mk-channel-list">
-                    {data.channelBreakdown.map(ch => {
+          {/* ═══ OVERVIEW TAB ═══ */}
+          {activeTab === 'overview' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20 }}>
+              {/* Channel Breakdown */}
+              <div className="apple-card">
+                <div className="apple-card-header">
+                  <h3 className="apple-card-title"><i className="ti ti-chart-bar" style={{ color: 'var(--accent-blue)', marginRight: 6 }} />Channel Breakdown</h3>
+                </div>
+                <div className="apple-card-body">
+                  {data.channelBreakdown.length === 0 ? (
+                    <div className="empty-state" style={{ padding: 32 }}>
+                      <div className="empty-state-icon"><i className="ti ti-chart-bar" /></div>
+                      <h4 className="empty-state-title">No channel data</h4>
+                    </div>
+                  ) : (
+                    data.channelBreakdown.map(ch => {
                       const meta = getChannelMeta(ch.channel);
-                      const pct = ((ch.sessions / totalFunnelSessions) * 100).toFixed(1);
+                      const pct = ((ch.sessions / totalSessions) * 100).toFixed(1);
                       return (
-                        <div key={ch.channel} className="mk-channel-row">
-                          <div className="mk-channel-info">
-                            <span className="mk-channel-dot" style={{ background: meta.color }} />
-                            <i className={`ti ${meta.icon}`} style={{ color: meta.color }} />
-                            <span className="mk-channel-name">{meta.label}</span>
-                            <span className="mk-channel-pct">{pct}%</span>
+                        <div key={ch.channel} style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--border-secondary)' }}>
+                          {/* Icon */}
+                          <div style={{
+                            width: 38, height: 38, borderRadius: 10,
+                            background: `${meta.color}12`, color: meta.color,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                          }}>
+                            <i className={`ti ${meta.icon}`} style={{ fontSize: 18 }} />
                           </div>
-                          <div className="mk-channel-bar-wrap">
-                            <div
-                              className="mk-channel-bar"
-                              style={{
+
+                          {/* Name + bar */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                              <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>{meta.label}</span>
+                              <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{pct}%</span>
+                            </div>
+                            <div style={{ height: 6, borderRadius: 3, background: 'var(--bg-tertiary)', overflow: 'hidden' }}>
+                              <div style={{
+                                height: '100%', borderRadius: 3,
                                 width: `${(ch.sessions / maxSessions) * 100}%`,
-                                background: `linear-gradient(90deg, ${meta.color}CC, ${meta.color}44)`,
-                              }}
-                            />
+                                background: `linear-gradient(90deg, ${meta.color}, ${meta.color}88)`,
+                                transition: 'width 0.6s ease',
+                              }} />
+                            </div>
                           </div>
-                          <div className="mk-channel-metrics">
-                            <span title="Sessions"><strong>{ch.sessions}</strong> sessions</span>
-                            <span title="Avg Duration">{formatDuration(ch.avgDuration)}</span>
-                            <span title="Pages/Session">{ch.avgPages} pg/s</span>
-                            <span title="Product Views">{ch.productViews} views</span>
-                            <span title="Add to Carts" className="mk-atc">{ch.addToCarts} ATC</span>
+
+                          {/* Metrics */}
+                          <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-secondary)', flexShrink: 0 }}>
+                            <span><strong style={{ color: 'var(--text-primary)' }}>{ch.sessions}</strong> sessions</span>
+                            <span>{formatDuration(ch.avgDuration)}</span>
+                            <span style={{ color: 'var(--accent-green)', fontWeight: 600 }}>{ch.addToCarts} ATC</span>
                           </div>
                         </div>
                       );
-                    })}
-                    {data.channelBreakdown.length === 0 && (
-                      <div className="mk-empty-inline">No channel data available</div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Referrer Domains */}
-                <div className="mk-card">
-                  <h3 className="mk-card-title">
-                    <i className="ti ti-world-www" /> Top Referrer Domains
-                  </h3>
-                  <div className="mk-referrer-list">
-                    {data.referrerDomains.map((r, i) => (
-                      <div key={r.domain} className="mk-referrer-row">
-                        <span className="mk-referrer-rank">#{i + 1}</span>
-                        <span className="mk-referrer-domain">{r.domain}</span>
-                        <span className="mk-referrer-count">{r.sessions} sessions</span>
-                      </div>
-                    ))}
-                    {data.referrerDomains.length === 0 && (
-                      <div className="mk-empty-inline">No referrer data</div>
-                    )}
-                  </div>
+                    })
+                  )}
                 </div>
               </div>
-            )}
 
-            {/* CAMPAIGNS TAB */}
-            {activeTab === 'campaigns' && (
-              <div className="mk-card mk-table-card">
-                <h3 className="mk-card-title">
-                  <i className="ti ti-speakerphone" /> Campaign Performance
-                </h3>
-                <div className="mk-table-wrap">
-                  <table className="mk-table">
+              {/* Referrer Domains */}
+              <div className="apple-card">
+                <div className="apple-card-header">
+                  <h3 className="apple-card-title"><i className="ti ti-world-www" style={{ color: 'var(--accent-purple)', marginRight: 6 }} />Top Referrer Domains</h3>
+                </div>
+                <div className="apple-card-body">
+                  {data.referrerDomains.length === 0 ? (
+                    <div className="empty-state" style={{ padding: 32 }}>
+                      <div className="empty-state-icon"><i className="ti ti-world-www" /></div>
+                      <h4 className="empty-state-title">No referrer data</h4>
+                    </div>
+                  ) : (
+                    data.referrerDomains.map((r, i) => (
+                      <div key={r.domain} style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '10px 0', borderBottom: '1px solid var(--border-secondary)',
+                      }}>
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          width: 24, height: 24, borderRadius: 6, fontSize: 11, fontWeight: 600,
+                          background: i < 3 ? ['#007aff14', '#5856d614', '#af52de14'][i] : 'var(--bg-tertiary)',
+                          color: i < 3 ? ['#007aff', '#5856d6', '#af52de'][i] : 'var(--text-tertiary)',
+                        }}>{i + 1}</span>
+                        <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{r.domain}</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{r.sessions}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═══ CAMPAIGNS TAB ═══ */}
+          {activeTab === 'campaigns' && (
+            <div className="apple-card">
+              <div className="apple-card-header">
+                <h3 className="apple-card-title"><i className="ti ti-speakerphone" style={{ color: 'var(--accent-orange)', marginRight: 6 }} />Campaign Performance</h3>
+              </div>
+              {data.campaignPerformance.length === 0 ? (
+                <div className="apple-card-body">
+                  <div className="empty-state" style={{ padding: 40 }}>
+                    <div className="empty-state-icon"><i className="ti ti-speakerphone" /></div>
+                    <h4 className="empty-state-title">No campaigns detected</h4>
+                    <p className="empty-state-desc">Add <code style={{ background: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: 4, fontSize: 12 }}>?utm_campaign=...</code> to your campaign URLs to start tracking.</p>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ overflow: 'auto' }}>
+                  <table className="apple-table">
                     <thead>
                       <tr>
                         <th>Campaign</th>
                         <th>Source</th>
                         <th>Medium</th>
                         <th>Channel</th>
-                        <th>Sessions</th>
-                        <th>Avg Duration</th>
-                        <th>Avg Pages</th>
-                        <th>Product Views</th>
-                        <th>Add to Cart</th>
+                        <th style={{ textAlign: 'right' }}>Sessions</th>
+                        <th style={{ textAlign: 'right' }}>Duration</th>
+                        <th style={{ textAlign: 'right' }}>Pages</th>
+                        <th style={{ textAlign: 'right' }}>Product Views</th>
+                        <th style={{ textAlign: 'right' }}>ATC</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -356,491 +387,164 @@ export default function MarketingPage() {
                         const meta = getChannelMeta(c.channel);
                         return (
                           <tr key={i}>
-                            <td className="mk-td-campaign">{c.campaign || '—'}</td>
+                            <td style={{ fontWeight: 600 }}>{c.campaign || '—'}</td>
                             <td>{c.source || '—'}</td>
                             <td>{c.medium || '—'}</td>
                             <td>
-                              <span className="mk-channel-badge" style={{ background: meta.color + '22', color: meta.color, borderColor: meta.color + '44' }}>
-                                <i className={`ti ${meta.icon}`} /> {meta.label}
+                              <span style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 4,
+                                padding: '3px 10px', borderRadius: 20,
+                                background: `${meta.color}10`, color: meta.color,
+                                fontSize: 11, fontWeight: 600,
+                              }}>
+                                <i className={`ti ${meta.icon}`} style={{ fontSize: 13 }} /> {meta.label}
                               </span>
                             </td>
-                            <td><strong>{c.sessions}</strong></td>
-                            <td>{formatDuration(c.avgDuration)}</td>
-                            <td>{c.avgPages}</td>
-                            <td>{c.productViews}</td>
-                            <td className="mk-atc">{c.addToCarts}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 600 }}>{c.sessions}</td>
+                            <td style={{ textAlign: 'right' }}>{formatDuration(c.avgDuration)}</td>
+                            <td style={{ textAlign: 'right' }}>{c.avgPages}</td>
+                            <td style={{ textAlign: 'right' }}>{c.productViews}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--accent-green)' }}>{c.addToCarts}</td>
                           </tr>
                         );
                       })}
                     </tbody>
                   </table>
-                  {data.campaignPerformance.length === 0 && (
-                    <div className="mk-empty-inline" style={{ padding: '3rem' }}>
-                      No UTM-tagged campaigns detected yet. Add <code>?utm_campaign=...</code> to your campaign URLs.
-                    </div>
-                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ═══ ATTRIBUTION PATHS TAB ═══ */}
+          {activeTab === 'attribution' && (
+            <div className="apple-card">
+              <div className="apple-card-header">
+                <div>
+                  <h3 className="apple-card-title"><i className="ti ti-route" style={{ color: 'var(--accent-indigo)', marginRight: 6 }} />Multi-Touch Attribution Paths</h3>
+                  <p className="apple-card-subtitle">Visitor journeys with 2+ touchpoints — showing the path from first visit to last.</p>
                 </div>
               </div>
-            )}
-
-            {/* ATTRIBUTION TAB */}
-            {activeTab === 'attribution' && (
-              <div className="mk-card">
-                <h3 className="mk-card-title">
-                  <i className="ti ti-route" /> Multi-Touch Attribution Paths
-                </h3>
-                <p className="mk-card-subtitle">
-                  Visitor journeys with 2+ touchpoints — showing the exact path from first visit to last.
-                </p>
-                <div className="mk-attribution-list">
-                  {data.attributionPaths.map((path, i) => (
-                    <div key={i} className={`mk-journey ${path.has_conversion ? 'converted' : ''}`}>
-                      <div className="mk-journey-header">
-                        <span className="mk-journey-id" title={path.fingerprint_id}>
-                          <i className="ti ti-fingerprint" /> {path.fingerprint_id.slice(0, 8)}...
-                        </span>
-                        <span className="mk-journey-count">{Number(path.touch_count)} touches</span>
-                        {path.has_conversion && (
-                          <span className="mk-journey-converted">
-                            <i className="ti ti-check" /> Converted
+              <div className="apple-card-body">
+                {data.attributionPaths.length === 0 ? (
+                  <div className="empty-state" style={{ padding: 40 }}>
+                    <div className="empty-state-icon"><i className="ti ti-route" /></div>
+                    <h4 className="empty-state-title">No multi-touch journeys yet</h4>
+                    <p className="empty-state-desc">Attribution paths appear when visitors return through different channels.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {data.attributionPaths.map((path, i) => (
+                      <div key={i} style={{
+                        border: `1px solid ${path.has_conversion ? 'var(--accent-green)' : 'var(--border-primary)'}`,
+                        borderRadius: 12, padding: 16,
+                        background: path.has_conversion ? 'rgba(52,199,89,0.03)' : 'var(--bg-tertiary)',
+                        transition: 'box-shadow 150ms',
+                      }}>
+                        {/* Header */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                          <i className="ti ti-fingerprint" style={{ fontSize: 16, color: 'var(--text-tertiary)' }} />
+                          <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-tertiary)' }}>
+                            {path.fingerprint_id.slice(0, 8)}...
                           </span>
-                        )}
-                      </div>
-                      <div className="mk-journey-steps">
-                        {path.journey.map((step, j) => {
-                          const meta = getChannelMeta(step.channel);
-                          return (
-                            <div key={j} className="mk-journey-step">
-                              {j > 0 && <i className="ti ti-arrow-right mk-journey-arrow" />}
-                              <div className="mk-journey-touch" style={{ borderColor: meta.color }}>
-                                <div className="mk-journey-touch-head" style={{ background: meta.color + '15' }}>
-                                  <i className={`ti ${meta.icon}`} style={{ color: meta.color }} />
-                                  <span style={{ color: meta.color }}>{meta.label}</span>
-                                </div>
-                                <div className="mk-journey-touch-body">
-                                  {step.utmCampaign && <small>Campaign: {step.utmCampaign}</small>}
-                                  {step.utmSource && <small>Source: {step.utmSource}</small>}
-                                  {step.landingPage && <small className="mk-journey-lp">{step.landingPage.split('?')[0]}</small>}
+                          <span className="badge-apple info">{Number(path.touch_count)} touches</span>
+                          {path.has_conversion && (
+                            <span className="badge-apple success"><i className="ti ti-check" style={{ fontSize: 12 }} /> Converted</span>
+                          )}
+                        </div>
+
+                        {/* Journey Steps */}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0, overflowX: 'auto', paddingBottom: 4 }}>
+                          {path.journey.map((step, j) => {
+                            const meta = getChannelMeta(step.channel);
+                            return (
+                              <div key={j} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                                {j > 0 && (
+                                  <i className="ti ti-arrow-right" style={{ margin: '0 8px', color: 'var(--text-quaternary)', fontSize: 16 }} />
+                                )}
+                                <div style={{
+                                  border: `1px solid ${meta.color}30`,
+                                  borderRadius: 10, overflow: 'hidden', minWidth: 140,
+                                  background: 'var(--bg-secondary)',
+                                }}>
+                                  <div style={{
+                                    display: 'flex', alignItems: 'center', gap: 5,
+                                    padding: '6px 10px',
+                                    background: `${meta.color}08`,
+                                    borderBottom: `1px solid ${meta.color}15`,
+                                  }}>
+                                    <i className={`ti ${meta.icon}`} style={{ fontSize: 14, color: meta.color }} />
+                                    <span style={{ fontSize: 12, fontWeight: 600, color: meta.color }}>{meta.label}</span>
+                                  </div>
+                                  <div style={{ padding: '6px 10px' }}>
+                                    {step.utmCampaign && <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Campaign: {step.utmCampaign}</div>}
+                                    {step.utmSource && <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Source: {step.utmSource}</div>}
+                                    {step.landingPage && <div style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-quaternary)', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>{step.landingPage.split('?')[0]}</div>}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  {data.attributionPaths.length === 0 && (
-                    <div className="mk-empty-inline" style={{ padding: '3rem' }}>
-                      <i className="ti ti-route" style={{ fontSize: '2rem', opacity: 0.4 }} />
-                      <p>Multi-touch attribution data will appear when visitors return multiple times through different channels.</p>
-                    </div>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* LANDING PAGES TAB */}
-            {activeTab === 'landing' && (
-              <div className="mk-card mk-table-card">
-                <h3 className="mk-card-title">
-                  <i className="ti ti-map-pin" /> Top Landing Pages
-                </h3>
-                <div className="mk-table-wrap">
-                  <table className="mk-table">
+          {/* ═══ LANDING PAGES TAB ═══ */}
+          {activeTab === 'landing' && (
+            <div className="apple-card">
+              <div className="apple-card-header">
+                <h3 className="apple-card-title"><i className="ti ti-map-pin" style={{ color: 'var(--accent-red)', marginRight: 6 }} />Top Landing Pages</h3>
+              </div>
+              {data.topLandingPages.length === 0 ? (
+                <div className="apple-card-body">
+                  <div className="empty-state" style={{ padding: 40 }}>
+                    <div className="empty-state-icon"><i className="ti ti-map-pin" /></div>
+                    <h4 className="empty-state-title">No landing page data</h4>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ overflow: 'auto' }}>
+                  <table className="apple-table">
                     <thead>
                       <tr>
-                        <th>#</th>
+                        <th style={{ width: 40 }}>#</th>
                         <th>Landing Page</th>
-                        <th>Sessions</th>
-                        <th>Avg Duration</th>
-                        <th>Avg Pages</th>
-                        <th>Add to Cart</th>
+                        <th style={{ textAlign: 'right' }}>Sessions</th>
+                        <th style={{ textAlign: 'right' }}>Avg Duration</th>
+                        <th style={{ textAlign: 'right' }}>Avg Pages</th>
+                        <th style={{ textAlign: 'right' }}>Add to Cart</th>
                       </tr>
                     </thead>
                     <tbody>
                       {data.topLandingPages.map((l, i) => (
                         <tr key={i}>
-                          <td className="mk-rank">{i + 1}</td>
-                          <td className="mk-td-page">{l.page || '/'}</td>
-                          <td><strong>{l.sessions}</strong></td>
-                          <td>{formatDuration(l.avgDuration)}</td>
-                          <td>{l.avgPages}</td>
-                          <td className="mk-atc">{l.addToCarts}</td>
+                          <td>
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              width: 24, height: 24, borderRadius: 6, fontSize: 11, fontWeight: 600,
+                              background: i < 3 ? ['#ffd70020', '#c0c0c020', '#cd7f3220'][i] : 'var(--bg-tertiary)',
+                              color: i < 3 ? ['#b8860b', '#808080', '#8b4513'][i] : 'var(--text-tertiary)',
+                            }}>{i + 1}</span>
+                          </td>
+                          <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{l.page || '/'}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 600 }}>{l.sessions}</td>
+                          <td style={{ textAlign: 'right' }}>{formatDuration(l.avgDuration)}</td>
+                          <td style={{ textAlign: 'right' }}>{l.avgPages}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--accent-green)' }}>{l.addToCarts}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  {data.topLandingPages.length === 0 && (
-                    <div className="mk-empty-inline" style={{ padding: '3rem' }}>No landing page data available</div>
-                  )}
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </>
       )}
-
-      <style jsx>{`
-        .marketing-page {
-          padding: 0;
-        }
-
-        /* ─── Toolbar ─── */
-        .mk-toolbar {
-          display: flex;
-          gap: 1rem;
-          align-items: center;
-          justify-content: space-between;
-          flex-wrap: wrap;
-          margin-bottom: 1.5rem;
-          padding: 1rem 1.25rem;
-          background: var(--card-bg, rgba(30,30,45,0.6));
-          border: 1px solid var(--border-color, rgba(255,255,255,0.06));
-          border-radius: 12px;
-        }
-        .mk-toolbar-group {
-          display: flex;
-          gap: 0.5rem;
-          align-items: center;
-          flex-wrap: wrap;
-        }
-        .mk-chip {
-          padding: 6px 14px;
-          border-radius: 20px;
-          border: 1px solid rgba(255,255,255,0.1);
-          background: transparent;
-          color: var(--text-secondary, #9CA3AF);
-          font-size: 0.8rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .mk-chip:hover { border-color: rgba(255,255,255,0.25); color: white; }
-        .mk-chip.active {
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
-          border-color: transparent;
-          color: white;
-          font-weight: 600;
-          box-shadow: 0 2px 12px rgba(99,102,241,0.3);
-        }
-        .mk-select {
-          padding: 6px 28px 6px 12px;
-          border-radius: 8px;
-          border: 1px solid rgba(255,255,255,0.1);
-          background: rgba(0,0,0,0.2);
-          color: var(--text-primary, #E5E7EB);
-          font-size: 0.8rem;
-          cursor: pointer;
-          appearance: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-          background-repeat: no-repeat;
-          background-position: right 8px center;
-        }
-        .mk-select:hover { border-color: rgba(255,255,255,0.2); }
-
-        /* ─── Loading / Empty ─── */
-        .mk-loading, .mk-empty {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 0.75rem;
-          padding: 4rem;
-          color: var(--text-secondary, #9CA3AF);
-          text-align: center;
-        }
-        .mk-loading i { font-size: 2rem; }
-        .mk-empty i { font-size: 3rem; opacity: 0.3; }
-        .mk-empty h3 { color: var(--text-primary, #E5E7EB); margin: 0; }
-        .mk-spin { animation: mk-spin 1s linear infinite; }
-        @keyframes mk-spin { to { transform: rotate(360deg); } }
-
-        /* ─── Stats Grid ─── */
-        .mk-stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-          gap: 1rem;
-          margin-bottom: 1.5rem;
-        }
-
-        /* ─── Tabs ─── */
-        .mk-tabs {
-          display: flex;
-          gap: 0;
-          margin-bottom: 1.5rem;
-          border-bottom: 1px solid rgba(255,255,255,0.06);
-        }
-        .mk-tab {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.75rem 1.25rem;
-          border: none;
-          background: none;
-          color: var(--text-secondary, #9CA3AF);
-          font-size: 0.85rem;
-          cursor: pointer;
-          border-bottom: 2px solid transparent;
-          transition: all 0.2s;
-        }
-        .mk-tab:hover { color: white; }
-        .mk-tab.active {
-          color: #818cf8;
-          border-bottom-color: #818cf8;
-          font-weight: 600;
-        }
-
-        /* ─── Card ─── */
-        .mk-card {
-          background: var(--card-bg, rgba(30,30,45,0.6));
-          border: 1px solid var(--border-color, rgba(255,255,255,0.06));
-          border-radius: 12px;
-          padding: 1.5rem;
-          margin-bottom: 1.5rem;
-        }
-        .mk-card-title {
-          font-size: 1rem;
-          font-weight: 600;
-          color: var(--text-primary, #E5E7EB);
-          margin: 0 0 1rem 0;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-        .mk-card-title i { color: #818cf8; }
-        .mk-card-subtitle {
-          font-size: 0.8rem;
-          color: var(--text-secondary, #9CA3AF);
-          margin: -0.5rem 0 1.25rem 0;
-        }
-
-        /* ─── Channel Breakdown ─── */
-        .mk-overview {
-          display: grid;
-          grid-template-columns: 2fr 1fr;
-          gap: 1.5rem;
-        }
-        @media (max-width: 900px) {
-          .mk-overview { grid-template-columns: 1fr; }
-        }
-        .mk-channel-list { display: flex; flex-direction: column; gap: 0.75rem; }
-        .mk-channel-row {
-          display: grid;
-          grid-template-columns: 220px 1fr auto;
-          gap: 1rem;
-          align-items: center;
-          padding: 0.5rem 0;
-          border-bottom: 1px solid rgba(255,255,255,0.04);
-        }
-        .mk-channel-info {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-        .mk-channel-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          flex-shrink: 0;
-        }
-        .mk-channel-name {
-          font-size: 0.85rem;
-          font-weight: 500;
-          color: var(--text-primary, #E5E7EB);
-        }
-        .mk-channel-pct {
-          font-size: 0.75rem;
-          color: var(--text-secondary, #9CA3AF);
-          margin-left: auto;
-        }
-        .mk-channel-bar-wrap {
-          height: 20px;
-          background: rgba(255,255,255,0.03);
-          border-radius: 6px;
-          overflow: hidden;
-        }
-        .mk-channel-bar {
-          height: 100%;
-          border-radius: 6px;
-          transition: width 0.6s ease;
-        }
-        .mk-channel-metrics {
-          display: flex;
-          gap: 0.75rem;
-          font-size: 0.75rem;
-          color: var(--text-secondary, #9CA3AF);
-          white-space: nowrap;
-        }
-        .mk-atc { color: #34D399; font-weight: 600; }
-
-        /* ─── Referrer Domains ─── */
-        .mk-referrer-list { display: flex; flex-direction: column; gap: 0.5rem; }
-        .mk-referrer-row {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          padding: 0.5rem 0;
-          border-bottom: 1px solid rgba(255,255,255,0.04);
-        }
-        .mk-referrer-rank {
-          font-size: 0.75rem;
-          color: var(--text-secondary, #9CA3AF);
-          min-width: 28px;
-        }
-        .mk-referrer-domain {
-          font-size: 0.85rem;
-          color: var(--text-primary, #E5E7EB);
-          flex: 1;
-        }
-        .mk-referrer-count {
-          font-size: 0.75rem;
-          color: var(--text-secondary, #9CA3AF);
-        }
-
-        /* ─── Table ─── */
-        .mk-table-card { padding: 0; overflow: hidden; }
-        .mk-table-card .mk-card-title { padding: 1.25rem 1.5rem 0.75rem; }
-        .mk-table-wrap { overflow-x: auto; }
-        .mk-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 0.85rem;
-        }
-        .mk-table th {
-          text-align: left;
-          padding: 0.75rem 1rem;
-          background: rgba(0,0,0,0.2);
-          color: var(--text-secondary, #9CA3AF);
-          font-weight: 600;
-          font-size: 0.75rem;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          border-bottom: 1px solid rgba(255,255,255,0.06);
-          white-space: nowrap;
-        }
-        .mk-table td {
-          padding: 0.65rem 1rem;
-          color: var(--text-primary, #E5E7EB);
-          border-bottom: 1px solid rgba(255,255,255,0.03);
-        }
-        .mk-table tbody tr:hover {
-          background: rgba(255,255,255,0.02);
-        }
-        .mk-td-campaign { font-weight: 600; min-width: 180px; }
-        .mk-td-page { font-family: monospace; font-size: 0.8rem; max-width: 400px; overflow: hidden; text-overflow: ellipsis; }
-        .mk-rank { color: var(--text-secondary, #9CA3AF); font-weight: 600; }
-        .mk-channel-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          padding: 3px 10px;
-          border-radius: 12px;
-          font-size: 0.75rem;
-          font-weight: 600;
-          border: 1px solid;
-          white-space: nowrap;
-        }
-        .mk-empty-inline {
-          text-align: center;
-          color: var(--text-secondary, #9CA3AF);
-          padding: 2rem;
-          font-size: 0.85rem;
-        }
-        .mk-empty-inline code {
-          background: rgba(255,255,255,0.05);
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-size: 0.8rem;
-        }
-
-        /* ─── Attribution Paths ─── */
-        .mk-attribution-list { display: flex; flex-direction: column; gap: 1.25rem; }
-        .mk-journey {
-          border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 12px;
-          padding: 1.25rem;
-          background: rgba(0,0,0,0.15);
-          transition: border-color 0.2s;
-        }
-        .mk-journey:hover { border-color: rgba(255,255,255,0.12); }
-        .mk-journey.converted { border-color: rgba(52,211,153,0.3); }
-        .mk-journey-header {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          margin-bottom: 1rem;
-        }
-        .mk-journey-id {
-          font-family: monospace;
-          font-size: 0.8rem;
-          color: var(--text-secondary, #9CA3AF);
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
-        }
-        .mk-journey-count {
-          font-size: 0.75rem;
-          background: rgba(129,140,248,0.15);
-          color: #818cf8;
-          padding: 2px 8px;
-          border-radius: 10px;
-          font-weight: 600;
-        }
-        .mk-journey-converted {
-          font-size: 0.75rem;
-          background: rgba(52,211,153,0.15);
-          color: #34D399;
-          padding: 2px 8px;
-          border-radius: 10px;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
-        }
-        .mk-journey-steps {
-          display: flex;
-          align-items: flex-start;
-          gap: 0;
-          overflow-x: auto;
-          padding: 0.5rem 0;
-        }
-        .mk-journey-step {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          flex-shrink: 0;
-        }
-        .mk-journey-arrow {
-          color: rgba(255,255,255,0.2);
-          font-size: 1.2rem;
-        }
-        .mk-journey-touch {
-          border: 1px solid;
-          border-radius: 10px;
-          overflow: hidden;
-          min-width: 150px;
-        }
-        .mk-journey-touch-head {
-          display: flex;
-          align-items: center;
-          gap: 0.4rem;
-          padding: 0.4rem 0.75rem;
-          font-size: 0.78rem;
-          font-weight: 600;
-        }
-        .mk-journey-touch-body {
-          padding: 0.4rem 0.75rem;
-          display: flex;
-          flex-direction: column;
-          gap: 0.15rem;
-        }
-        .mk-journey-touch-body small {
-          font-size: 0.7rem;
-          color: var(--text-secondary, #9CA3AF);
-        }
-        .mk-journey-lp {
-          font-family: monospace;
-          opacity: 0.7;
-        }
-      `}</style>
     </div>
   );
 }
