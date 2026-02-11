@@ -187,23 +187,44 @@ a:hover { color: #0056b3; }
 .apple-card-body { padding: 18px 22px; }
 .apple-card-footer { padding: 14px 22px; border-top: 1px solid var(--border-secondary); background: var(--bg-tertiary); }
 
-/* ── Stats Card ── */
-.stat-card {
-  background: var(--bg-secondary); border: 1px solid var(--border-primary);
-  border-radius: var(--radius-lg); padding: 20px 22px;
-  display: flex; align-items: flex-start; justify-content: space-between;
-  transition: all var(--transition-normal);
+/* ── Stats Grid & Card ── */
+.stats-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;
+  margin-bottom: 24px;
 }
-.stat-card:hover { box-shadow: var(--shadow-sm); transform: translateY(-1px); }
-.stat-label { font-size: 12px; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.3px; }
-.stat-value { font-size: 28px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; line-height: 1.2; margin-top: 4px; }
-.stat-change { font-size: 12px; font-weight: 500; margin-top: 4px; display: flex; align-items: center; gap: 3px; }
+@media (min-width: 1200px) {
+  .stats-grid.cols-5 { grid-template-columns: repeat(5, 1fr); }
+  .stats-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .stats-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+}
+.stat-card {
+  position: relative;
+  background: var(--bg-secondary); border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg); padding: 20px 20px 18px;
+  display: flex; flex-direction: column; gap: 12px;
+  transition: all var(--transition-normal); overflow: hidden;
+}
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--stat-accent, var(--accent-blue));
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  opacity: 0; transition: opacity var(--transition-normal);
+}
+.stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.stat-card:hover::before { opacity: 1; }
+.stat-icon {
+  width: 42px; height: 42px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+.stat-card:hover .stat-icon { transform: scale(1.08); }
+.stat-content { display: flex; flex-direction: column; gap: 2px; }
+.stat-label { font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.4px; }
+.stat-value { font-size: 26px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; line-height: 1.2; }
+.stat-change { font-size: 12px; font-weight: 500; margin-top: 2px; display: flex; align-items: center; gap: 3px; }
 .stat-change.positive { color: var(--accent-green); }
 .stat-change.negative { color: var(--accent-red); }
-.stat-icon {
-  width: 44px; height: 44px; border-radius: var(--radius-md);
-  display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
-}
+.stat-meta { font-size: 11px; color: var(--text-quaternary); margin-top: -2px; }
 .stat-icon.blue { background: var(--accent-blue-soft); color: var(--accent-blue); }
 .stat-icon.green { background: var(--accent-green-soft); color: var(--accent-green); }
 .stat-icon.orange { background: var(--accent-orange-soft); color: var(--accent-orange); }
@@ -318,9 +339,10 @@ a:hover { color: #0056b3; }
 .apple-toast .toast-close { background: none; border: none; color: var(--text-quaternary); cursor: pointer; padding: 4px; font-size: 16px; }
 
 /* ── Page header ── */
-.page-header { margin-bottom: 24px; }
+.page-header { margin-bottom: 24px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .page-title { font-size: 26px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
 .page-subtitle { font-size: 14px; color: var(--text-tertiary); margin-top: 4px; }
+.page-header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
 /* ── Grids ── */
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }

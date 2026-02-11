@@ -1,7 +1,7 @@
 'use client';
 
-import { ReactNode } from 'react';
 import Link from 'next/link';
+import { ReactNode } from 'react';
 
 /* ─── Page Header ─── */
 interface PageAction {
@@ -98,29 +98,36 @@ interface StatsCardProps {
   color?: string;
   iconColor?: string;
   trend?: string;
+  meta?: string;
   loading?: boolean;
 }
 
-export function StatsCard({ title, value, icon, color, iconColor, trend, loading }: StatsCardProps) {
+export function StatsCard({ title, value, icon, color, iconColor, trend, meta, loading }: StatsCardProps) {
   const resolvedColor = color || COLOR_MAP[iconColor || 'primary'] || '#007aff';
 
   if (loading) {
     return (
       <div className="stat-card">
-        <div className="skeleton" style={{ height: 14, width: 80, marginBottom: 8 }} />
-        <div className="skeleton" style={{ height: 28, width: 60 }} />
+        <div className="skeleton" style={{ height: 42, width: 42, borderRadius: 'var(--radius-md)' }} />
+        <div className="stat-content">
+          <div className="skeleton" style={{ height: 12, width: 80 }} />
+          <div className="skeleton" style={{ height: 28, width: 64, marginTop: 4 }} />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="stat-card">
+    <div className="stat-card" style={{ '--stat-accent': resolvedColor } as React.CSSProperties}>
       <div className="stat-icon" style={{ background: `${resolvedColor}14`, color: resolvedColor }}>
         <i className={`ti ti-${icon}`} />
       </div>
-      <div className="stat-label">{title}</div>
-      <div className="stat-value">{value}</div>
-      {trend && <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4 }}>{trend}</div>}
+      <div className="stat-content">
+        <div className="stat-label">{title}</div>
+        <div className="stat-value">{value}</div>
+        {trend && <div className="stat-change">{trend}</div>}
+        {meta && <div className="stat-meta">{meta}</div>}
+      </div>
     </div>
   );
 }

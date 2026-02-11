@@ -1,7 +1,8 @@
 'use client';
 
+import { PageHeader, StatsCard, Tabs } from '@/components/ui';
+import { adminFetch } from '@/lib/api-client';
 import { useCallback, useEffect, useState } from 'react';
-import { adminFetch } from '../../lib/api-client';
 
 interface FingerprintStats {
   totalVisitors: number;
@@ -67,223 +68,210 @@ interface HotLead {
   lastSeenAt: string;
 }
 
+const INTENT_CONFIG: Record<string, { color: string; emoji: string; bg: string }> = {
+  hot:        { color: '#ff3b30', emoji: '🔥', bg: 'var(--accent-red-soft)' },
+  warm:       { color: '#ff9500', emoji: '🌡️', bg: 'var(--accent-orange-soft)' },
+  cold:       { color: '#007aff', emoji: '❄️', bg: 'var(--accent-blue-soft)' },
+  converting: { color: '#34c759', emoji: '💰', bg: 'var(--accent-green-soft)' },
+};
+
+const SEGMENT_CONFIG: Record<string, { color: string; bg: string }> = {
+  VIP:            { color: 'var(--accent-purple)', bg: 'var(--accent-purple-soft)' },
+  customer:       { color: 'var(--accent-green)',  bg: 'var(--accent-green-soft)' },
+  abandoned_cart: { color: 'var(--accent-red)',    bg: 'var(--accent-red-soft)' },
+  browser:        { color: 'var(--accent-blue)',   bg: 'var(--accent-blue-soft)' },
+  new_visitor:    { color: 'var(--text-tertiary)', bg: 'rgba(0,0,0,0.05)' },
+};
+
+function timeAgo(date: string) {
+  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+  if (seconds < 60) return `${seconds}s ago`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return `${Math.floor(seconds / 86400)}d ago`;
+}
+
+function ProgressBar({ value, max = 100, color = 'var(--accent-blue)' }: { value: number; max?: number; color?: string }) {
+  const pct = Math.min(100, (value / max) * 100);
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ width: 60, height: 6, background: 'var(--bg-primary)', borderRadius: 3, overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 3, transition: 'width 0.5s ease' }} />
+      </div>
+      <span style={{ fontSize: 12, fontWeight: 600, color, minWidth: 20 }}>{value.toFixed(0)}</span>
+    </div>
+  );
+}
+
+function IntentBadge({ intent }: { intent: string }) {
+  const cfg = INTENT_CONFIG[intent] || { color: 'var(--text-tertiary)', emoji: '👤', bg: 'rgba(0,0,0,0.05)' };
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      padding: '3px 10px', borderRadius: 'var(--radius-full)',
+      fontSize: 11, fontWeight: 600, background: cfg.bg, color: cfg.color,
+    }}>
+      {cfg.emoji} {intent}
+    </span>
+  );
+}
+
+function SegmentBadge({ segment }: { segment: string }) {
+  const cfg = SEGMENT_CONFIG[segment] || SEGMENT_CONFIG.new_visitor;
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      padding: '3px 10px', borderRadius: 'var(--radius-full)',
+      fontSize: 11, fontWeight: 600, background: cfg.bg, color: cfg.color,
+    }}>
+      {segment.replace(/_/g, ' ')}
+    </span>
+  );
+}
+
+function IdDot({ identified }: { identified: boolean }) {
+  return (
+    <div style={{
+      width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+      background: identified ? 'var(--accent-green)' : 'var(--text-quaternary)',
+      boxShadow: identified ? '0 0 6px rgba(52,199,89,0.4)' : 'none',
+    }} />
+  );
+}
+
 export default function FingerprintPage() {
   const [stats, setStats] = useState<FingerprintStats | null>(null);
   const [intentDistribution, setIntentDistribution] = useState<IntentDistribution[]>([]);
   const [recentVisitors, setRecentVisitors] = useState<RecentVisitor[]>([]);
   const [topEngaged, setTopEngaged] = useState<EngagedVisitor[]>([]);
   const [hotLeads, setHotLeads] = useState<HotLead[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'visitors' | 'leads' | 'engaged'>('overview');
+  const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   const loadDashboard = useCallback(async () => {
     try {
       setLoading(true);
-      setError('');
-      const data = await adminFetch('/api/v1/fingerprint/dashboard');
-      setStats(data.stats);
-      setIntentDistribution(data.intentDistribution || []);
-      setRecentVisitors(data.recentVisitors || []);
-      setTopEngaged(data.topEngaged || []);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load fingerprint data');
-    } finally {
-      setLoading(false);
-    }
+      const res = await adminFetch('/api/v1/fingerprint/dashboard');
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data.stats);
+        setIntentDistribution(data.intentDistribution || []);
+        setRecentVisitors(data.recentVisitors || []);
+        setTopEngaged(data.topEngaged || []);
+      }
+    } catch { /* silent */ }
+    finally { setLoading(false); }
   }, []);
 
   const loadHotLeads = useCallback(async () => {
     try {
-      const data = await adminFetch('/api/v1/fingerprint/hot-leads');
-      setHotLeads(data.leads || []);
-    } catch (err: any) {
-      console.error('Failed to load hot leads', err);
-    }
+      const res = await adminFetch('/api/v1/fingerprint/hot-leads');
+      if (res.ok) {
+        const data = await res.json();
+        setHotLeads(data.leads || []);
+      }
+    } catch { /* silent */ }
   }, []);
 
-  useEffect(() => {
-    loadDashboard();
-    loadHotLeads();
-  }, [loadDashboard, loadHotLeads]);
-
-  const getIntentColor = (intent: string) => {
-    switch (intent) {
-      case 'hot': return '#ef4444';
-      case 'warm': return '#f59e0b';
-      case 'cold': return '#3b82f6';
-      case 'converting': return '#10b981';
-      default: return '#6b7280';
-    }
-  };
-
-  const getIntentEmoji = (intent: string) => {
-    switch (intent) {
-      case 'hot': return '🔥';
-      case 'warm': return '🌡️';
-      case 'cold': return '❄️';
-      case 'converting': return '💰';
-      default: return '👤';
-    }
-  };
-
-  const getSegmentBadge = (segment: string) => {
-    const colors: Record<string, string> = {
-      VIP: 'bg-purple-500',
-      customer: 'bg-green-500',
-      abandoned_cart: 'bg-red-500',
-      browser: 'bg-blue-500',
-      new_visitor: 'bg-gray-500',
-    };
-    return colors[segment] || 'bg-gray-500';
-  };
-
-  const timeAgo = (date: string) => {
-    const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-    if (seconds < 60) return `${seconds}s ago`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-    return `${Math.floor(seconds / 86400)}d ago`;
-  };
-
-  if (loading) {
-    return (
-      <div className="p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-          <span className="ml-3 text-gray-500">Loading Fingerprint Intelligence...</span>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => { loadDashboard(); loadHotLeads(); }, [loadDashboard, loadHotLeads]);
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            🧬 Fingerprint Intelligence
-          </h1>
-          <p className="text-gray-500 mt-1">
-            Real-time visitor identification, behavioral profiling & buyer intent analysis
-          </p>
-        </div>
-        <button
-          onClick={() => { loadDashboard(); loadHotLeads(); }}
-          className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg"
-        >
-          ↻ Refresh
-        </button>
+    <div>
+      <PageHeader
+        title="Fingerprint Intelligence"
+        subtitle="Real-time visitor identification, behavioral profiling & buyer intent analysis"
+        actions={[
+          { label: 'Refresh', icon: 'refresh', variant: 'secondary', onClick: () => { loadDashboard(); loadHotLeads(); } },
+        ]}
+      />
+
+      {/* ── Stats ── */}
+      <div className="stats-grid cols-5">
+        <StatsCard title="Total Visitors" value={stats?.totalVisitors ?? 0} icon="fingerprint" iconColor="primary" meta="Unique fingerprints" loading={loading} />
+        <StatsCard title="Returning" value={stats?.returningVisitors ?? 0} icon="arrow-back-up" iconColor="info" meta="Multi-visit" loading={loading} />
+        <StatsCard title="Identified" value={stats?.identifiedVisitors ?? 0} icon="user-check" iconColor="success" meta="Linked to accounts" loading={loading} />
+        <StatsCard title="ID Rate" value={stats ? `${stats.identificationRate}%` : '—'} icon="percentage" color="#af52de" meta="Resolution rate" loading={loading} />
+        <StatsCard title="Bots Blocked" value={stats?.botCount ?? 0} icon="robot" iconColor="danger" meta="Auto-detected" loading={loading} />
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">{error}</div>
-      )}
-
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <div className="text-sm font-medium text-gray-500">Total Visitors</div>
-            <div className="mt-1 text-3xl font-bold text-gray-900">{stats.totalVisitors.toLocaleString()}</div>
-            <div className="text-xs text-gray-400 mt-1">Unique fingerprints</div>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <div className="text-sm font-medium text-gray-500">Returning</div>
-            <div className="mt-1 text-3xl font-bold text-blue-600">{stats.returningVisitors.toLocaleString()}</div>
-            <div className="text-xs text-gray-400 mt-1">Multi-visit visitors</div>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <div className="text-sm font-medium text-gray-500">Identified</div>
-            <div className="mt-1 text-3xl font-bold text-green-600">{stats.identifiedVisitors.toLocaleString()}</div>
-            <div className="text-xs text-gray-400 mt-1">Linked to accounts</div>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <div className="text-sm font-medium text-gray-500">ID Rate</div>
-            <div className="mt-1 text-3xl font-bold text-purple-600">{stats.identificationRate}%</div>
-            <div className="text-xs text-gray-400 mt-1">Resolution effectiveness</div>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <div className="text-sm font-medium text-gray-500">Bots Blocked</div>
-            <div className="mt-1 text-3xl font-bold text-red-500">{stats.botCount.toLocaleString()}</div>
-            <div className="text-xs text-gray-400 mt-1">Auto-detected</div>
-          </div>
-        </div>
-      )}
-
-      {/* Intent Distribution */}
+      {/* ── Intent Distribution ── */}
       {intentDistribution.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Buyer Intent Distribution</h2>
-          <div className="flex items-center gap-4 flex-wrap">
-            {intentDistribution.map((d) => (
-              <div
-                key={d.intent}
-                className="flex items-center gap-2 px-4 py-3 rounded-lg border"
-                style={{ borderColor: getIntentColor(d.intent) + '40', background: getIntentColor(d.intent) + '10' }}
-              >
-                <span className="text-xl">{getIntentEmoji(d.intent)}</span>
-                <div>
-                  <div className="font-semibold capitalize" style={{ color: getIntentColor(d.intent) }}>
-                    {d.intent}
+        <div className="apple-card" style={{ marginBottom: 24 }}>
+          <div className="apple-card-header">
+            <div className="apple-card-title">Buyer Intent Distribution</div>
+          </div>
+          <div className="apple-card-body" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            {intentDistribution.map((d) => {
+              const cfg = INTENT_CONFIG[d.intent] || { color: 'var(--text-tertiary)', emoji: '👤', bg: 'rgba(0,0,0,0.05)' };
+              return (
+                <div key={d.intent} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '12px 18px', borderRadius: 'var(--radius-md)',
+                  border: `1px solid ${cfg.color}22`, background: cfg.bg,
+                  minWidth: 140,
+                }}>
+                  <span style={{ fontSize: 22 }}>{cfg.emoji}</span>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: cfg.color, textTransform: 'uppercase', letterSpacing: 0.4 }}>
+                      {d.intent}
+                    </div>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                      {d.count}
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{d.count}</div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {(['overview', 'visitors', 'leads', 'engaged'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === tab
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab === 'overview' && '📊 Overview'}
-              {tab === 'visitors' && `👤 Recent Visitors (${recentVisitors.length})`}
-              {tab === 'leads' && `🔥 Hot Leads (${hotLeads.length})`}
-              {tab === 'engaged' && `⭐ Top Engaged (${topEngaged.length})`}
-            </button>
-          ))}
-        </nav>
-      </div>
+      {/* ── Tabs ── */}
+      <Tabs
+        tabs={[
+          { id: 'overview', label: 'Overview', icon: 'chart-dots-3' },
+          { id: 'visitors', label: 'Recent Visitors', icon: 'users', count: recentVisitors.length },
+          { id: 'leads', label: 'Hot Leads', icon: 'flame', count: hotLeads.length },
+          { id: 'engaged', label: 'Top Engaged', icon: 'star', count: topEngaged.length },
+        ]}
+        active={activeTab}
+        onChange={setActiveTab}
+      />
 
-      {/* Tab Content */}
+      {/* ─────── OVERVIEW ─────── */}
       {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Visitors Preview */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">🕐 Recent Visitors</h3>
-            <div className="space-y-3">
-              {recentVisitors.slice(0, 8).map((v) => (
-                <div key={v.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-2.5 h-2.5 rounded-full ${v.isIdentified ? 'bg-green-500' : 'bg-gray-300'}`} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          {/* Recent Visitors */}
+          <div className="apple-card">
+            <div className="apple-card-header">
+              <div className="apple-card-title">🕐 Recent Visitors</div>
+            </div>
+            <div className="apple-card-body" style={{ padding: '8px 0' }}>
+              {recentVisitors.length === 0 ? (
+                <div className="empty-state" style={{ padding: 40 }}>
+                  <div className="empty-state-icon"><i className="ti ti-users" /></div>
+                  <h4 className="empty-state-title">No visitors yet</h4>
+                </div>
+              ) : recentVisitors.slice(0, 8).map((v) => (
+                <div key={v.id} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 22px', transition: 'background var(--transition-fast)', cursor: 'default',
+                  borderBottom: '1px solid var(--border-secondary)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <IdDot identified={v.isIdentified} />
                     <div>
-                      <div className="font-medium text-sm text-gray-900">
-                        {v.identity?.name || v.identity?.email || v.fingerprintHash}
+                      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
+                        {v.identity?.name || v.identity?.email || v.fingerprintHash.slice(0, 16) + '…'}
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {v.identity?.company && `${v.identity.company} · `}
-                        {v.platform} · {v.visitCount} visits
+                      <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                        {v.identity?.company ? `${v.identity.company} · ` : ''}{v.platform || '—'} · {v.visitCount} visits
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    {v.identity?.buyerIntent && (
-                      <span className="text-xs mr-1">{getIntentEmoji(v.identity.buyerIntent)}</span>
-                    )}
-                    <span className="text-xs text-gray-400">{timeAgo(v.lastSeenAt)}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {v.identity?.buyerIntent && <IntentBadge intent={v.identity.buyerIntent} />}
+                    <span style={{ fontSize: 11, color: 'var(--text-quaternary)' }}>{timeAgo(v.lastSeenAt)}</span>
                   </div>
                 </div>
               ))}
@@ -291,160 +279,89 @@ export default function FingerprintPage() {
           </div>
 
           {/* Hot Leads Preview */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">🔥 Hot Leads</h3>
-            {hotLeads.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                <div className="text-4xl mb-2">🎯</div>
-                <p>No hot leads detected yet.</p>
-                <p className="text-xs mt-1">Leads appear when visitors show high purchase intent.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {hotLeads.slice(0, 8).map((lead) => (
-                  <div key={lead.id} className="flex items-center justify-between p-3 rounded-lg bg-orange-50 hover:bg-orange-100 transition-colors">
-                    <div>
-                      <div className="font-medium text-sm text-gray-900">
-                        {lead.name || lead.email || 'Anonymous'}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {lead.company && `${lead.company} · `}
-                        {lead.totalProductViews} views · {lead.totalAddToCarts} carts
-                      </div>
+          <div className="apple-card">
+            <div className="apple-card-header">
+              <div className="apple-card-title">🔥 Hot Leads</div>
+            </div>
+            <div className="apple-card-body" style={{ padding: '8px 0' }}>
+              {hotLeads.length === 0 ? (
+                <div className="empty-state" style={{ padding: 40 }}>
+                  <div className="empty-state-icon"><i className="ti ti-flame" /></div>
+                  <h4 className="empty-state-title">No hot leads yet</h4>
+                  <p className="empty-state-description">
+                    Leads appear when visitors show high purchase intent without converting.
+                  </p>
+                </div>
+              ) : hotLeads.slice(0, 8).map((lead) => (
+                <div key={lead.id} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 22px', borderBottom: '1px solid var(--border-secondary)',
+                }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
+                      {lead.name || lead.email || 'Anonymous'}
                     </div>
-                    <div className="text-right">
-                      <div className="text-xs font-semibold" style={{ color: getIntentColor(lead.buyerIntent) }}>
-                        {getIntentEmoji(lead.buyerIntent)} {lead.engagementScore.toFixed(0)}
-                      </div>
-                      <div className="text-xs text-gray-400">{timeAgo(lead.lastSeenAt)}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                      {lead.company ? `${lead.company} · ` : ''}{lead.totalProductViews} views · {lead.totalAddToCarts} carts
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <ProgressBar value={lead.engagementScore} color={INTENT_CONFIG[lead.buyerIntent]?.color || 'var(--accent-orange)'} />
+                    <span style={{ fontSize: 11, color: 'var(--text-quaternary)' }}>{timeAgo(lead.lastSeenAt)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
+      {/* ─────── RECENT VISITORS ─────── */}
       {activeTab === 'visitors' && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Visitor</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Platform</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Visits</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Intent</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Engagement</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Seen</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {recentVisitors.map((v) => (
-                <tr key={v.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${v.isIdentified ? 'bg-green-500' : 'bg-gray-300'}`} />
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {v.identity?.name || v.identity?.email || v.fingerprintHash}
-                        </div>
-                        {v.identity?.company && (
-                          <div className="text-xs text-gray-500">{v.identity.company}</div>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{v.platform || '—'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{v.visitCount}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {v.identity?.buyerIntent ? (
-                      <span className="text-sm" style={{ color: getIntentColor(v.identity.buyerIntent) }}>
-                        {getIntentEmoji(v.identity.buyerIntent)} {v.identity.buyerIntent}
-                      </span>
-                    ) : (
-                      <span className="text-sm text-gray-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {v.identity?.engagementScore !== undefined ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-16 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-indigo-500 h-2 rounded-full"
-                            style={{ width: `${Math.min(100, v.identity.engagementScore)}%` }}
-                          />
-                        </div>
-                        <span className="text-xs text-gray-500">{v.identity.engagementScore.toFixed(0)}</span>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-gray-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{timeAgo(v.lastSeenAt)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {activeTab === 'leads' && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          {hotLeads.length === 0 ? (
-            <div className="text-center py-16 text-gray-400">
-              <div className="text-5xl mb-3">🎯</div>
-              <p className="text-lg">No hot leads detected yet</p>
-              <p className="text-sm mt-1">Visitors with high engagement but no orders will appear here.</p>
+        <div className="apple-card">
+          {recentVisitors.length === 0 ? (
+            <div className="empty-state" style={{ padding: 60 }}>
+              <div className="empty-state-icon"><i className="ti ti-users" /></div>
+              <h4 className="empty-state-title">No visitors yet</h4>
+              <p className="empty-state-description">Visitor data will appear as people browse your store.</p>
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="apple-table">
+              <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lead</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Intent</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product Views</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cart Actions</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Timezone</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Active</th>
+                  <th>Visitor</th>
+                  <th>Platform</th>
+                  <th>Visits</th>
+                  <th>Intent</th>
+                  <th>Engagement</th>
+                  <th>Last Seen</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
-                {hotLeads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-orange-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{lead.name || lead.email || 'Anonymous'}</div>
-                        {lead.company && <div className="text-xs text-gray-500">{lead.company}</div>}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                        style={{
-                          backgroundColor: getIntentColor(lead.buyerIntent) + '20',
-                          color: getIntentColor(lead.buyerIntent),
-                        }}
-                      >
-                        {getIntentEmoji(lead.buyerIntent)} {lead.buyerIntent}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{lead.totalProductViews}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{lead.totalAddToCarts}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <div className="w-16 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-orange-500 h-2 rounded-full"
-                            style={{ width: `${Math.min(100, lead.engagementScore)}%` }}
-                          />
+              <tbody>
+                {recentVisitors.map((v) => (
+                  <tr key={v.id}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <IdDot identified={v.isIdentified} />
+                        <div>
+                          <div style={{ fontWeight: 500 }}>
+                            {v.identity?.name || v.identity?.email || v.fingerprintHash.slice(0, 16) + '…'}
+                          </div>
+                          {v.identity?.company && (
+                            <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{v.identity.company}</div>
+                          )}
                         </div>
-                        <span className="text-xs font-semibold text-orange-600">{lead.engagementScore.toFixed(0)}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">{lead.timezone || '—'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{timeAgo(lead.lastSeenAt)}</td>
+                    <td>{v.platform || '—'}</td>
+                    <td style={{ fontWeight: 600 }}>{v.visitCount}</td>
+                    <td>{v.identity?.buyerIntent ? <IntentBadge intent={v.identity.buyerIntent} /> : '—'}</td>
+                    <td>
+                      {v.identity?.engagementScore != null
+                        ? <ProgressBar value={v.identity.engagementScore} color="var(--accent-indigo)" />
+                        : '—'}
+                    </td>
+                    <td style={{ color: 'var(--text-tertiary)' }}>{timeAgo(v.lastSeenAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -453,63 +370,104 @@ export default function FingerprintPage() {
         </div>
       )}
 
-      {activeTab === 'engaged' && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Segment</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pages</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Products</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Carts</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Orders</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Revenue</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {topEngaged.map((e) => (
-                <tr key={e.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{e.name || e.email || 'Anonymous'}</div>
-                      {e.company && <div className="text-xs text-gray-500">{e.company}</div>}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {e.segment && (
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white ${getSegmentBadge(e.segment)}`}>
-                        {e.segment.replace(/_/g, ' ')}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 bg-gray-200 rounded-full h-2">
-                        <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${Math.min(100, e.engagementScore)}%` }} />
-                      </div>
-                      <span className="text-xs font-semibold text-purple-600">{e.engagementScore.toFixed(0)}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{e.totalPageViews}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{e.totalProductViews}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{e.totalAddToCarts}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{e.totalOrders}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">${e.totalRevenue.toLocaleString()}</td>
-                </tr>
-              ))}
-              {topEngaged.length === 0 && (
+      {/* ─────── HOT LEADS ─────── */}
+      {activeTab === 'leads' && (
+        <div className="apple-card">
+          {hotLeads.length === 0 ? (
+            <div className="empty-state" style={{ padding: 60 }}>
+              <div className="empty-state-icon"><i className="ti ti-flame" /></div>
+              <h4 className="empty-state-title">No hot leads detected</h4>
+              <p className="empty-state-description">Visitors with high engagement but no orders will surface here.</p>
+            </div>
+          ) : (
+            <table className="apple-table">
+              <thead>
                 <tr>
-                  <td colSpan={8} className="px-6 py-16 text-center text-gray-400">
-                    <div className="text-5xl mb-3">⭐</div>
-                    <p className="text-lg">No engaged visitors yet</p>
-                    <p className="text-sm mt-1">Engagement data will populate as visitors interact with your store.</p>
-                  </td>
+                  <th>Lead</th>
+                  <th>Intent</th>
+                  <th>Product Views</th>
+                  <th>Cart Actions</th>
+                  <th>Score</th>
+                  <th>Timezone</th>
+                  <th>Last Active</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {hotLeads.map((lead) => (
+                  <tr key={lead.id}>
+                    <td>
+                      <div>
+                        <div style={{ fontWeight: 500 }}>{lead.name || lead.email || 'Anonymous'}</div>
+                        {lead.company && (
+                          <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{lead.company}</div>
+                        )}
+                      </div>
+                    </td>
+                    <td><IntentBadge intent={lead.buyerIntent} /></td>
+                    <td style={{ fontWeight: 600 }}>{lead.totalProductViews}</td>
+                    <td style={{ fontWeight: 600 }}>{lead.totalAddToCarts}</td>
+                    <td>
+                      <ProgressBar
+                        value={lead.engagementScore}
+                        color={INTENT_CONFIG[lead.buyerIntent]?.color || 'var(--accent-orange)'}
+                      />
+                    </td>
+                    <td style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{lead.timezone || '—'}</td>
+                    <td style={{ color: 'var(--text-tertiary)' }}>{timeAgo(lead.lastSeenAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* ─────── TOP ENGAGED ─────── */}
+      {activeTab === 'engaged' && (
+        <div className="apple-card">
+          {topEngaged.length === 0 ? (
+            <div className="empty-state" style={{ padding: 60 }}>
+              <div className="empty-state-icon"><i className="ti ti-star" /></div>
+              <h4 className="empty-state-title">No engaged visitors yet</h4>
+              <p className="empty-state-description">Engagement data will populate as visitors interact with your store.</p>
+            </div>
+          ) : (
+            <table className="apple-table">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Segment</th>
+                  <th>Score</th>
+                  <th>Pages</th>
+                  <th>Products</th>
+                  <th>Carts</th>
+                  <th>Orders</th>
+                  <th>Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topEngaged.map((e) => (
+                  <tr key={e.id}>
+                    <td>
+                      <div>
+                        <div style={{ fontWeight: 500 }}>{e.name || e.email || 'Anonymous'}</div>
+                        {e.company && (
+                          <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{e.company}</div>
+                        )}
+                      </div>
+                    </td>
+                    <td>{e.segment ? <SegmentBadge segment={e.segment} /> : '—'}</td>
+                    <td><ProgressBar value={e.engagementScore} color="var(--accent-purple)" /></td>
+                    <td>{e.totalPageViews}</td>
+                    <td>{e.totalProductViews}</td>
+                    <td>{e.totalAddToCarts}</td>
+                    <td style={{ fontWeight: 600 }}>{e.totalOrders}</td>
+                    <td style={{ fontWeight: 600, color: 'var(--accent-green)' }}>${e.totalRevenue.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
     </div>
