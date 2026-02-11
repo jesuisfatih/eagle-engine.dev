@@ -58,4 +58,30 @@ export class EventsController {
   ) {
     return this.eventsService.getAdminActivityFeed(merchantId, limit ? parseInt(limit) : 50);
   }
+
+  /**
+   * Webhook activity feed - returns webhook-related events for the webhooks page
+   */
+  @SkipThrottle()
+  @UseGuards(JwtAuthGuard)
+  @Get('webhook-activity')
+  async getWebhookActivity(
+    @CurrentUser('merchantId') merchantId: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.eventsService.getWebhookActivityFeed(merchantId, limit ? parseInt(limit) : 100);
+  }
+
+  /**
+   * Session activity feed - returns login/logout events for the sessions page
+   */
+  @SkipThrottle()
+  @UseGuards(JwtAuthGuard)
+  @Get('session-activity')
+  async getSessionActivity(
+    @CurrentUser('merchantId') merchantId: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.eventsService.getSessionActivityFeed(merchantId, limit ? parseInt(limit) : 50);
+  }
 }

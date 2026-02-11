@@ -2,7 +2,7 @@
 
 import { PageHeader, StatusBadge, showToast } from '@/components/ui';
 import { adminFetch } from '@/lib/api-client';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface Ticket {
   id: string;
@@ -20,15 +20,16 @@ export default function SupportPage() {
   const [form, setForm] = useState({ subject: '', description: '', priority: 'medium', customerEmail: '' });
   const [submitting, setSubmitting] = useState(false);
 
-  useState(() => {
-    (async () => {
-      try {
-        const res = await adminFetch('/api/v1/support-tickets');
-        if (res.ok) { const d = await res.json(); setTickets(d.tickets || d.data || d || []); }
-      } catch { /* silent */ }
-      finally { setLoading(false); }
-    })();
-  });
+  const loadTickets = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await adminFetch('/api/v1/support-tickets');
+      if (res.ok) { const d = await res.json(); setTickets(d.tickets || d.data || d || []); }
+    } catch { /* silent */ }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { loadTickets(); }, [loadTickets]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

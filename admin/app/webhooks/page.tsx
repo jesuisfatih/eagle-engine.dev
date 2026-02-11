@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { adminFetch } from '@/lib/api-client';
 import { PageHeader, StatusBadge } from '@/components/ui';
+import { adminFetch } from '@/lib/api-client';
+import { useEffect, useState } from 'react';
 
 interface WebhookLog {
   id: string;
@@ -19,7 +19,7 @@ export default function WebhooksPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await adminFetch('/api/v1/webhooks/logs');
+        const res = await adminFetch('/api/v1/events/webhook-activity');
         if (res.ok) { const d = await res.json(); setLogs(d.logs || d.data || d || []); }
       } catch { /* silent */ }
       finally { setLoading(false); }
@@ -56,4 +56,3 @@ export default function WebhooksPage() {
     </div>
   );
 }
-

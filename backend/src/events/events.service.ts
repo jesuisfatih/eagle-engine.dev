@@ -152,4 +152,82 @@ export class EventsService {
 
     return { activities, total: activities.length };
   }
+
+  /**
+   * Webhook activity feed - shows webhook-related events (order/customer creates, etc.)
+   */
+  async getWebhookActivityFeed(merchantId: string, limit: number = 100) {
+    const webhookEventTypes = ['order_created', 'order_paid', 'customer_created', 'checkout_started', 'checkout_completed'];
+
+    const logs = await this.prisma.activityLog.findMany({
+      where: {
+        merchantId,
+        eventType: { in: webhookEventTypes },
+      },
+      include: {
+        companyUser: {
+          select: { email: true, firstName: true, lastName: true },
+        },
+        company: {
+          select: { name: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+
+    const webhookLogs = logs.map(log => ({
+      id: log.id,
+      topic: log.eventType.replace(/_/g, '/'),
+      status: 'success',
+      payload: log.payload ? JSON.stringify(log.payload).substring(0, 200) : null,
+      company: log.company?.name,
+      user: log.companyUser ? `${log.companyUser.firstName || ''} ${log.companyUser.lastName || ''}`.trim() : null,
+      ipAddress: log.ipAddress,
+      createdAt: log.createdAt,
+    }));
+
+    return { logs: webhookLogs, total: webhookLogs.length };
+  }
+
+  /**
+   * Session activity feed - aggregates login events to show active sessions
+   */
+  async getSessionActivityFeed(merchantId: string, limit: number = 50) {
+    const loginEvents = await this.prisma.activityLog.findMany({
+      where: {
+        merchantId,
+        eventType: 'login',
+      },
+      include: {
+        companyUser: {
+          select: { id: true, email: true, firstName: true, lastName: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+
+    // Group by sessionId to deduplicate
+    const sessionMap = new Map<string, any>();
+    for (const event of loginEvents) {
+      const key = event.sessionId || event.id;
+      if (!sessionMap.has(key)) {
+        sessionMap.set(key, {
+          id: event.sessionId || event.id,
+          userId: event.companyUser?.id || event.companyUserId || 'unknown',
+          userName: event.companyUser
+            ? `${event.companyUser.firstName || ''} ${event.companyUser.lastName || ''}`.trim() || 'User'
+            : 'Unknown',
+          email: event.companyUser?.email || '',
+          ip: event.ipAddress || 'N/A',
+          userAgent: event.userAgent || 'Unknown Device',
+          lastActivity: event.createdAt,
+          createdAt: event.createdAt,
+        });
+      }
+    }
+
+    return { sessions: Array.from(sessionMap.values()), total: sessionMap.size };
+  }
 }

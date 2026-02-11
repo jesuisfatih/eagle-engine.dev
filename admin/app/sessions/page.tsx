@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { adminFetch } from '@/lib/api-client';
-import { PageHeader, showToast } from '@/components/ui';
 import Modal from '@/components/Modal';
+import { PageHeader, showToast } from '@/components/ui';
+import { adminFetch } from '@/lib/api-client';
+import { useEffect, useState } from 'react';
 
 interface Session {
   id: string;
@@ -26,7 +26,7 @@ export default function SessionsPage() {
   const loadSessions = async () => {
     setLoading(true);
     try {
-      const res = await adminFetch('/api/v1/sessions');
+      const res = await adminFetch('/api/v1/events/session-activity');
       if (res.ok) { const d = await res.json(); setSessions(d.sessions || d.data || d || []); }
     } catch { /* silent */ }
     finally { setLoading(false); }
@@ -80,4 +80,3 @@ export default function SessionsPage() {
     </div>
   );
 }
-
