@@ -42,6 +42,7 @@ const menuGroups: MenuGroup[] = [
     label: 'Analytics',
     items: [
       { title: 'Analytics', icon: 'ti-chart-line', href: '/analytics' },
+      { title: 'Fingerprint Intel', icon: 'ti-fingerprint', href: '/fingerprint' },
       { title: 'Reports', icon: 'ti-file-analytics', href: '/reports' },
       { title: 'Activity', icon: 'ti-activity', href: '/activity' },
       { title: 'Sessions', icon: 'ti-device-desktop', href: '/sessions' },
@@ -107,7 +108,3 @@ export default function Sidebar() {
     </aside>
   );
 }
-
-
-
-

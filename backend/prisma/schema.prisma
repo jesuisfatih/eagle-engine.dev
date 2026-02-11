@@ -42,6 +42,8 @@ model Merchant {
   wishlists      Wishlist[]
   addresses      Address[]
   supportTickets SupportTicket[]
+  fingerprints   VisitorFingerprint[]
+  identities     VisitorIdentity[]
 
   @@index([shopDomain])
   @@index([status])
@@ -115,6 +117,7 @@ model Company {
   wishlists      Wishlist[]
   addresses      Address[]
   supportTickets SupportTicket[]
+  identities     VisitorIdentity[]
 
   @@index([merchantId])
   @@index([status])
@@ -154,6 +157,7 @@ model CompanyUser {
   wishlists      Wishlist[]
   addresses      Address[]
   supportTickets SupportTicket[]
+  identities     VisitorIdentity[]
 
   @@index([companyId])
   @@index([email])
@@ -466,6 +470,135 @@ model ActivityLog {
   @@index([createdAt])
   @@index([sessionId])
   @@map("activity_log")
+}
+
+// ============================================
+// VISITOR FINGERPRINTS (Browser Fingerprinting)
+// ============================================
+
+model VisitorFingerprint {
+  id              String  @id @default(uuid())
+  merchantId      String  @map("merchant_id")
+  fingerprintHash String  @map("fingerprint_hash")
+
+  // Canvas & WebGL signatures
+  canvasHash   String? @map("canvas_hash")
+  webglHash    String? @map("webgl_hash")
+  audioHash    String? @map("audio_hash")
+
+  // Device & Browser signals
+  userAgent    String? @map("user_agent")
+  platform     String?
+  language     String?
+  languages    String?
+  timezone     String?
+  timezoneOffset Int?  @map("timezone_offset")
+
+  // Screen & Display
+  screenWidth  Int?    @map("screen_width")
+  screenHeight Int?    @map("screen_height")
+  colorDepth   Int?    @map("color_depth")
+  pixelRatio   Float?  @map("pixel_ratio")
+  touchSupport Boolean? @map("touch_support")
+
+  // Hardware signals
+  hardwareConcurrency Int?    @map("hardware_concurrency")
+  deviceMemory        Float?  @map("device_memory")
+  maxTouchPoints      Int?    @map("max_touch_points")
+  gpuVendor           String? @map("gpu_vendor")
+  gpuRenderer         String? @map("gpu_renderer")
+
+  // Browser features
+  cookiesEnabled  Boolean? @map("cookies_enabled")
+  doNotTrack      String?  @map("do_not_track")
+  adBlockDetected Boolean? @map("ad_block_detected")
+  pluginCount     Int?     @map("plugin_count")
+  fontCount       Int?     @map("font_count")
+
+  // Network signals
+  connectionType String? @map("connection_type")
+  ipAddress      String? @map("ip_address")
+
+  // Bot detection
+  isBot       Boolean @default(false) @map("is_bot")
+  botScore    Float?  @map("bot_score")
+
+  // Confidence & quality
+  signalCount Int   @default(0) @map("signal_count")
+  confidence  Float @default(0)
+
+  firstSeenAt DateTime @default(now()) @map("first_seen_at")
+  lastSeenAt  DateTime @default(now()) @map("last_seen_at")
+  visitCount  Int      @default(1) @map("visit_count")
+
+  // Relations
+  merchant   Merchant          @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  identities VisitorIdentity[]
+
+  @@unique([merchantId, fingerprintHash])
+  @@index([merchantId])
+  @@index([fingerprintHash])
+  @@index([canvasHash])
+  @@index([lastSeenAt])
+  @@index([isBot])
+  @@map("visitor_fingerprints")
+}
+
+// ============================================
+// VISITOR IDENTITY RESOLUTION (Identity Graph)
+// ============================================
+
+model VisitorIdentity {
+  id              String  @id @default(uuid())
+  merchantId      String  @map("merchant_id")
+  fingerprintId   String  @map("fingerprint_id")
+
+  // Identity linkage
+  shopifyCustomerId BigInt?  @map("shopify_customer_id")
+  companyUserId     String?  @map("company_user_id")
+  companyId         String?  @map("company_id")
+  email             String?
+
+  // Session linkage
+  sessionId       String?  @map("session_id")
+  eagleToken      String?  @map("eagle_token")
+
+  // Resolution metadata
+  matchType       String   @map("match_type")
+  matchConfidence Float    @default(0) @map("match_confidence")
+
+  // Behavioral profile
+  totalPageViews    Int     @default(0) @map("total_page_views")
+  totalProductViews Int     @default(0) @map("total_product_views")
+  totalAddToCarts   Int     @default(0) @map("total_add_to_carts")
+  totalOrders       Int     @default(0) @map("total_orders")
+  totalRevenue      Decimal @default(0) @map("total_revenue") @db.Decimal(12, 2)
+  lastProductViewed String? @map("last_product_viewed")
+  lastPageUrl       String? @map("last_page_url")
+
+  // Engagement scoring
+  engagementScore Float  @default(0) @map("engagement_score")
+  buyerIntent     String @default("cold") @map("buyer_intent")
+  segment         String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  merchant    Merchant           @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  fingerprint VisitorFingerprint @relation(fields: [fingerprintId], references: [id], onDelete: Cascade)
+  companyUser CompanyUser?       @relation(fields: [companyUserId], references: [id])
+  company     Company?           @relation(fields: [companyId], references: [id])
+
+  @@unique([merchantId, fingerprintId, matchType])
+  @@index([merchantId])
+  @@index([fingerprintId])
+  @@index([shopifyCustomerId])
+  @@index([companyUserId])
+  @@index([email])
+  @@index([buyerIntent])
+  @@index([engagementScore])
+  @@map("visitor_identities")
 }
 
 // ============================================
