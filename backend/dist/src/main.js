@@ -16,9 +16,7 @@ async function bootstrap() {
     app.use((0, express_1.json)({ limit: '10mb' }));
     const config = app.get(config_1.ConfigService);
     app.useGlobalPipes(new common_1.ValidationPipe({
-        whitelist: true,
         transform: true,
-        forbidNonWhitelisted: true,
     }));
     app.setGlobalPrefix('api/v1', {
         exclude: ['/'],

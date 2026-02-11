@@ -23,12 +23,12 @@ async function bootstrap() {
 
   // CORS handled by Caddy - removed duplicate headers to prevent '*, *' error
 
-  // Global pipes
+  // Global pipes — validate DTOs that use class-validator decorators
+  // NOTE: whitelist/forbidNonWhitelisted removed because they break
+  // snippet-facing endpoints that use @Body() body: any (strips all fields)
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,
       transform: true,
-      forbidNonWhitelisted: true,
     }),
   );
 
