@@ -21,6 +21,13 @@ class EagleSnippet {
   private cartToken: string | null = null;
   private fingerprintHash: string | null = null;
 
+  private mouseBuffer: Array<{x: number; y: number; t: number; type: string}> = [];
+  private mouseFlushInterval: ReturnType<typeof setInterval> | null = null;
+  private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+  private scrollY: number = 0;
+  private viewportWidth: number = 0;
+  private viewportHeight: number = 0;
+
   constructor(config: EagleConfig) {
     this.config = config;
     this.sessionId = this.getOrCreateSessionId();
@@ -40,6 +47,177 @@ class EagleSnippet {
     this.setupCartTracking();
     this.setupCustomerSync();
     this.setupCheckoutAutofill();
+
+    // Start presence heartbeat & mouse tracking
+    this.startHeartbeat();
+    this.startMouseTracking();
+  }
+
+  // ============================
+  // REAL-TIME PRESENCE (Heartbeat)
+  // ============================
+
+  private startHeartbeat() {
+    // Immediate first heartbeat
+    this.sendHeartbeat();
+
+    // Then every 30 seconds
+    this.heartbeatInterval = setInterval(() => this.sendHeartbeat(), 30000);
+
+    // Stop on page unload
+    window.addEventListener('beforeunload', () => {
+      if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+      // Send final "offline" signal via sendBeacon
+      const payload = JSON.stringify({
+        shop: this.config.shop,
+        sessionId: this.sessionId,
+        fingerprintHash: this.fingerprintHash,
+        status: 'offline',
+        timestamp: Date.now(),
+      });
+      navigator.sendBeacon(`${this.config.apiUrl}/api/v1/fingerprint/heartbeat`, new Blob([payload], { type: 'application/json' }));
+    });
+
+    // Detect visibility changes (tab hidden = away)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.sendHeartbeat('away');
+      } else {
+        this.sendHeartbeat('online');
+      }
+    });
+  }
+
+  private async sendHeartbeat(status: string = 'online') {
+    try {
+      await fetch(`${this.config.apiUrl}/api/v1/fingerprint/heartbeat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shop: this.config.shop,
+          sessionId: this.sessionId,
+          fingerprintHash: this.fingerprintHash,
+          eagleToken: this.config.token || localStorage.getItem('eagle_token'),
+          status,
+          timestamp: Date.now(),
+          page: {
+            url: window.location.href,
+            path: window.location.pathname,
+            title: document.title,
+            referrer: document.referrer,
+          },
+          viewport: {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            scrollY: window.scrollY,
+          },
+        }),
+        keepalive: true,
+      });
+    } catch { /* silent */ }
+  }
+
+  // ============================
+  // MOUSE & INTERACTION TRACKING (Clarity-like)
+  // ============================
+
+  private startMouseTracking() {
+    this.viewportWidth = window.innerWidth;
+    this.viewportHeight = window.innerHeight;
+
+    // Track mouse movements (sampled — every 100ms max)
+    let lastMouseTime = 0;
+    document.addEventListener('mousemove', (e) => {
+      const now = Date.now();
+      if (now - lastMouseTime < 100) return; // Throttle to 10fps
+      lastMouseTime = now;
+      this.mouseBuffer.push({
+        x: Math.round((e.clientX / this.viewportWidth) * 10000) / 100, // Normalized %
+        y: Math.round((e.clientY / this.viewportHeight) * 10000) / 100,
+        t: now,
+        type: 'm', // move
+      });
+    });
+
+    // Track clicks
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      this.mouseBuffer.push({
+        x: Math.round((e.clientX / this.viewportWidth) * 10000) / 100,
+        y: Math.round((e.clientY / this.viewportHeight) * 10000) / 100,
+        t: Date.now(),
+        type: 'c', // click
+      });
+
+      // Also track click target info for heatmap
+      this.trackEvent('click', {
+        url: window.location.href,
+        path: window.location.pathname,
+        elementTag: target.tagName,
+        elementText: target.textContent?.slice(0, 50)?.trim(),
+        elementId: target.id || undefined,
+        elementClass: target.className?.toString()?.slice(0, 100) || undefined,
+        x: Math.round((e.clientX / this.viewportWidth) * 100),
+        y: Math.round((e.clientY / this.viewportHeight) * 100),
+      });
+    });
+
+    // Track scroll
+    let lastScrollTime = 0;
+    window.addEventListener('scroll', () => {
+      const now = Date.now();
+      if (now - lastScrollTime < 200) return; // Throttle scroll
+      lastScrollTime = now;
+      this.scrollY = window.scrollY;
+      this.mouseBuffer.push({
+        x: 0,
+        y: Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 10000) / 100,
+        t: now,
+        type: 's', // scroll
+      });
+    });
+
+    // Track window resize
+    window.addEventListener('resize', () => {
+      this.viewportWidth = window.innerWidth;
+      this.viewportHeight = window.innerHeight;
+    });
+
+    // Flush mouse buffer every 5 seconds
+    this.mouseFlushInterval = setInterval(() => this.flushMouseBuffer(), 5000);
+
+    // Flush on page unload
+    window.addEventListener('beforeunload', () => {
+      if (this.mouseFlushInterval) clearInterval(this.mouseFlushInterval);
+      this.flushMouseBuffer(true);
+    });
+  }
+
+  private flushMouseBuffer(useBeacon: boolean = false) {
+    if (this.mouseBuffer.length === 0) return;
+
+    const data = {
+      shop: this.config.shop,
+      sessionId: this.sessionId,
+      fingerprintHash: this.fingerprintHash,
+      viewport: { width: this.viewportWidth, height: this.viewportHeight },
+      pageUrl: window.location.href,
+      events: this.mouseBuffer.splice(0), // Take all and clear
+    };
+
+    if (useBeacon) {
+      navigator.sendBeacon(
+        `${this.config.apiUrl}/api/v1/fingerprint/mouse`,
+        new Blob([JSON.stringify(data)], { type: 'application/json' })
+      );
+    } else {
+      fetch(`${this.config.apiUrl}/api/v1/fingerprint/mouse`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        keepalive: true,
+      }).catch(() => { /* silent */ });
+    }
   }
 
   // ============================

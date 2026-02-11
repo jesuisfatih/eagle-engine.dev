@@ -216,14 +216,11 @@ interface SelectFilterProps {
 
 export function SelectFilter({ value, onChange, options, placeholder }: SelectFilterProps) {
   return (
-    <div className="select-apple">
-      <select value={value} onChange={(e) => onChange(e.target.value)}>
-        {placeholder && <option value="">{placeholder}</option>}
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>{opt.label}</option>
-        ))}
-      </select>
-      <i className="ti ti-chevron-down select-icon" />
-    </div>
+    <select className="select-apple" value={value} onChange={(e) => onChange(e.target.value)}>
+      {placeholder && <option value="">{placeholder}</option>}
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </select>
   );
 }

@@ -810,6 +810,253 @@ export class FingerprintService {
   }
 
   // ============================
+  // REAL-TIME PRESENCE (Heartbeat)
+  // ============================
+
+  // In-memory presence map: sessionId -> presence data
+  private activePresence = new Map<string, {
+    merchantId: string;
+    sessionId: string;
+    fingerprintHash: string;
+    status: string;
+    companyId?: string;
+    companyName?: string;
+    companyUserId?: string;
+    userName?: string;
+    userEmail?: string;
+    page: { url: string; path: string; title: string; referrer?: string };
+    viewport: { width: number; height: number; scrollY: number };
+    platform?: string;
+    lastSeen: number;
+  }>();
+
+  // Mouse data per session: sessionId -> batches
+  private mouseData = new Map<string, Array<{
+    pageUrl: string;
+    viewport: { width: number; height: number };
+    events: Array<{ x: number; y: number; t: number; type: string }>;
+    timestamp: number;
+  }>>();
+
+  async processHeartbeat(merchantId: string, data: {
+    sessionId: string;
+    fingerprintHash: string;
+    eagleToken?: string;
+    status: string;
+    timestamp: number;
+    page: any;
+    viewport: any;
+  }) {
+    const key = `${merchantId}:${data.sessionId}`;
+
+    if (data.status === 'offline') {
+      this.activePresence.delete(key);
+      return;
+    }
+
+    // Resolve identity from fingerprint/token
+    let companyId: string | undefined;
+    let companyName: string | undefined;
+    let companyUserId: string | undefined;
+    let userName: string | undefined;
+    let userEmail: string | undefined;
+    let platform: string | undefined;
+
+    try {
+      if (data.fingerprintHash) {
+        const identity = await this.prisma.visitorIdentity.findFirst({
+          where: { merchantId, fingerprint: { fingerprintHash: data.fingerprintHash } },
+          include: {
+            companyUser: { include: { company: true } },
+            fingerprint: { select: { platform: true } },
+          },
+          orderBy: { updatedAt: 'desc' },
+        });
+
+        if (identity) {
+          companyUserId = identity.companyUserId || undefined;
+          companyId = identity.companyId || identity.companyUser?.companyId || undefined;
+          companyName = identity.companyUser?.company?.name || undefined;
+          userName = identity.companyUser ? `${identity.companyUser.firstName} ${identity.companyUser.lastName}` : undefined;
+          userEmail = identity.email || identity.companyUser?.email || undefined;
+          platform = identity.fingerprint?.platform || undefined;
+        }
+      }
+    } catch { /* continue without identity */ }
+
+    this.activePresence.set(key, {
+      merchantId,
+      sessionId: data.sessionId,
+      fingerprintHash: data.fingerprintHash,
+      status: data.status,
+      companyId,
+      companyName,
+      companyUserId,
+      userName,
+      userEmail,
+      page: data.page || {},
+      viewport: data.viewport || {},
+      platform,
+      lastSeen: Date.now(),
+    });
+
+    // Also update the session's last_activity_at
+    try {
+      await this.prisma.visitorSession.updateMany({
+        where: { merchantId, sessionId: data.sessionId },
+        data: {
+          lastActivityAt: new Date(),
+          exitPage: data.page?.path,
+        },
+      });
+    } catch { /* ignore */ }
+
+    // Cleanup stale entries (older than 60s)
+    const now = Date.now();
+    for (const [k, v] of this.activePresence.entries()) {
+      if (now - v.lastSeen > 60000) {
+        this.activePresence.delete(k);
+      }
+    }
+  }
+
+  // ============================
+  // MOUSE DATA (Clarity-like replay)
+  // ============================
+
+  async processMouseData(merchantId: string, data: {
+    sessionId: string;
+    fingerprintHash: string;
+    viewport: { width: number; height: number };
+    pageUrl: string;
+    events: Array<{ x: number; y: number; t: number; type: string }>;
+  }) {
+    const key = `${merchantId}:${data.sessionId}`;
+
+    if (!this.mouseData.has(key)) {
+      this.mouseData.set(key, []);
+    }
+
+    const batches = this.mouseData.get(key)!;
+    batches.push({
+      pageUrl: data.pageUrl,
+      viewport: data.viewport,
+      events: data.events,
+      timestamp: Date.now(),
+    });
+
+    // Keep only last 5 minutes of data per session (prevent memory bloat)
+    const cutoff = Date.now() - 300000;
+    const filtered = batches.filter(b => b.timestamp > cutoff);
+    this.mouseData.set(key, filtered);
+
+    // Cleanup sessions with no data
+    if (filtered.length === 0) {
+      this.mouseData.delete(key);
+    }
+  }
+
+  // ============================
+  // ACTIVE VISITORS (Admin)
+  // ============================
+
+  async getActiveVisitors(merchantId: string) {
+    const now = Date.now();
+    const active: any[] = [];
+
+    for (const [, presence] of this.activePresence.entries()) {
+      if (presence.merchantId !== merchantId) continue;
+      if (now - presence.lastSeen > 60000) continue; // Stale
+
+      active.push({
+        sessionId: presence.sessionId,
+        status: presence.status,
+        companyId: presence.companyId,
+        companyName: presence.companyName,
+        companyUserId: presence.companyUserId,
+        userName: presence.userName,
+        userEmail: presence.userEmail,
+        platform: presence.platform,
+        currentPage: presence.page,
+        viewport: presence.viewport,
+        isIdentified: !!(presence.companyUserId || presence.userEmail),
+        lastSeen: new Date(presence.lastSeen),
+        secondsAgo: Math.round((now - presence.lastSeen) / 1000),
+      });
+    }
+
+    // Sort: identified users first, then by last seen
+    active.sort((a, b) => {
+      if (a.isIdentified && !b.isIdentified) return -1;
+      if (!a.isIdentified && b.isIdentified) return 1;
+      return b.lastSeen - a.lastSeen;
+    });
+
+    // Aggregate stats
+    const totalOnline = active.filter(a => a.status === 'online').length;
+    const totalAway = active.filter(a => a.status === 'away').length;
+    const identifiedCount = active.filter(a => a.isIdentified).length;
+    const companies = [...new Set(active.filter(a => a.companyId).map(a => a.companyId))];
+
+    return {
+      totalOnline,
+      totalAway,
+      totalVisitors: active.length,
+      identifiedCount,
+      activeCompanyCount: companies.length,
+      visitors: active,
+    };
+  }
+
+  // ============================
+  // SESSION REPLAY (Admin)
+  // ============================
+
+  async getSessionReplay(merchantId: string, sessionId: string) {
+    const key = `${merchantId}:${sessionId}`;
+    const batches = this.mouseData.get(key) || [];
+
+    // Also get session info
+    const session = await this.prisma.visitorSession.findFirst({
+      where: { merchantId, sessionId },
+      include: {
+        companyUser: true,
+        company: true,
+        fingerprint: { select: { platform: true, userAgent: true } },
+      },
+    });
+
+    // Flatten all events and sort by time
+    const allEvents: any[] = [];
+    for (const batch of batches) {
+      for (const event of batch.events) {
+        allEvents.push({
+          ...event,
+          pageUrl: batch.pageUrl,
+          viewport: batch.viewport,
+        });
+      }
+    }
+    allEvents.sort((a, b) => a.t - b.t);
+
+    return {
+      session: session ? {
+        id: session.id,
+        sessionId: session.sessionId,
+        companyName: session.company?.name,
+        userName: session.companyUser ? `${session.companyUser.firstName} ${session.companyUser.lastName}` : 'Anonymous',
+        platform: session.fingerprint?.platform,
+        userAgent: session.fingerprint?.userAgent,
+        startedAt: session.startedAt,
+        pageViews: session.pageViews,
+      } : null,
+      events: allEvents,
+      totalEvents: allEvents.length,
+      durationMs: allEvents.length > 1 ? allEvents[allEvents.length - 1].t - allEvents[0].t : 0,
+    };
+  }
+
+  // ============================
   // Scoring Helpers
   // ============================
 

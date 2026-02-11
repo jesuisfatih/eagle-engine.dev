@@ -49,6 +49,60 @@ export class FingerprintController {
     return { success: true };
   }
 
+  /**
+   * Heartbeat — real-time presence tracking from snippet
+   */
+  @Post('heartbeat')
+  @SkipThrottle()
+  async heartbeat(@Body() body: any) {
+    if (!body.shop || !body.sessionId) {
+      return { success: false };
+    }
+
+    const merchant = await this.prisma.merchant.findUnique({
+      where: { shopDomain: body.shop },
+    });
+    if (!merchant) return { success: false };
+
+    await this.fingerprintService.processHeartbeat(merchant.id, {
+      sessionId: body.sessionId,
+      fingerprintHash: body.fingerprintHash,
+      eagleToken: body.eagleToken,
+      status: body.status || 'online',
+      timestamp: body.timestamp,
+      page: body.page,
+      viewport: body.viewport,
+    });
+
+    return { success: true };
+  }
+
+  /**
+   * Mouse tracking data — Clarity-like session replay data
+   */
+  @Post('mouse')
+  @SkipThrottle()
+  async mouseTracking(@Body() body: any) {
+    if (!body.shop || !body.sessionId || !body.events?.length) {
+      return { success: false };
+    }
+
+    const merchant = await this.prisma.merchant.findUnique({
+      where: { shopDomain: body.shop },
+    });
+    if (!merchant) return { success: false };
+
+    await this.fingerprintService.processMouseData(merchant.id, {
+      sessionId: body.sessionId,
+      fingerprintHash: body.fingerprintHash,
+      viewport: body.viewport,
+      pageUrl: body.pageUrl,
+      events: body.events,
+    });
+
+    return { success: true };
+  }
+
   // ─── Admin Endpoints ───
 
   @Get('dashboard')
@@ -87,5 +141,26 @@ export class FingerprintController {
       fingerprintId,
       limit: limit ? parseInt(limit) : undefined,
     });
+  }
+
+  /**
+   * Get currently active visitors (real-time)
+   */
+  @Get('active-visitors')
+  @UseGuards(JwtAuthGuard)
+  async getActiveVisitors(@CurrentUser('merchantId') merchantId: string) {
+    return this.fingerprintService.getActiveVisitors(merchantId);
+  }
+
+  /**
+   * Get mouse replay data for a session
+   */
+  @Get('replay')
+  @UseGuards(JwtAuthGuard)
+  async getSessionReplay(
+    @CurrentUser('merchantId') merchantId: string,
+    @Query('sessionId') sessionId: string,
+  ) {
+    return this.fingerprintService.getSessionReplay(merchantId, sessionId);
   }
 }
