@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { SkipThrottle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { CollectFingerprintDto } from './dto/collect-fingerprint.dto';
@@ -17,7 +18,8 @@ export class FingerprintController {
    * Public endpoint — called by the storefront snippet
    */
   @Post('collect')
-  @SkipThrottle()
+  @Public()
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 100, ttl: 10000 } })
   async collect(@Body() dto: CollectFingerprintDto, @Req() req: any) {
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
     return this.fingerprintService.collectFingerprint(dto, ip);
@@ -27,7 +29,8 @@ export class FingerprintController {
    * Track event — called by snippet (public, no auth)
    */
   @Post('event')
-  @SkipThrottle()
+  @Public()
+  @Throttle({ short: { limit: 50, ttl: 1000 }, medium: { limit: 200, ttl: 10000 } })
   async trackEvent(@Body() body: any) {
     if (!body.shop || !body.sessionId || !body.eventType) {
       return { success: false, error: 'Missing required fields' };
@@ -53,6 +56,7 @@ export class FingerprintController {
    * Heartbeat — real-time presence tracking from snippet
    */
   @Post('heartbeat')
+  @Public()
   @SkipThrottle()
   async heartbeat(@Body() body: any) {
     if (!body.shop || !body.sessionId) {
@@ -81,6 +85,7 @@ export class FingerprintController {
    * Mouse tracking data — Clarity-like session replay data
    */
   @Post('mouse')
+  @Public()
   @SkipThrottle()
   async mouseTracking(@Body() body: any) {
     if (!body.shop || !body.sessionId || !body.events?.length) {

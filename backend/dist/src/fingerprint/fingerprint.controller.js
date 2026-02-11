@@ -16,6 +16,7 @@ exports.FingerprintController = void 0;
 const common_1 = require("@nestjs/common");
 const throttler_1 = require("@nestjs/throttler");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
+const public_decorator_1 = require("../auth/decorators/public.decorator");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const prisma_service_1 = require("../prisma/prisma.service");
 const collect_fingerprint_dto_1 = require("./dto/collect-fingerprint.dto");
@@ -108,7 +109,8 @@ let FingerprintController = class FingerprintController {
 exports.FingerprintController = FingerprintController;
 __decorate([
     (0, common_1.Post)('collect'),
-    (0, throttler_1.SkipThrottle)(),
+    (0, public_decorator_1.Public)(),
+    (0, throttler_1.Throttle)({ short: { limit: 30, ttl: 1000 }, medium: { limit: 100, ttl: 10000 } }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
@@ -117,7 +119,8 @@ __decorate([
 ], FingerprintController.prototype, "collect", null);
 __decorate([
     (0, common_1.Post)('event'),
-    (0, throttler_1.SkipThrottle)(),
+    (0, public_decorator_1.Public)(),
+    (0, throttler_1.Throttle)({ short: { limit: 50, ttl: 1000 }, medium: { limit: 200, ttl: 10000 } }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -125,6 +128,7 @@ __decorate([
 ], FingerprintController.prototype, "trackEvent", null);
 __decorate([
     (0, common_1.Post)('heartbeat'),
+    (0, public_decorator_1.Public)(),
     (0, throttler_1.SkipThrottle)(),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -133,6 +137,7 @@ __decorate([
 ], FingerprintController.prototype, "heartbeat", null);
 __decorate([
     (0, common_1.Post)('mouse'),
+    (0, public_decorator_1.Public)(),
     (0, throttler_1.SkipThrottle)(),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
