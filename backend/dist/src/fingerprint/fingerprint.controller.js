@@ -32,7 +32,8 @@ let FingerprintController = class FingerprintController {
         const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
         return this.fingerprintService.collectFingerprint(dto, ip);
     }
-    async trackEvent(body) {
+    async trackEvent(req) {
+        const body = req.body;
         if (!body.shop || !body.sessionId || !body.eventType) {
             return { success: false, error: 'Missing required fields' };
         }
@@ -44,7 +45,8 @@ let FingerprintController = class FingerprintController {
         await this.fingerprintService.trackEvent(merchant.id, body.sessionId, body.payload?.fingerprintHash || body.fingerprintHash || '', body.eventType, body.payload || {});
         return { success: true };
     }
-    async heartbeat(body) {
+    async heartbeat(req) {
+        const body = req.body;
         if (!body.shop || !body.sessionId) {
             return { success: false };
         }
@@ -64,20 +66,16 @@ let FingerprintController = class FingerprintController {
         });
         return { success: true };
     }
-    async mouseTracking(body) {
-        console.log(`[rrweb-ctrl] mouseTracking called. body keys: ${Object.keys(body || {}).join(',')}, shop: ${body?.shop}, sessionId: ${body?.sessionId}, eventsLen: ${body?.events?.length}, bodyType: ${typeof body}`);
+    async mouseTracking(req) {
+        const body = req.body;
         if (!body.shop || !body.sessionId || !body.events?.length) {
-            console.log('[rrweb-ctrl] mouseTracking rejected — missing fields');
             return { success: false };
         }
         const merchant = await this.prisma.merchant.findUnique({
             where: { shopDomain: body.shop },
         });
-        if (!merchant) {
-            console.log(`[rrweb-ctrl] mouseTracking — merchant not found for shop: ${body.shop}`);
+        if (!merchant)
             return { success: false };
-        }
-        console.log(`[rrweb-ctrl] mouseTracking — calling processMouseData merchantId=${merchant.id} sessionId=${body.sessionId}`);
         await this.fingerprintService.processMouseData(merchant.id, {
             sessionId: body.sessionId,
             fingerprintHash: body.fingerprintHash,
@@ -126,7 +124,7 @@ __decorate([
     (0, common_1.Post)('event'),
     (0, public_decorator_1.Public)(),
     (0, throttler_1.Throttle)({ short: { limit: 50, ttl: 1000 }, medium: { limit: 200, ttl: 10000 } }),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
@@ -135,7 +133,7 @@ __decorate([
     (0, common_1.Post)('heartbeat'),
     (0, public_decorator_1.Public)(),
     (0, throttler_1.SkipThrottle)(),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
@@ -144,7 +142,7 @@ __decorate([
     (0, common_1.Post)('mouse'),
     (0, public_decorator_1.Public)(),
     (0, throttler_1.SkipThrottle)(),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)

@@ -27,11 +27,13 @@ export class FingerprintController {
 
   /**
    * Track event — called by snippet (public, no auth)
+   * Uses @Req() to bypass global ValidationPipe (forbidNonWhitelisted strips unknown fields)
    */
   @Post('event')
   @Public()
   @Throttle({ short: { limit: 50, ttl: 1000 }, medium: { limit: 200, ttl: 10000 } })
-  async trackEvent(@Body() body: any) {
+  async trackEvent(@Req() req: any) {
+    const body = req.body;
     if (!body.shop || !body.sessionId || !body.eventType) {
       return { success: false, error: 'Missing required fields' };
     }
@@ -54,11 +56,13 @@ export class FingerprintController {
 
   /**
    * Heartbeat — real-time presence tracking from snippet
+   * Uses @Req() to bypass global ValidationPipe
    */
   @Post('heartbeat')
   @Public()
   @SkipThrottle()
-  async heartbeat(@Body() body: any) {
+  async heartbeat(@Req() req: any) {
+    const body = req.body;
     if (!body.shop || !body.sessionId) {
       return { success: false };
     }
@@ -82,28 +86,23 @@ export class FingerprintController {
   }
 
   /**
-   * Mouse tracking data — Clarity-like session replay data
+   * Session recording data — rrweb events for Clarity-grade replay
+   * Uses @Req() to bypass global ValidationPipe (rrweb events have deeply nested dynamic structure)
    */
   @Post('mouse')
   @Public()
   @SkipThrottle()
-  async mouseTracking(@Body() body: any) {
-    console.log(`[rrweb-ctrl] mouseTracking called. body keys: ${Object.keys(body || {}).join(',')}, shop: ${body?.shop}, sessionId: ${body?.sessionId}, eventsLen: ${body?.events?.length}, bodyType: ${typeof body}`);
+  async mouseTracking(@Req() req: any) {
+    const body = req.body;
 
     if (!body.shop || !body.sessionId || !body.events?.length) {
-      console.log('[rrweb-ctrl] mouseTracking rejected — missing fields');
       return { success: false };
     }
 
     const merchant = await this.prisma.merchant.findUnique({
       where: { shopDomain: body.shop },
     });
-    if (!merchant) {
-      console.log(`[rrweb-ctrl] mouseTracking — merchant not found for shop: ${body.shop}`);
-      return { success: false };
-    }
-
-    console.log(`[rrweb-ctrl] mouseTracking — calling processMouseData merchantId=${merchant.id} sessionId=${body.sessionId}`);
+    if (!merchant) return { success: false };
 
     await this.fingerprintService.processMouseData(merchant.id, {
       sessionId: body.sessionId,
@@ -166,7 +165,7 @@ export class FingerprintController {
   }
 
   /**
-   * Get mouse replay data for a session
+   * Get session replay data for rrweb-player
    */
   @Get('replay')
   @UseGuards(JwtAuthGuard)

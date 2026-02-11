@@ -20,17 +20,17 @@ export declare class FingerprintController {
         isBot: boolean;
         error?: undefined;
     }>;
-    trackEvent(body: any): Promise<{
+    trackEvent(req: any): Promise<{
         success: boolean;
         error: string;
     } | {
         success: boolean;
         error?: undefined;
     }>;
-    heartbeat(body: any): Promise<{
+    heartbeat(req: any): Promise<{
         success: boolean;
     }>;
-    mouseTracking(body: any): Promise<{
+    mouseTracking(req: any): Promise<{
         success: boolean;
     }>;
     getDashboard(merchantId: string): Promise<{
