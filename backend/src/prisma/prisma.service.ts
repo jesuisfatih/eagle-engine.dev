@@ -113,6 +113,14 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.prisma.ticketResponse;
   }
 
+  get visitorFingerprint() {
+    return this.prisma.visitorFingerprint;
+  }
+
+  get visitorIdentity() {
+    return this.prisma.visitorIdentity;
+  }
+
   async onModuleInit() {
     try {
       await this.$connect();

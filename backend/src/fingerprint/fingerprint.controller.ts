@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CollectFingerprintDto } from './dto/collect-fingerprint.dto';
 import { FingerprintService } from './fingerprint.service';
@@ -13,6 +14,7 @@ export class FingerprintController {
    * PUBLIC endpoint — called by the Shopify snippet to collect fingerprint data.
    * No auth required (snippet runs on Shopify storefront).
    */
+  @Public()
   @SkipThrottle()
   @Post('collect')
   async collectFingerprint(@Body() dto: CollectFingerprintDto, @Req() req: any) {
