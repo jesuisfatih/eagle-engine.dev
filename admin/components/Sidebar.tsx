@@ -39,6 +39,14 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
+    label: 'Campaigns',
+    items: [
+      { title: 'Segments', icon: 'ti-filter', href: '/segments' },
+      { title: 'Campaigns', icon: 'ti-speakerphone', href: '/campaigns' },
+      { title: 'Data Sync', icon: 'ti-refresh', href: '/data-sync' },
+    ],
+  },
+  {
     label: 'Analytics',
     items: [
       { title: 'Live Visitors', icon: 'ti-antenna-bars-5', href: '/live' },

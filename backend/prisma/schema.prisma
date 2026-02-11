@@ -48,6 +48,8 @@ model Merchant {
   visitorEvents  VisitorEvent[]
   companyIntelligence CompanyIntelligence[]
   trafficAttributions TrafficAttribution[]
+  segments       Segment[]
+  campaigns      Campaign[]
 
   @@index([shopDomain])
   @@index([status])
@@ -290,6 +292,7 @@ model PricingRule {
   targetCompany     Company?     @relation(fields: [targetCompanyId], references: [id], onDelete: Cascade)
   targetCompanyUser CompanyUser? @relation("UserPricingRules", fields: [targetCompanyUserId], references: [id], onDelete: Cascade)
   cartItems         CartItem[]
+  linkedCampaign    Campaign?
 
   @@index([merchantId])
   @@index([targetCompanyId])
@@ -1125,4 +1128,100 @@ model TrafficAttribution {
   @@index([createdAt])
   @@index([hasConversion])
   @@map("traffic_attributions")
+}
+
+// ============================================
+// SEGMENTS (Dynamic Company Groups)
+// ============================================
+
+model Segment {
+  id          String @id @default(uuid())
+  merchantId  String @map("merchant_id")
+  name        String
+  description String?
+  color       String @default("#007aff")
+
+  // Dynamic conditions stored as JSON array
+  // Each condition: { field, operator, value }
+  // Fields: totalRevenue, totalOrders, avgOrderValue, daysSinceLastOrder,
+  //         churnRisk, upsellPotential, engagementScore, segment, buyerIntent,
+  //         totalSessions, totalProductViews, totalAddToCarts, companyStatus
+  // Operators: gt, gte, lt, lte, eq, neq, in, notIn
+  conditions  Json   @default("[]")
+
+  // Match mode: 'all' = AND, 'any' = OR
+  matchMode   String @default("all") @map("match_mode")
+
+  // Cached count of matching companies
+  companyCount Int    @default(0) @map("company_count")
+  lastEvaluatedAt DateTime? @map("last_evaluated_at")
+
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  merchant  Merchant   @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  campaigns Campaign[]
+
+  @@index([merchantId])
+  @@index([isActive])
+  @@map("segments")
+}
+
+// ============================================
+// CAMPAIGNS
+// ============================================
+
+model Campaign {
+  id          String @id @default(uuid())
+  merchantId  String @map("merchant_id")
+  name        String
+  description String?
+
+  // Type
+  type String @default("discount")
+  // discount | free_shipping | announcement | reorder_reminder | custom
+
+  // Status lifecycle
+  status String @default("draft")
+  // draft | scheduled | active | paused | completed | expired
+
+  // Targeting — linked to a segment
+  segmentId      String?  @map("segment_id")
+  targetAllCompanies Boolean @default(false) @map("target_all_companies")
+
+  // Offer details
+  offerType       String?  @map("offer_type")   // percentage | fixed_amount | free_shipping | none
+  offerValue      Decimal? @map("offer_value") @db.Decimal(12, 2)
+  offerMinOrder   Decimal? @map("offer_min_order") @db.Decimal(12, 2)
+  offerMessage    String?  @map("offer_message") @db.Text
+  offerCode       String?  @map("offer_code")
+
+  // Auto-create pricing rule when campaign activates
+  linkedPricingRuleId String? @unique @map("linked_pricing_rule_id")
+
+  // Schedule
+  startDate DateTime? @map("start_date")
+  endDate   DateTime? @map("end_date")
+
+  // Results tracking
+  companiesReached Int     @default(0) @map("companies_reached")
+  companiesConverted Int   @default(0) @map("companies_converted")
+  totalRevenue     Decimal @default(0) @map("total_revenue") @db.Decimal(12, 2)
+  conversionRate   Decimal @default(0) @map("conversion_rate") @db.Decimal(5, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  merchant     Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  segment      Segment?      @relation(fields: [segmentId], references: [id], onDelete: SetNull)
+  linkedRule   PricingRule?   @relation(fields: [linkedPricingRuleId], references: [id], onDelete: SetNull)
+
+  @@index([merchantId])
+  @@index([segmentId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("campaigns")
 }
