@@ -45,4 +45,10 @@ export class CollectFingerprintDto {
   @IsOptional() @IsString() email?: string;
 
   @IsOptional() @IsNumber() signalCount?: number;
+
+  // ThumbmarkJS cross-session fingerprint hash
+  @IsOptional() @IsString() thumbmarkHash?: string;
+
+  // Traffic source (sent as nested object from snippet)
+  @IsOptional() trafficSource?: any;
 }

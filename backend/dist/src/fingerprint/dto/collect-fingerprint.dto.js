@@ -44,6 +44,8 @@ class CollectFingerprintDto {
     shopifyCustomerId;
     email;
     signalCount;
+    thumbmarkHash;
+    trafficSource;
 }
 exports.CollectFingerprintDto = CollectFingerprintDto;
 __decorate([
@@ -204,4 +206,13 @@ __decorate([
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], CollectFingerprintDto.prototype, "signalCount", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CollectFingerprintDto.prototype, "thumbmarkHash", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
+], CollectFingerprintDto.prototype, "trafficSource", void 0);
 //# sourceMappingURL=collect-fingerprint.dto.js.map

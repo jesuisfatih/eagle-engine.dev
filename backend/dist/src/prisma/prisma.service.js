@@ -40,6 +40,9 @@ let PrismaService = PrismaService_1 = class PrismaService {
     $executeRaw(query, ...values) {
         return this.prisma.$executeRaw(query, ...values);
     }
+    $queryRawUnsafe(query, ...values) {
+        return this.prisma.$queryRawUnsafe(query, ...values);
+    }
     $transaction(fn) {
         return this.prisma.$transaction(fn);
     }
@@ -114,6 +117,9 @@ let PrismaService = PrismaService_1 = class PrismaService {
     }
     get companyIntelligence() {
         return this.prisma.companyIntelligence;
+    }
+    get trafficAttribution() {
+        return this.prisma.trafficAttribution;
     }
     async onModuleInit() {
         try {

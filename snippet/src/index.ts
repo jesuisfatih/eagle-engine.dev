@@ -1,6 +1,7 @@
 /**
  * Eagle B2B Commerce Engine - Shopify Snippet
- * Browser fingerprinting, rrweb session replay, cart tracking, and customer identity resolution
+ * Browser fingerprinting, rrweb session replay, cart tracking,
+ * customer identity resolution, and multi-touch traffic attribution
  */
 
 import { record } from '@rrweb/record';
@@ -10,6 +11,25 @@ interface EagleConfig {
   apiUrl: string;
   shop: string;
   token?: string;
+}
+
+interface TrafficSource {
+  // UTM parameters
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  utmContent: string | null;
+  utmTerm: string | null;
+  // Ad platform click IDs
+  gclid: string | null;   // Google Ads
+  fbclid: string | null;  // Facebook/Meta
+  ttclid: string | null;  // TikTok
+  msclkid: string | null; // Microsoft/Bing Ads
+  // Derived
+  referrer: string;
+  referrerDomain: string | null;
+  channel: string;        // google_organic, google_ads, facebook_ads, direct, email, etc.
+  landingPage: string;
 }
 
 declare global {
@@ -26,6 +46,8 @@ class EagleSnippet {
   private customerId: string | null = null;
   private cartToken: string | null = null;
   private fingerprintHash: string | null = null;
+  private thumbmarkHash: string | null = null;
+  private trafficSource: TrafficSource | null = null;
 
   private rrwebEvents: eventWithTime[] = [];
   private rrwebFlushInterval: ReturnType<typeof setInterval> | null = null;
@@ -43,8 +65,14 @@ class EagleSnippet {
     this.loadToken();
     this.detectCustomer();
 
-    // Collect fingerprint first (async, non-blocking)
+    // Capture traffic source BEFORE anything else (UTM params may be in URL)
+    this.trafficSource = this.captureTrafficSource();
+
+    // Collect fingerprint (with ThumbmarkJS) - async, non-blocking
     this.collectFingerprint();
+
+    // Send traffic attribution to backend
+    this.sendTrafficAttribution();
 
     this.trackPageView();
     this.setupEventListeners();
@@ -277,8 +305,14 @@ class EagleSnippet {
 
   private async collectFingerprint() {
     try {
-      const fp = await this.generateFingerprint();
+      // Collect ThumbmarkJS fingerprint in parallel with our own
+      const [fp, thumbmark] = await Promise.all([
+        this.generateFingerprint(),
+        import('@thumbmarkjs/thumbmarkjs').then(m => m.getFingerprint()).catch(() => null),
+      ]);
+
       this.fingerprintHash = fp.hash;
+      this.thumbmarkHash = typeof thumbmark === 'string' ? thumbmark : null;
 
       // Get identity signals
       const email = this.detectEmail();
@@ -287,12 +321,15 @@ class EagleSnippet {
       const payload = {
         shop: this.config.shop,
         fingerprintHash: fp.hash,
+        thumbmarkHash: this.thumbmarkHash || undefined,
         sessionId: this.sessionId,
         eagleToken: this.config.token || undefined,
         email: email || undefined,
         shopifyCustomerId: shopifyCustomerId || undefined,
         ...fp.signals,
         signalCount: fp.signalCount,
+        // Include traffic source in fingerprint collect
+        trafficSource: this.trafficSource || undefined,
       };
 
       const response = await fetch(`${this.config.apiUrl}/api/v1/fingerprint/collect`, {
@@ -759,6 +796,10 @@ class EagleSnippet {
       url: window.location.href,
       path: window.location.pathname,
       referrer: document.referrer,
+      trafficChannel: this.trafficSource?.channel || 'unknown',
+      utmSource: this.trafficSource?.utmSource || undefined,
+      utmMedium: this.trafficSource?.utmMedium || undefined,
+      utmCampaign: this.trafficSource?.utmCampaign || undefined,
     });
   }
 
@@ -902,6 +943,167 @@ class EagleSnippet {
     const observer = new MutationObserver(() => fillCheckoutForm());
     observer.observe(document.body, { childList: true, subtree: true });
     setTimeout(() => observer.disconnect(), 30000);
+  }
+
+  // ============================
+  // TRAFFIC SOURCE & ATTRIBUTION
+  // ============================
+
+  private captureTrafficSource(): TrafficSource {
+    const params = new URLSearchParams(window.location.search);
+
+    // Parse UTM parameters
+    const utmSource = params.get('utm_source');
+    const utmMedium = params.get('utm_medium');
+    const utmCampaign = params.get('utm_campaign');
+    const utmContent = params.get('utm_content');
+    const utmTerm = params.get('utm_term');
+
+    // Parse ad platform click IDs
+    const gclid = params.get('gclid');
+    const fbclid = params.get('fbclid');
+    const ttclid = params.get('ttclid');
+    const msclkid = params.get('msclkid');
+
+    // Parse referrer
+    const referrer = document.referrer || '';
+    let referrerDomain: string | null = null;
+    try {
+      if (referrer) referrerDomain = new URL(referrer).hostname.replace('www.', '');
+    } catch { }
+
+    // Classify the traffic channel
+    const channel = this.classifyChannel({
+      utmSource, utmMedium, gclid, fbclid, ttclid, msclkid, referrerDomain,
+    });
+
+    const source: TrafficSource = {
+      utmSource, utmMedium, utmCampaign, utmContent, utmTerm,
+      gclid, fbclid, ttclid, msclkid,
+      referrer, referrerDomain, channel,
+      landingPage: window.location.pathname + window.location.search,
+    };
+
+    // Save first-touch attribution (persisted across sessions via localStorage)
+    const firstTouchKey = 'eagle_first_touch';
+    if (!localStorage.getItem(firstTouchKey)) {
+      localStorage.setItem(firstTouchKey, JSON.stringify({
+        ...source,
+        timestamp: Date.now(),
+      }));
+    }
+
+    // Save current touch for this session
+    sessionStorage.setItem('eagle_current_touch', JSON.stringify(source));
+
+    return source;
+  }
+
+  private classifyChannel(params: {
+    utmSource: string | null; utmMedium: string | null;
+    gclid: string | null; fbclid: string | null;
+    ttclid: string | null; msclkid: string | null;
+    referrerDomain: string | null;
+  }): string {
+    const { utmSource, utmMedium, gclid, fbclid, ttclid, msclkid, referrerDomain } = params;
+    const src = (utmSource || '').toLowerCase();
+    const med = (utmMedium || '').toLowerCase();
+    const ref = (referrerDomain || '').toLowerCase();
+
+    // 1. Ad platform click IDs (highest priority — definitive)
+    if (gclid) return 'google_ads';
+    if (fbclid) return 'facebook_ads';
+    if (ttclid) return 'tiktok_ads';
+    if (msclkid) return 'bing_ads';
+
+    // 2. UTM medium = paid variations
+    if (med === 'cpc' || med === 'ppc' || med === 'paid' || med === 'paidsearch') {
+      if (src.includes('google')) return 'google_ads';
+      if (src.includes('facebook') || src.includes('fb') || src.includes('meta')) return 'facebook_ads';
+      if (src.includes('instagram') || src.includes('ig')) return 'instagram_ads';
+      if (src.includes('tiktok')) return 'tiktok_ads';
+      if (src.includes('bing') || src.includes('microsoft')) return 'bing_ads';
+      return 'paid_other';
+    }
+
+    // 3. UTM medium = social
+    if (med === 'social' || med === 'social-media') {
+      if (src.includes('facebook') || src.includes('fb')) return 'facebook_organic';
+      if (src.includes('instagram') || src.includes('ig')) return 'instagram_organic';
+      if (src.includes('tiktok')) return 'tiktok_organic';
+      if (src.includes('twitter') || src.includes('x.com')) return 'twitter_organic';
+      if (src.includes('linkedin')) return 'linkedin_organic';
+      return 'social_other';
+    }
+
+    // 4. UTM medium = email
+    if (med === 'email' || med === 'e-mail' || src.includes('email') || src.includes('mailchimp') || src.includes('klaviyo')) {
+      return 'email';
+    }
+
+    // 5. UTM medium = referral
+    if (med === 'referral') return 'referral';
+
+    // 6. Referrer-based classification (no UTM)
+    if (ref) {
+      // Search engines
+      if (ref.includes('google.')) return 'google_organic';
+      if (ref.includes('bing.') || ref.includes('msn.')) return 'bing_organic';
+      if (ref.includes('yahoo.')) return 'yahoo_organic';
+      if (ref.includes('duckduckgo.')) return 'duckduckgo_organic';
+      if (ref.includes('yandex.')) return 'yandex_organic';
+      if (ref.includes('baidu.')) return 'baidu_organic';
+
+      // Social platforms
+      if (ref.includes('facebook.') || ref.includes('fb.') || ref.includes('m.facebook.')) return 'facebook_organic';
+      if (ref.includes('instagram.')) return 'instagram_organic';
+      if (ref.includes('tiktok.')) return 'tiktok_organic';
+      if (ref.includes('twitter.') || ref.includes('t.co') || ref.includes('x.com')) return 'twitter_organic';
+      if (ref.includes('linkedin.')) return 'linkedin_organic';
+      if (ref.includes('pinterest.')) return 'pinterest_organic';
+      if (ref.includes('youtube.') || ref.includes('youtu.be')) return 'youtube_organic';
+      if (ref.includes('reddit.')) return 'reddit';
+
+      // Same domain = internal (shouldn't normally be first touch)
+      if (ref.includes(window.location.hostname)) return 'internal';
+
+      // Any other referrer
+      return 'referral';
+    }
+
+    // 7. No referrer, no UTM = direct
+    return 'direct';
+  }
+
+  private async sendTrafficAttribution() {
+    if (!this.trafficSource) return;
+
+    // Get first-touch data
+    let firstTouch: TrafficSource | null = null;
+    try {
+      const raw = localStorage.getItem('eagle_first_touch');
+      if (raw) firstTouch = JSON.parse(raw);
+    } catch { }
+
+    const payload = {
+      shop: this.config.shop,
+      sessionId: this.sessionId,
+      fingerprintHash: this.fingerprintHash,
+      // Current session touch
+      currentTouch: this.trafficSource,
+      // First ever touch for this device
+      firstTouch: firstTouch || this.trafficSource,
+    };
+
+    try {
+      await fetch(`${this.config.apiUrl}/api/v1/fingerprint/attribution`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      console.warn('🦅 Eagle: Traffic attribution failed', err);
+    }
   }
 }
 

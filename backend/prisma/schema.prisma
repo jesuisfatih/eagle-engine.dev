@@ -47,6 +47,7 @@ model Merchant {
   visitorSessions VisitorSession[]
   visitorEvents  VisitorEvent[]
   companyIntelligence CompanyIntelligence[]
+  trafficAttributions TrafficAttribution[]
 
   @@index([shopDomain])
   @@index([status])
@@ -538,19 +539,24 @@ model VisitorFingerprint {
   signalCount Int   @default(0) @map("signal_count")
   confidence  Float @default(0)
 
+  // ThumbmarkJS hash (90% accuracy cross-session fingerprint)
+  thumbmarkHash String? @map("thumbmark_hash")
+
   firstSeenAt DateTime @default(now()) @map("first_seen_at")
   lastSeenAt  DateTime @default(now()) @map("last_seen_at")
   visitCount  Int      @default(1) @map("visit_count")
 
   // Relations
-  merchant   Merchant          @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  identities VisitorIdentity[]
-  sessions   VisitorSession[]
-  events     VisitorEvent[]
+  merchant      Merchant              @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  identities    VisitorIdentity[]
+  sessions      VisitorSession[]
+  events        VisitorEvent[]
+  attributions  TrafficAttribution[]
 
   @@unique([merchantId, fingerprintHash])
   @@index([merchantId])
   @@index([fingerprintHash])
+  @@index([thumbmarkHash])
   @@index([canvasHash])
   @@index([lastSeenAt])
   @@index([isBot])
@@ -635,6 +641,19 @@ model VisitorSession {
   landingPage     String? @map("landing_page")
   exitPage        String? @map("exit_page")
 
+  // Traffic source / UTM attribution
+  utmSource       String? @map("utm_source")
+  utmMedium       String? @map("utm_medium")
+  utmCampaign     String? @map("utm_campaign")
+  utmContent      String? @map("utm_content")
+  utmTerm         String? @map("utm_term")
+  gclid           String? // Google Ads click ID
+  fbclid          String? // Facebook/Meta click ID
+  ttclid          String? // TikTok click ID
+  msclkid         String? // Microsoft/Bing Ads click ID
+  trafficChannel  String? @map("traffic_channel") // google_ads, facebook_ads, google_organic, direct, email, etc.
+  referrerDomain  String? @map("referrer_domain")
+
   // Session metrics
   pageViews       Int     @default(0) @map("page_views")
   productViews    Int     @default(0) @map("product_views")
@@ -666,6 +685,9 @@ model VisitorSession {
   @@index([companyUserId])
   @@index([companyId])
   @@index([startedAt])
+  @@index([trafficChannel])
+  @@index([utmSource])
+  @@index([utmCampaign])
   @@map("visitor_sessions")
 }
 
@@ -1046,4 +1068,61 @@ model TicketResponse {
 
   @@index([ticketId])
   @@map("ticket_responses")
+}
+
+// ============================================
+// TRAFFIC ATTRIBUTION (Multi-Touch Attribution)
+// ============================================
+
+model TrafficAttribution {
+  id              String  @id @default(uuid())
+  merchantId      String  @map("merchant_id")
+  fingerprintId   String  @map("fingerprint_id")
+  sessionId       String  @map("session_id")
+
+  // Touch metadata
+  touchNumber     Int     @map("touch_number")  // 1, 2, 3... sequential touch
+  isFirstTouch    Boolean @default(false) @map("is_first_touch")
+  isLastTouch     Boolean @default(false) @map("is_last_touch")
+
+  // Traffic Source
+  channel         String  // google_ads, facebook_ads, google_organic, direct, email, etc.
+  utmSource       String? @map("utm_source")
+  utmMedium       String? @map("utm_medium")
+  utmCampaign     String? @map("utm_campaign")
+  utmContent      String? @map("utm_content")
+  utmTerm         String? @map("utm_term")
+
+  // Ad click IDs
+  gclid           String?
+  fbclid          String?
+  ttclid          String?
+  msclkid         String?
+
+  // Context
+  referrer        String?
+  referrerDomain  String? @map("referrer_domain")
+  landingPage     String? @map("landing_page")
+
+  // Conversion tracking
+  hasConversion     Boolean @default(false) @map("has_conversion")
+  conversionType    String? @map("conversion_type") // add_to_cart, checkout, purchase
+  conversionValue   Decimal? @map("conversion_value") @db.Decimal(12, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  merchant    Merchant           @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  fingerprint VisitorFingerprint @relation(fields: [fingerprintId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@index([fingerprintId])
+  @@index([sessionId])
+  @@index([channel])
+  @@index([utmSource])
+  @@index([utmCampaign])
+  @@index([isFirstTouch])
+  @@index([createdAt])
+  @@index([hasConversion])
+  @@map("traffic_attributions")
 }

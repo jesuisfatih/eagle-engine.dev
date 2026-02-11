@@ -10,6 +10,7 @@ export declare class PrismaService implements OnModuleInit, OnModuleDestroy {
     $disconnect(): Promise<void>;
     $queryRaw(query: TemplateStringsArray, ...values: any[]): import("@prisma/client").Prisma.PrismaPromise<unknown>;
     $executeRaw(query: TemplateStringsArray, ...values: any[]): import("@prisma/client").Prisma.PrismaPromise<number>;
+    $queryRawUnsafe(query: string, ...values: any[]): import("@prisma/client").Prisma.PrismaPromise<unknown>;
     $transaction(fn: any): Promise<any[]>;
     get merchant(): import("@prisma/client").Prisma.MerchantDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     get shopifyCustomer(): import("@prisma/client").Prisma.ShopifyCustomerDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
@@ -35,6 +36,7 @@ export declare class PrismaService implements OnModuleInit, OnModuleDestroy {
     get visitorSession(): import("@prisma/client").Prisma.VisitorSessionDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     get visitorEvent(): import("@prisma/client").Prisma.VisitorEventDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     get companyIntelligence(): import("@prisma/client").Prisma.CompanyIntelligenceDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    get trafficAttribution(): import("@prisma/client").Prisma.TrafficAttributionDelegate<import("@prisma/client/runtime/client").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
     onModuleInit(): Promise<void>;
     onModuleDestroy(): Promise<void>;
     cleanDatabase(): Promise<any>;

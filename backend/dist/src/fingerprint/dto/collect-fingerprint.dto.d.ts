@@ -31,4 +31,6 @@ export declare class CollectFingerprintDto {
     shopifyCustomerId?: string;
     email?: string;
     signalCount?: number;
+    thumbmarkHash?: string;
+    trafficSource?: any;
 }

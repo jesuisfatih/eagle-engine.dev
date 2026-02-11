@@ -33,6 +33,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.prisma.$executeRaw(query, ...values);
   }
 
+  $queryRawUnsafe(query: string, ...values: any[]) {
+    return this.prisma.$queryRawUnsafe(query, ...values);
+  }
+
   $transaction(fn: any) {
     return this.prisma.$transaction(fn);
   }
@@ -131,6 +135,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
   get companyIntelligence() {
     return this.prisma.companyIntelligence;
+  }
+
+  get trafficAttribution() {
+    return this.prisma.trafficAttribution;
   }
 
   async onModuleInit() {

@@ -42,6 +42,7 @@ const menuGroups: MenuGroup[] = [
     label: 'Analytics',
     items: [
       { title: 'Live Visitors', icon: 'ti-antenna-bars-5', href: '/live' },
+      { title: 'Marketing', icon: 'ti-ad-2', href: '/marketing' },
       { title: 'Analytics', icon: 'ti-chart-line', href: '/analytics' },
       { title: 'Fingerprint Intel', icon: 'ti-fingerprint', href: '/fingerprint' },
       { title: 'Reports', icon: 'ti-file-analytics', href: '/reports' },

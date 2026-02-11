@@ -223,6 +223,17 @@ export declare class FingerprintService {
         fingerprintId: string;
         landingPage: string | null;
         exitPage: string | null;
+        utmSource: string | null;
+        utmMedium: string | null;
+        utmCampaign: string | null;
+        utmContent: string | null;
+        utmTerm: string | null;
+        gclid: string | null;
+        fbclid: string | null;
+        ttclid: string | null;
+        msclkid: string | null;
+        trafficChannel: string | null;
+        referrerDomain: string | null;
         pageViews: number;
         productViews: number;
         addToCarts: number;
@@ -275,6 +286,57 @@ export declare class FingerprintService {
         events: any[];
         totalEvents: number;
         durationMs: number;
+    }>;
+    processAttribution(merchantId: string, data: any): Promise<void>;
+    getTrafficAnalytics(merchantId: string, filters: {
+        startDate?: Date;
+        endDate?: Date;
+        channel?: string;
+        utmSource?: string;
+        utmCampaign?: string;
+    }): Promise<{
+        summary: {
+            totalSessions: number;
+            uniqueVisitors: number;
+            avgDuration: number;
+            avgPagesPerSession: number;
+            totalPageViews: number;
+            totalProductViews: number;
+            totalAddToCarts: number;
+        };
+        channelBreakdown: {
+            channel: string;
+            sessions: number;
+            avgDuration: number;
+            avgPages: number;
+            addToCarts: number;
+            productViews: number;
+        }[];
+        campaignPerformance: {
+            campaign: string | null;
+            source: string | null;
+            medium: string | null;
+            channel: string | null;
+            sessions: number;
+            avgDuration: number;
+            avgPages: number;
+            addToCarts: number;
+            productViews: number;
+        }[];
+        funnelByChannel: unknown;
+        topLandingPages: {
+            page: string | null;
+            sessions: number;
+            avgDuration: number;
+            avgPages: number;
+            addToCarts: number;
+        }[];
+        attributionPaths: unknown;
+        referrerDomains: {
+            domain: string | null;
+            sessions: number;
+        }[];
+        dailyTrend: unknown;
     }>;
     private calculateBotScore;
     private calculateConfidence;

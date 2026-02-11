@@ -17,6 +17,7 @@
   "dependencies": {
     "@rrweb/record": "^2.0.0-alpha.18",
     "@rrweb/types": "^2.0.0-alpha.18",
+    "@thumbmarkjs/thumbmarkjs": "^1.7.1",
     "rrweb": "^2.0.0-alpha.18"
   }
 }

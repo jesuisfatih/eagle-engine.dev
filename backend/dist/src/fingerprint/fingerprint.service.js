@@ -73,6 +73,7 @@ let FingerprintService = FingerprintService_1 = class FingerprintService {
                 botScore,
                 signalCount: dto.signalCount || 0,
                 confidence: this.calculateConfidence(dto),
+                thumbmarkHash: dto.thumbmarkHash || null,
             },
             update: {
                 lastSeenAt: new Date(),
@@ -82,6 +83,7 @@ let FingerprintService = FingerprintService_1 = class FingerprintService {
                 ...(dto.gpuRenderer && { gpuRenderer: dto.gpuRenderer }),
                 ...(dto.connectionType && { connectionType: dto.connectionType }),
                 ...(dto.signalCount && { signalCount: dto.signalCount }),
+                ...(dto.thumbmarkHash && { thumbmarkHash: dto.thumbmarkHash }),
             },
         });
         const identity = await this.resolveIdentity(merchantId, fingerprint.id, dto, ipAddress);
@@ -189,6 +191,7 @@ let FingerprintService = FingerprintService_1 = class FingerprintService {
     }
     async upsertSession(merchantId, fingerprintId, dto, ipAddress, identity, isBot = false) {
         try {
+            const ts = dto.trafficSource;
             await this.prisma.visitorSession.upsert({
                 where: {
                     merchantId_sessionId: { merchantId, sessionId: dto.sessionId },
@@ -206,6 +209,19 @@ let FingerprintService = FingerprintService_1 = class FingerprintService {
                     timezone: dto.timezone,
                     isLoggedIn: !!dto.eagleToken || !!dto.email,
                     isBot,
+                    utmSource: ts?.utmSource || null,
+                    utmMedium: ts?.utmMedium || null,
+                    utmCampaign: ts?.utmCampaign || null,
+                    utmContent: ts?.utmContent || null,
+                    utmTerm: ts?.utmTerm || null,
+                    gclid: ts?.gclid || null,
+                    fbclid: ts?.fbclid || null,
+                    ttclid: ts?.ttclid || null,
+                    msclkid: ts?.msclkid || null,
+                    trafficChannel: ts?.channel || null,
+                    referrerDomain: ts?.referrerDomain || null,
+                    referrer: ts?.referrer || null,
+                    landingPage: ts?.landingPage || null,
                 },
                 update: {
                     lastActivityAt: new Date(),
@@ -861,6 +877,230 @@ let FingerprintService = FingerprintService_1 = class FingerprintService {
             events: allEvents,
             totalEvents: allEvents.length,
             durationMs,
+        };
+    }
+    async processAttribution(merchantId, data) {
+        try {
+            const currentTouch = data.currentTouch;
+            const firstTouch = data.firstTouch;
+            if (!currentTouch?.channel)
+                return;
+            const fingerprintHash = data.fingerprintHash;
+            if (!fingerprintHash)
+                return;
+            const fingerprint = await this.prisma.visitorFingerprint.findFirst({
+                where: { merchantId, fingerprintHash },
+            });
+            if (!fingerprint)
+                return;
+            const existingTouches = await this.prisma.trafficAttribution.count({
+                where: { merchantId, fingerprintId: fingerprint.id },
+            });
+            const touchNumber = existingTouches + 1;
+            const isFirstTouch = touchNumber === 1;
+            if (existingTouches > 0) {
+                await this.prisma.trafficAttribution.updateMany({
+                    where: { merchantId, fingerprintId: fingerprint.id, isLastTouch: true },
+                    data: { isLastTouch: false },
+                });
+            }
+            await this.prisma.trafficAttribution.create({
+                data: {
+                    merchantId,
+                    fingerprintId: fingerprint.id,
+                    sessionId: data.sessionId,
+                    touchNumber,
+                    isFirstTouch,
+                    isLastTouch: true,
+                    channel: currentTouch.channel,
+                    utmSource: currentTouch.utmSource || null,
+                    utmMedium: currentTouch.utmMedium || null,
+                    utmCampaign: currentTouch.utmCampaign || null,
+                    utmContent: currentTouch.utmContent || null,
+                    utmTerm: currentTouch.utmTerm || null,
+                    gclid: currentTouch.gclid || null,
+                    fbclid: currentTouch.fbclid || null,
+                    ttclid: currentTouch.ttclid || null,
+                    msclkid: currentTouch.msclkid || null,
+                    referrer: currentTouch.referrer || null,
+                    referrerDomain: currentTouch.referrerDomain || null,
+                    landingPage: currentTouch.landingPage || null,
+                },
+            });
+            this.logger.debug(`Attribution recorded: ${currentTouch.channel} (touch #${touchNumber}) for ${fingerprintHash}`);
+        }
+        catch (error) {
+            this.logger.debug(`Attribution error: ${error}`);
+        }
+    }
+    async getTrafficAnalytics(merchantId, filters) {
+        const where = { merchantId };
+        if (filters.startDate || filters.endDate) {
+            where.createdAt = {};
+            if (filters.startDate)
+                where.createdAt.gte = filters.startDate;
+            if (filters.endDate)
+                where.createdAt.lte = filters.endDate;
+        }
+        const sessionWhere = { merchantId, isBot: false };
+        if (filters.startDate || filters.endDate) {
+            sessionWhere.startedAt = {};
+            if (filters.startDate)
+                sessionWhere.startedAt.gte = filters.startDate;
+            if (filters.endDate)
+                sessionWhere.startedAt.lte = filters.endDate;
+        }
+        if (filters.channel)
+            sessionWhere.trafficChannel = filters.channel;
+        if (filters.utmSource)
+            sessionWhere.utmSource = filters.utmSource;
+        if (filters.utmCampaign)
+            sessionWhere.utmCampaign = filters.utmCampaign;
+        const channelBreakdown = await this.prisma.visitorSession.groupBy({
+            by: ['trafficChannel'],
+            where: sessionWhere,
+            _count: { id: true },
+            _avg: { durationSeconds: true, pageViews: true },
+            _sum: { addToCarts: true, productViews: true },
+            orderBy: { _count: { id: 'desc' } },
+        });
+        const campaignPerformance = await this.prisma.visitorSession.groupBy({
+            by: ['utmCampaign', 'utmSource', 'utmMedium', 'trafficChannel'],
+            where: { ...sessionWhere, utmCampaign: { not: null } },
+            _count: { id: true },
+            _avg: { durationSeconds: true, pageViews: true },
+            _sum: { addToCarts: true, productViews: true },
+            orderBy: { _count: { id: 'desc' } },
+            take: 50,
+        });
+        const totalSessions = await this.prisma.visitorSession.count({ where: sessionWhere });
+        const uniqueFingerprints = await this.prisma.visitorSession.groupBy({
+            by: ['fingerprintId'],
+            where: sessionWhere,
+        });
+        const avgMetrics = await this.prisma.visitorSession.aggregate({
+            where: sessionWhere,
+            _avg: { durationSeconds: true, pageViews: true, productViews: true },
+            _sum: { addToCarts: true, productViews: true, pageViews: true },
+        });
+        const funnelByChannel = await this.prisma.$queryRawUnsafe(`
+      SELECT
+        traffic_channel as channel,
+        COUNT(DISTINCT id) as sessions,
+        COUNT(DISTINCT fingerprint_id) as unique_visitors,
+        SUM(page_views) as total_page_views,
+        SUM(product_views) as total_product_views,
+        SUM(add_to_carts) as total_add_to_carts,
+        AVG(duration_seconds) as avg_duration,
+        AVG(page_views) as avg_pages_per_session
+      FROM visitor_sessions
+      WHERE merchant_id = $1
+        AND is_bot = false
+        ${filters.startDate ? `AND started_at >= $2` : ''}
+        ${filters.endDate ? `AND started_at <= $3` : ''}
+      GROUP BY traffic_channel
+      ORDER BY sessions DESC
+    `, merchantId, ...(filters.startDate ? [filters.startDate] : []), ...(filters.endDate ? [filters.endDate] : []));
+        const topLandingPages = await this.prisma.visitorSession.groupBy({
+            by: ['landingPage'],
+            where: { ...sessionWhere, landingPage: { not: null } },
+            _count: { id: true },
+            _avg: { durationSeconds: true, pageViews: true },
+            _sum: { addToCarts: true },
+            orderBy: { _count: { id: 'desc' } },
+            take: 20,
+        });
+        const attributionPaths = await this.prisma.$queryRawUnsafe(`
+      SELECT
+        fingerprint_id,
+        json_agg(
+          json_build_object(
+            'touchNumber', touch_number,
+            'channel', channel,
+            'utmSource', utm_source,
+            'utmCampaign', utm_campaign,
+            'landingPage', landing_page,
+            'createdAt', created_at
+          ) ORDER BY touch_number
+        ) as journey,
+        COUNT(*) as touch_count,
+        bool_or(has_conversion) as has_conversion
+      FROM traffic_attributions
+      WHERE merchant_id = $1
+        ${filters.startDate ? `AND created_at >= $2` : ''}
+        ${filters.endDate ? `AND created_at <= $3` : ''}
+      GROUP BY fingerprint_id
+      HAVING COUNT(*) > 1
+      ORDER BY touch_count DESC
+      LIMIT 50
+    `, merchantId, ...(filters.startDate ? [filters.startDate] : []), ...(filters.endDate ? [filters.endDate] : []));
+        const referrerDomains = await this.prisma.visitorSession.groupBy({
+            by: ['referrerDomain'],
+            where: { ...sessionWhere, referrerDomain: { not: null } },
+            _count: { id: true },
+            orderBy: { _count: { id: 'desc' } },
+            take: 20,
+        });
+        const dailyTrend = await this.prisma.$queryRawUnsafe(`
+      SELECT
+        DATE(started_at) as date,
+        traffic_channel as channel,
+        COUNT(*) as sessions,
+        COUNT(DISTINCT fingerprint_id) as unique_visitors,
+        SUM(page_views) as page_views,
+        SUM(add_to_carts) as add_to_carts
+      FROM visitor_sessions
+      WHERE merchant_id = $1
+        AND is_bot = false
+        ${filters.startDate ? `AND started_at >= $2` : ''}
+        ${filters.endDate ? `AND started_at <= $3` : ''}
+      GROUP BY DATE(started_at), traffic_channel
+      ORDER BY date DESC
+      LIMIT 500
+    `, merchantId, ...(filters.startDate ? [filters.startDate] : []), ...(filters.endDate ? [filters.endDate] : []));
+        return {
+            summary: {
+                totalSessions,
+                uniqueVisitors: uniqueFingerprints.length,
+                avgDuration: Math.round(avgMetrics._avg?.durationSeconds || 0),
+                avgPagesPerSession: Math.round((avgMetrics._avg?.pageViews || 0) * 10) / 10,
+                totalPageViews: avgMetrics._sum?.pageViews || 0,
+                totalProductViews: avgMetrics._sum?.productViews || 0,
+                totalAddToCarts: avgMetrics._sum?.addToCarts || 0,
+            },
+            channelBreakdown: channelBreakdown.map(c => ({
+                channel: c.trafficChannel || 'unknown',
+                sessions: c._count.id,
+                avgDuration: Math.round(c._avg?.durationSeconds || 0),
+                avgPages: Math.round((c._avg?.pageViews || 0) * 10) / 10,
+                addToCarts: c._sum?.addToCarts || 0,
+                productViews: c._sum?.productViews || 0,
+            })),
+            campaignPerformance: campaignPerformance.map(c => ({
+                campaign: c.utmCampaign,
+                source: c.utmSource,
+                medium: c.utmMedium,
+                channel: c.trafficChannel,
+                sessions: c._count.id,
+                avgDuration: Math.round(c._avg?.durationSeconds || 0),
+                avgPages: Math.round((c._avg?.pageViews || 0) * 10) / 10,
+                addToCarts: c._sum?.addToCarts || 0,
+                productViews: c._sum?.productViews || 0,
+            })),
+            funnelByChannel,
+            topLandingPages: topLandingPages.map(l => ({
+                page: l.landingPage,
+                sessions: l._count.id,
+                avgDuration: Math.round(l._avg?.durationSeconds || 0),
+                avgPages: Math.round((l._avg?.pageViews || 0) * 10) / 10,
+                addToCarts: l._sum?.addToCarts || 0,
+            })),
+            attributionPaths,
+            referrerDomains: referrerDomains.map(r => ({
+                domain: r.referrerDomain,
+                sessions: r._count.id,
+            })),
+            dailyTrend,
         };
     }
     calculateBotScore(dto) {

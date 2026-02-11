@@ -85,6 +85,19 @@ let FingerprintController = class FingerprintController {
         });
         return { success: true };
     }
+    async trackAttribution(req) {
+        const body = req.body;
+        if (!body.shop || !body.sessionId) {
+            return { success: false, error: 'Missing required fields' };
+        }
+        const merchant = await this.prisma.merchant.findUnique({
+            where: { shopDomain: body.shop },
+        });
+        if (!merchant)
+            return { success: false, error: 'Unknown shop' };
+        await this.fingerprintService.processAttribution(merchant.id, body);
+        return { success: true };
+    }
     async getDashboard(merchantId) {
         return this.fingerprintService.getDashboard(merchantId);
     }
@@ -107,6 +120,15 @@ let FingerprintController = class FingerprintController {
     }
     async getSessionReplay(merchantId, sessionId) {
         return this.fingerprintService.getSessionReplay(merchantId, sessionId);
+    }
+    async getTrafficAnalytics(merchantId, startDate, endDate, channel, utmSource, utmCampaign) {
+        return this.fingerprintService.getTrafficAnalytics(merchantId, {
+            startDate: startDate ? new Date(startDate) : undefined,
+            endDate: endDate ? new Date(endDate) : undefined,
+            channel,
+            utmSource,
+            utmCampaign,
+        });
     }
 };
 exports.FingerprintController = FingerprintController;
@@ -147,6 +169,15 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], FingerprintController.prototype, "mouseTracking", null);
+__decorate([
+    (0, common_1.Post)('attribution'),
+    (0, public_decorator_1.Public)(),
+    (0, throttler_1.Throttle)({ short: { limit: 30, ttl: 1000 }, medium: { limit: 100, ttl: 10000 } }),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], FingerprintController.prototype, "trackAttribution", null);
 __decorate([
     (0, common_1.Get)('dashboard'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
@@ -201,6 +232,19 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], FingerprintController.prototype, "getSessionReplay", null);
+__decorate([
+    (0, common_1.Get)('traffic-analytics'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('merchantId')),
+    __param(1, (0, common_1.Query)('startDate')),
+    __param(2, (0, common_1.Query)('endDate')),
+    __param(3, (0, common_1.Query)('channel')),
+    __param(4, (0, common_1.Query)('utmSource')),
+    __param(5, (0, common_1.Query)('utmCampaign')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String, String, String, String]),
+    __metadata("design:returntype", Promise)
+], FingerprintController.prototype, "getTrafficAnalytics", null);
 exports.FingerprintController = FingerprintController = __decorate([
     (0, common_1.Controller)('fingerprint'),
     __metadata("design:paramtypes", [fingerprint_service_1.FingerprintService,

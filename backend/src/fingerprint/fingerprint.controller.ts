@@ -115,6 +115,28 @@ export class FingerprintController {
     return { success: true };
   }
 
+  /**
+   * Traffic attribution — multi-touch attribution data from snippet
+   * Captures UTM, gclid, fbclid, referrer, channel for each session touch
+   */
+  @Post('attribution')
+  @Public()
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 100, ttl: 10000 } })
+  async trackAttribution(@Req() req: any) {
+    const body = req.body;
+    if (!body.shop || !body.sessionId) {
+      return { success: false, error: 'Missing required fields' };
+    }
+
+    const merchant = await this.prisma.merchant.findUnique({
+      where: { shopDomain: body.shop },
+    });
+    if (!merchant) return { success: false, error: 'Unknown shop' };
+
+    await this.fingerprintService.processAttribution(merchant.id, body);
+    return { success: true };
+  }
+
   // ─── Admin Endpoints ───
 
   @Get('dashboard')
@@ -174,5 +196,27 @@ export class FingerprintController {
     @Query('sessionId') sessionId: string,
   ) {
     return this.fingerprintService.getSessionReplay(merchantId, sessionId);
+  }
+
+  /**
+   * Traffic analytics — GA4-level traffic source analytics for admin panel
+   */
+  @Get('traffic-analytics')
+  @UseGuards(JwtAuthGuard)
+  async getTrafficAnalytics(
+    @CurrentUser('merchantId') merchantId: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('channel') channel?: string,
+    @Query('utmSource') utmSource?: string,
+    @Query('utmCampaign') utmCampaign?: string,
+  ) {
+    return this.fingerprintService.getTrafficAnalytics(merchantId, {
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+      channel,
+      utmSource,
+      utmCampaign,
+    });
   }
 }
