@@ -141,6 +141,14 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.prisma.trafficAttribution;
   }
 
+  get invoice() {
+    return this.prisma.invoice;
+  }
+
+  get quote() {
+    return this.prisma.quote;
+  }
+
   async onModuleInit() {
     try {
       await this.$connect();
