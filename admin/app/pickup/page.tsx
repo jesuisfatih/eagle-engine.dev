@@ -1,6 +1,6 @@
 'use client';
 
-import { adminFetch } from '@/lib/api';
+import { adminFetch } from '@/lib/api-client';
 import { useEffect, useState } from 'react';
 
 interface PickupOrder {
