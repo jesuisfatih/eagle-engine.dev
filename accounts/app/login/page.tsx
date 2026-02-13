@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { publicFetch } from '@/lib/api-client';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,18 +15,10 @@ export default function LoginPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Check if already logged in
     const token = localStorage.getItem('eagle_token');
-    if (token) {
-      router.push('/dashboard');
-    }
-    
-    // Check for remembered email
+    if (token) router.push('/dashboard');
     const savedEmail = localStorage.getItem('eagle_remembered_email');
-    if (savedEmail) {
-      setEmail(savedEmail);
-      setRememberMe(true);
-    }
+    if (savedEmail) { setEmail(savedEmail); setRememberMe(true); }
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,8 +34,6 @@ export default function LoginPage() {
 
       if (response.ok) {
         const data = await response.json();
-        
-        // Store auth data
         localStorage.setItem('eagle_token', data.accessToken || data.token);
         localStorage.setItem('eagle_userId', data.user.id);
         localStorage.setItem('eagle_companyId', data.user.companyId);
@@ -52,15 +42,8 @@ export default function LoginPage() {
         localStorage.setItem('eagle_userName', `${data.user.firstName} ${data.user.lastName}`);
         localStorage.setItem('eagle_userRole', data.user.role || 'member');
         localStorage.setItem('eagle_loginTime', Date.now().toString());
-        
-        // Remember email if checked
-        if (rememberMe) {
-          localStorage.setItem('eagle_remembered_email', email);
-        } else {
-          localStorage.removeItem('eagle_remembered_email');
-        }
-        
-        // Redirect to dashboard
+        if (rememberMe) localStorage.setItem('eagle_remembered_email', email);
+        else localStorage.removeItem('eagle_remembered_email');
         router.push('/dashboard');
       } else {
         const errorData = await response.json();
@@ -77,25 +60,21 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-container">
-        <div className="login-card" style={{ maxWidth: 440
-
- }}>
+        <div className="login-card">
           {/* Logo & Brand */}
-          <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--accent)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-              <span style={{ fontSize: 28, color: '#fff' }}>🦅</span>
-            </div>
-            <h2 style={{ fontWeight: 700, fontSize: 22, margin: '0 0 4px' }}>Welcome Back!</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 14, margin: 0 }}>Sign in to your B2B account</p>
+          <div style={{ textAlign: 'center', marginBottom: 36 }}>
+            <div className="login-logo">🦅</div>
+            <h2 className="login-title">Welcome back</h2>
+            <p className="login-subtitle">Sign in to your Eagle B2B account</p>
           </div>
 
           {/* Error Alert */}
           {error && (
-            <div className="alert alert-error" style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <i className="ti ti-alert-circle"></i>
+            <div className="alert alert-error" style={{ marginBottom: 24 }}>
+              <i className="ti ti-alert-circle" />
               <span style={{ flex: 1 }}>{error}</span>
-              <button onClick={() => setError('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-                <i className="ti ti-x"></i>
+              <button onClick={() => setError('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 4 }}>
+                <i className="ti ti-x" />
               </button>
             </div>
           )}
@@ -103,9 +82,7 @@ export default function LoginPage() {
           {/* Login Form */}
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">
-                <i className="ti ti-mail" style={{ marginRight: 4 }}></i>Email Address
-              </label>
+              <label className="form-label">Email</label>
               <input
                 type="email"
                 className="form-input"
@@ -119,15 +96,13 @@ export default function LoginPage() {
             </div>
 
             <div className="form-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label className="form-label" style={{ marginBottom: 0 }}>
-                  <i className="ti ti-lock" style={{ marginRight: 4 }}></i>Password
-                </label>
-                <Link href="/forgot-password" style={{ fontSize: 13, color: 'var(--accent)', textDecoration: 'none' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <label className="form-label" style={{ marginBottom: 0 }}>Password</label>
+                <Link href="/forgot-password" style={{ fontSize: 12, color: 'var(--accent)', opacity: 0.8 }}>
                   Forgot password?
                 </Link>
               </div>
-              <div style={{ position: 'relative', marginTop: 6 }}>
+              <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   className="form-input"
@@ -143,79 +118,91 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   tabIndex={-1}
-                  style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: 'var(--text-tertiary)' }}
+                  style={{
+                    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer', padding: 4,
+                    color: 'var(--text-quaternary)', fontSize: 18,
+                  }}
                 >
-                  <i className={`ti ti-eye${showPassword ? '-off' : ''}`}></i>
+                  <i className={`ti ti-eye${showPassword ? '-off' : ''}`} />
                 </button>
               </div>
             </div>
 
-            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
               <input
                 type="checkbox"
                 id="remember-me"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                style={{ accentColor: 'var(--accent)' }}
+                style={{ accentColor: 'var(--accent)', width: 16, height: 16 }}
               />
-              <label htmlFor="remember-me" style={{ fontSize: 14, color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                Remember me on this device
+              <label htmlFor="remember-me" style={{ fontSize: 13, color: 'var(--text-tertiary)', cursor: 'pointer' }}>
+                Remember me
               </label>
             </div>
 
-            <button type="submit" disabled={loading} className="btn-apple btn-apple-primary" style={{ width: '100%', height: 44, fontSize: 15, marginTop: 8 }}>
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-apple primary lg"
+              style={{ width: '100%', height: 48, fontSize: 15, borderRadius: 'var(--radius-md)' }}
+            >
               {loading ? (
-                <><span className="spinner-apple" style={{ width: 18, height: 18, marginRight: 8 }} />Signing in...</>
+                <><span className="spinner-apple" style={{ width: 18, height: 18, borderWidth: 2 }} /> Signing in...</>
               ) : (
-                <><i className="ti ti-login" style={{ marginRight: 8 }}></i>Sign In</>
+                'Sign In'
               )}
             </button>
           </form>
 
           {/* Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', margin: '28px 0', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', margin: '32px 0', gap: 16 }}>
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-            <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>New to Eagle B2B?</span>
+            <span style={{ fontSize: 12, color: 'var(--text-quaternary)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600 }}>or</span>
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           </div>
 
           {/* Register Links */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <Link href="/register" className="btn-apple btn-apple-secondary" style={{ width: '100%', textDecoration: 'none', textAlign: 'center', height: 42 }}>
-              <i className="ti ti-user-plus" style={{ marginRight: 8 }}></i>
-              Create an Account
+            <Link
+              href="/register"
+              className="btn-apple secondary"
+              style={{ width: '100%', textAlign: 'center', height: 44, textDecoration: 'none' }}
+            >
+              <i className="ti ti-user-plus" /> Create Account
             </Link>
-            <Link href="/request-invitation" className="btn-apple" style={{ width: '100%', textDecoration: 'none', textAlign: 'center', height: 42, border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-              <i className="ti ti-mail-forward" style={{ marginRight: 8 }}></i>
-              Request B2B Invitation
+            <Link
+              href="/request-invitation"
+              className="btn-apple ghost"
+              style={{ width: '100%', textAlign: 'center', height: 44, textDecoration: 'none', border: '1px solid var(--border)' }}
+            >
+              <i className="ti ti-mail-forward" /> Request B2B Access
             </Link>
           </div>
 
           {/* B2B Benefits */}
-          <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
-            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center', margin: '0 0 16px' }}>B2B Account Benefits</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, textAlign: 'center' }}>
-              <div>
-                <i className="ti ti-discount-2" style={{ fontSize: 22, color: 'var(--green)' }}></i>
-                <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '6px 0 0' }}>Bulk Discounts</p>
-              </div>
-              <div>
-                <i className="ti ti-credit-card" style={{ fontSize: 22, color: 'var(--accent)' }}></i>
-                <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '6px 0 0' }}>Net Terms</p>
-              </div>
-              <div>
-                <i className="ti ti-users" style={{ fontSize: 22, color: 'var(--purple)' }}></i>
-                <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '6px 0 0' }}>Team Access</p>
-              </div>
+          <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, textAlign: 'center' }}>
+              {[
+                { icon: 'ti-discount-2', label: 'Bulk Discounts', color: 'var(--green)' },
+                { icon: 'ti-credit-card', label: 'Net Terms', color: 'var(--accent)' },
+                { icon: 'ti-users', label: 'Team Access', color: 'var(--purple)' },
+              ].map(b => (
+                <div key={b.label} style={{ opacity: 0.7 }}>
+                  <i className={`ti ${b.icon}`} style={{ fontSize: 20, color: b.color, display: 'block', marginBottom: 6 }} />
+                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)', fontWeight: 500 }}>{b.label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-
-        {/* Footer */}
-        <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', marginTop: 24, fontSize: 13 }}>
-          © 2025 Eagle DTF Supply. All rights reserved.
-        </p>
       </div>
+
+      {/* Footer */}
+      <p style={{ position: 'absolute', bottom: 24, left: 0, right: 0, textAlign: 'center', color: 'var(--text-quaternary)', fontSize: 12 }}>
+        © 2026 Eagle DTF Supply. All rights reserved.
+      </p>
     </div>
   );
 }

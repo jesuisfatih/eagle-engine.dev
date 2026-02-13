@@ -1,9 +1,8 @@
 'use client';
 
-import React from 'react';
-import Link from 'next/link';
-import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils';
+import { formatCurrency, formatNumber } from '@/lib/utils';
 import type { EnhancedDashboardStats, Promotion } from '@/types';
+import Link from 'next/link';
 
 // ============================================
 // WELCOME BANNER
@@ -28,12 +27,12 @@ export function WelcomeBanner({
   const greeting = getGreeting();
 
   return (
-    <div className="card" style={{ background: 'var(--accent)', color: '#fff', marginBottom: '1.5rem' }}>
+    <div className="card" style={{ background: 'linear-gradient(135deg, rgba(99,131,255,0.2), rgba(167,139,250,0.15))', border: '1px solid rgba(99,131,255,0.15)', color: 'var(--text-primary)', marginBottom: '1.5rem' }}>
       <div className="card-body">
         {/* Welcome Message */}
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ flex: '2 1 60%', minWidth: '300px' }}>
-            <h4 className="card-title" style={{ color: '#fff', marginBottom: '0.5rem' }}>
+            <h4 className="card-title" style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
               {greeting}, {firstName}! 👋
             </h4>
             <p style={{ marginBottom: '0.75rem' }}>
@@ -73,8 +72,8 @@ export function WelcomeBanner({
                 </span>
                 {activePromotions.slice(0, 2).map((promo) => (
                   <span key={promo.id} className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
-                    {promo.discountType === 'percentage' 
-                      ? `${promo.discountValue}% OFF` 
+                    {promo.discountType === 'percentage'
+                      ? `${promo.discountValue}% OFF`
                       : `$${promo.discountValue} OFF`}
                     {promo.minQuantity && ` on ${promo.minQuantity}+ items`}
                   </span>
@@ -152,10 +151,10 @@ interface StatCardProps {
 }
 
 function StatCard({ label, value, icon, variant = 'default' }: StatCardProps) {
-  const bgColor = variant === 'success' 
-    ? 'rgba(52, 199, 89, 0.25)' 
-    : variant === 'warning' 
-      ? 'rgba(255, 149, 0, 0.25)' 
+  const bgColor = variant === 'success'
+    ? 'rgba(52, 199, 89, 0.25)'
+    : variant === 'warning'
+      ? 'rgba(255, 149, 0, 0.25)'
       : 'rgba(255, 255, 255, 0.1)';
 
   return (
