@@ -77,6 +77,13 @@ export class InvoiceService {
     });
   }
 
+  async updateFileUrl(id: string, merchantId: string, fileUrl: string) {
+    return this.prisma.invoice.update({
+      where: { id, merchantId },
+      data: { fileUrl },
+    });
+  }
+
   // Get invoices for a specific company (for Accounts panel)
   async getCompanyInvoices(companyId: string) {
     return this.prisma.invoice.findMany({

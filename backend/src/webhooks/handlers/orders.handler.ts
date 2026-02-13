@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { PickupService } from '../../pickup/pickup.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ShopifyWebhookSyncService } from '../shopify-webhook-sync.service';
 import { ShopifyService } from '../../shopify/shopify.service';
+import { ShopifyWebhookSyncService } from '../shopify-webhook-sync.service';
 
 @Injectable()
 export class OrdersHandler {
@@ -11,12 +12,13 @@ export class OrdersHandler {
     private prisma: PrismaService,
     private webhookSync: ShopifyWebhookSyncService,
     private shopifyService: ShopifyService,
+    private pickupService: PickupService,
   ) {}
 
   async handleOrderCreate(orderData: any, headers: any) {
     try {
       const shop = headers['x-shopify-shop-domain'];
-      
+
       const merchant = await this.shopifyService.getMerchantByShopDomain(shop);
 
       if (!merchant) {
@@ -39,7 +41,7 @@ export class OrdersHandler {
       }
 
       // Create order record
-      await this.prisma.orderLocal.create({
+      const orderLocal = await this.prisma.orderLocal.create({
         data: {
           merchantId: merchant.id,
           shopifyOrderId: BigInt(orderData.id),
@@ -64,10 +66,25 @@ export class OrdersHandler {
       });
 
       this.logger.log(`Order created: ${orderData.order_number} for ${shop}`);
-      
+
       // Sync cart status
       await this.webhookSync.handleOrderCreate(orderData, shop);
-      
+
+      // Auto-create pickup order if it's a pickup order
+      try {
+        const pickupOrder = await this.pickupService.createFromWebhookOrder(
+          merchant.id,
+          orderLocal,
+          orderData,
+        );
+        if (pickupOrder) {
+          this.logger.log(`Pickup order auto-created for order #${orderData.order_number}, QR: ${pickupOrder.qrCode}`);
+        }
+      } catch (pickupError) {
+        // Don't let pickup creation failure break the webhook
+        this.logger.warn(`Failed to auto-create pickup order for #${orderData.order_number}`, pickupError);
+      }
+
       return { success: true };
     } catch (error) {
       this.logger.error('Failed to handle order create', error);
@@ -78,7 +95,7 @@ export class OrdersHandler {
   async handleOrderPaid(orderData: any, headers: any) {
     try {
       const shop = headers['x-shopify-shop-domain'];
-      
+
       const merchant = await this.shopifyService.getMerchantByShopDomain(shop);
 
       if (!merchant) {
@@ -105,7 +122,3 @@ export class OrdersHandler {
     }
   }
 }
-
-
-
-

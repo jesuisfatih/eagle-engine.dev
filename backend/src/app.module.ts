@@ -24,6 +24,7 @@ import { MailModule } from './mail/mail.module';
 import { MerchantsModule } from './merchants/merchants.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { OrdersModule } from './orders/orders.module';
+import { PickupModule } from './pickup/pickup.module';
 import { PricingModule } from './pricing/pricing.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { QuotesModule } from './quotes/quotes.module';
@@ -103,6 +104,7 @@ import { WishlistModule } from './wishlist/wishlist.module';
     FingerprintModule,
     DittofeedModule,
     InvoiceModule,
+    PickupModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,12 +1,12 @@
 'use client';
 
+import Header from '@/components/Header';
+import Sidebar from '@/components/Sidebar';
+import { ToastContainer } from '@/components/ui';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import Sidebar from '@/components/Sidebar';
-import Header from '@/components/Header';
-import { ToastContainer } from '@/components/ui';
 
-const publicRoutes = ['/login', '/register', '/request-invitation', '/forgot-password', '/reset-password'];
+const publicRoutes = ['/login', '/register', '/request-invitation', '/forgot-password', '/reset-password', '/qrpickup'];
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -59,4 +59,3 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
     </div>
   );
 }
-

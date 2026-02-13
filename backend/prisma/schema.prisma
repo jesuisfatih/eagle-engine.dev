@@ -52,6 +52,8 @@ model Merchant {
   campaigns      Campaign[]
   quotes         Quote[]
   invoices       Invoice[]
+  pickupShelves  PickupShelf[]
+  pickupOrders   PickupOrder[]
 
   @@index([shopDomain])
   @@index([status])
@@ -131,6 +133,7 @@ model Company {
   intelligence   CompanyIntelligence?
   quotes              Quote[]
   invoices            Invoice[]
+  pickupOrders        PickupOrder[]
 
   @@index([merchantId])
   @@index([status])
@@ -176,6 +179,7 @@ model CompanyUser {
   targetedPricingRules PricingRule[] @relation("UserPricingRules")
   quotes         Quote[]
   invoices       Invoice[]
+  pickupOrders   PickupOrder[]
 
   @@index([companyId])
   @@index([email])
@@ -440,6 +444,7 @@ model OrderLocal {
   companyUser  CompanyUser? @relation(fields: [companyUserId], references: [id])
   relatedCarts Cart[]
   invoices     Invoice[]
+  pickupOrders PickupOrder[]
 
   @@unique([merchantId, shopifyOrderId])
   @@index([merchantId])
@@ -1312,4 +1317,73 @@ model Invoice {
   @@index([merchantId])
   @@index([companyId])
   @@map("invoices")
+}
+
+// ============================================
+// PICKUP SHELVES (Raf Tanımları)
+// ============================================
+
+model PickupShelf {
+  id          String   @id @default(uuid())
+  merchantId  String   @map("merchant_id")
+  code        String   // A-1, B-3, C-12 etc.
+  name        String?  // "Raf A - Üst"
+  description String?  // "Sol tarafa doğru girince ilk raf"
+  isActive    Boolean  @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  merchant     Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  pickupOrders PickupOrder[]
+
+  @@unique([merchantId, code])
+  @@index([merchantId])
+  @@map("pickup_shelves")
+}
+
+// ============================================
+// PICKUP ORDERS (Sipariş-Raf-QR Eşleştirme)
+// ============================================
+
+model PickupOrder {
+  id            String   @id @default(uuid())
+  merchantId    String   @map("merchant_id")
+  orderId       String   @map("order_id")
+  companyId     String?  @map("company_id")
+  companyUserId String?  @map("company_user_id")
+  shelfId       String?  @map("shelf_id")
+
+  qrCode        String   @unique @map("qr_code")    // Benzersiz QR kodu
+  status        String   @default("pending")          // pending, processing, ready, notified, picked_up, completed
+
+  designFiles   Json?    @map("design_files")         // DripApps/CustomizerApp dosya bilgileri
+  customerEmail String?  @map("customer_email")
+  customerName  String?  @map("customer_name")
+  orderNumber   String?  @map("order_number")
+
+  assignedAt    DateTime? @map("assigned_at")         // Raf atanma zamanı
+  readyAt       DateTime? @map("ready_at")            // Hazır olma zamanı
+  notifiedAt    DateTime? @map("notified_at")         // Müşteriye bildirim zamanı
+  pickedUpAt    DateTime? @map("picked_up_at")        // Alınma zamanı
+
+  notes         String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  merchant    Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  order       OrderLocal   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  company     Company?     @relation(fields: [companyId], references: [id])
+  companyUser CompanyUser? @relation(fields: [companyUserId], references: [id])
+  shelf       PickupShelf? @relation(fields: [shelfId], references: [id])
+
+  @@index([merchantId])
+  @@index([orderId])
+  @@index([companyId])
+  @@index([qrCode])
+  @@index([status])
+  @@map("pickup_orders")
 }
