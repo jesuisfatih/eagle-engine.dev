@@ -1,9 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ShopifyService } from '../shopify/shopify.service';
 
 @Injectable()
 export class QuotesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private shopifyService: ShopifyService,
+  ) {}
 
   async create(companyId: string, userId: string, data: any) {
     // Quote'lar cart'lar gibi çalışır ama status farklıdır
@@ -17,6 +21,25 @@ export class QuotesService {
         metadata: { type: 'quote', ...data.metadata },
       },
     });
+  }
+
+  async sendQuoteEmail(quoteId: string, merchantId: string) {
+    const quote = await this.prisma.cart.findUnique({
+      where: { id: quoteId },
+      include: {
+        company: true,
+      }
+    });
+
+    if (!quote) throw new NotFoundException('Quote not found');
+
+    const shopifyDraftOrderId = quote.metadata ? (quote.metadata as any).shopifyDraftOrderId : null;
+
+    if (!shopifyDraftOrderId) {
+      throw new Error('No linked Shopify Draft Order found for this quote');
+    }
+
+    return this.shopifyService.sendDraftOrderInvoice(merchantId, shopifyDraftOrderId.toString());
   }
 
   async findAll(companyId: string) {
@@ -63,4 +86,3 @@ export class QuotesService {
     });
   }
 }
-

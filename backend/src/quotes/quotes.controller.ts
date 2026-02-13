@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Param, Body, UseGuards, BadRequestException } from '@nestjs/common';
-import { QuotesService } from './quotes.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { BadRequestException, Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { CreateQuoteDto, UpdateQuoteStatusDto } from './dto/quote.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CreateQuoteDto } from './dto/quote.dto';
+import { QuotesService } from './quotes.service';
 
 @Controller('quotes')
 @UseGuards(JwtAuthGuard)
@@ -44,5 +44,15 @@ export class QuotesController {
   async reject(@Param('id') id: string) {
     return this.quotesService.reject(id);
   }
-}
 
+  @Post(':id/send-email')
+  async sendEmail(
+    @Param('id') id: string,
+    @CurrentUser('merchantId') merchantId: string,
+  ) {
+    if (!merchantId) {
+      throw new BadRequestException('Merchant ID required');
+    }
+    return this.quotesService.sendQuoteEmail(id, merchantId);
+  }
+}
