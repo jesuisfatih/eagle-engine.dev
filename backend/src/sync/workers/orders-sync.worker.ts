@@ -76,17 +76,67 @@ export class OrdersSyncWorker {
         let companyUserId: string | undefined;
 
         if (order.customer?.id) {
-          const companyUser = await this.prisma.companyUser.findFirst({
-            where: {
-              shopifyCustomerId: BigInt(order.customer.id),
-            },
+          const user = await this.prisma.companyUser.findFirst({
+            where: { shopifyCustomerId: BigInt(order.customer.id) },
           });
-
-          if (companyUser) {
-            companyUserId = companyUser.id;
-            companyId = companyUser.companyId;
+          if (user) {
+            companyUserId = user.id;
+            companyId = user.companyId;
           }
         }
+
+        // Extract fulfillment data
+        const fulfillments = (order.fulfillments || []).map((f: any) => ({
+          id: f.id,
+          status: f.status,
+          trackingNumber: f.tracking_number,
+          trackingNumbers: f.tracking_numbers,
+          trackingUrl: f.tracking_url,
+          trackingUrls: f.tracking_urls,
+          trackingCompany: f.tracking_company,
+          shipmentStatus: f.shipment_status,
+          createdAt: f.created_at,
+          updatedAt: f.updated_at,
+          lineItems: f.line_items?.map((li: any) => ({
+            id: li.id,
+            title: li.title,
+            quantity: li.quantity,
+          })),
+        }));
+
+        // Extract refund data
+        const refunds = (order.refunds || []).map((r: any) => ({
+          id: r.id,
+          note: r.note,
+          createdAt: r.created_at,
+          processedAt: r.processed_at,
+          refundLineItems: r.refund_line_items?.map((rli: any) => ({
+            lineItemId: rli.line_item_id,
+            quantity: rli.quantity,
+            subtotal: rli.subtotal,
+          })),
+          transactions: r.transactions?.map((t: any) => ({
+            amount: t.amount,
+            currency: t.currency,
+            kind: t.kind,
+            status: t.status,
+          })),
+        }));
+
+        // Calculate total refunded
+        const totalRefunded = refunds.reduce((sum: number, r: any) => {
+          const refundAmount = r.transactions?.reduce(
+            (ts: number, t: any) => ts + parseFloat(t.amount || '0'),
+            0,
+          ) || 0;
+          return sum + refundAmount;
+        }, 0);
+
+        // Calculate total shipping
+        const totalShipping = order.shipping_lines?.reduce(
+          (sum: number, sl: any) => sum + parseFloat(sl.price || '0'),
+          0,
+        ) || 0;
 
         await this.prisma.orderLocal.upsert({
           where: {
@@ -103,17 +153,28 @@ export class OrdersSyncWorker {
             companyId,
             companyUserId,
             email: order.email,
+            phone: order.phone,
             subtotal: order.subtotal_price ? parseFloat(order.subtotal_price) : 0,
             totalDiscounts: order.total_discounts ? parseFloat(order.total_discounts) : 0,
             totalTax: order.total_tax ? parseFloat(order.total_tax) : 0,
             totalPrice: order.total_price ? parseFloat(order.total_price) : 0,
+            totalShipping,
+            totalRefunded: totalRefunded > 0 ? totalRefunded : null,
             currency: order.currency,
             financialStatus: order.financial_status,
             fulfillmentStatus: order.fulfillment_status,
+            notes: order.note,
+            tags: order.tags,
+            riskLevel: this.extractRiskLevel(order),
             lineItems: order.line_items || [],
             shippingAddress: order.shipping_address,
             billingAddress: order.billing_address,
             discountCodes: order.discount_codes || [],
+            fulfillments: fulfillments.length > 0 ? fulfillments : null,
+            refunds: refunds.length > 0 ? refunds : null,
+            processedAt: order.processed_at ? new Date(order.processed_at) : null,
+            cancelledAt: order.cancelled_at ? new Date(order.cancelled_at) : null,
+            closedAt: order.closed_at ? new Date(order.closed_at) : null,
             rawData: order,
           },
           update: {
@@ -122,17 +183,28 @@ export class OrdersSyncWorker {
             companyId,
             companyUserId,
             email: order.email,
+            phone: order.phone,
             subtotal: order.subtotal_price ? parseFloat(order.subtotal_price) : 0,
             totalDiscounts: order.total_discounts ? parseFloat(order.total_discounts) : 0,
             totalTax: order.total_tax ? parseFloat(order.total_tax) : 0,
             totalPrice: order.total_price ? parseFloat(order.total_price) : 0,
+            totalShipping,
+            totalRefunded: totalRefunded > 0 ? totalRefunded : null,
             currency: order.currency,
             financialStatus: order.financial_status,
             fulfillmentStatus: order.fulfillment_status,
+            notes: order.note,
+            tags: order.tags,
+            riskLevel: this.extractRiskLevel(order),
             lineItems: order.line_items || [],
             shippingAddress: order.shipping_address,
             billingAddress: order.billing_address,
             discountCodes: order.discount_codes || [],
+            fulfillments: fulfillments.length > 0 ? fulfillments : null,
+            refunds: refunds.length > 0 ? refunds : null,
+            processedAt: order.processed_at ? new Date(order.processed_at) : null,
+            cancelledAt: order.cancelled_at ? new Date(order.cancelled_at) : null,
+            closedAt: order.closed_at ? new Date(order.closed_at) : null,
             rawData: order,
             syncedAt: new Date(),
           },
@@ -183,5 +255,25 @@ export class OrdersSyncWorker {
 
       throw error;
     }
+  }
+
+  /**
+   * Extract risk level from order data
+   */
+  private extractRiskLevel(order: any): string | null {
+    if (!order.order_status_url) return null;
+
+    // Shopify includes fraud analysis in the order
+    const risks = order.fraud_lines || order.risks || [];
+    if (risks.length === 0) return 'low';
+
+    const maxRisk = risks.reduce((max: string, risk: any) => {
+      const level = risk.recommendation || risk.level || 'low';
+      if (level === 'cancel' || level === 'high') return 'high';
+      if (level === 'investigate' || level === 'medium') return max === 'high' ? 'high' : 'medium';
+      return max;
+    }, 'low');
+
+    return maxRisk;
   }
 }

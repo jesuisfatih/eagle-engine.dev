@@ -73,6 +73,29 @@ export class CustomersSyncWorker {
             ? parseInt(customer.numberOfOrders, 10)
             : 0;
 
+          // Calculate average order value
+          const avgOrderValue = ordersCount > 0 ? totalSpent / ordersCount : 0;
+
+          // Extract marketing consent
+          const acceptsMarketing = customer.emailMarketingConsent?.marketingState === 'SUBSCRIBED';
+          const marketingOptInLevel = customer.emailMarketingConsent?.marketingOptInLevel || null;
+
+          // Extract metafields from edges
+          const metafields = customer.metafields?.edges?.map((e: any) => ({
+            namespace: e.node.namespace,
+            key: e.node.key,
+            value: e.node.value,
+            type: e.node.type,
+          })) || [];
+
+          // Extract last order data
+          const lastOrderId = customer.lastOrder?.legacyResourceId
+            ? BigInt(customer.lastOrder.legacyResourceId)
+            : null;
+          const lastOrderAt = customer.lastOrder?.createdAt
+            ? new Date(customer.lastOrder.createdAt)
+            : null;
+
           await this.prisma.shopifyCustomer.upsert({
             where: {
               merchantId_shopifyCustomerId: {
@@ -92,6 +115,17 @@ export class CustomersSyncWorker {
               totalSpent,
               ordersCount,
               addresses: customer.addresses || [],
+              verifiedEmail: customer.verifiedEmail,
+              acceptsMarketing,
+              marketingOptInLevel,
+              taxExempt: customer.taxExempt,
+              state: customer.state,
+              currency: customer.amountSpent?.currencyCode || null,
+              locale: customer.locale,
+              lastOrderId,
+              lastOrderAt,
+              averageOrderValue: avgOrderValue,
+              metafields: metafields.length > 0 ? metafields : null,
               rawData: customer,
             },
             update: {
@@ -104,6 +138,17 @@ export class CustomersSyncWorker {
               totalSpent,
               ordersCount,
               addresses: customer.addresses || [],
+              verifiedEmail: customer.verifiedEmail,
+              acceptsMarketing,
+              marketingOptInLevel,
+              taxExempt: customer.taxExempt,
+              state: customer.state,
+              currency: customer.amountSpent?.currencyCode || null,
+              locale: customer.locale,
+              lastOrderId,
+              lastOrderAt,
+              averageOrderValue: avgOrderValue,
+              metafields: metafields.length > 0 ? metafields : null,
               rawData: customer,
               syncedAt: new Date(),
             },

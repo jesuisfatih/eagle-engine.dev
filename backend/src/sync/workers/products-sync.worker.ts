@@ -64,6 +64,41 @@ export class ProductsSyncWorker {
         for (const edge of products) {
           const product = edge.node;
 
+          // Extract images from edges
+          const images = product.images?.edges?.map((e: any) => e.node) || [];
+
+          // Extract media from edges (images, videos, 3D models)
+          const media = product.media?.edges?.map((e: any) => ({
+            type: e.node.mediaContentType,
+            alt: e.node.alt,
+            ...(e.node.image && { image: e.node.image }),
+            ...(e.node.sources && { sources: e.node.sources }),
+            ...(e.node.embedUrl && { embedUrl: e.node.embedUrl }),
+          })) || [];
+
+          // Extract collections from edges
+          const collections = product.collections?.edges?.map((e: any) => ({
+            id: e.node.id,
+            title: e.node.title,
+            handle: e.node.handle,
+          })) || [];
+
+          // Extract metafields from edges
+          const metafields = product.metafields?.edges?.map((e: any) => ({
+            namespace: e.node.namespace,
+            key: e.node.key,
+            value: e.node.value,
+            type: e.node.type,
+          })) || [];
+
+          // Extract options
+          const options = product.options?.map((opt: any) => ({
+            id: opt.id,
+            name: opt.name,
+            values: opt.values,
+            position: opt.position,
+          })) || [];
+
           const catalogProduct = await this.prisma.catalogProduct.upsert({
             where: {
               merchantId_shopifyProductId: {
@@ -77,28 +112,54 @@ export class ProductsSyncWorker {
               title: product.title,
               handle: product.handle,
               description: product.description,
+              descriptionHtml: product.descriptionHtml,
               vendor: product.vendor,
               productType: product.productType,
               tags: product.tags?.join(', '),
               status: product.status,
-              images: product.images?.edges?.map((e: any) => e.node) || [],
+              images,
+              collections,
+              metafields,
+              seoTitle: product.seo?.title || null,
+              seoDescription: product.seo?.description || null,
+              options,
+              media,
+              templateSuffix: product.templateSuffix,
+              publishedAt: product.publishedAt ? new Date(product.publishedAt) : null,
+              onlineStoreUrl: product.onlineStoreUrl,
+              totalInventory: product.totalInventory,
+              hasOnlyDefaultVariant: product.hasOnlyDefaultVariant,
+              requiresSellingPlan: product.requiresSellingPlan,
               rawData: product,
             },
             update: {
               title: product.title,
               handle: product.handle,
               description: product.description,
+              descriptionHtml: product.descriptionHtml,
               vendor: product.vendor,
               productType: product.productType,
               tags: product.tags?.join(', '),
               status: product.status,
-              images: product.images?.edges?.map((e: any) => e.node) || [],
+              images,
+              collections,
+              metafields,
+              seoTitle: product.seo?.title || null,
+              seoDescription: product.seo?.description || null,
+              options,
+              media,
+              templateSuffix: product.templateSuffix,
+              publishedAt: product.publishedAt ? new Date(product.publishedAt) : null,
+              onlineStoreUrl: product.onlineStoreUrl,
+              totalInventory: product.totalInventory,
+              hasOnlyDefaultVariant: product.hasOnlyDefaultVariant,
+              requiresSellingPlan: product.requiresSellingPlan,
               rawData: product,
               syncedAt: new Date(),
             },
           });
 
-          // Sync variants
+          // Sync variants with enhanced fields
           if (product.variants?.edges) {
             for (const variantEdge of product.variants.edges) {
               const variant = variantEdge.node;
@@ -111,28 +172,42 @@ export class ProductsSyncWorker {
                   productId: catalogProduct.id,
                   shopifyVariantId: BigInt(variant.legacyResourceId),
                   sku: variant.sku,
+                  barcode: variant.barcode,
                   title: variant.title,
                   price: variant.price ? parseFloat(variant.price) : 0,
                   compareAtPrice: variant.compareAtPrice ? parseFloat(variant.compareAtPrice) : null,
                   inventoryQuantity: variant.inventoryQuantity || 0,
-                  weight: null,
-                  weightUnit: null,
+                  weight: variant.weight ? parseFloat(variant.weight) : null,
+                  weightUnit: variant.weightUnit,
                   option1: variant.selectedOptions?.[0]?.value,
                   option2: variant.selectedOptions?.[1]?.value,
                   option3: variant.selectedOptions?.[2]?.value,
+                  imageUrl: variant.image?.url || null,
+                  position: variant.position || 0,
+                  taxable: variant.taxable ?? true,
+                  requiresShipping: variant.requiresShipping ?? true,
+                  availableForSale: variant.availableForSale ?? true,
+                  inventoryPolicy: variant.inventoryPolicy || 'deny',
                   rawData: variant,
                 },
                 update: {
                   sku: variant.sku,
+                  barcode: variant.barcode,
                   title: variant.title,
                   price: variant.price ? parseFloat(variant.price) : 0,
                   compareAtPrice: variant.compareAtPrice ? parseFloat(variant.compareAtPrice) : null,
                   inventoryQuantity: variant.inventoryQuantity || 0,
-                  weight: null,
-                  weightUnit: null,
+                  weight: variant.weight ? parseFloat(variant.weight) : null,
+                  weightUnit: variant.weightUnit,
                   option1: variant.selectedOptions?.[0]?.value,
                   option2: variant.selectedOptions?.[1]?.value,
                   option3: variant.selectedOptions?.[2]?.value,
+                  imageUrl: variant.image?.url || null,
+                  position: variant.position || 0,
+                  taxable: variant.taxable ?? true,
+                  requiresShipping: variant.requiresShipping ?? true,
+                  availableForSale: variant.availableForSale ?? true,
+                  inventoryPolicy: variant.inventoryPolicy || 'deny',
                   rawData: variant,
                   syncedAt: new Date(),
                 },

@@ -31,6 +31,7 @@ const menuGroups: MenuGroup[] = [
       { title: 'Invoices', icon: 'ti-receipt', href: '/invoices' },
       { title: 'Pickup', icon: 'ti-package-import', href: '/pickup' },
       { title: 'Abandoned Carts', icon: 'ti-shopping-cart-off', href: '/abandoned-carts' },
+      { title: 'Offers', icon: 'ti-discount-2', href: '/offers' },
     ],
   },
   {

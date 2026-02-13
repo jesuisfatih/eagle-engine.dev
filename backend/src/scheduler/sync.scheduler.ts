@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { CustomerIntelligenceService } from '../customers/customer-intelligence.service';
+import { ProactiveOfferService } from '../customers/proactive-offer.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SyncStateService } from '../sync/sync-state.service';
 import { SyncService } from '../sync/sync.service';
@@ -12,6 +14,8 @@ export class SyncScheduler {
     private prisma: PrismaService,
     private syncService: SyncService,
     private syncState: SyncStateService,
+    private customerIntelligence: CustomerIntelligenceService,
+    private proactiveOffers: ProactiveOfferService,
   ) {}
 
   /**
@@ -40,6 +44,65 @@ export class SyncScheduler {
   async handleOrdersSync() {
     this.logger.debug('Running scheduled orders sync...');
     await this.runSyncForAllMerchants('orders');
+  }
+
+  /**
+   * Customer Intelligence calculation every hour.
+   * Calculates CLV, RFM, health scores, churn risk for all customers.
+   */
+  @Cron(CronExpression.EVERY_HOUR)
+  async handleCustomerIntelligence() {
+    this.logger.debug('Running customer intelligence calculations...');
+
+    const merchants = await this.prisma.merchant.findMany({
+      where: { status: 'active' },
+    });
+
+    for (const merchant of merchants) {
+      try {
+        const result = await this.customerIntelligence.calculateInsights(merchant.id);
+        this.logger.log(`Customer intelligence calculated for ${merchant.shopDomain}: ${result.processed} customers`);
+      } catch (error) {
+        this.logger.error(
+          `Failed to calculate customer intelligence for ${merchant.shopDomain}`,
+          error,
+        );
+      }
+    }
+  }
+
+  /**
+   * Proactive offer generation every 6 hours.
+   * Creates personalized discount offers based on customer intelligence.
+   */
+  @Cron('0 */6 * * *')
+  async handleOfferGeneration() {
+    this.logger.debug('Running proactive offer generation...');
+
+    const merchants = await this.prisma.merchant.findMany({
+      where: { status: 'active' },
+    });
+
+    for (const merchant of merchants) {
+      try {
+        // First expire old offers
+        const expired = await this.proactiveOffers.expireOldOffers(merchant.id);
+        if (expired > 0) {
+          this.logger.log(`Expired ${expired} old offers for ${merchant.shopDomain}`);
+        }
+
+        // Then generate new ones
+        const result = await this.proactiveOffers.generateOffers(merchant.id);
+        this.logger.log(
+          `Generated ${result.generated} offers for ${merchant.shopDomain}: ${JSON.stringify(result.strategies)}`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to generate offers for ${merchant.shopDomain}`,
+          error,
+        );
+      }
+    }
   }
 
   /**

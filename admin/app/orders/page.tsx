@@ -1,18 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { adminFetch } from '@/lib/api-client';
 import {
-  PageHeader,
-  PageContent,
-  StatsCard,
-  DataTable,
-  type DataTableColumn,
-  StatusBadge,
-  showToast
+    DataTable,
+    type DataTableColumn,
+    PageContent,
+    PageHeader,
+    StatsCard,
+    StatusBadge,
+    showToast
 } from '@/components/ui';
+import { adminFetch } from '@/lib/api-client';
 import type { OrderWithItems } from '@/types';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
@@ -22,6 +22,9 @@ export default function OrdersPage() {
     pending: 0,
     paid: 0,
     revenue: 0,
+    refunded: 0,
+    fulfilled: 0,
+    fulfillmentRate: '0',
   });
 
   useEffect(() => {
@@ -31,16 +34,36 @@ export default function OrdersPage() {
   const loadOrders = async () => {
     try {
       setLoading(true);
-      const response = await adminFetch('/api/v1/orders');
-      const data = await response.json();
-      const orderList = Array.isArray(data) ? data : [];
-      setOrders(orderList);
-      setStats({
-        total: orderList.length,
-        pending: orderList.filter((o: OrderWithItems) => o.paymentStatus === 'pending').length,
-        paid: orderList.filter((o: OrderWithItems) => o.paymentStatus === 'paid').length,
-        revenue: orderList.reduce((sum: number, o: OrderWithItems) => sum + Number(o.totalPrice || 0), 0),
-      });
+      const [ordersRes, statsRes] = await Promise.all([
+        adminFetch('/api/v1/orders'),
+        adminFetch('/api/v1/orders/stats').catch(() => null),
+      ]);
+      const orderList = await ordersRes.json();
+      const data = Array.isArray(orderList) ? orderList : [];
+      setOrders(data);
+
+      if (statsRes?.ok) {
+        const s = await statsRes.json();
+        setStats({
+          total: s.total || data.length,
+          pending: data.filter((o: any) => o.paymentStatus === 'pending').length,
+          paid: data.filter((o: any) => o.paymentStatus === 'paid').length,
+          revenue: Number(s.totalRevenue || data.reduce((sum: number, o: any) => sum + Number(o.totalPrice || 0), 0)),
+          refunded: Number(s.totalRefunded || 0),
+          fulfilled: s.fulfilledCount || data.filter((o: any) => o.fulfillmentStatus === 'fulfilled').length,
+          fulfillmentRate: s.fulfillmentRate || '0',
+        });
+      } else {
+        setStats({
+          total: data.length,
+          pending: data.filter((o: any) => o.paymentStatus === 'pending').length,
+          paid: data.filter((o: any) => o.paymentStatus === 'paid').length,
+          revenue: data.reduce((sum: number, o: any) => sum + Number(o.totalPrice || 0), 0),
+          refunded: 0,
+          fulfilled: data.filter((o: any) => o.fulfillmentStatus === 'fulfilled').length,
+          fulfillmentRate: '0',
+        });
+      }
     } catch (err) {
       console.error('Load orders error:', err);
       setOrders([]);
@@ -50,8 +73,8 @@ export default function OrdersPage() {
   };
 
   const exportCSV = () => {
-    const csv = 'Order,Company,Total,Status,Date\n' + orders.map(o =>
-      `${o.orderNumber},${o.company?.name || 'N/A'},${o.totalPrice},${o.paymentStatus},${new Date(o.createdAt).toLocaleDateString()}`
+    const csv = 'Order,Company,Total,Payment,Fulfillment,Risk,Shipping,Refunded,Date\n' + orders.map(o =>
+      `${o.orderNumber},${(o as any).company?.name || 'N/A'},${o.totalPrice},${o.paymentStatus},${o.fulfillmentStatus},${(o as any).riskLevel || 'normal'},${(o as any).totalShipping || 0},${(o as any).totalRefunded || 0},${new Date(o.createdAt).toLocaleDateString()}`
     ).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -60,6 +83,13 @@ export default function OrdersPage() {
     a.download = `orders-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     showToast('Orders exported successfully!', 'success');
+  };
+
+  const riskBadge = (risk: string) => {
+    const colors: Record<string, string> = { low: 'success', normal: 'secondary', medium: 'warning', high: 'danger' };
+    return risk && risk !== 'normal' ? (
+      <StatusBadge status={risk} colorMap={colors} />
+    ) : null;
   };
 
   const columns: DataTableColumn<OrderWithItems>[] = [
@@ -84,6 +114,10 @@ export default function OrdersPage() {
       key: 'fulfillmentStatus', label: 'Fulfillment', sortable: true,
       render: (order) => <StatusBadge status={order.fulfillmentStatus} colorMap={{ fulfilled: 'success', partial: 'warning', unfulfilled: 'secondary' }} />,
     },
+    {
+      key: 'riskLevel' as any, label: 'Risk', sortable: true,
+      render: (order: any) => riskBadge(order.riskLevel) || <span style={{ color: 'var(--text-tertiary)' }}>—</span>,
+    },
   ];
 
   const rowActions = (order: OrderWithItems) => (
@@ -100,6 +134,8 @@ export default function OrdersPage() {
     </div>
   );
 
+  const fmtRevenue = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   return (
     <div>
       <PageHeader
@@ -113,9 +149,11 @@ export default function OrdersPage() {
 
       <div className="stats-grid">
         <StatsCard title="Total Orders" value={stats.total} icon="shopping-cart" iconColor="primary" loading={loading} />
-        <StatsCard title="Pending" value={stats.pending} icon="clock" iconColor="warning" loading={loading} />
+        <StatsCard title="Revenue" value={fmtRevenue(stats.revenue)} icon="currency-dollar" iconColor="success" loading={loading} />
         <StatsCard title="Paid" value={stats.paid} icon="check" iconColor="success" loading={loading} />
-        <StatsCard title="Revenue" value={`$${stats.revenue.toFixed(2)}`} icon="currency-dollar" iconColor="info" loading={loading} />
+        <StatsCard title="Pending" value={stats.pending} icon="clock" iconColor="warning" loading={loading} />
+        <StatsCard title="Fulfilled" value={`${stats.fulfilled} (${stats.fulfillmentRate}%)`} icon="package" iconColor="info" loading={loading} />
+        <StatsCard title="Refunded" value={fmtRevenue(stats.refunded)} icon="arrow-back" iconColor="danger" loading={loading} />
       </div>
 
       <div style={{ marginTop: 20 }}>
@@ -124,12 +162,12 @@ export default function OrdersPage() {
           empty={{ show: !loading && orders.length === 0, icon: 'shopping-cart', title: 'No orders yet', message: 'Orders will appear here after customers make purchases.' }}
         >
           <DataTable
-            data={orders}
-            columns={columns}
+            data={orders as any}
+            columns={columns as any}
             loading={loading}
             searchable
             searchPlaceholder="Search orders..."
-            searchFields={['orderNumber', 'company.name']}
+            searchFields={['orderNumber', 'company.name', 'email']}
             statusFilter={{
               field: 'paymentStatus',
               options: [
@@ -141,8 +179,8 @@ export default function OrdersPage() {
             }}
             defaultSortKey="createdAt"
             defaultSortOrder="desc"
-            rowActions={rowActions}
-            onRowClick={(order) => window.location.href = `/orders/${order.id}`}
+            rowActions={rowActions as any}
+            onRowClick={(order: any) => window.location.href = `/orders/${order.id}`}
           />
         </PageContent>
       </div>

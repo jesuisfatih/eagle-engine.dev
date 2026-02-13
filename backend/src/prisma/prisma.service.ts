@@ -157,6 +157,14 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return (this.prisma as any).pickupOrder;
   }
 
+  get customerInsight() {
+    return this.prisma.customerInsight;
+  }
+
+  get proactiveOffer() {
+    return this.prisma.proactiveOffer;
+  }
+
   async onModuleInit() {
     try {
       await this.$connect();
