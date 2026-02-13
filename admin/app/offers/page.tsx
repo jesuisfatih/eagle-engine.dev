@@ -30,17 +30,14 @@ interface Offer {
 }
 
 interface Analytics {
-  total: number;
-  active: number;
-  accepted: number;
-  redeemed: number;
-  expired: number;
-  cancelled: number;
-  viewRate: number;
-  acceptRate: number;
-  redemptionRate: number;
+  totalSent: number;
+  totalAccepted: number;
+  totalExpired: number;
   totalRevenue: number;
-  byStrategy: Record<string, { total: number; accepted: number; redeemed: number; revenue: number }>;
+  conversionRate: string;
+  avgRevenuePerAccepted: string;
+  activeOffers: number;
+  byStrategy: Record<string, { sent: number; accepted: number; expired: number; revenue: number }>;
 }
 
 export default function OffersPage() {
@@ -61,15 +58,17 @@ export default function OffersPage() {
 
       const [offersRes, analyticsRes] = await Promise.all([
         adminFetch(`/api/v1/offers?${params}`),
-        adminFetch('/api/v1/offers/analytics'),
+        adminFetch('/api/v1/offers/analytics').catch(() => null),
       ]);
 
       if (offersRes.ok) {
         const data = await offersRes.json();
         setOffers(Array.isArray(data) ? data : data.offers || data.data || []);
       }
-      if (analyticsRes.ok) {
-        setAnalytics(await analyticsRes.json());
+      if (analyticsRes?.ok) {
+        try {
+          setAnalytics(await analyticsRes.json());
+        } catch { /* ignore parse errors */ }
       }
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
@@ -155,23 +154,23 @@ export default function OffersPage() {
           <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)', marginBottom: 24 }}>
             <div className="stat-card" style={{ background: 'linear-gradient(135deg, #007aff14, #007aff04)' }}>
               <div className="stat-icon" style={{ background: '#007aff20', color: '#007aff' }}><i className="ti ti-mail" /></div>
-              <div className="stat-label">Total Offers</div>
-              <div className="stat-value">{analytics.total}</div>
+              <div className="stat-label">Total Sent</div>
+              <div className="stat-value">{analytics.totalSent || 0}</div>
             </div>
             <div className="stat-card" style={{ background: 'linear-gradient(135deg, #34c75914, #34c75904)' }}>
               <div className="stat-icon" style={{ background: '#34c75920', color: '#34c759' }}><i className="ti ti-check" /></div>
               <div className="stat-label">Active</div>
-              <div className="stat-value">{analytics.active}</div>
+              <div className="stat-value">{analytics.activeOffers || 0}</div>
             </div>
             <div className="stat-card" style={{ background: 'linear-gradient(135deg, #ff950014, #ff950004)' }}>
-              <div className="stat-icon" style={{ background: '#ff950020', color: '#ff9500' }}><i className="ti ti-eye" /></div>
-              <div className="stat-label">View Rate</div>
-              <div className="stat-value">{analytics.viewRate.toFixed(1)}%</div>
+              <div className="stat-icon" style={{ background: '#ff950020', color: '#ff9500' }}><i className="ti ti-thumb-up" /></div>
+              <div className="stat-label">Accepted</div>
+              <div className="stat-value">{analytics.totalAccepted || 0}</div>
             </div>
             <div className="stat-card" style={{ background: 'linear-gradient(135deg, #5856d614, #5856d604)' }}>
-              <div className="stat-icon" style={{ background: '#5856d620', color: '#5856d6' }}><i className="ti ti-thumb-up" /></div>
-              <div className="stat-label">Accept Rate</div>
-              <div className="stat-value">{analytics.acceptRate.toFixed(1)}%</div>
+              <div className="stat-icon" style={{ background: '#5856d620', color: '#5856d6' }}><i className="ti ti-chart-bar" /></div>
+              <div className="stat-label">Conv. Rate</div>
+              <div className="stat-value">{analytics.conversionRate || '0'}%</div>
             </div>
             <div className="stat-card" style={{ background: 'linear-gradient(135deg, #34c75914, #34c75904)' }}>
               <div className="stat-icon" style={{ background: '#34c75920', color: '#34c759' }}><i className="ti ti-currency-dollar" /></div>
@@ -189,12 +188,12 @@ export default function OffersPage() {
               <div className="apple-card-body" style={{ padding: 0 }}>
                 <table className="apple-table" style={{ fontSize: 13 }}>
                   <thead>
-                    <tr><th>Strategy</th><th>Sent</th><th>Accepted</th><th>Redeemed</th><th>Revenue</th><th>Conv. Rate</th></tr>
+                    <tr><th>Strategy</th><th>Sent</th><th>Accepted</th><th>Expired</th><th>Revenue</th><th>Conv. Rate</th></tr>
                   </thead>
                   <tbody>
                     {Object.entries(analytics.byStrategy).map(([key, val]) => {
                       const s = strategyLabels[key] || { label: key, icon: 'ti-tag', color: '#8e8e93' };
-                      const convRate = val.total > 0 ? ((val.redeemed / val.total) * 100).toFixed(1) : '0';
+                      const convRate = (val.sent || 0) > 0 ? (((val.accepted || 0) / val.sent) * 100).toFixed(1) : '0';
                       return (
                         <tr key={key}>
                           <td>
@@ -203,9 +202,9 @@ export default function OffersPage() {
                               <span style={{ fontWeight: 500 }}>{s.label}</span>
                             </div>
                           </td>
-                          <td>{val.total}</td>
-                          <td>{val.accepted}</td>
-                          <td>{val.redeemed}</td>
+                          <td>{val.sent || 0}</td>
+                          <td>{val.accepted || 0}</td>
+                          <td>{val.expired || 0}</td>
                           <td style={{ fontWeight: 600, color: '#34c759' }}>{fmt(val.revenue)}</td>
                           <td>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
