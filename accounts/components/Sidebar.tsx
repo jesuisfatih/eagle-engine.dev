@@ -12,6 +12,7 @@ const menuItems = [
     { title: 'Cart', icon: 'ti-shopping-cart', href: '/cart' },
     { title: 'Orders', icon: 'ti-package', href: '/orders' },
     { title: 'Quotes', icon: 'ti-file-invoice', href: '/quotes' },
+    { title: 'Invoices', icon: 'ti-receipt', href: '/invoices' },
     { title: 'Abandoned Carts', icon: 'ti-shopping-cart-off', href: '/abandoned-carts' },
   ]},
   { group: 'Account', items: [
@@ -55,4 +56,3 @@ export default function Sidebar() {
     </aside>
   );
 }
-

@@ -19,6 +19,7 @@ import { CompaniesModule } from './companies/companies.module';
 import { DittofeedModule } from './dittofeed/dittofeed.module';
 import { EventsModule } from './events/events.module';
 import { FingerprintModule } from './fingerprint/fingerprint.module';
+import { InvoiceModule } from './invoices/invoices.module';
 import { MailModule } from './mail/mail.module';
 import { MerchantsModule } from './merchants/merchants.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -101,6 +102,7 @@ import { WishlistModule } from './wishlist/wishlist.module';
     AddressesModule,
     FingerprintModule,
     DittofeedModule,
+    InvoiceModule,
   ],
   controllers: [AppController],
   providers: [

@@ -11,15 +11,15 @@
   --bg-secondary: #ffffff;
   --bg-tertiary: #fafafa;
   --bg-elevated: #ffffff;
-  --bg-sidebar: rgba(255, 255, 255, 0.72);
-  --bg-header: rgba(255, 255, 255, 0.72);
-  --bg-hover: rgba(0, 0, 0, 0.03);
-  --bg-active: rgba(0, 122, 255, 0.08);
-  --bg-modal-overlay: rgba(0, 0, 0, 0.18);
+  --bg-sidebar: rgba(255, 255, 255, 0.88);
+  --bg-header: rgba(255, 255, 255, 0.88);
+  --bg-hover: rgba(0, 0, 0, 0.05);
+  --bg-active: rgba(0, 122, 255, 0.12);
+  --bg-modal-overlay: rgba(0, 0, 0, 0.35);
 
   --text-primary: #1d1d1f;
-  --text-secondary: #6e6e73;
-  --text-tertiary: #86868b;
+  --text-secondary: #424245;
+  --text-tertiary: #6e6e73;
   --text-quaternary: #aeaeb2;
 
   --accent-blue: #007aff;
@@ -176,11 +176,11 @@ a:hover { color: #0056b3; }
 
 /* ── Cards ── */
 .apple-card {
-  background: var(--bg-secondary); border: 1px solid var(--border-primary);
-  border-radius: var(--radius-lg); box-shadow: var(--shadow-xs); overflow: hidden;
-  transition: box-shadow var(--transition-normal);
+  background: var(--bg-secondary); border: 1.5px solid var(--border-primary);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden;
+  transition: all var(--transition-normal);
 }
-.apple-card:hover { box-shadow: var(--shadow-sm); }
+.apple-card:hover { border-color: rgba(0, 122, 255, 0.2); box-shadow: var(--shadow-md); transform: translateY(-1px); }
 .apple-card-header { padding: 18px 22px 0; display: flex; align-items: center; justify-content: space-between; }
 .apple-card-title { font-size: 15px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.2px; }
 .apple-card-subtitle { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }

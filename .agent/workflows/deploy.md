@@ -1,125 +1,67 @@
 ---
-description: Deploy Eagle B2B Engine to production server (Hetzner)
+description: Deploy Eagle B2B Engine to production server (DigitalOcean)
 ---
 
-# Eagle B2B Engine - Production Deployment
+# 🦅 Eagle Engine Deployment & Infrastructure Full Report
 
-## Server & Connection Info
+This workflow follows the strict deployment rules for the **DigitalOcean** environment.
 
-| Key | Value |
-|-----|-------|
-| **IP** | `5.78.148.183` (Hetzner) |
-| **SSH Key** | `~/.ssh/hetzner_gsb` |
-| **SSH Command** | `ssh -i ~/.ssh/hetzner_gsb root@5.78.148.183` |
-| **Project Root** | `/var/www/eagle/` |
+## ⛔ 1. KESİN YASAKLAR (STRICT PROHIBITIONS)
 
-## GitHub Repository
+**Aşağıdaki kuralların ihlali sunucunun çökmesine ve diğer ticari uygulamaların durmasına neden olur:**
 
-| Key | Value |
-|-----|-------|
-| **Repo** | `jesuisfatih/eagle-engine.dev` |
-| **URL** | `https://github.com/jesuisfatih/eagle-engine.dev` |
-| **Branch** | `main` |
+1.  **KAYNAK SINIRLARINI KALDIRMA:** `docker-compose.yml` içindeki `deploy.resources.limits` ayarlarını (CPU ve RAM kısıtları) kesinlikle kaldırma veya yükseltme. Tüm Eagle projesi toplamda **%10 CPU ve %20 RAM** sınırına tabidir.
+2.  **DİĞER UYGULAMALARA DOKUNMA:** `/opt/apps/custom/customizerapp/` ve `/opt/apps/custom/ssactivewear/` dizinlerine ve bu dizinlerdeki container'lara (CustomizerApp, SSActiveWear) kesinlikle müdahale etme.
+3.  **LOKAL DB KULLANMA:** Sunucu üzerindeki yerel Docker PostgreSQL container'larını (`factoryengine-eagledtf-db`) sakın kullanma. Prod datası **Managed DB** üzerindedir.
+4.  **HOST ÜZERİNDE PM2 ÇALIŞTIRMA:** Sunucunun kendisinde (host seviyesinde) PM2 süreci başlatma. Tüm servisler Docker container'ı içinde izole çalışmalıdır.
+5.  **CADDY GLOBAL AYARLAR:** `/opt/apps/caddy/Caddyfile` içindeki global ayarları değiştirme. Sadece yeni subdomain gerekirse Eagle bloklarına ekleme yap.
 
-## Server Directories
+## 🔑 2. BAĞLANTI VE ERİŞİM BİLGİLERİ
 
-| Service | Directory |
-|---------|-----------|
-| Project Root | `/var/www/eagle/` |
-| Admin Panel | `/var/www/eagle/admin` |
-| Accounts Panel | `/var/www/eagle/accounts` |
-| Backend API | `/var/www/eagle/backend` |
-| Snippet | `/var/www/eagle/snippet` |
-| Deploy Scripts | `/var/www/eagle/deploy` |
+### Sunucu Erişimi (SSH)
+- **Host IP:** `104.236.78.45` | **User:** `root` | **Port:** `22`
+- **SSH Key:** `~/.ssh/appserver` (Local makinede)
 
-## PM2 Services
+### Managed PostgreSQL (DigitalOcean)
+- **Host:** `private-db-postgresql-nyc3-64923-do-user-33221790-0.f.db.ondigitalocean.com`
+- **Port:** `25060` | **User:** `doadmin` | **Database:** `eagle_db`
+- **Password:** `[HIDDEN_IN_ENV]`
+- **SSL Mode:** `require` (Prisma'da `sslmode=no-verify` eklenmiştir).
 
-| ID | Name | Port | Mode |
-|----|------|------|------|
-| 0-1 | eagle-api | 4000 | cluster x2 |
-| 2 | eagle-admin | 3000 | fork |
-| 3 | eagle-accounts | 3001 | fork |
+## 📂 3. PROJE VE GİT KONFİGÜRASYONU
 
-## Domains & URLs
+- **Dizin:** `/opt/apps/custom/factoryengine/eagledtftransfer/`
+- **Git Repo:** `https://github.com/jesuisfatih/eagle-engine.dev`
+- **Branch:** `master`
 
-| Service | URL |
-|---------|-----|
-| Admin Panel | `https://app.eagledtfsupply.com` |
-| Accounts Panel | `https://accounts.eagledtfsupply.com` |
-| API | `https://api.eagledtfsupply.com` |
-| CDN | `https://cdn.eagledtfsupply.com` |
-| API Health | `https://api.eagledtfsupply.com/api/v1/health` |
+### Servisler & Portlar
+- `app.eagledtfsupply.com` (Port 3000)
+- `accounts.eagledtfsupply.com` (Port 3001)
+- `api.eagledtfsupply.com` (Port 4000)
+- `campaigns.eagledtfsupply.com` (Port 3010)
 
-## Database & Redis
-
-| Service | Info |
-|---------|------|
-| PostgreSQL | `eagle_user:Eagle2025!Secure@localhost:5432/eagle_db` |
-| Redis | `localhost:6379` (default) |
-
-## Reverse Proxy
-
-- **Caddy** — Protected: `chattr +i /usr/bin/caddy` + `apt-mark hold caddy`
-
-## Login Credentials
-
-| Panel | User | Password |
-|-------|------|----------|
-| Admin Panel | `admin` | `eagle2025` |
-| B2B Admin | `admin@testb2b.com` | `test1234` |
-| B2B Buyer | `buyer@testb2b.com` | `test1234` |
-
----
-
-## Deployment Steps
-
-### Option A: Quick Deploy (Code changes only, no DB reset)
+## 🛠️ 4. DEPLOYMENT STEPS
 
 // turbo-all
 
 1. Push local changes to GitHub:
 ```bash
 cd c:\Users\mhmmd\Desktop\eagle-engine.dev
-git add -A && git commit -m "deploy: update" && git push origin main
+git add -A && git commit -m "deploy: digitalocean migration" && git push origin master
 ```
 
-2. SSH into server and pull + rebuild:
+2. SSH into server and update Docker:
 ```bash
-ssh -i ~/.ssh/hetzner_gsb root@5.78.148.183 "cd /var/www/eagle && git pull origin main && cd backend && npm install && npx prisma generate && npx prisma db push && npm run build && cd ../admin && npm install && NEXT_PUBLIC_API_URL=https://api.eagledtfsupply.com npm run build && cd ../accounts && npm install && NEXT_PUBLIC_API_URL=https://api.eagledtfsupply.com npm run build && cd ../snippet && npm install && npm run build && cp -r dist/* /var/www/eagle/cdn/ && cd /var/www/eagle && pm2 restart all && pm2 save"
+ssh -i ~/.ssh/appserver root@104.236.78.45 "cd /opt/apps/custom/factoryengine/eagledtftransfer/ && git pull origin master && docker compose build && docker compose up -d"
 ```
 
-3. Verify deployment:
+3. Rebuild Admin/Backend inside container (if needed):
 ```bash
-curl -s https://api.eagledtfsupply.com/api/v1/health | head -c 200
+ssh -i ~/.ssh/appserver root@104.236.78.45 "docker exec factoryengine-eagledtf-app bash -c 'cd /app/backend && npx prisma db push && npm run build && pm2 restart all'"
 ```
 
-### Option B: Full Deploy (with DB reset)
-
-1. Push local changes to GitHub (same as Option A step 1)
-
-2. SSH into server and run full deploy:
-```bash
-ssh -i ~/.ssh/hetzner_gsb root@5.78.148.183 "cd /var/www/eagle && git pull origin main && bash deploy/final-deploy.sh"
-```
-
-### Option C: Backend-Only Deploy
-
-1. Push and deploy only backend:
-```bash
-ssh -i ~/.ssh/hetzner_gsb root@5.78.148.183 "cd /var/www/eagle && git pull origin main && cd backend && npm install && npx prisma generate && npx prisma db push && npm run build && pm2 restart eagle-api && pm2 save"
-```
-
-### Option D: Admin-Only Deploy
-
-1. Push and deploy only admin panel:
-```bash
-ssh -i ~/.ssh/hetzner_gsb root@5.78.148.183 "cd /var/www/eagle && git pull origin main && cd admin && npm install && NEXT_PUBLIC_API_URL=https://api.eagledtfsupply.com npm run build && pm2 restart eagle-admin && pm2 save"
-```
-
-### Useful Commands
-
-- **Check PM2 status:** `ssh -i ~/.ssh/hetzner_gsb root@5.78.148.183 "pm2 list"`
-- **Check PM2 logs:** `ssh -i ~/.ssh/hetzner_gsb root@5.78.148.183 "pm2 logs --lines 50"`
-- **Restart all:** `ssh -i ~/.ssh/hetzner_gsb root@5.78.148.183 "pm2 restart all"`
-- **Check disk:** `ssh -i ~/.ssh/hetzner_gsb root@5.78.148.183 "df -h"`
-- **Check Caddy:** `ssh -i ~/.ssh/hetzner_gsb root@5.78.148.183 "systemctl status caddy"`
+## 📊 5. FAYDALI KOMUTLAR
+- **Status:** `ssh -i ~/.ssh/appserver root@104.236.78.45 "docker exec factoryengine-eagledtf-app pm2 status"`
+- **Logs:** `docker logs -f factoryengine-eagledtf-app`
+- **Caddy Reload:** `ssh -i ~/.ssh/appserver root@104.236.78.45 "docker exec caddy caddy reload"`
+- **Container Stats:** `docker stats`
