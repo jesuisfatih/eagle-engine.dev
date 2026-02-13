@@ -149,6 +149,14 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.prisma.quote;
   }
 
+  get pickupShelf() {
+    return (this.prisma as any).pickupShelf;
+  }
+
+  get pickupOrder() {
+    return (this.prisma as any).pickupOrder;
+  }
+
   async onModuleInit() {
     try {
       await this.$connect();
