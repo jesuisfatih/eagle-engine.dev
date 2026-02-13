@@ -42,7 +42,12 @@ export class PickupController {
   @Get('orders')
   @UseGuards(JwtAuthGuard)
   async getOrders(@Req() req: any, @Query() query: any) {
-    return this.pickupService.getPickupOrders(req.user.merchantId, query);
+    // If request comes from a company_user (accounts panel), auto-filter by their company
+    const filters = { ...query };
+    if (req.user.companyId) {
+      filters.companyId = req.user.companyId;
+    }
+    return this.pickupService.getPickupOrders(req.user.merchantId, filters);
   }
 
   @Get('orders/stats')

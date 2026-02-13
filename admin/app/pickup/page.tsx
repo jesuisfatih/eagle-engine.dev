@@ -123,7 +123,17 @@ export default function PickupPage() {
     return map[status] || 'var(--text-tertiary)';
   };
 
-  const statusLabel = (status: string) => status.replace('_', ' ').toUpperCase();
+  const statusLabel = (status: string) => {
+    const map: Record<string, string> = {
+      pending: 'Sipariş Alındı',
+      processing: 'Hazırlanıyor',
+      ready: 'Rafta Hazır',
+      notified: 'Bildirim Gönderildi',
+      picked_up: 'Teslim Alındı',
+      completed: 'Tamamlandı',
+    };
+    return map[status] || status;
+  };
 
   return (
     <>
@@ -138,10 +148,10 @@ export default function PickupPage() {
       {stats && (
         <div className="stats-grid cols-5" style={{ marginBottom: 24 }}>
           {[
-            { label: 'Bekleyen', value: stats.pending, icon: 'ti-clock', color: 'orange' },
-            { label: 'İşleniyor', value: stats.processing, icon: 'ti-loader', color: 'blue' },
-            { label: 'Hazır', value: stats.ready, icon: 'ti-check', color: 'green' },
-            { label: 'Alındı', value: stats.pickedUp, icon: 'ti-package', color: 'purple' },
+            { label: 'Sipariş Alındı', value: stats.pending, icon: 'ti-clock', color: 'orange' },
+            { label: 'Hazırlanıyor', value: stats.processing, icon: 'ti-loader', color: 'blue' },
+            { label: 'Rafta Hazır', value: stats.ready, icon: 'ti-check', color: 'green' },
+            { label: 'Teslim Alındı', value: stats.pickedUp, icon: 'ti-package', color: 'purple' },
             { label: 'Toplam Raf', value: stats.totalShelves, icon: 'ti-layout-grid', color: 'teal' },
           ].map(s => (
             <div className="stat-card" key={s.label}>
@@ -177,11 +187,11 @@ export default function PickupPage() {
               </div>
               <select className="select-apple" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ width: 160 }}>
                 <option value="">Tüm Durumlar</option>
-                <option value="pending">Bekleyen</option>
-                <option value="processing">İşleniyor</option>
-                <option value="ready">Hazır</option>
-                <option value="notified">Bildirildi</option>
-                <option value="picked_up">Alındı</option>
+                <option value="pending">Sipariş Alındı</option>
+                <option value="processing">Hazırlanıyor</option>
+                <option value="ready">Rafta Hazır</option>
+                <option value="notified">Bildirim Gönderildi</option>
+                <option value="picked_up">Teslim Alındı</option>
                 <option value="completed">Tamamlandı</option>
               </select>
             </div>

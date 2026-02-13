@@ -11,6 +11,7 @@ const menuItems = [
   { group: 'Orders', items: [
     { title: 'Cart', icon: 'ti-shopping-cart', href: '/cart' },
     { title: 'Orders', icon: 'ti-package', href: '/orders' },
+    { title: 'Pickup', icon: 'ti-package-import', href: '/pickup' },
     { title: 'Quotes', icon: 'ti-file-invoice', href: '/quotes' },
     { title: 'Invoices', icon: 'ti-receipt', href: '/invoices' },
     { title: 'Abandoned Carts', icon: 'ti-shopping-cart-off', href: '/abandoned-carts' },
