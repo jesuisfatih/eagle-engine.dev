@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useTheme } from '@/components/ThemeProvider';
 import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 
 export default function Header() {
+  const { theme, toggleTheme } = useTheme();
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -15,6 +17,19 @@ export default function Header() {
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  // Keyboard shortcut: Ctrl/Cmd + K to focus search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        const searchInput = document.querySelector('.header-search input') as HTMLInputElement;
+        searchInput?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -41,9 +56,21 @@ export default function Header() {
           placeholder="Search companies, orders..."
           onKeyDown={handleSearch}
         />
+        <kbd style={{
+          fontSize: 10, padding: '2px 6px', borderRadius: 4,
+          background: 'var(--bg-hover)', color: 'var(--text-quaternary)',
+          border: '1px solid var(--border-primary)', fontFamily: 'inherit', fontWeight: 600,
+          marginLeft: 'auto', whiteSpace: 'nowrap',
+        }}>⌘K</kbd>
       </div>
 
       <div className="header-actions">
+        {/* Theme Toggle */}
+        <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+          <i className="ti ti-sun icon-sun" />
+          <i className="ti ti-moon icon-moon" />
+        </button>
+
         <button className="header-action-btn">
           <i className="ti ti-bell" />
         </button>

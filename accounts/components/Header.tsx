@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useTheme } from '@/components/ThemeProvider';
 import { accountsFetch } from '@/lib/api-client';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 
 export default function Header() {
   const router = useRouter();
+  const { theme, toggleTheme } = useTheme();
   const [cartCount, setCartCount] = useState(0);
   const [userName, setUserName] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -20,6 +22,19 @@ export default function Header() {
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Keyboard shortcut: Ctrl/Cmd + K to focus search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        const searchInput = document.querySelector('.header-search input') as HTMLInputElement;
+        searchInput?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const loadCartCount = async () => {
@@ -80,8 +95,21 @@ export default function Header() {
         <input placeholder="Search products..." onKeyDown={e => {
           if (e.key === 'Enter') router.push(`/products?search=${(e.target as HTMLInputElement).value}`);
         }} />
+        <kbd style={{
+          fontSize: 10, padding: '2px 6px', borderRadius: 4,
+          background: 'var(--bg-hover)', color: 'var(--text-quaternary)',
+          border: '1px solid var(--border)', fontFamily: 'inherit', fontWeight: 600,
+          marginLeft: 'auto', whiteSpace: 'nowrap',
+        }}>⌘K</kbd>
       </div>
+
       <div className="header-actions">
+        {/* Theme Toggle */}
+        <button className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+          <i className="ti ti-sun icon-sun" />
+          <i className="ti ti-moon icon-moon" />
+        </button>
+
         <Link href="/cart" className="header-action-btn">
           <i className="ti ti-shopping-cart" />
           {cartCount > 0 && <span className="header-badge">{cartCount}</span>}
@@ -110,4 +138,3 @@ export default function Header() {
     </header>
   );
 }
-
