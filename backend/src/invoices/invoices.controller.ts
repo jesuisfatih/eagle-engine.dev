@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { InvoiceService } from './invoices.service';
 
-@Controller('api/v1/invoices')
+@Controller('invoices')
 @UseGuards(JwtAuthGuard)
 export class InvoiceController {
   constructor(private readonly invoiceService: InvoiceService) {}

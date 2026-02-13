@@ -30,9 +30,10 @@ export default function MyInvoicesPage() {
     try {
       const res = await accountsFetch(`/api/v1/invoices?companyId=${companyId}`);
       const data = await res.json();
-      setInvoices(data);
+      setInvoices(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load invoices');
+      setInvoices([]);
     } finally {
       setLoading(false);
     }
