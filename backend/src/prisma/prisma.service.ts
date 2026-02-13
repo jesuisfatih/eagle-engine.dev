@@ -169,6 +169,31 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     try {
       await this.$connect();
       this.logger.log('✅ Database connected successfully');
+
+      // Auto-sync merchant access token from env (env is source of truth)
+      const envToken = this.config.get<string>('SHOPIFY_ACCESS_TOKEN');
+      const envDomain = this.config.get<string>('SHOPIFY_STORE_DOMAIN');
+      if (envToken && envDomain) {
+        try {
+          const merchant = await this.prisma.merchant.findFirst({
+            where: { shopDomain: envDomain },
+          });
+          if (merchant && merchant.accessToken !== envToken) {
+            await this.prisma.merchant.update({
+              where: { id: merchant.id },
+              data: { accessToken: envToken },
+            });
+            // Also reset sync failure counters so sync can resume
+            await this.prisma.syncState.updateMany({
+              where: { merchantId: merchant.id },
+              data: { consecutiveFailures: 0, lastError: null, status: 'idle' },
+            });
+            this.logger.log(`🔑 Merchant access token synced from env for ${envDomain}`);
+          }
+        } catch (tokenErr) {
+          this.logger.warn('⚠️ Could not sync merchant token from env', tokenErr);
+        }
+      }
     } catch (error) {
       this.logger.error('❌ Failed to connect to database', error);
       throw error;
