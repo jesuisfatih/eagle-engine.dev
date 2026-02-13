@@ -92,7 +92,7 @@ export default function Sidebar() {
     <aside className="apple-sidebar">
       <Link href="/dashboard" className="sidebar-brand" style={{ textDecoration: 'none' }}>
         <div className="sidebar-brand-logo">🦅</div>
-        <span className="sidebar-brand-text">Eagle B2B</span>
+        <span className="sidebar-brand-text">EAGLE SYSTEM</span>
       </Link>
 
       <nav className="sidebar-nav">

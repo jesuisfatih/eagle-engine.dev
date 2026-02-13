@@ -21,12 +21,12 @@ interface PickupOrder {
 }
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: string; bgColor: string; step: number }> = {
-  pending:    { label: 'Sipariş Alındı',       color: '#f59e0b', bgColor: 'rgba(245,158,11,0.1)',  icon: 'ti-clock',          step: 1 },
-  processing: { label: 'Hazırlanıyor',         color: '#3b82f6', bgColor: 'rgba(59,130,246,0.1)',  icon: 'ti-loader',         step: 2 },
-  ready:      { label: 'Rafta Hazır',           color: '#10b981', bgColor: 'rgba(16,185,129,0.1)', icon: 'ti-package-export',  step: 3 },
-  notified:   { label: 'Bildirim Gönderildi',   color: '#06b6d4', bgColor: 'rgba(6,182,212,0.1)',  icon: 'ti-bell-ringing',   step: 4 },
-  picked_up:  { label: 'Teslim Alındı',         color: '#8b5cf6', bgColor: 'rgba(139,92,246,0.1)', icon: 'ti-circle-check',   step: 5 },
-  completed:  { label: 'Tamamlandı',            color: '#6b7280', bgColor: 'rgba(107,114,128,0.1)', icon: 'ti-checks',        step: 6 },
+  pending:    { label: 'Order Received',      color: '#f59e0b', bgColor: 'rgba(245,158,11,0.1)',  icon: 'ti-clock',          step: 1 },
+  processing: { label: 'Preparing',           color: '#3b82f6', bgColor: 'rgba(59,130,246,0.1)',  icon: 'ti-loader',         step: 2 },
+  ready:      { label: 'Ready for Pickup',    color: '#10b981', bgColor: 'rgba(16,185,129,0.1)', icon: 'ti-package-export',  step: 3 },
+  notified:   { label: 'Notified',            color: '#06b6d4', bgColor: 'rgba(6,182,212,0.1)',  icon: 'ti-bell-ringing',   step: 4 },
+  picked_up:  { label: 'Picked Up',           color: '#8b5cf6', bgColor: 'rgba(139,92,246,0.1)', icon: 'ti-circle-check',   step: 5 },
+  completed:  { label: 'Completed',           color: '#6b7280', bgColor: 'rgba(107,114,128,0.1)', icon: 'ti-checks',        step: 6 },
 };
 
 export default function PickupPage() {
@@ -55,7 +55,7 @@ export default function PickupPage() {
 
   const formatDate = (d: string | null) => {
     if (!d) return '—';
-    return new Date(d).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return new Date(d).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
   // Separate orders into active and completed
@@ -66,8 +66,8 @@ export default function PickupPage() {
     <>
       <div className="page-header mb-24">
         <div>
-          <h1 className="page-title">Pickup Takip</h1>
-          <p className="page-subtitle">Siparişlerinizin hazırlanma ve teslim durumunu buradan takip edin</p>
+          <h1 className="page-title">Pickup Tracking</h1>
+          <p className="page-subtitle">Track the preparation and delivery status of your orders</p>
         </div>
         <a href="/qrpickup" target="_blank" className="btn-apple secondary sm" style={{ textDecoration: 'none' }}>
           <i className="ti ti-qrcode" style={{ marginRight: 6 }} /> QR Kiosk
@@ -77,7 +77,7 @@ export default function PickupPage() {
       {loading ? (
         <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-tertiary)' }}>
           <i className="ti ti-loader" style={{ fontSize: 28, animation: 'spin 1s linear infinite' }} />
-          <p style={{ marginTop: 12 }}>Siparişler yükleniyor...</p>
+          <p style={{ marginTop: 12 }}>Loading orders...</p>
         </div>
       ) : orders.length === 0 ? (
         <div className="apple-card" style={{ textAlign: 'center', padding: 60 }}>
@@ -89,9 +89,9 @@ export default function PickupPage() {
           }}>
             <i className="ti ti-package-off" style={{ fontSize: 32, color: 'var(--text-quaternary)' }} />
           </div>
-          <h3 style={{ color: 'var(--text-secondary)', marginBottom: 8 }}>Henüz pickup siparişi yok</h3>
+          <h3 style={{ color: 'var(--text-secondary)', marginBottom: 8 }}>No pickup orders yet</h3>
           <p style={{ color: 'var(--text-tertiary)', fontSize: 13 }}>
-            Mağazadan teslim alma siparişleriniz burada görünecek.
+            Your store pickup orders will appear here.
           </p>
         </div>
       ) : (
@@ -101,7 +101,7 @@ export default function PickupPage() {
             <div style={{ marginBottom: 32 }}>
               <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <i className="ti ti-clock" style={{ color: 'var(--accent-blue)' }} />
-                Aktif Siparişler
+                Active Orders
                 <span style={{ background: 'var(--accent-blue)', color: '#fff', borderRadius: 10, padding: '1px 8px', fontSize: 11, fontWeight: 700 }}>
                   {activeOrders.length}
                 </span>
@@ -130,7 +130,7 @@ export default function PickupPage() {
                           </div>
                           <div>
                             <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
-                              Sipariş #{order.orderNumber || '—'}
+                              Order #{order.orderNumber || '—'}
                             </div>
                             <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
                               {formatDate(order.createdAt)}
@@ -146,7 +146,7 @@ export default function PickupPage() {
                               background: 'rgba(16,185,129,0.1)',
                               border: '1px solid rgba(16,185,129,0.2)',
                             }}>
-                              <span style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', lineHeight: 1 }}>RAF</span>
+                              <span style={{ fontSize: 11, color: 'var(--text-tertiary)', display: 'block', lineHeight: 1 }}>SHELF</span>
                               <span style={{ fontSize: 18, fontWeight: 800, color: '#10b981', letterSpacing: 1 }}>{order.shelf.code}</span>
                             </div>
                           )}
@@ -191,15 +191,15 @@ export default function PickupPage() {
                           {/* Timeline */}
                           <div style={{ marginBottom: 16 }}>
                             <h4 style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
-                              Süreç Takibi
+                              Progress Tracking
                             </h4>
                             <div style={{ display: 'grid', gap: 8 }}>
                               {[
-                                { label: 'Sipariş Oluşturuldu', date: order.createdAt, done: true },
-                                { label: 'Rafa Atandı', date: order.assignedAt, done: !!order.assignedAt },
-                                { label: 'Hazır', date: order.readyAt, done: !!order.readyAt },
-                                { label: 'Bildirim Gönderildi', date: order.notifiedAt, done: !!order.notifiedAt },
-                                { label: 'Teslim Alındı', date: order.pickedUpAt, done: !!order.pickedUpAt },
+                                { label: 'Order Created', date: order.createdAt, done: true },
+                                { label: 'Assigned to Shelf', date: order.assignedAt, done: !!order.assignedAt },
+                                { label: 'Ready for Pickup', date: order.readyAt, done: !!order.readyAt },
+                                { label: 'Notification Sent', date: order.notifiedAt, done: !!order.notifiedAt },
+                                { label: 'Picked Up', date: order.pickedUpAt, done: !!order.pickedUpAt },
                               ].map((step, i) => (
                                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                   <div style={{
@@ -229,7 +229,7 @@ export default function PickupPage() {
                               border: '1px solid rgba(16,185,129,0.12)',
                             }}>
                               <div style={{ fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
-                                Teslim Alma Konumu
+                                Pickup Location
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                 <span style={{ fontSize: 28, fontWeight: 800, color: '#10b981' }}>{order.shelf.code}</span>
@@ -252,7 +252,7 @@ export default function PickupPage() {
                           {/* Design Files */}
                           {Array.isArray(order.designFiles) && order.designFiles.length > 0 && (
                             <div style={{ marginTop: 12 }}>
-                              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 6 }}>Tasarım Dosyaları</div>
+                              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginBottom: 6 }}>Design Files</div>
                               {order.designFiles.map((f: any, i: number) => (
                                 <div key={i} style={{
                                   padding: '8px 12px', borderRadius: 8,
@@ -260,10 +260,10 @@ export default function PickupPage() {
                                   display: 'flex', alignItems: 'center', gap: 8, fontSize: 12,
                                 }}>
                                   <i className="ti ti-file" style={{ color: 'var(--accent-blue)' }} />
-                                  <span style={{ color: 'var(--text-secondary)' }}>{f.lineItemTitle || f.fileName || `Dosya ${i + 1}`}</span>
+                                  <span style={{ color: 'var(--text-secondary)' }}>{f.lineItemTitle || f.fileName || `File ${i + 1}`}</span>
                                   {f.previewUrl && (
                                     <a href={f.previewUrl} target="_blank" style={{ marginLeft: 'auto', color: 'var(--accent-blue)', fontSize: 11 }}>
-                                      Önizle
+                                      Preview
                                     </a>
                                   )}
                                 </div>
@@ -284,7 +284,7 @@ export default function PickupPage() {
             <div>
               <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-tertiary)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <i className="ti ti-circle-check" style={{ color: 'var(--accent-green)' }} />
-                Tamamlanan Siparişler
+                Completed Orders
                 <span style={{ background: 'var(--bg-hover)', color: 'var(--text-tertiary)', borderRadius: 10, padding: '1px 8px', fontSize: 11, fontWeight: 600 }}>
                   {completedOrders.length}
                 </span>
@@ -293,10 +293,10 @@ export default function PickupPage() {
                 <table className="apple-table">
                   <thead>
                     <tr>
-                      <th>Sipariş</th>
-                      <th>Durum</th>
-                      <th>Raf</th>
-                      <th>Teslim Tarihi</th>
+                      <th>Order</th>
+                      <th>Status</th>
+                      <th>Shelf</th>
+                      <th>Pickup Date</th>
                     </tr>
                   </thead>
                   <tbody>

@@ -89,7 +89,7 @@ export default function PickupPage() {
   };
 
   const handleDeleteShelf = async (id: string) => {
-    if (!confirm('Bu rafı silmek istediğinize emin misiniz?')) return;
+    if (!confirm('Are you sure you want to delete this shelf?')) return;
     await adminFetch(`/api/v1/pickup/shelves/${id}`, { method: 'DELETE' });
     loadData();
   };
@@ -125,12 +125,12 @@ export default function PickupPage() {
 
   const statusLabel = (status: string) => {
     const map: Record<string, string> = {
-      pending: 'Sipariş Alındı',
-      processing: 'Hazırlanıyor',
-      ready: 'Rafta Hazır',
-      notified: 'Bildirim Gönderildi',
-      picked_up: 'Teslim Alındı',
-      completed: 'Tamamlandı',
+      pending: 'Order Received',
+      processing: 'Preparing',
+      ready: 'Ready for Pickup',
+      notified: 'Notified',
+      picked_up: 'Picked Up',
+      completed: 'Completed',
     };
     return map[status] || status;
   };
@@ -140,7 +140,7 @@ export default function PickupPage() {
       <div className="page-header mb-24">
         <div>
           <h1 className="page-title">Pickup Management</h1>
-          <p className="page-subtitle">Raf ataması, QR yönetimi ve sipariş takibi</p>
+          <p className="page-subtitle">Shelf assignment, QR management and order tracking</p>
         </div>
       </div>
 
@@ -148,11 +148,11 @@ export default function PickupPage() {
       {stats && (
         <div className="stats-grid cols-5" style={{ marginBottom: 24 }}>
           {[
-            { label: 'Sipariş Alındı', value: stats.pending, icon: 'ti-clock', color: 'orange' },
-            { label: 'Hazırlanıyor', value: stats.processing, icon: 'ti-loader', color: 'blue' },
-            { label: 'Rafta Hazır', value: stats.ready, icon: 'ti-check', color: 'green' },
-            { label: 'Teslim Alındı', value: stats.pickedUp, icon: 'ti-package', color: 'purple' },
-            { label: 'Toplam Raf', value: stats.totalShelves, icon: 'ti-layout-grid', color: 'teal' },
+            { label: 'Received', value: stats.pending, icon: 'ti-clock', color: 'orange' },
+            { label: 'Preparing', value: stats.processing, icon: 'ti-loader', color: 'blue' },
+            { label: 'Ready', value: stats.ready, icon: 'ti-check', color: 'green' },
+            { label: 'Picked Up', value: stats.pickedUp, icon: 'ti-package', color: 'purple' },
+            { label: 'Total Shelves', value: stats.totalShelves, icon: 'ti-layout-grid', color: 'teal' },
           ].map(s => (
             <div className="stat-card" key={s.label}>
               <div className={`stat-icon ${s.color}`}><i className={`ti ${s.icon}`} /></div>
@@ -168,10 +168,10 @@ export default function PickupPage() {
       {/* Tabs */}
       <div className="apple-tabs" style={{ marginBottom: 20 }}>
         <button className={`apple-tab ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => setActiveTab('orders')}>
-          <i className="ti ti-package" style={{ marginRight: 6 }} /> Pickup Siparişleri
+          <i className="ti ti-package" style={{ marginRight: 6 }} /> Pickup Orders
         </button>
         <button className={`apple-tab ${activeTab === 'shelves' ? 'active' : ''}`} onClick={() => setActiveTab('shelves')}>
-          <i className="ti ti-layout-grid" style={{ marginRight: 6 }} /> Raf Yönetimi
+          <i className="ti ti-layout-grid" style={{ marginRight: 6 }} /> Shelf Management
         </button>
       </div>
 
@@ -182,36 +182,36 @@ export default function PickupPage() {
             <div className="flex items-center gap-12">
               <div className="header-search" style={{ width: 220 }}>
                 <i className="ti ti-search header-search-icon" />
-                <input placeholder="Sipariş ara..." value={searchQuery}
+                <input placeholder="Search orders..." value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)} style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: 13, color: 'var(--text-primary)' }} />
               </div>
               <select className="select-apple" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ width: 160 }}>
-                <option value="">Tüm Durumlar</option>
-                <option value="pending">Sipariş Alındı</option>
-                <option value="processing">Hazırlanıyor</option>
-                <option value="ready">Rafta Hazır</option>
-                <option value="notified">Bildirim Gönderildi</option>
-                <option value="picked_up">Teslim Alındı</option>
-                <option value="completed">Tamamlandı</option>
+                <option value="">All Statuses</option>
+                <option value="pending">Order Received</option>
+                <option value="processing">Preparing</option>
+                <option value="ready">Ready for Pickup</option>
+                <option value="notified">Notified</option>
+                <option value="picked_up">Picked Up</option>
+                <option value="completed">Completed</option>
               </select>
             </div>
           </div>
           <div className="apple-table-wrapper">
             <table className="apple-table">
               <thead><tr>
-                <th>Sipariş</th>
-                <th>Müşteri</th>
-                <th>Durum</th>
-                <th>Raf</th>
-                <th>QR Kodu</th>
-                <th>Dosyalar</th>
-                <th style={{ textAlign: 'right' }}>İşlem</th>
+                <th>Order</th>
+                <th>Customer</th>
+                <th>Status</th>
+                <th>Shelf</th>
+                <th>QR Code</th>
+                <th>Files</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
               </tr></thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40 }}>Yükleniyor...</td></tr>
+                  <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40 }}>Loading...</td></tr>
                 ) : orders.length === 0 ? (
-                  <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-tertiary)' }}>Henüz pickup siparişi yok.</td></tr>
+                  <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-tertiary)' }}>No pickup orders yet.</td></tr>
                 ) : orders.map(o => (
                   <tr key={o.id}>
                     <td><span style={{ fontWeight: 600 }}>#{o.orderNumber || '—'}</span></td>
@@ -238,7 +238,7 @@ export default function PickupPage() {
                     <td>
                       {Array.isArray(o.designFiles) && o.designFiles.length > 0 ? (
                         <span style={{ fontSize: 12, color: 'var(--accent-green)' }}>
-                          <i className="ti ti-file" /> {o.designFiles.length} dosya
+                          <i className="ti ti-file" /> {o.designFiles.length} file(s)
                         </span>
                       ) : <span style={{ fontSize: 12, color: 'var(--text-quaternary)' }}>—</span>}
                     </td>
@@ -262,24 +262,24 @@ export default function PickupPage() {
       {activeTab === 'shelves' && (
         <div className="apple-card">
           <div className="apple-card-header" style={{ padding: '16px 22px' }}>
-            <span className="apple-card-title">Raf Tanımları</span>
+            <span className="apple-card-title">Shelf Definitions</span>
             <button className="btn-apple primary sm" onClick={() => { setShowShelfModal(true); setEditingShelf(null); setShelfForm({ code: '', name: '', description: '' }); }}>
-              <i className="ti ti-plus" /> Yeni Raf
+              <i className="ti ti-plus" /> New Shelf
             </button>
           </div>
           <div className="apple-table-wrapper">
             <table className="apple-table">
               <thead><tr>
-                <th>Kod</th>
-                <th>Ad</th>
-                <th>Açıklama</th>
-                <th>Sipariş Sayısı</th>
-                <th>Durum</th>
-                <th style={{ textAlign: 'right' }}>İşlem</th>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Order Count</th>
+                <th>Status</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
               </tr></thead>
               <tbody>
                 {shelves.length === 0 ? (
-                  <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40, color: 'var(--text-tertiary)' }}>Henüz raf tanımı yok. Yukarıdan yeni raf ekleyin.</td></tr>
+                  <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40, color: 'var(--text-tertiary)' }}>No shelves defined yet. Add a new shelf above.</td></tr>
                 ) : shelves.map(s => (
                   <tr key={s.id}>
                     <td><span style={{ fontWeight: 700, fontSize: 16, color: 'var(--accent-blue)' }}>{s.code}</span></td>
@@ -310,29 +310,29 @@ export default function PickupPage() {
         <div className="apple-modal-overlay" onClick={() => setShowShelfModal(false)}>
           <div className="apple-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>
             <div className="apple-modal-header">
-              <h3>{editingShelf ? 'Raf Düzenle' : 'Yeni Raf Ekle'}</h3>
+              <h3>{editingShelf ? 'Edit Shelf' : 'Add New Shelf'}</h3>
               <button className="apple-modal-close" onClick={() => setShowShelfModal(false)}>
                 <i className="ti ti-x" />
               </button>
             </div>
             <div className="apple-modal-body">
               <div className="form-group">
-                <label className="input-label">Raf Kodu *</label>
-                <input className="input-apple-field" placeholder="Örn: A-1, B-3, C-12" value={shelfForm.code} onChange={e => setShelfForm(f => ({ ...f, code: e.target.value }))} />
+                <label className="input-label">Shelf Code *</label>
+                <input className="input-apple-field" placeholder="e.g. A-1, B-3, C-12" value={shelfForm.code} onChange={e => setShelfForm(f => ({ ...f, code: e.target.value }))} />
               </div>
               <div className="form-group">
-                <label className="input-label">Ad</label>
-                <input className="input-apple-field" placeholder="Örn: Sol Raf - Üst Bölme" value={shelfForm.name} onChange={e => setShelfForm(f => ({ ...f, name: e.target.value }))} />
+                <label className="input-label">Name</label>
+                <input className="input-apple-field" placeholder="e.g. Left Rack - Top Section" value={shelfForm.name} onChange={e => setShelfForm(f => ({ ...f, name: e.target.value }))} />
               </div>
               <div className="form-group">
-                <label className="input-label">Açıklama</label>
-                <textarea className="input-apple-field" placeholder="Müşteriye gösterilecek konum bilgisi..." value={shelfForm.description} onChange={e => setShelfForm(f => ({ ...f, description: e.target.value }))} />
+                <label className="input-label">Description</label>
+                <textarea className="input-apple-field" placeholder="Location info visible to customers..." value={shelfForm.description} onChange={e => setShelfForm(f => ({ ...f, description: e.target.value }))} />
               </div>
             </div>
             <div className="apple-modal-footer">
-              <button className="btn-apple secondary" onClick={() => setShowShelfModal(false)}>İptal</button>
+              <button className="btn-apple secondary" onClick={() => setShowShelfModal(false)}>Cancel</button>
               <button className="btn-apple primary" onClick={handleCreateShelf} disabled={!shelfForm.code}>
-                {editingShelf ? 'Güncelle' : 'Oluştur'}
+                {editingShelf ? 'Update' : 'Create'}
               </button>
             </div>
           </div>
@@ -344,16 +344,16 @@ export default function PickupPage() {
         <div className="apple-modal-overlay" onClick={() => setAssignModal(null)}>
           <div className="apple-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 380 }}>
             <div className="apple-modal-header">
-              <h3>Raf Ata — #{assignModal.orderNumber}</h3>
+              <h3>Assign Shelf — #{assignModal.orderNumber}</h3>
               <button className="apple-modal-close" onClick={() => setAssignModal(null)}>
                 <i className="ti ti-x" />
               </button>
             </div>
             <div className="apple-modal-body">
               <div className="form-group">
-                <label className="input-label">Raf Seç</label>
+                <label className="input-label">Select Shelf</label>
                 <select className="select-apple" value={selectedShelfId} onChange={e => setSelectedShelfId(e.target.value)}>
-                  <option value="">— Seçin —</option>
+                  <option value="">— Select —</option>
                   {shelves.filter(s => s.isActive).map(s => (
                     <option key={s.id} value={s.id}>{s.code} {s.name ? `— ${s.name}` : ''}</option>
                   ))}
@@ -361,8 +361,8 @@ export default function PickupPage() {
               </div>
             </div>
             <div className="apple-modal-footer">
-              <button className="btn-apple secondary" onClick={() => setAssignModal(null)}>İptal</button>
-              <button className="btn-apple primary" onClick={handleAssignShelf} disabled={!selectedShelfId}>Raf Ata</button>
+              <button className="btn-apple secondary" onClick={() => setAssignModal(null)}>Cancel</button>
+              <button className="btn-apple primary" onClick={handleAssignShelf} disabled={!selectedShelfId}>Assign Shelf</button>
             </div>
           </div>
         </div>
