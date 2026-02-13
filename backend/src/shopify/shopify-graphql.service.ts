@@ -153,11 +153,8 @@ export class ShopifyGraphqlService {
                     inventoryQuantity
                     position
                     taxable
-                    requiresShipping
                     availableForSale
                     inventoryPolicy
-                    weight
-                    weightUnit
                     image {
                       url
                       altText
