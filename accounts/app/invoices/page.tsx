@@ -1,6 +1,5 @@
 'use client';
 
-import { showToast } from '@/components/ui/Toast';
 import { accountsFetch } from '@/lib/api-client';
 import { getCompanyIdSync } from '@/lib/auth-context';
 import { useEffect, useState } from 'react';
@@ -33,7 +32,7 @@ export default function MyInvoicesPage() {
       const data = await res.json();
       setInvoices(data);
     } catch (err) {
-      showToast('Failed to load invoices', 'danger');
+      console.error('Failed to load invoices');
     } finally {
       setLoading(false);
     }
