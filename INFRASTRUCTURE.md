@@ -44,11 +44,10 @@
 
 | Container | Rol | Port |
 |---|---|---|
-| `factoryengine-eagledtf-app` | API, Admin, Accounts (PM2) | 3000, 3001, 4000 |
-| `factoryengine-eagledtf-dittofeed` | Campaigns Engine | 3010 |
-| `factoryengine-eagledtf-db` | Postgres (Local) | 5432 |
-| `factoryengine-eagledtf-clickhouse` | Analytics | 8123 |
-| `factoryengine-eagledtf-temporal` | Workflow Engine | 7233 |
+| `factoryengine-app` | API, Admin, Accounts | 3000, 3001, 4000 |
+| `multiservice-dittofeed` | Campaigns (Shared) | 3010 |
+| `multiservice-penpot` | Design Editor (Shared) | 9001 |
+| `factoryengine-db` | Postgres (Local) | 5432 |
 
 ---
 

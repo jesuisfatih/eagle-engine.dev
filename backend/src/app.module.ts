@@ -18,7 +18,6 @@ import { CheckoutModule } from './checkout/checkout.module';
 import { CommonModule } from './common/common.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { CompaniesModule } from './companies/companies.module';
-import { DittofeedModule } from './dittofeed/dittofeed.module';
 import { EventsModule } from './events/events.module';
 import { FingerprintModule } from './fingerprint/fingerprint.module';
 import { InvoiceModule } from './invoices/invoices.module';
@@ -108,7 +107,6 @@ import { WishlistModule } from './wishlist/wishlist.module';
     WishlistModule,
     AddressesModule,
     FingerprintModule,
-    DittofeedModule,
     InvoiceModule,
     PickupModule,
   ],
